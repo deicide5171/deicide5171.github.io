@@ -1,0 +1,13 @@
+# 2021 Personal Project
+
+# 목표
+
+- 나만의 개발환경 구성
+- React.js 전체 훑어보기
+- Webpack 전체 훑어보기
+- Javascript 최신 문법 적응하기
+- Spring Boot 다양한 설정 시도하기
+- Spring Boot CRUD REST API 코드 자동생성 프로젝트
+    - IntelliJ IDEA Plugin
+    - VS Code Extension
+- IntelliJ IDEA, Web Storm, VS Code 개발 IDE 익숙해지기
