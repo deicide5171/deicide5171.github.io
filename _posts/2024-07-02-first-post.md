@@ -3,14 +3,7 @@ title: "1인 개발"
 date: 2024-07-02 18:11:54 -0400
 categories: My Project
 ---
-
-# 제목
-
-- 아러ㅏㅎㅁ너앙
-- ㅁㄴ-ㅁㄴㅇㄹㅇㅁㄴㄹ
-- ㅁㄴㅇㄻㄴㅇㄹ
-
-## ㅇㄹ마ㅓㅇㄹ미ㅏㄴ러
+test
 
 [jekyll-docs]: https://jekyllrb.com/docs/home
 [jekyll-gh]:   https://github.com/jekyll/jekyll
