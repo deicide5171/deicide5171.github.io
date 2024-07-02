@@ -12,7 +12,7 @@ categories: my project
 - Flutter 와 Android Studio, VS Code 통합
 - Flutter 설정 확인
 - Flutter Project 생성 및 실행(Android Emulator or Android Device 사용)
-- ![예제 App 실행 화면]([https://deicide5171.github.io/assets/images/example_app_flutter.png])
+- ![예제 App 실행 화면](https://deicide5171.github.io/assets/images/example_app_flutter.png)
 
 [jekyll-docs]: https://jekyllrb.com/docs/home
 [jekyll-gh]:   https://github.com/jekyll/jekyll
