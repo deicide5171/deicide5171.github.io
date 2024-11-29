@@ -1,28 +1,13 @@
 # deicide5171.github.io
 
-https://deicide5171.github.io/
+- https://deicide5171.github.io/
 
-# Study
+## Developer
 
-## Java
+## Exercise
 
-## Spring
+## Diet
 
-## Javascript
+## English Conversation
 
-## OpenLayers
-
-## GeoServer
-
-## PostgreSQL
-
-# Project
-
-## Idea
-
-- 랜선여행
-  - 추천
-  - 정보
-  - 경로
-  - 코스
-  - 영상연계
+## Tekken 8
