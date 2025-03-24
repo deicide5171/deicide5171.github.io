@@ -1,19 +1,9 @@
 # deicide5171.github.io (https://deicide5171.github.io/)
 
-## JavaScript
+## AI & Python
 
-## Node.js
+## JavaScript & Node.js & React
 
-## Spring
+## Java & Spring
 
-## AI
-
-## Python
-
-## GeoServer
-
-## ArcGIS
-
-## OpenLayers
-
-## Mapbox
+## GIS
