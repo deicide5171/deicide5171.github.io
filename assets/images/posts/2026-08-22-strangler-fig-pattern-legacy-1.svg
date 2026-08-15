@@ -1,0 +1,101 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="34" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">스트랭글러 무화과 패턴 — 단계별 트래픽 이전</text>
+
+  <!-- column dividers -->
+  <line x1="270" y1="55" x2="270" y2="420" stroke="#e0e0e0" stroke-width="2" stroke-dasharray="6,6"/>
+  <line x1="535" y1="55" x2="535" y2="420" stroke="#e0e0e0" stroke-width="2" stroke-dasharray="6,6"/>
+
+  <!-- Stage 1 title -->
+  <text x="135" y="72" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#444">1단계: 초기</text>
+
+  <!-- Stage 1: Facade -->
+  <rect x="75" y="90" width="120" height="36" rx="6" fill="#f5f5f5" stroke="#999" stroke-width="1.5"/>
+  <text x="135" y="112" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">파사드 / 프록시</text>
+
+  <!-- Stage 1: New service (empty) -->
+  <rect x="30" y="170" width="90" height="55" rx="8" fill="#2f9e44" opacity="0.08" stroke="#2f9e44" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="75" y="200" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#2f9e44">신규 서비스</text>
+  <text x="75" y="215" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#888">(미구현)</text>
+
+  <!-- Stage 1: Legacy -->
+  <rect x="140" y="170" width="90" height="55" rx="8" fill="#2c6fbb" opacity="0.15" stroke="#2c6fbb" stroke-width="2"/>
+  <text x="185" y="200" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="#2c6fbb">레거시 시스템</text>
+
+  <!-- Stage 1 arrow -->
+  <line x1="150" y1="126" x2="185" y2="168" stroke="#2c6fbb" stroke-width="3" marker-end="url(#arrowBlue)"/>
+  <rect x="155" y="140" width="34" height="18" rx="4" fill="#2c6fbb"/>
+  <text x="172" y="153" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#ffffff">100%</text>
+
+  <text x="135" y="255" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#666">모든 요청이</text>
+  <text x="135" y="270" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#666">레거시로 전달됨</text>
+
+  <!-- Stage 2 title -->
+  <text x="400" y="72" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#444">2단계: 이전 중</text>
+
+  <!-- Stage 2: Facade -->
+  <rect x="340" y="90" width="120" height="36" rx="6" fill="#f5f5f5" stroke="#999" stroke-width="1.5"/>
+  <text x="400" y="112" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">파사드 / 프록시</text>
+
+  <!-- Stage 2: New service -->
+  <rect x="295" y="170" width="90" height="55" rx="8" fill="#2f9e44" opacity="0.2" stroke="#2f9e44" stroke-width="2"/>
+  <text x="340" y="200" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="#2f9e44">신규 서비스</text>
+  <text x="340" y="215" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#555">신규 기능 이전</text>
+
+  <!-- Stage 2: Legacy (shrinking) -->
+  <rect x="405" y="170" width="90" height="55" rx="8" fill="#2c6fbb" opacity="0.15" stroke="#2c6fbb" stroke-width="2"/>
+  <text x="450" y="200" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="#2c6fbb">레거시 시스템</text>
+  <text x="450" y="215" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#555">일부 기능 남음</text>
+
+  <!-- Stage 2 arrows -->
+  <line x1="385" y1="126" x2="345" y2="168" stroke="#2f9e44" stroke-width="2.5" marker-end="url(#arrowGreen)"/>
+  <line x1="415" y1="126" x2="450" y2="168" stroke="#2c6fbb" stroke-width="2.5" marker-end="url(#arrowBlue)"/>
+  <rect x="300" y="140" width="34" height="18" rx="4" fill="#2f9e44"/>
+  <text x="317" y="153" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#ffffff">40%</text>
+  <rect x="440" y="140" width="34" height="18" rx="4" fill="#2c6fbb"/>
+  <text x="457" y="153" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#ffffff">60%</text>
+
+  <text x="400" y="255" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#666">라우팅 규칙으로 기능별</text>
+  <text x="400" y="270" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#666">엔드포인트를 순차 이전</text>
+
+  <!-- data sync note -->
+  <path d="M 340 225 C 340 260, 450 260, 450 225" fill="none" stroke="#e0a800" stroke-width="1.5" stroke-dasharray="3,3"/>
+  <text x="400" y="295" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#b08900">이중 쓰기 / CDC로 데이터 동기화</text>
+
+  <!-- Stage 3 title -->
+  <text x="665" y="72" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#444">3단계: 완료</text>
+
+  <!-- Stage 3: Facade -->
+  <rect x="605" y="90" width="120" height="36" rx="6" fill="#f5f5f5" stroke="#999" stroke-width="1.5"/>
+  <text x="665" y="112" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">파사드 / 프록시</text>
+
+  <!-- Stage 3: New service (full) -->
+  <rect x="605" y="170" width="120" height="55" rx="8" fill="#2f9e44" opacity="0.2" stroke="#2f9e44" stroke-width="2.5"/>
+  <text x="665" y="202" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#2f9e44">신규 서비스</text>
+
+  <!-- Stage 3: Legacy (retired) -->
+  <rect x="605" y="245" width="120" height="40" rx="8" fill="#f5f5f5" stroke="#bbb" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="665" y="269" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#999">레거시 폐기됨</text>
+
+  <line x1="665" y1="126" x2="665" y2="168" stroke="#2f9e44" stroke-width="3" marker-end="url(#arrowGreen)"/>
+  <rect x="648" y="140" width="34" height="18" rx="4" fill="#2f9e44"/>
+  <text x="665" y="153" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#ffffff">100%</text>
+
+  <text x="665" y="310" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#666">모든 트래픽이 신규 서비스로</text>
+  <text x="665" y="325" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#666">이전된 뒤 레거시 시스템 제거</text>
+
+  <!-- legend -->
+  <rect x="40" y="360" width="720" height="70" rx="8" fill="#fafafa" stroke="#e0e0e0"/>
+  <text x="400" y="384" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#444">파사드가 모든 요청을 가로채 신규/레거시로 라우팅을 나누고, 기능이 이전될 때마다 규칙을 갱신한다.</text>
+  <text x="400" y="404" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#444">무화과 넝쿨이 숙주나무를 서서히 감싸듯, 레거시는 트래픽을 잃어가며 마지막에 안전하게 제거된다.</text>
+
+  <defs>
+    <marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#2c6fbb"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#2f9e44"/>
+    </marker>
+  </defs>
+</svg>
