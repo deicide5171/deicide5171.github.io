@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <!-- Divider -->
+  <line x1="400" y1="20" x2="400" y2="430" stroke="#e0e0e0" stroke-width="2" stroke-dasharray="6,6"/>
+
+  <!-- Titles -->
+  <text x="200" y="38" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">블루-그린 배포</text>
+  <text x="600" y="38" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">카나리 배포</text>
+
+  <!-- ===== Blue-Green side ===== -->
+  <!-- Load balancer -->
+  <rect x="150" y="70" width="100" height="40" rx="6" fill="#f5f5f5" stroke="#999" stroke-width="1.5"/>
+  <text x="200" y="95" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#333">로드밸런서</text>
+
+  <!-- Blue env (live before) -->
+  <rect x="70" y="160" width="130" height="70" rx="8" fill="#2c6fbb" opacity="0.15" stroke="#2c6fbb" stroke-width="2"/>
+  <text x="135" y="190" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#2c6fbb">Blue (구버전)</text>
+  <text x="135" y="210" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#555">기존 운영 환경</text>
+
+  <!-- Green env (new) -->
+  <rect x="220" y="160" width="130" height="70" rx="8" fill="#2f9e44" opacity="0.15" stroke="#2f9e44" stroke-width="2"/>
+  <text x="285" y="190" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#2f9e44">Green (신버전)</text>
+  <text x="285" y="210" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#555">검증 완료 후 대기</text>
+
+  <!-- Arrow: LB -> Blue (fading) -->
+  <line x1="185" y1="110" x2="140" y2="158" stroke="#2c6fbb" stroke-width="2" stroke-dasharray="5,4" marker-end="url(#arrowBlue)"/>
+  <!-- Arrow: LB -> Green (switched) -->
+  <line x1="215" y1="110" x2="280" y2="158" stroke="#2f9e44" stroke-width="3" marker-end="url(#arrowGreen)"/>
+  <text x="200" y="140" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#555">전환(cutover)</text>
+
+  <text x="200" y="255" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#666">트래픽 100% → 100%</text>
+  <text x="200" y="272" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#666">한 번에 전체 전환</text>
+
+  <!-- 100% badge -->
+  <rect x="245" y="140" width="34" height="18" rx="4" fill="#2f9e44"/>
+  <text x="262" y="153" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#ffffff">100%</text>
+
+  <!-- rollback arrow -->
+  <path d="M 285 235 C 285 270, 135 270, 135 235" fill="none" stroke="#e03131" stroke-width="2" marker-end="url(#arrowRed)"/>
+  <text x="210" y="290" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#e03131">문제 시 즉시 롤백(스위치 되돌리기)</text>
+
+  <!-- ===== Canary side ===== -->
+  <rect x="550" y="70" width="100" height="40" rx="6" fill="#f5f5f5" stroke="#999" stroke-width="1.5"/>
+  <text x="600" y="95" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#333">로드밸런서</text>
+
+  <!-- Stable -->
+  <rect x="470" y="160" width="130" height="70" rx="8" fill="#2c6fbb" opacity="0.15" stroke="#2c6fbb" stroke-width="2"/>
+  <text x="535" y="190" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#2c6fbb">Stable</text>
+  <text x="535" y="210" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#555">기존 버전</text>
+
+  <!-- Canary -->
+  <rect x="620" y="160" width="130" height="70" rx="8" fill="#2f9e44" opacity="0.15" stroke="#2f9e44" stroke-width="2"/>
+  <text x="685" y="190" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#2f9e44">Canary</text>
+  <text x="685" y="210" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#555">신버전 일부 배포</text>
+
+  <!-- Arrows with weighted split -->
+  <line x1="585" y1="110" x2="545" y2="158" stroke="#2c6fbb" stroke-width="4" marker-end="url(#arrowBlue)"/>
+  <line x1="615" y1="110" x2="670" y2="158" stroke="#2f9e44" stroke-width="1.5" marker-end="url(#arrowGreen)"/>
+
+  <rect x="500" y="140" width="34" height="18" rx="4" fill="#2c6fbb"/>
+  <text x="517" y="153" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#ffffff">90%</text>
+  <rect x="646" y="140" width="34" height="18" rx="4" fill="#2f9e44"/>
+  <text x="663" y="153" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#ffffff">10%</text>
+
+  <text x="600" y="255" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#666">트래픽 비율을 단계적으로 조정</text>
+  <text x="600" y="272" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#666">(10% → 30% → 100%)</text>
+
+  <path d="M 685 235 C 685 270, 535 270, 535 235" fill="none" stroke="#e0a800" stroke-width="2" marker-end="url(#arrowYellow)"/>
+  <text x="610" y="290" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#b08900">메트릭 악화 시 비율을 0%로 되돌림</text>
+
+  <!-- legend -->
+  <rect x="60" y="360" width="680" height="60" rx="8" fill="#fafafa" stroke="#e0e0e0"/>
+  <text x="400" y="384" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#444">블루-그린은 전체 환경을 한 번에 전환해 롤백이 즉각적인 대신 이중 인프라 비용이 든다.</text>
+  <text x="400" y="404" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#444">카나리는 트래픽을 점진적으로 옮겨 위험을 줄이는 대신 지속적인 관측이 필요하다.</text>
+
+  <defs>
+    <marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#2c6fbb"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#2f9e44"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#e03131"/>
+    </marker>
+    <marker id="arrowYellow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#e0a800"/>
+    </marker>
+  </defs>
+</svg>
