@@ -189,6 +189,7 @@ encoding: "utf-8"
 markdown_ext: "markdown,mkdown,mkdn,mkd,md"
 
 # Conversion
+future: true # 선작성된 미래 날짜 포스트도 즉시 렌더링
 markdown: kramdown
 highlighter: rouge
 lsi: false
