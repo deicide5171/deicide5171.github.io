@@ -85,10 +85,14 @@ excerpt: "글 요약 한 문장"
 2. **편 단위로 커밋·push**: 한 필러의 MD+HTML 페어를 완성할 때마다
    `git add <두 파일> && git commit -m "post: <제목> (auto)" && git push -u origin auto-post/${TODAY}`
    — 중간에 중단돼도 완성분은 남는다
-3. 모든 작업 후 master 대상 PR 확인: 없으면 생성(제목 `daily posts: ${TODAY} (N편)`), 이미 있으면 push만으로 자동 반영됨
-4. rate limit·오류로 중단 시: 마지막 완성 편까지 push됐는지 확인하고, 생성 편수/남은 필러를 보고
-5. **금지**: master 직접 커밋/push, 기존 파일 수정·삭제, force push, `_config.yml` 변경
-6. 완료 보고 후 가능하면 PushNotification으로 "N편 생성 완료 + PR 링크" 알림
+3. 모든 작업 후 **open 상태**의 master 대상 PR 확인: 없으면 생성(제목 `daily posts: ${TODAY} (N편)`).
+   같은 날 이전 PR이 이미 merge된 뒤의 추가 생성분이라면 새 PR을 만든다.
+4. **PR 자동 merge**: PR 생성(또는 확인) 직후 GitHub MCP 도구나 GitHub API로 즉시 merge한다(merge commit 방식).
+   merge하면 GitHub Pages가 자동으로 게시한다. merge 실패 시 PR을 열어둔 채 실패 사유를 보고한다.
+   merge 후 원격 브랜치 삭제는 토큰 권한상 불가하므로 그대로 남겨둔다(무해 — 다음 실행의 이어쓰기 판단에도 지장 없음).
+5. rate limit·오류로 중단 시: 마지막 완성 편까지 push를 확인하고, **완성분만이라도 PR·merge까지 마친 뒤** 생성 편수/남은 필러를 보고
+6. **금지**: master 직접 커밋/push(게시는 반드시 PR merge 경유), 기존 파일 수정·삭제, force push, `_config.yml` 변경
+7. 완료 보고 후 가능하면 PushNotification으로 "N편 생성·게시 완료 + 링크" 알림
 
 ## 스케줄 변경 방법
 
