@@ -1,0 +1,91 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="26" text-anchor="middle" font-size="17" font-weight="bold" fill="#1a1a1a">멀티테넌시 격리 스펙트럼 — Pool → Bridge(스키마) → Silo</text>
+
+  <defs>
+    <marker id="arrowN" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#555555"/>
+    </marker>
+  </defs>
+
+  <!-- column dividers -->
+  <line x1="270" y1="40" x2="270" y2="390" stroke="#e2e2e2" stroke-width="1"/>
+  <line x1="530" y1="40" x2="530" y2="390" stroke="#e2e2e2" stroke-width="1"/>
+
+  <!-- column headers -->
+  <text x="145" y="50" text-anchor="middle" font-size="13" font-weight="bold" fill="#0b5fa5">Pool 모델 (완전 공유)</text>
+  <text x="400" y="50" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f7a38">Bridge 모델 (스키마 분리)</text>
+  <text x="655" y="50" text-anchor="middle" font-size="13" font-weight="bold" fill="#a3550f">Silo 모델 (완전 격리)</text>
+
+  <!-- Column 1: Pool -->
+  <rect x="85" y="62" width="120" height="34" rx="6" fill="#eaf3ff" stroke="#0b5fa5"/>
+  <text x="145" y="83" text-anchor="middle" font-size="11.5" fill="#0b5fa5">Application (공유)</text>
+  <line x1="145" y1="96" x2="145" y2="118" stroke="#555555" stroke-width="2" marker-end="url(#arrowN)"/>
+
+  <rect x="45" y="120" width="200" height="185" rx="8" fill="#f7fbff" stroke="#0b5fa5" stroke-width="2"/>
+  <text x="145" y="137" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#0b5fa5">공유 데이터베이스</text>
+
+  <rect x="60" y="148" width="170" height="20" fill="#eeeeee" stroke="#cccccc"/>
+  <text x="145" y="162" text-anchor="middle" font-size="9.5" fill="#444">orders 테이블 (tenant_id 컬럼)</text>
+
+  <rect x="60" y="171" width="170" height="24" fill="#eaf3ff" stroke="#1877c9"/>
+  <text x="145" y="187" text-anchor="middle" font-size="9.5" fill="#0b5fa5">tenant_id = A 의 주문 행들</text>
+
+  <rect x="60" y="198" width="170" height="24" fill="#eaffef" stroke="#2fa84f"/>
+  <text x="145" y="214" text-anchor="middle" font-size="9.5" fill="#1f7a38">tenant_id = B 의 주문 행들</text>
+
+  <rect x="60" y="225" width="170" height="24" fill="#fff4e5" stroke="#c9701d"/>
+  <text x="145" y="241" text-anchor="middle" font-size="9.5" fill="#a3550f">tenant_id = C 의 주문 행들</text>
+
+  <text x="145" y="270" text-anchor="middle" font-size="9.5" fill="#555">행 단위(Row-Level) 격리</text>
+  <text x="145" y="285" text-anchor="middle" font-size="9.5" fill="#555">WHERE tenant_id = ? / RLS 정책</text>
+
+  <!-- Column 2: Bridge -->
+  <rect x="340" y="62" width="120" height="34" rx="6" fill="#eaf3ff" stroke="#0b5fa5"/>
+  <text x="400" y="83" text-anchor="middle" font-size="11.5" fill="#0b5fa5">Application (공유)</text>
+  <line x1="400" y1="96" x2="400" y2="118" stroke="#555555" stroke-width="2" marker-end="url(#arrowN)"/>
+
+  <rect x="310" y="120" width="180" height="185" rx="8" fill="#f7fbff" stroke="#1f7a38" stroke-width="2"/>
+  <text x="400" y="137" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1f7a38">하나의 DB 인스턴스</text>
+
+  <rect x="325" y="150" width="150" height="42" rx="5" fill="#eaf3ff" stroke="#1877c9"/>
+  <text x="400" y="175" text-anchor="middle" font-size="10.5" fill="#0b5fa5">Schema: tenant_a</text>
+
+  <rect x="325" y="198" width="150" height="42" rx="5" fill="#eaffef" stroke="#2fa84f"/>
+  <text x="400" y="223" text-anchor="middle" font-size="10.5" fill="#1f7a38">Schema: tenant_b</text>
+
+  <rect x="325" y="246" width="150" height="42" rx="5" fill="#fff4e5" stroke="#c9701d"/>
+  <text x="400" y="271" text-anchor="middle" font-size="10.5" fill="#a3550f">Schema: tenant_c</text>
+
+  <text x="400" y="298" text-anchor="middle" font-size="9.5" fill="#555">스키마 단위 격리 — 같은 서버, 다른 네임스페이스</text>
+
+  <!-- Column 3: Silo -->
+  <rect x="550" y="62" width="95" height="30" rx="6" fill="#eaf3ff" stroke="#1877c9"/>
+  <text x="597" y="82" text-anchor="middle" font-size="10.5" fill="#0b5fa5">App (tenant A)</text>
+  <line x1="597" y1="92" x2="597" y2="110" stroke="#555555" stroke-width="2" marker-end="url(#arrowN)"/>
+  <rect x="550" y="112" width="95" height="60" rx="6" fill="#eaf3ff" stroke="#1877c9"/>
+  <text x="597" y="138" text-anchor="middle" font-size="10.5" fill="#0b5fa5">전용 DB</text>
+  <text x="597" y="154" text-anchor="middle" font-size="9.5" fill="#0b5fa5">tenant_a 전용</text>
+
+  <rect x="660" y="62" width="95" height="30" rx="6" fill="#eaffef" stroke="#2fa84f"/>
+  <text x="707" y="82" text-anchor="middle" font-size="10.5" fill="#1f7a38">App (tenant B)</text>
+  <line x1="707" y1="92" x2="707" y2="110" stroke="#555555" stroke-width="2" marker-end="url(#arrowN)"/>
+  <rect x="660" y="112" width="95" height="60" rx="6" fill="#eaffef" stroke="#2fa84f"/>
+  <text x="707" y="138" text-anchor="middle" font-size="10.5" fill="#1f7a38">전용 DB</text>
+  <text x="707" y="154" text-anchor="middle" font-size="9.5" fill="#1f7a38">tenant_b 전용</text>
+
+  <rect x="550" y="185" width="205" height="2" fill="none"/>
+  <text x="655" y="200" text-anchor="middle" font-size="9.5" fill="#555">테넌트마다 App+DB 스택이 완전히 분리</text>
+  <text x="655" y="215" text-anchor="middle" font-size="9.5" fill="#555">(필요 시 리전·인프라까지 개별 배포)</text>
+
+  <!-- spectrum bar -->
+  <line x1="60" y1="405" x2="740" y2="405" stroke="#999999" stroke-width="2" marker-end="url(#arrowN)"/>
+  <line x1="145" y1="400" x2="145" y2="410" stroke="#999999" stroke-width="1.5"/>
+  <line x1="400" y1="400" x2="400" y2="410" stroke="#999999" stroke-width="1.5"/>
+  <line x1="655" y1="400" x2="655" y2="410" stroke="#999999" stroke-width="1.5"/>
+
+  <text x="60" y="428" text-anchor="start" font-size="10.5" fill="#0b5fa5">완전 공유 · 비용 효율적</text>
+  <text x="400" y="428" text-anchor="middle" font-size="10.5" fill="#555">테넌트 티어링(Tiering)으로 혼합 가능</text>
+  <text x="740" y="428" text-anchor="end" font-size="10.5" fill="#a3550f">완전 격리 · 규제·보안 대응 용이</text>
+</svg>
