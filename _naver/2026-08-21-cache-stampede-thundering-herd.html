@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>캐시 스탬피드 막기 — 인기 키 하나가 DB를 무너뜨리지 않도록</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">캐시 스탬피드 막기 — 인기 키 하나가 DB를 무너뜨리지 않도록</div>
+<p style="font-size:14px; color:#999;">2026. 8. 21. · 시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 인기 캐시 키 하나가 동시에 만료되는 순간, 수백~수천 개 요청이 한꺼번에 DB로 몰리는 <b>캐시 스탬피드(썬더링 허드)</b> 현상이 발생할 수 있습니다. 이를 막는 <b>뮤텍스 락</b>과 <b>확률적 조기 재계산</b> 전략을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">문제 상황 — 캐시가 만료되는 그 찰나</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">트래픽이 몰리는 서비스일수록 캐시에 의존하는 정도가 커집니다. 대부분의 요청은 캐시에서 곧바로 응답되고, DB는 캐시가 없을 때만 조용히 뒤에서 일하면 됩니다. 문제는 그 &quot;캐시가 없을 때&quot;가 한꺼번에 몰리는 순간입니다. <b>인기 있는 캐시 키 하나의 TTL이 만료되는 찰나</b>, 그 키를 참조하던 수백에서 수천 개의 동시 요청이 전부 캐시 미스를 겪고, 각자 독립적으로 같은 데이터를 다시 계산하거나 DB에 같은 쿼리를 던지게 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">평소라면 초당 몇 건에 불과했을 DB 쿼리가 이 순간만큼은 동시 요청 수만큼 배로 증가합니다. DB 커넥션 풀이 고갈되고, 쿼리 지연이 늘어나면서 응답을 기다리던 요청들이 타임아웃되어 재시도를 걸고, 그 재시도가 다시 DB 부하를 키우는 악순환으로 이어질 수 있습니다. 이 현상을 <b>캐시 스탬피드(cache stampede)</b> 또는 <b>썬더링 허드(thundering herd)</b>라고 부릅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이번 글에서는 캐시 스탬피드가 왜 발생하는지, 그리고 이를 완화하는 대표적인 두 가지 전략인 <b>뮤텍스 락 방식</b>과 <b>확률적 조기 재계산 방식</b>을 정리해봤습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 캐시 스탬피드는 왜 발생할까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">캐시 스탬피드의 근본 원인은 &quot;여러 요청이 같은 캐시 미스를 동시에 겪고, 각자 독립적으로 원본 데이터를 다시 가져오려 한다&quot;는 데 있습니다. 특히 다음과 같은 상황에서 두드러집니다. <b>인기 키(hot key)</b>에 트래픽이 집중되어 있으면 그 키 하나가 만료되는 순간 영향을 받는 동시 요청 수도 함께 커지고, 여러 키를 같은 시점에 채워 넣었다면(예: 배치 작업으로 캐시를 일괄 생성) TTL도 같은 시점에 함께 만료되어 <b>동시 만료</b>가 겹쳐 발생할 수 있습니다. 또한 캐시 값을 만드는 데 걸리는 시간이 길수록(복잡한 집계 쿼리, 외부 API 호출 등) 그 사이 몰리는 중복 요청 수가 늘어나고 DB 부하도 함께 커집니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-21-cache-stampede-thundering-herd-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">핵심은 &quot;캐시 미스가 발생했다는 사실&quot;과 &quot;그 값을 다시 채워 넣는 책임&quot;이 분리되어 있지 않다는 점입니다. 모든 요청이 캐시 미스를 확인하는 순간 동일하게 &quot;내가 다시 계산해야겠다&quot;고 판단하기 때문에, 재계산 작업이 중복되는 것을 막을 장치가 없으면 요청 수만큼 DB 부하가 그대로 증폭됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 뮤텍스 락으로 재계산을 단일화하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 널리 쓰이는 완화 전략은 캐시 미스가 발생했을 때 <b>오직 하나의 요청만 실제로 DB에서 값을 재계산</b>하도록 락(lock)을 거는 것입니다. 요청이 캐시를 조회했는데 값이 없으면, 해당 키에 대한 락 획득을 시도합니다(예: Redis의 <b>SET key value NX PX ttl</b> 명령으로 원자적으로 락을 겁니다). 락 획득에 성공한 요청만 DB에서 값을 조회해 재계산하고, 결과를 캐시에 채운 뒤 락을 해제합니다. 락 획득에 실패한 나머지 요청들은 짧게 대기했다가 캐시를 다시 확인하거나, 만료 직전의 오래된 값(stale value)을 잠시 그대로 반환합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 방식의 장점은 DB로 향하는 재계산 요청을 정확히 한 건으로 줄인다는 점입니다. 다만 락을 잡은 요청이 예상보다 오래 걸리거나 중간에 실패하면, 락이 풀리지 않아 나머지 요청들이 계속 대기하게 되는 위험이 있습니다. 그래서 락에는 반드시 <b>만료 시간(lease timeout)</b>을 두어야 하며, 여러 노드에 분산된 환경이라면 안전한 분산 락 패턴을 참고해 구현할 필요가 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 확률적 조기 재계산(Probabilistic Early Expiration)</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">락 방식이 &quot;미스가 발생한 후 누가 재계산할지&quot;를 정하는 사후 대응이라면, <b>확률적 조기 재계산</b>은 &quot;미스가 발생하기 전에 미리 갱신해버리는&quot; 사전 대응에 가깝습니다. 캐시 값의 만료 시각이 다가올수록, 캐시가 아직 유효하더라도 <b>일정 확률로 미리 재계산을 트리거</b>하는 방식입니다. 만료까지 시간이 많이 남았을 때는 재계산이 거의 일어나지 않고, 만료 직전에는 재계산이 트리거될 확률이 높아집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이렇게 하면 동시 요청 중 극히 일부만 &quot;먼저&quot; 재계산을 수행하게 되고, 실제 만료 시점에는 이미 새 값이 채워져 있어 대량의 동시 미스 자체가 발생하지 않습니다. 락 없이도 스탬피드를 완화할 수 있다는 장점이 있지만, 확률적으로 동작하기 때문에 운이 나쁘면 여전히 여러 요청이 동시에 조기 재계산을 트리거할 수 있고, 캐시 값의 &quot;실제 신선도&quot;와 &quot;체감 신선도&quot; 사이에 약간의 오차가 생길 수 있다는 점도 감안해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 4 — 두 방식 비교</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">뮤텍스 락</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">확률적 조기 재계산</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">동작 시점</td>
+<td style="border:1px solid #ddd; padding:10px;">캐시 미스 발생 후</td>
+<td style="border:1px solid #ddd; padding:10px;">만료 전 미리</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">DB 요청 수</td>
+<td style="border:1px solid #ddd; padding:10px;">미스 시점에 정확히 1건으로 제한</td>
+<td style="border:1px solid #ddd; padding:10px;">낮은 확률로 소수 건 발생 가능</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">구현 복잡도</td>
+<td style="border:1px solid #ddd; padding:10px;">락 관리·타임아웃·데드락 방지 필요</td>
+<td style="border:1px solid #ddd; padding:10px;">확률 계산 로직만 추가(락 불필요)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">대기 지연</td>
+<td style="border:1px solid #ddd; padding:10px;">락을 못 잡은 요청은 대기 또는 stale 응답</td>
+<td style="border:1px solid #ddd; padding:10px;">대부분 대기 없이 즉시 응답</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">적합한 상황</td>
+<td style="border:1px solid #ddd; padding:10px;">재계산 비용이 매우 크고 정합성이 중요할 때</td>
+<td style="border:1px solid #ddd; padding:10px;">트래픽이 꾸준하고 조기 재계산 여유가 있을 때</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실무에서는 두 방식을 함께 쓰는 경우도 많습니다. 평소에는 확률적 조기 재계산으로 대부분의 스탬피드를 사전에 예방하고, 그럼에도 미스가 발생하는 예외적인 경우(캐시 서버 재시작, 신규 키 최초 생성 등)에 대비해 뮤텍스 락을 안전망으로 함께 두는 방식입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 분산 락으로 재계산 단일화하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">다음은 Redis를 이용해 캐시 미스 시 재계산을 단일화하는 분산 락 의사코드입니다(Python 스타일).</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">LOCK_TTL_MS = 3000       # 락 만료 시간(ms) - 재계산 작업보다 여유 있게 설정
+WAIT_RETRY_MS = 50       # 락 획득 실패 시 재시도 간격
+MAX_WAIT_MS = 500        # 최대 대기 시간
+
+def get_with_stampede_protection(cache, db, key):
+    value = cache.get(key)
+    if value is not None:
+        return value
+
+    lock_key = f"lock:{key}"
+    # SET NX PX: 키가 없을 때만 설정 + 만료 시간 지정 (원자적 연산)
+    acquired = cache.set(lock_key, "1", nx=True, px=LOCK_TTL_MS)
+
+    if acquired:
+        try:
+            fresh_value = db.query(key)          # 실제 재계산은 락을 잡은 요청만 수행
+            cache.set(key, fresh_value, ex=default_ttl(key))
+            return fresh_value
+        finally:
+            cache.delete(lock_key)               # 완료 후 즉시 락 해제
+    else:
+        # 락을 못 잡은 요청: 짧게 대기하며 캐시가 채워지길 기다린다
+        waited = 0
+        while waited &lt; MAX_WAIT_MS:
+            sleep(WAIT_RETRY_MS)
+            waited += WAIT_RETRY_MS
+            value = cache.get(key)
+            if value is not None:
+                return value
+        # 그래도 채워지지 않았다면 최후 수단으로 직접 조회(락 보호 없이)
+        return db.query(key)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">확률적 조기 재계산은 다음과 같은 형태로 구현합니다(같은 Python 스타일 의사코드).</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">import math
+import random
+
+def should_recompute_early(now, expiry_at, recompute_cost_ms, beta=1.0):
+    # 만료까지 남은 시간이 짧을수록, 그리고 beta가 클수록 조기 재계산 확률이 높아진다
+    delta = recompute_cost_ms  # 재계산에 걸리는 예상 시간
+    rand = random.random()
+    threshold = now - delta * beta * math.log(rand)
+    return threshold &gt;= expiry_at</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 락 타임아웃 설계하기</b> — 락의 만료 시간(TTL)은 실제 재계산 작업이 걸리는 시간보다 충분히 길게 잡아야 합니다. 너무 짧으면 재계산이 끝나기도 전에 락이 풀려 다른 요청이 동시에 재계산을 시작해버리고, 반대로 너무 길면 재계산 작업이 예외로 중단됐을 때 락이 오래 남아 나머지 요청들이 불필요하게 오래 대기하게 됩니다. 재계산 소요 시간을 모니터링해 락 TTL을 그 시간의 몇 배 수준으로 여유 있게 설정하는 것이 안전합니다<br>
+<b>2. 캐시 워밍(cache warming) 전략 세우기</b> — 트래픽이 몰릴 것이 예상되는 시점(배치 작업 완료 직후, 이벤트 시작 시각 등)에는 사용자 요청이 도달하기 전에 백그라운드 작업으로 미리 캐시를 채워두는 것이 스탬피드 자체를 원천적으로 줄이는 방법입니다. 또한 여러 키를 한꺼번에 생성할 때는 TTL에 약간의 무작위 지터(jitter)를 더해, 만료 시각이 한 순간에 몰리지 않도록 분산시키는 것도 함께 고려할 만합니다
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 인기 캐시 키의 TTL이 만료되는 순간, 동시 요청이 모두 캐시 미스를 겪고 각자 DB를 재조회하면서 부하가 급증하는 현상이 캐시 스탬피드(썬더링 허드)입니다.<br>
+② 뮤텍스 락은 미스 발생 후 재계산을 한 요청으로 단일화하고, 확률적 조기 재계산은 만료 전에 미리 소수의 요청만 갱신을 트리거해 스탬피드 자체를 예방합니다.<br>
+③ 실무에서는 락 타임아웃을 재계산 시간보다 여유 있게 설정하고, 캐시 워밍과 TTL 지터를 함께 적용해 두 전략을 보완적으로 조합하는 것이 안전합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 시스템 설계 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#캐시스탬피드 #썬더링허드 #Redis #분산락 #시스템설계 #캐싱전략</p>
+
+</body>
+</html>
