@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="32" text-anchor="middle" font-size="19" font-weight="bold" fill="#1a1a1a">지도 타일 캐시 계층 구조</text>
+  <text x="400" y="52" text-anchor="middle" font-size="12" fill="#666">요청이 위 계층에서 해결될수록 오리진 타일 서버 부담이 줄어든다</text>
+
+  <!-- Layer 1: Client -->
+  <rect x="60" y="75" width="220" height="70" rx="8" fill="#2fa84f" stroke="#1f7a38" stroke-width="1.5"/>
+  <text x="170" y="100" text-anchor="middle" font-size="13" fill="#fff" font-weight="bold">브라우저 캐시</text>
+  <text x="170" y="117" text-anchor="middle" font-size="10.5" fill="#eafff0">Cache-Control / ETag</text>
+  <text x="170" y="132" text-anchor="middle" font-size="10.5" fill="#eafff0">디스크·메모리 캐시</text>
+
+  <!-- Layer 2: Service Worker -->
+  <rect x="300" y="75" width="220" height="70" rx="8" fill="#1877c9" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="410" y="100" text-anchor="middle" font-size="13" fill="#fff" font-weight="bold">서비스워커 캐시</text>
+  <text x="410" y="117" text-anchor="middle" font-size="10.5" fill="#dbeafe">Cache Storage API</text>
+  <text x="410" y="132" text-anchor="middle" font-size="10.5" fill="#dbeafe">오프라인·재방문 대응</text>
+
+  <!-- Layer 3: CDN -->
+  <rect x="540" y="75" width="200" height="70" rx="8" fill="#7a4bd6" stroke="#5a2fb0" stroke-width="1.5"/>
+  <text x="640" y="100" text-anchor="middle" font-size="13" fill="#fff" font-weight="bold">CDN 엣지 캐시</text>
+  <text x="640" y="117" text-anchor="middle" font-size="10.5" fill="#efe6ff">지역 PoP 분산</text>
+  <text x="640" y="132" text-anchor="middle" font-size="10.5" fill="#efe6ff">TTL·Cache Key 정책</text>
+
+  <!-- arrows down to origin -->
+  <line x1="170" y1="145" x2="170" y2="200" stroke="#999" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="410" y1="145" x2="410" y2="200" stroke="#999" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="640" y1="145" x2="640" y2="200" stroke="#999" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#999"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#c0392b"/>
+    </marker>
+  </defs>
+
+  <!-- miss path labels -->
+  <text x="170" y="180" text-anchor="middle" font-size="10.5" fill="#a33">miss 시 하위로</text>
+  <text x="410" y="180" text-anchor="middle" font-size="10.5" fill="#a33">miss 시 하위로</text>
+  <text x="640" y="180" text-anchor="middle" font-size="10.5" fill="#a33">miss 시 오리진으로</text>
+
+  <!-- Layer 4: Origin tile server -->
+  <rect x="270" y="205" width="260" height="70" rx="8" fill="#0b5fa5" stroke="#083f6e" stroke-width="1.5"/>
+  <text x="400" y="232" text-anchor="middle" font-size="13" fill="#fff" font-weight="bold">오리진 타일 서버</text>
+  <text x="400" y="249" text-anchor="middle" font-size="10.5" fill="#dbeafe">렌더링 / DB 조회 발생 지점</text>
+  <text x="400" y="264" text-anchor="middle" font-size="10.5" fill="#ffdede">요청이 도달할수록 부하·지연 증가</text>
+
+  <!-- request flow arrow from client through to origin (top path) -->
+  <path d="M 170 75 C 170 40, 400 40, 400 75" fill="none" stroke="#333" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="290" y="45" text-anchor="middle" font-size="10.5" fill="#333">타일 요청(z/x/y)</text>
+
+  <!-- coverage bars showing typical role (qualitative, no numbers claimed as measured) -->
+  <rect x="60" y="300" width="680" height="34" rx="6" fill="#f5f5f5" stroke="#ddd" stroke-width="1"/>
+  <text x="400" y="322" text-anchor="middle" font-size="11.5" fill="#555">계층이 아래로 갈수록 응답은 느려지지만, 위 계층이 흡수하는 요청이 많을수록 오리진 부하는 줄어든다</text>
+
+  <!-- legend: cache key note -->
+  <rect x="60" y="350" width="680" height="72" rx="8" fill="#fff7f0" stroke="#ff8a3d" stroke-width="1.5"/>
+  <text x="80" y="372" font-size="12.5" fill="#7a4b00" font-weight="bold">캐시 키 설계 주의</text>
+  <text x="80" y="392" font-size="11.5" fill="#7a4b00">타일 URL의 z/x/y 외에 스타일 버전·레이어 파라미터가 캐시 키에 섞이면 히트율이 급격히 떨어진다.</text>
+  <text x="80" y="408" font-size="11.5" fill="#7a4b00">스타일이 바뀔 때는 URL 버저닝(예: /v3/{z}/{x}/{y})으로 캐시를 무효화하는 편이 안전하다.</text>
+</svg>

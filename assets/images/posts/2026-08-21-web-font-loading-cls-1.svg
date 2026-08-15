@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="34" text-anchor="middle" font-size="19" font-weight="bold" fill="#222" font-family="sans-serif">웹폰트 로딩 타임라인과 CLS 발생 시점</text>
+
+  <!-- time axis -->
+  <line x1="120" y1="70" x2="700" y2="70" stroke="#999" stroke-width="2"/>
+  <line x1="120" y1="64" x2="120" y2="76" stroke="#999" stroke-width="2"/>
+  <line x1="420" y1="64" x2="420" y2="76" stroke="#999" stroke-width="2"/>
+  <line x1="700" y1="64" x2="700" y2="76" stroke="#999" stroke-width="2"/>
+  <text x="120" y="92" text-anchor="middle" font-size="12" fill="#666" font-family="sans-serif">0ms (요청 시작)</text>
+  <text x="420" y="92" text-anchor="middle" font-size="12" fill="#666" font-family="sans-serif">폴백 폰트로 텍스트 표시</text>
+  <text x="700" y="92" text-anchor="middle" font-size="12" fill="#666" font-family="sans-serif">웹폰트 로드 완료 → 스왑</text>
+
+  <!-- Scenario A: swap without metric matching -->
+  <text x="90" y="150" text-anchor="start" font-size="14" font-weight="bold" fill="#c62828" font-family="sans-serif">A. font-display: swap (메트릭 미조정)</text>
+
+  <rect x="120" y="165" width="150" height="34" fill="#e3f2fd" stroke="#1565c0" stroke-width="1.5"/>
+  <text x="195" y="187" text-anchor="middle" font-size="12" fill="#1565c0" font-family="sans-serif">폴백 폰트 텍스트</text>
+
+  <path d="M275,182 L400,182" stroke="#bbb" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+  <rect x="400" y="165" width="230" height="34" fill="#ffebee" stroke="#c62828" stroke-width="1.5"/>
+  <text x="515" y="187" text-anchor="middle" font-size="12" fill="#c62828" font-family="sans-serif">웹폰트 텍스트 (너비 변경)</text>
+
+  <path d="M270,215 L400,215" stroke="#c62828" stroke-width="2" marker-end="url(#arrowRed)"/>
+  <text x="335" y="232" text-anchor="middle" font-size="12" fill="#c62828" font-family="sans-serif">폭 차이만큼 이동 → CLS 증가</text>
+
+  <!-- Scenario B: swap with size-adjust -->
+  <text x="90" y="290" text-anchor="start" font-size="14" font-weight="bold" fill="#2e7d32" font-family="sans-serif">B. font-display: swap + size-adjust 매칭</text>
+
+  <rect x="120" y="305" width="150" height="34" fill="#e3f2fd" stroke="#1565c0" stroke-width="1.5"/>
+  <text x="195" y="327" text-anchor="middle" font-size="12" fill="#1565c0" font-family="sans-serif">폴백 폰트 텍스트</text>
+
+  <path d="M275,322 L400,322" stroke="#bbb" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+  <rect x="400" y="305" width="150" height="34" fill="#e8f5e9" stroke="#2e7d32" stroke-width="1.5"/>
+  <text x="475" y="327" text-anchor="middle" font-size="12" fill="#2e7d32" font-family="sans-serif">웹폰트 텍스트 (같은 너비)</text>
+
+  <path d="M195,345 L475,345" stroke="#2e7d32" stroke-width="2" stroke-dasharray="2,2"/>
+  <text x="335" y="368" text-anchor="middle" font-size="12" fill="#2e7d32" font-family="sans-serif">박스 크기 동일 → 레이아웃 이동 없음 (CLS 0)</text>
+
+  <defs>
+    <marker id="arrowRed" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#c62828"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="420" text-anchor="middle" font-size="12" fill="#888" font-family="sans-serif">size-adjust / ascent-override 등으로 폴백 폰트의 박스 크기를 웹폰트와 미리 맞추면 스왑 시점의 흔들림을 없앨 수 있다</text>
+</svg>

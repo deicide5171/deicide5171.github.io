@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>지도 타일 서버 부담 줄이기 — CDN·브라우저·서비스워커 캐시 전략</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">지도 타일, 서버까지 안 가고 끝내기 — CDN·브라우저·서비스워커 3단 캐시 전략</div>
+<p style="font-size:14px; color:#999;">2026. 8. 22. · GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 웹 지도는 화면 하나에 타일 요청이 수십 개씩 몰리는 구조라, <b>브라우저 캐시·서비스워커 캐시·CDN 엣지 캐시</b>를 순서대로 겹쳐야 오리진 타일 서버가 버틸 수 있습니다. 캐시 키 설계와 무효화 전략까지 함께 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 타일 캐싱인가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">웹 지도는 OpenLayers, MapLibre, Mapbox GL 같은 지도 라이브러리가 화면에 보이는 영역을 z/x/y 좌표의 타일 이미지 조각으로 쪼개 요청하는 구조입니다. 사용자가 화면을 조금만 이동하거나 확대해도 새로 필요한 타일이 한 번에 수십 개씩 발생합니다. 이 요청이 매번 오리진 타일 서버까지 도달해 렌더링이나 DB 조회를 거친다면, 동시 접속자가 조금만 늘어나도 서버 부하가 급격히 커집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">중요한 점은 대부분의 타일이 <b>누구에게나 똑같은 응답</b>이라는 것입니다. 개인화된 오버레이가 없는 한 특정 좌표의 타일은 어느 사용자가 요청하든 내용이 같습니다. 이런 정적 성격 덕분에 타일은 캐싱에 매우 유리한데도, 계층을 제대로 설계하지 않으면 이 이점을 살리지 못하고 매 요청을 오리진까지 흘려보내게 됩니다. 이 글은 타일을 만드는 방법이 아니라, <b>이미 만들어진 타일을 어떻게 여러 계층에서 재사용해 오리진 부담을 줄일 것인가</b>에 초점을 둡니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념: 캐시 계층과 각자의 역할</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">타일 요청은 보통 브라우저 캐시 → 서비스워커 캐시 → CDN 엣지 캐시 → 오리진 타일 서버 순으로 계층을 거치며, 앞 계층에서 캐시 히트가 나면 뒤 계층까지 갈 필요가 없습니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-22-map-tile-caching-strategy-1.svg" alt="지도 타일 캐시 계층 구조" style="width:100%;">
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">계층</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">강점</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">한계</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">브라우저 캐시</td>
+<td style="border:1px solid #ddd; padding:10px;">응답 즉시, 네트워크 왕복 없음</td>
+<td style="border:1px solid #ddd; padding:10px;">사용자별 저장이라 재사용 범위가 좁음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">서비스워커 캐시</td>
+<td style="border:1px solid #ddd; padding:10px;">오프라인 대응, 캐시 정책을 코드로 세밀 제어</td>
+<td style="border:1px solid #ddd; padding:10px;">최초 등록 전에는 효과 없음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">CDN 엣지 캐시</td>
+<td style="border:1px solid #ddd; padding:10px;">여러 사용자가 같은 타일 공유, 히트율 가장 높음</td>
+<td style="border:1px solid #ddd; padding:10px;">캐시 무효화가 즉시 전파되지 않을 수 있음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">오리진 타일 서버</td>
+<td style="border:1px solid #ddd; padding:10px;">항상 최신 데이터</td>
+<td style="border:1px solid #ddd; padding:10px;">부하·지연이 가장 크고 장애 영향 범위가 큼</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">핵심은 브라우저·서비스워커는 <b>같은 사용자의 재방문</b>을, CDN은 <b>여러 사용자 간 공유</b>를 담당한다는 역할 분리입니다. 둘 다 필요하며 어느 하나만으로는 부족합니다. 타일 URL 자체가 캐시 키가 되므로, z/x/y 외에 스타일 버전이나 불필요한 쿼리 파라미터가 섞이면 히트율이 떨어집니다. 반대로 스타일이나 데이터가 바뀌었는데 캐시 키가 그대로면 사용자가 오래된 타일을 계속 보게 됩니다. 이 두 문제를 함께 풀려면 <b>URL 버저닝</b>이 실용적입니다. 예를 들어 스타일이 바뀔 때마다 경로에 버전을 올리면, 이전 캐시는 자연히 미스가 나며 새 버전으로 교체되고 강제 무효화 없이도 깔끔하게 전환됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 1: CDN·브라우저 캐시 헤더 설정 (Nginx)</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">타일 내용은 버전 경로가 바뀌지 않는 한 절대 변하지 않으므로, <b>immutable</b> 지정으로 조건부 재검증 요청까지 줄일 수 있습니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">location ~ ^/tiles/v3/\d+/\d+/\d+\.png$ {
+    add_header Cache-Control &quot;public, max-age=604800, immutable&quot;;
+    add_header Vary &quot;Accept-Encoding&quot;;
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">단, 이 헤더는 URL 버저닝과 반드시 함께 써야 합니다. 버전 없이 같은 경로에 내용만 바꾸면 클라이언트가 갱신을 영영 모르게 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 2: 서비스워커로 오프라인 타일 캐시 (JavaScript)</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">const TILE_CACHE = 'map-tiles-v3';
+
+self.addEventListener('fetch', (event) =&gt; {
+  const url = new URL(event.request.url);
+  if (url.pathname.startsWith('/tiles/v3/')) {
+    event.respondWith(
+      caches.open(TILE_CACHE).then(async (cache) =&gt; {
+        const cached = await cache.match(event.request);
+        if (cached) return cached; // 캐시 히트 시 네트워크 요청 없이 즉시 반환
+
+        const response = await fetch(event.request);
+        if (response.ok) {
+          cache.put(event.request, response.clone());
+        }
+        return response;
+      })
+    );
+  }
+});</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">캐시 이름에 버전(map-tiles-v3)을 넣어두면, 서비스워커 갱신 시 이전 버전 캐시를 통째로 정리하기 쉽습니다. 용량이 무한하지 않으므로, 최근 뷰포트 중심으로 캐시 크기를 제한하는 LRU 정책을 함께 두는 것이 안전합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 계층별 TTL 순서를 지킨다</b> — 브라우저 → 서비스워커 → CDN → 오리진 순으로 뒤로 갈수록 TTL이 같거나 길어야 역전 현상이 안 생깁니다<br>
+<b>2. 개인화 오버레이는 분리한다</b> — 위치 마커·선택 상태를 타일 이미지에 합성하면 그 타일은 공유 캐시가 불가능해집니다<br>
+<b>3. CDN 강제 퍼지는 최후 수단</b> — 전파 지연·비용이 들 수 있어 URL 버저닝으로 자연 교체를 유도하는 편이 예측 가능합니다<br>
+<b>4. 히트율부터 확인하고 튜닝한다</b> — 실제 트래픽 패턴에 따라 계층별 효과가 달라지므로 지표 없이 정책부터 바꾸지 않습니다
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 타일은 대부분 정적이고 공유 가능한 응답이라, 브라우저·서비스워커·CDN 세 계층에 순서대로 캐시를 겹치면 오리진 부담을 크게 줄일 수 있습니다.<br>
+② 캐시 키에 불필요한 파라미터가 섞이지 않게 하고, 스타일 변경 시에는 URL 버저닝으로 무효화를 자연스럽게 처리하는 것이 핵심입니다.<br>
+③ 개인화 오버레이는 베이스 타일과 분리하고, 계층별 TTL 순서와 히트율을 함께 점검해야 캐시 전략이 실제로 효과를 냅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#지도타일캐싱 #CDN #서비스워커 #웹지도 #GIS #웹성능</p>
+
+</body>
+</html>
