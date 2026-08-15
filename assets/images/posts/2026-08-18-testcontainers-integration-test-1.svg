@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="19" font-weight="bold" fill="#1a1a1a">Testcontainers 아키텍처 (Spring Boot 통합 테스트)</text>
+
+  <!-- Box A: JUnit test class -->
+  <rect x="40" y="55" width="230" height="64" rx="8" fill="#eaf3ff" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="155" y="80" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#0b5fa5">JUnit 5 테스트 클래스</text>
+  <text x="155" y="98" text-anchor="middle" font-size="11" fill="#0b5fa5">@Testcontainers / @Container</text>
+
+  <!-- Box B: Spring ApplicationContext -->
+  <rect x="530" y="55" width="230" height="64" rx="8" fill="#f5eeff" stroke="#6a3fb5" stroke-width="1.5"/>
+  <text x="645" y="80" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#5a34a0">Spring Boot</text>
+  <text x="645" y="98" text-anchor="middle" font-size="11" fill="#5a34a0">ApplicationContext</text>
+
+  <!-- Box C: Testcontainers library -->
+  <rect x="285" y="165" width="230" height="60" rx="8" fill="#eafff0" stroke="#1f7a38" stroke-width="1.5"/>
+  <text x="400" y="189" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1f7a38">Testcontainers 라이브러리</text>
+  <text x="400" y="206" text-anchor="middle" font-size="11" fill="#1f7a38">(Docker Client API)</text>
+
+  <!-- Box D: Docker Daemon -->
+  <rect x="285" y="262" width="230" height="56" rx="8" fill="#f0f0f0" stroke="#555" stroke-width="1.5"/>
+  <text x="400" y="286" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#333">Docker 데몬</text>
+  <text x="400" y="302" text-anchor="middle" font-size="10.5" fill="#555">컨테이너 생성·기동·포트 매핑</text>
+
+  <!-- Ryuk sidecar -->
+  <rect x="560" y="262" width="170" height="56" rx="8" fill="#fff0e0" stroke="#c9701d" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="645" y="284" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#a3550f">Ryuk 사이드카</text>
+  <text x="645" y="300" text-anchor="middle" font-size="10" fill="#a3550f">테스트 JVM 종료 감지 → 정리</text>
+
+  <!-- Container boxes -->
+  <rect x="90" y="375" width="150" height="52" rx="8" fill="#eaf3ff" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="165" y="398" text-anchor="middle" font-size="12" font-weight="bold" fill="#0b5fa5">PostgreSQL</text>
+  <text x="165" y="414" text-anchor="middle" font-size="10" fill="#0b5fa5">컨테이너</text>
+
+  <rect x="325" y="375" width="150" height="52" rx="8" fill="#eafff0" stroke="#1f7a38" stroke-width="1.5"/>
+  <text x="400" y="398" text-anchor="middle" font-size="12" font-weight="bold" fill="#1f7a38">Kafka</text>
+  <text x="400" y="414" text-anchor="middle" font-size="10" fill="#1f7a38">컨테이너</text>
+
+  <rect x="560" y="375" width="150" height="52" rx="8" fill="#fff0e0" stroke="#a3550f" stroke-width="1.5"/>
+  <text x="635" y="398" text-anchor="middle" font-size="12" font-weight="bold" fill="#a3550f">Redis</text>
+  <text x="635" y="414" text-anchor="middle" font-size="10" fill="#a3550f">컨테이너</text>
+
+  <!-- Arrows -->
+  <!-- A -> C -->
+  <line x1="165" y1="119" x2="330" y2="165" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="200" y="145" font-size="10.5" fill="#333">① 테스트 시작 시 컨테이너 요청</text>
+
+  <!-- C -> D -->
+  <line x1="400" y1="225" x2="400" y2="262" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="410" y="248" font-size="10.5" fill="#333">② 컨테이너 생성 요청</text>
+
+  <!-- D -> containers -->
+  <line x1="340" y1="318" x2="190" y2="375" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="400" y1="318" x2="400" y2="375" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="460" y1="318" x2="620" y2="375" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="400" y="345" text-anchor="middle" font-size="10.5" fill="#333">③ 컨테이너 기동 + 임의 포트 매핑</text>
+
+  <!-- C -> B -->
+  <line x1="480" y1="180" x2="560" y2="119" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="470" y="150" font-size="10.5" fill="#333">④ @ServiceConnection으로</text>
+  <text x="470" y="163" font-size="10.5" fill="#333">접속정보 자동 주입</text>
+
+  <!-- Ryuk dashed to containers -->
+  <line x1="600" y1="318" x2="450" y2="375" stroke="#c9701d" stroke-width="1.2" stroke-dasharray="3,3"/>
+  <line x1="630" y1="318" x2="635" y2="375" stroke="#c9701d" stroke-width="1.2" stroke-dasharray="3,3"/>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#888"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="445" text-anchor="middle" font-size="11.5" fill="#555">Mock이 아닌 실제 엔진 컨테이너로 검증하고, 테스트 종료 후에는 Ryuk이 자동으로 정리한다</text>
+</svg>
