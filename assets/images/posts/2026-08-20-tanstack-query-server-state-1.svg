@@ -1,0 +1,56 @@
+<svg viewBox="0 0 800 450" width="800" height="450" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="34" text-anchor="middle" font-size="19" font-weight="bold" fill="#1f2937">쿼리 캐시의 생명주기 — staleTime과 gcTime</text>
+
+  <!-- Timeline base -->
+  <line x1="60" y1="220" x2="740" y2="220" stroke="#cbd5e1" stroke-width="2"/>
+
+  <!-- Fetch point -->
+  <circle cx="120" cy="220" r="7" fill="#2563eb"/>
+  <text x="120" y="205" text-anchor="middle" font-size="13" fill="#1e3a8a">최초 요청</text>
+  <text x="120" y="250" text-anchor="middle" font-size="12" fill="#64748b">queryFn 실행</text>
+
+  <!-- Fresh zone -->
+  <rect x="120" y="200" width="220" height="40" fill="#dbeafe" opacity="0.6"/>
+  <text x="230" y="195" text-anchor="middle" font-size="14" font-weight="bold" fill="#1d4ed8">Fresh (신선)</text>
+  <text x="230" y="270" text-anchor="middle" font-size="12" fill="#334155">staleTime 동안 유지</text>
+  <text x="230" y="288" text-anchor="middle" font-size="12" fill="#334155">캐시만 읽고 재요청 없음</text>
+
+  <!-- Stale point -->
+  <circle cx="340" cy="220" r="7" fill="#d97706"/>
+  <text x="340" y="205" text-anchor="middle" font-size="13" fill="#92400e">staleTime 경과</text>
+
+  <!-- Stale zone -->
+  <rect x="340" y="200" width="220" height="40" fill="#fef3c7" opacity="0.7"/>
+  <text x="450" y="195" text-anchor="middle" font-size="14" font-weight="bold" fill="#b45309">Stale (오래됨)</text>
+  <text x="450" y="270" text-anchor="middle" font-size="12" fill="#334155">화면엔 캐시 즉시 표시</text>
+  <text x="450" y="288" text-anchor="middle" font-size="12" fill="#334155">+ 재마운트·리포커스 시</text>
+  <text x="450" y="304" text-anchor="middle" font-size="12" fill="#334155">백그라운드 refetch</text>
+
+  <!-- Unmount point -->
+  <circle cx="560" cy="220" r="7" fill="#dc2626"/>
+  <text x="560" y="205" text-anchor="middle" font-size="13" fill="#991b1b">구독자 0명</text>
+
+  <!-- gcTime zone -->
+  <rect x="560" y="200" width="150" height="40" fill="#fee2e2" opacity="0.6"/>
+  <text x="635" y="195" text-anchor="middle" font-size="14" font-weight="bold" fill="#b91c1c">gcTime 대기</text>
+  <text x="635" y="270" text-anchor="middle" font-size="12" fill="#334155">메모리에 남아있음</text>
+  <text x="635" y="288" text-anchor="middle" font-size="12" fill="#334155">재구독 시 즉시 재사용</text>
+
+  <!-- GC point -->
+  <circle cx="710" cy="220" r="7" fill="#6b7280"/>
+  <text x="710" y="205" text-anchor="middle" font-size="12" fill="#374151">gcTime 경과</text>
+  <text x="710" y="250" text-anchor="middle" font-size="12" fill="#64748b">캐시 삭제</text>
+
+  <!-- Bottom summary boxes -->
+  <rect x="60" y="330" width="330" height="90" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="80" y="356" font-size="14" font-weight="bold" fill="#1d4ed8">staleTime</text>
+  <text x="80" y="378" font-size="12.5" fill="#334155">"이 데이터를 얼마나 믿을지" 결정.</text>
+  <text x="80" y="396" font-size="12.5" fill="#334155">경과 전엔 재요청 없이 캐시만 사용.</text>
+
+  <rect x="410" y="330" width="330" height="90" rx="8" fill="#f8fafc" stroke="#e2e8f0" stroke-width="1"/>
+  <text x="430" y="356" font-size="14" font-weight="bold" fill="#b91c1c">gcTime</text>
+  <text x="430" y="378" font-size="12.5" fill="#334155">"화면에서 사라진 데이터를 얼마나</text>
+  <text x="430" y="396" font-size="12.5" fill="#334155">더 들고 있을지" 결정 (구 cacheTime).</text>
+</svg>

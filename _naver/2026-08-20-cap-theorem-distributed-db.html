@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>CAP 정리로 분산 DB 제대로 고르기 — Cassandra·MongoDB·CockroachDB는 어디에 서 있나</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">CAP 정리로 분산 DB 제대로 고르기 — Cassandra·MongoDB·CockroachDB는 어디에 서 있나</div>
+<p style="font-size:14px; color:#999;">2026. 8. 20. · DB·데이터 모델링</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — CAP 정리는 "3개 중 2개 선택"이 아니라 <b>파티션이 실제로 발생한 순간에만</b> 일관성과 가용성 중 하나를 포기해야 한다는 좁은 주장입니다. Cassandra, MongoDB, CockroachDB가 실제로 CAP 삼각형 어디에 서 있는지 설정값 수준까지 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 이야기인가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">분산 DB 후보가 넘쳐나는 요즘, "우리 서비스는 가용성이 중요하니 AP로 가자" 같은 말이 회의에서 쉽게 나옵니다. 문제는 이 말이 CAP 정리를 잘못 요약한 채로 쓰이는 경우가 많다는 점입니다. CAP은 <b>"일관성·가용성·파티션 허용 중 아무 때나 2개만 고르라"</b>는 정리가 아니라, 네트워크 파티션이 실제로 발생한 그 순간에 한해 일관성과 가용성 중 하나를 포기해야 한다는 훨씬 좁고 구체적인 주장입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 차이를 모르면 마케팅 문구만 보고 "이 DB는 CP니까 안전하다"고 단정하거나, 같은 DB라도 컨시스턴시 레벨 설정에 따라 삼각형 위 위치가 움직인다는 사실을 놓치기 쉽습니다. Cassandra, MongoDB, CockroachDB는 셋 다 분산 DB지만 기본 동작과 튜닝 가능 범위가 전혀 다릅니다. 오늘은 CAP 정리를 정확히 짚고, 이 세 DB가 실제로 어디에 서 있는지 설정값 수준에서 정리해봤습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념: CAP 정리, 정확히 무엇을 말하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">노드 간 네트워크가 멀쩡할 때는 일관성(C)과 가용성(A)을 동시에 만족하는 것이 어렵지 않습니다. CAP이 강제하는 트레이드오프는 <b>파티션이 발생한 그 순간에만</b> 작동합니다. 분리된 쪽 노드가 요청을 받았을 때, 최신 값인지 확신할 수 없으니 응답을 거부(C 선택, 가용성 포기)하거나, 오래된 값이라도 일단 응답(A 선택, 일관성 포기)하는 두 갈래뿐입니다. 분산 시스템에서 파티션은 발생 여부의 문제가 아니라 언제 발생하느냐의 문제이므로, 실질적으로 모든 분산 DB는 <b>CP 아니면 AP</b>로 분류됩니다. CA는 파티션이 원천적으로 없는 단일 노드 시스템에서만 성립합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:22%;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">의미</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">흔한 오해</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Consistency(일관성)</td>
+<td style="border:1px solid #ddd; padding:10px;">모든 노드가 항상 최신의 동일한 값을 반환</td>
+<td style="border:1px solid #ddd; padding:10px;">"절대 틀리지 않는다"가 아니라 "읽기 시점 최신값 일치"</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Availability(가용성)</td>
+<td style="border:1px solid #ddd; padding:10px;">살아있는 노드는 항상(에러 없이) 응답</td>
+<td style="border:1px solid #ddd; padding:10px;">"빠르다"가 아니라 "응답 자체는 반드시 온다"</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Partition Tolerance(파티션 허용)</td>
+<td style="border:1px solid #ddd; padding:10px;">노드 간 네트워크가 끊겨도 시스템은 계속 동작</td>
+<td style="border:1px solid #ddd; padding:10px;">"선택 사항"이 아니라 분산 시스템의 전제조건</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념: 실전 DB는 삼각형 어디에 있나</div>
+
+<p style="text-align:center;"><img src="https://deicide5171.github.io/assets/images/posts/2026-08-20-cap-theorem-distributed-db-1.svg" alt="CAP 삼각형 개념도와 Cassandra, MongoDB, CockroachDB의 위치" style="width:100%; max-width:760px;"></p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:14%;">DB</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:14%;">기본 성향</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">근거</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">튜닝 가능 범위</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Cassandra</td>
+<td style="border:1px solid #ddd; padding:10px;">AP</td>
+<td style="border:1px solid #ddd; padding:10px;">마스터 없는 구조, 기본 컨시스턴시 레벨이 낮아 일부 노드만 응답해도 성공 처리</td>
+<td style="border:1px solid #ddd; padding:10px;">쿼럼 레벨을 높이면 CP 쪽에 가깝게 이동 가능</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">MongoDB</td>
+<td style="border:1px solid #ddd; padding:10px;">CP에 가까움</td>
+<td style="border:1px solid #ddd; padding:10px;">단일 프라이머리 구조, majority 쓰기 시 과반수 미확보하면 쓰기 실패</td>
+<td style="border:1px solid #ddd; padding:10px;">세컨더리 읽기·낮은 write concern으로 AP 쪽 이동 가능</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">CockroachDB</td>
+<td style="border:1px solid #ddd; padding:10px;">CP</td>
+<td style="border:1px solid #ddd; padding:10px;">Raft 기반 쿼럼 커밋, 소수 쪽 파티션은 쓰기·강한 읽기 모두 거부</td>
+<td style="border:1px solid #ddd; padding:10px;">팔로워 읽기(약한 일관성 허용) 정도만 부분 완화</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">중요한 건 "이 DB는 원래 AP다/CP다"라는 딱지가 아니라, <b>컨시스턴시 레벨 설정값 하나로 같은 DB가 삼각형 위에서 움직인다</b>는 사실입니다. DB 선택은 이름이 아니라 이 워크로드에 어떤 레벨로 설정해서 쓸 것인가의 문제입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: Cassandra·MongoDB 설정으로 보는 위치 이동</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Cassandra는 컨시스턴시 레벨을 요청마다 지정할 수 있습니다. 아래는 가용성 우선 설정과 일관성 우선 설정을 비교한 CQL입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">-- 가용성 우선: 노드 하나만 응답해도 성공 처리
+CONSISTENCY ONE;
+SELECT * FROM users WHERE user_id = 123;
+
+-- 일관성 우선: 읽기+쓰기 모두 QUORUM이면 두 쿼럼 집합이
+-- 항상 겹쳐 최신값을 보장 (CP에 가깝게 동작)
+CONSISTENCY QUORUM;
+SELECT * FROM users WHERE user_id = 123;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>ONE</b>은 아무 노드나 응답하면 되므로 가용성이 높지만, 그 노드가 아직 복제를 못 받았다면 오래된 값을 돌려줄 수 있습니다. <b>QUORUM</b>으로 맞추면 과반수를 확보하지 못한 쪽은 요청 자체가 실패합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">MongoDB는 write concern으로 같은 트레이드오프를 조절합니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">// 일관성 우선: 과반수 노드에 복제된 뒤에만 성공 응답
+db.orders.insertOne(
+  { orderId: "A1001", amount: 42000 },
+  { writeConcern: { w: "majority" } }
+);
+
+// 같은 강도로 읽기: majority로 커밋된 값만 조회
+db.orders.find({ orderId: "A1001" }).readConcern("majority");</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>w: "majority"</b>는 과반수 세컨더리 복제를 기다린 뒤 응답하므로, 프라이머리가 파티션으로 고립되면 쓰기가 실패합니다(CP 방향). <b>w: 1</b>로 낮추면 즉시 응답이 오지만, 복제 전 데이터가 유실될 위험이 커집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. "CP/AP다"로 끝내지 말고 컨시스턴시 레벨까지 확인</b> — 같은 Cassandra 클러스터도 애플리케이션마다 다른 레벨을 쓸 수 있음<br>
+<b>2. 파티션 시나리오를 직접 시뮬레이션</b> — 네트워크를 끊어보고 어느 쪽 응답이 실패하는지, 재시도·큐잉으로 버틸 수 있는지 확인<br>
+<b>3. 읽기·쓰기 레벨을 따로 결정</b> — 쓰기는 강하게, 조회는 약하게(또는 그 반대) 섞어 쓰는 것이 실무에서는 자연스러움<br>
+<b>4. CockroachDB처럼 강한 일관성이 기본인 DB라면</b> — 파티션 중 소수 리전의 가용성 저하를 감수할 수 있는 워크로드인지 먼저 확인<br>
+<b>5. CAP은 평상시 성능은 설명하지 않음</b> — 파티션이 없을 때의 지연·일관성 트레이드오프는 PACELC라는 확장 개념이 다룸
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① CAP은 항상 2개를 고르라는 뜻이 아니라, 파티션이 실제로 발생한 순간에만 일관성·가용성 중 하나를 포기해야 한다는 좁은 주장입니다.<br>
+② Cassandra는 기본 AP, MongoDB·CockroachDB는 CP에 가깝게 동작하지만, 컨시스턴시 레벨·write concern 설정으로 같은 DB도 삼각형 위 위치가 움직입니다.<br>
+③ DB 선택은 이름표가 아니라 워크로드별 읽기·쓰기 레벨 설정의 문제이며, 파티션 시나리오를 직접 시험해보는 것이 실무에서는 가장 확실합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 실제 쿼럼 장애 대응 사례를 다뤄보겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#CAP정리 #분산DB #Cassandra #MongoDB #CockroachDB #데이터베이스</p>
+
+</body>
+</html>

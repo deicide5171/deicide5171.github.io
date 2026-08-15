@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="30" text-anchor="middle" font-size="19" font-weight="bold" fill="#1a1a1a">밴드 조합과 NDVI 계산 개념도</text>
+
+  <!-- Band strip -->
+  <text x="400" y="54" text-anchor="middle" font-size="12" fill="#666">위성 센서가 수집하는 개별 밴드(파장대)</text>
+
+  <rect x="60" y="66" width="150" height="58" rx="6" fill="#2f6fb3" stroke="#1c4d80" stroke-width="1.5"/>
+  <text x="135" y="90" text-anchor="middle" font-size="13" fill="#fff" font-weight="bold">Blue</text>
+  <text x="135" y="107" text-anchor="middle" font-size="10.5" fill="#dbeafe">약 450~515nm</text>
+
+  <rect x="220" y="66" width="150" height="58" rx="6" fill="#3f9142" stroke="#296b2c" stroke-width="1.5"/>
+  <text x="295" y="90" text-anchor="middle" font-size="13" fill="#fff" font-weight="bold">Green</text>
+  <text x="295" y="107" text-anchor="middle" font-size="10.5" fill="#e6ffe9">약 525~600nm</text>
+
+  <rect x="380" y="66" width="150" height="58" rx="6" fill="#c14444" stroke="#8f2b2b" stroke-width="1.5"/>
+  <text x="455" y="90" text-anchor="middle" font-size="13" fill="#fff" font-weight="bold">Red</text>
+  <text x="455" y="107" text-anchor="middle" font-size="10.5" fill="#ffe7e7">약 630~680nm</text>
+
+  <rect x="540" y="66" width="150" height="58" rx="6" fill="#8b4fc9" stroke="#5e2f8f" stroke-width="1.5"/>
+  <text x="615" y="90" text-anchor="middle" font-size="13" fill="#fff" font-weight="bold">NIR (근적외선)</text>
+  <text x="615" y="107" text-anchor="middle" font-size="10.5" fill="#f1e6ff">약 845~885nm</text>
+
+  <!-- connectors from Red, NIR down to formula -->
+  <line x1="455" y1="124" x2="455" y2="160" stroke="#8f2b2b" stroke-width="2"/>
+  <line x1="615" y1="124" x2="615" y2="160" stroke="#5e2f8f" stroke-width="2"/>
+  <line x1="455" y1="160" x2="615" y2="160" stroke="#999" stroke-width="1.5"/>
+  <line x1="535" y1="160" x2="535" y2="182" stroke="#999" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#999"/>
+    </marker>
+  </defs>
+
+  <!-- NDVI formula box -->
+  <rect x="255" y="184" width="330" height="56" rx="6" fill="#f5f0fa" stroke="#8b4fc9" stroke-width="1.5"/>
+  <text x="420" y="210" text-anchor="middle" font-size="15" font-weight="bold" fill="#4a1f7a">NDVI = (NIR − Red) / (NIR + Red)</text>
+  <text x="420" y="228" text-anchor="middle" font-size="10.5" fill="#6b3fa0">엽록소는 NIR을 강하게 반사, Red를 강하게 흡수</text>
+
+  <line x1="420" y1="240" x2="420" y2="262" stroke="#999" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- NDVI scale gradient -->
+  <text x="400" y="278" text-anchor="middle" font-size="12" fill="#666">NDVI 값 범위와 대략적인 지표 해석</text>
+
+  <defs>
+    <linearGradient id="ndviGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4a6fa5"/>
+      <stop offset="30%" stop-color="#c9b18a"/>
+      <stop offset="55%" stop-color="#e8d97a"/>
+      <stop offset="75%" stop-color="#8fc95a"/>
+      <stop offset="100%" stop-color="#2f7d32"/>
+    </linearGradient>
+  </defs>
+  <rect x="100" y="290" width="600" height="34" rx="4" fill="url(#ndviGrad)" stroke="#999" stroke-width="1"/>
+
+  <!-- tick marks -->
+  <line x1="100" y1="290" x2="100" y2="324" stroke="#555" stroke-width="1"/>
+  <line x1="220" y1="290" x2="220" y2="324" stroke="#555" stroke-width="1"/>
+  <line x1="340" y1="290" x2="340" y2="324" stroke="#555" stroke-width="1"/>
+  <line x1="460" y1="290" x2="460" y2="324" stroke="#555" stroke-width="1"/>
+  <line x1="700" y1="290" x2="700" y2="324" stroke="#555" stroke-width="1"/>
+
+  <text x="100" y="338" text-anchor="middle" font-size="10.5" fill="#333">-1</text>
+  <text x="220" y="338" text-anchor="middle" font-size="10.5" fill="#333">0</text>
+  <text x="340" y="338" text-anchor="middle" font-size="10.5" fill="#333">0.2</text>
+  <text x="460" y="338" text-anchor="middle" font-size="10.5" fill="#333">0.5</text>
+  <text x="700" y="338" text-anchor="middle" font-size="10.5" fill="#333">1.0</text>
+
+  <text x="160" y="358" text-anchor="middle" font-size="11" fill="#33507a" font-weight="bold">물·구름·눈</text>
+  <text x="280" y="358" text-anchor="middle" font-size="11" fill="#7a5f2a" font-weight="bold">나지·도심</text>
+  <text x="400" y="358" text-anchor="middle" font-size="11" fill="#7a6f1f" font-weight="bold">저밀도 식생</text>
+  <text x="580" y="358" text-anchor="middle" font-size="11" fill="#1f6b23" font-weight="bold">고밀도·건강한 식생</text>
+
+  <text x="400" y="400" text-anchor="middle" font-size="12" fill="#555">같은 계산식이라도 센서·대기보정 방식에 따라 절대값 해석은 달라질 수 있어 시계열 비교가 중요하다</text>
+</svg>
