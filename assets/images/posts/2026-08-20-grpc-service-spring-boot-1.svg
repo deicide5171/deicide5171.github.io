@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="26" text-anchor="middle" font-size="18" font-weight="bold" fill="#1a1a1a">Spring Boot gRPC 서비스 구조 — Protobuf부터 배포까지</text>
+
+  <!-- .proto file -->
+  <rect x="300" y="42" width="200" height="48" rx="8" fill="#eafff0" stroke="#1f7a38" stroke-width="1.5"/>
+  <text x="400" y="62" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1f7a38">.proto 정의 파일</text>
+  <text x="400" y="79" text-anchor="middle" font-size="10.5" fill="#1f7a38">OrderService (message + rpc)</text>
+
+  <!-- codegen box -->
+  <rect x="250" y="112" width="300" height="46" rx="8" fill="#fff7e8" stroke="#b5790b" stroke-width="1.5"/>
+  <text x="400" y="132" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#a5670a">protobuf-gradle-plugin</text>
+  <text x="400" y="148" text-anchor="middle" font-size="10.5" fill="#a5670a">protoc 코드 자동 생성</text>
+
+  <!-- generated server stub -->
+  <rect x="105" y="190" width="260" height="54" rx="8" fill="#eaf3ff" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="235" y="211" text-anchor="middle" font-size="12" font-weight="bold" fill="#0b5fa5">생성된 서버 스텁</text>
+  <text x="235" y="228" text-anchor="middle" font-size="10.5" fill="#0b5fa5">OrderServiceImplBase</text>
+
+  <!-- generated client stub -->
+  <rect x="435" y="190" width="260" height="54" rx="8" fill="#eaf3ff" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="565" y="211" text-anchor="middle" font-size="12" font-weight="bold" fill="#0b5fa5">생성된 클라이언트 스텁</text>
+  <text x="565" y="228" text-anchor="middle" font-size="10.5" fill="#0b5fa5">OrderServiceBlockingStub</text>
+
+  <!-- Spring Boot server -->
+  <rect x="105" y="278" width="260" height="60" rx="8" fill="#f5eeff" stroke="#6a3fb5" stroke-width="1.5"/>
+  <text x="235" y="301" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#5a34a0">Spring Boot 서버</text>
+  <text x="235" y="318" text-anchor="middle" font-size="10.5" fill="#5a34a0">@GrpcService 구현체</text>
+
+  <!-- Client app -->
+  <rect x="435" y="278" width="260" height="60" rx="8" fill="#f5eeff" stroke="#6a3fb5" stroke-width="1.5"/>
+  <text x="565" y="301" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#5a34a0">호출 클라이언트</text>
+  <text x="565" y="318" text-anchor="middle" font-size="10.5" fill="#5a34a0">다른 마이크로서비스</text>
+
+  <!-- Health check -->
+  <rect x="105" y="368" width="260" height="50" rx="8" fill="#eafff0" stroke="#1f7a38" stroke-width="1.5"/>
+  <text x="235" y="388" text-anchor="middle" font-size="12" font-weight="bold" fill="#1f7a38">Health Check 서비스</text>
+  <text x="235" y="404" text-anchor="middle" font-size="10.5" fill="#1f7a38">grpc.health.v1</text>
+
+  <!-- Kubernetes probe -->
+  <rect x="435" y="368" width="260" height="50" rx="8" fill="#fdeeee" stroke="#b5390b" stroke-width="1.5"/>
+  <text x="565" y="388" text-anchor="middle" font-size="12" font-weight="bold" fill="#a5330a">Kubernetes</text>
+  <text x="565" y="404" text-anchor="middle" font-size="10.5" fill="#a5330a">readiness / liveness probe</text>
+
+  <!-- Arrows: proto -> codegen -->
+  <line x1="400" y1="90" x2="400" y2="110" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Arrows: codegen -> server stub / client stub -->
+  <line x1="330" y1="158" x2="255" y2="188" stroke="#888" stroke-width="1.4" marker-end="url(#arrow)"/>
+  <line x1="470" y1="158" x2="545" y2="188" stroke="#888" stroke-width="1.4" marker-end="url(#arrow)"/>
+
+  <!-- Arrows: stub -> app -->
+  <line x1="235" y1="244" x2="235" y2="276" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="565" y1="244" x2="565" y2="276" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Bidirectional arrow: server <-> client -->
+  <line x1="367" y1="308" x2="433" y2="308" stroke="#555" stroke-width="1.8" marker-end="url(#arrow)" marker-start="url(#arrowstart)"/>
+  <text x="400" y="298" text-anchor="middle" font-size="9.5" fill="#555">HTTP/2 + Protobuf</text>
+  <text x="400" y="322" text-anchor="middle" font-size="9" fill="#777">(단일 커넥션, 다중 스트림)</text>
+
+  <!-- Arrows: server -> health check -->
+  <line x1="235" y1="338" x2="235" y2="366" stroke="#888" stroke-width="1.4" marker-end="url(#arrow)"/>
+
+  <!-- Arrow: health check -> k8s -->
+  <line x1="367" y1="393" x2="433" y2="393" stroke="#888" stroke-width="1.4" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="30" y="432" width="12" height="12" fill="#eafff0" stroke="#1f7a38"/>
+  <text x="48" y="442" font-size="10" fill="#333">계약·헬스체크</text>
+  <rect x="150" y="432" width="12" height="12" fill="#fff7e8" stroke="#b5790b"/>
+  <text x="168" y="442" font-size="10" fill="#333">빌드 도구</text>
+  <rect x="250" y="432" width="12" height="12" fill="#eaf3ff" stroke="#0b5fa5"/>
+  <text x="268" y="442" font-size="10" fill="#333">생성 코드</text>
+  <rect x="350" y="432" width="12" height="12" fill="#f5eeff" stroke="#6a3fb5"/>
+  <text x="368" y="442" font-size="10" fill="#333">런타임 애플리케이션</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#888"/>
+    </marker>
+    <marker id="arrowstart" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto-start-reverse">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>
