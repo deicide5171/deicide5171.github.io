@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Astro 아일랜드 아키텍처 — 자바스크립트를 필요한 곳에만 보내기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Astro 아일랜드 아키텍처 — 자바스크립트를 필요한 곳에만 보내기</div>
+<p style="font-size:14px; color:#999;">2026. 8. 22. · 프론트엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 페이지 대부분이 정적인 콘텐츠 사이트에서 SPA 프레임워크 전체를 하이드레이션하는 낭비를 피하기 위해, <b>Astro</b>가 채택한 <b>아일랜드 아키텍처(Islands Architecture)</b>의 핵심 원리를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 페이지 전체를 하이드레이션할 필요가 없을까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">블로그, 랜딩 페이지, 문서 사이트처럼 콘텐츠 대부분이 정적인 사이트를 React나 Vue 같은 SPA 프레임워크로 만들면, 실제로 인터랙티브한 요소는 댓글 위젯이나 이미지 캐러셀 몇 개뿐인데도 페이지 전체가 클라이언트에서 다시 하이드레이션되는 구조를 갖게 되는 경우가 많습니다. 서버에서 HTML을 렌더링해 내려보내더라도, 브라우저는 프레임워크 런타임 전체와 컴포넌트 트리 전체의 자바스크립트를 내려받아 실행해야 화면이 인터랙티브해집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">문제는 이 하이드레이션 비용이 페이지 안의 실제 인터랙티브 영역 크기와는 무관하게, 프레임워크와 번들러 설정에 따라 거의 고정적으로 붙는다는 점입니다. 정적 텍스트와 이미지만 있는 블로그 글 하나를 열기 위해 라우터, 상태 관리 라이브러리, 컴포넌트 트리 전체가 클라이언트에서 재구성되는 셈입니다. <b>이는 초기 로딩 시간과 상호작용 가능 시점(TTI)을 늦추는 원인 중 하나로 자주 지목됩니다.</b></p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Astro는 이 문제를 정면으로 겨냥해 등장한 정적 사이트 생성기(SSG)입니다. 기본적으로 모든 컴포넌트를 서버 또는 빌드 타임에 정적 HTML로 렌더링하고, 자바스크립트는 명시적으로 지정한 컴포넌트에만 선택적으로 실어 보냅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 정적 바다 위의 인터랙티브 섬</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아일랜드 아키텍처라는 이름은 페이지 전체를 하나의 큰 정적 바다(sea)로 보고, 그 위에 인터랙티브 기능이 필요한 부분만 독립된 섬(island)으로 띄운다는 비유에서 왔습니다. 이 개념 자체는 Astro가 처음 만든 것은 아니고, Preact의 창시자 Jason Miller가 정리한 아키텍처 패턴에서 이름을 가져왔습니다. Astro는 이 패턴을 프레임워크 차원의 기본값으로 채택했다는 점이 다릅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>.astro 컴포넌트로 작성한 페이지는 기본적으로 빌드 타임에 순수 HTML/CSS로 컴파일됩니다.</b> 여기에는 자바스크립트 런타임이 전혀 딸려 가지 않습니다. 페이지 안에 React 컴포넌트나 Vue 컴포넌트를 끼워 넣더라도, 별도로 하이드레이션을 지시하지 않는 한 그 컴포넌트 역시 정적 HTML로만 렌더링되고 클라이언트 자바스크립트는 로드되지 않습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 하이드레이션 지시자(client directive)</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">정적으로 렌더링된 컴포넌트 중 실제로 클라이언트 상호작용이 필요한 것에는 <b>client:*</b> 형태의 지시자를 붙입니다. 각 지시자는 "언제 이 컴포넌트에 자바스크립트를 실행할 것인가"를 세밀하게 제어하는 역할을 합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">지시자</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">하이드레이션 시점</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">client:load</td>
+<td style="border:1px solid #ddd; padding:10px;">페이지 로드 즉시</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">client:idle</td>
+<td style="border:1px solid #ddd; padding:10px;">브라우저가 유휴 상태가 될 때</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">client:visible</td>
+<td style="border:1px solid #ddd; padding:10px;">컴포넌트가 뷰포트에 들어올 때</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">client:media</td>
+<td style="border:1px solid #ddd; padding:10px;">지정한 미디어 쿼리 조건을 만족할 때</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">예를 들어 페이지 최상단의 검색창처럼 즉시 반응해야 하는 컴포넌트는 client:load를, 페이지 하단에 있어 스크롤해야 보이는 댓글 위젯은 client:visible을 붙이는 식입니다. 이렇게 하면 뷰포트 밖에 있는 컴포넌트의 자바스크립트는 실제로 화면에 나타나기 전까지 아예 요청되지 않으므로, 초기 페이지 로드 시 내려받는 자바스크립트 총량이 <b>지금 당장 필요한 요소의 개수</b>에 비례하게 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 프레임워크 무관성(framework-agnostic)</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Astro의 또 다른 특징은 한 페이지 안에 서로 다른 UI 프레임워크로 작성된 컴포넌트를 섞어 쓸 수 있다는 점입니다. 같은 페이지에 React로 작성된 아일랜드와 Vue, Svelte로 작성된 아일랜드가 나란히 존재해도 무방합니다. <b>각 아일랜드는 독립적으로 하이드레이션되며, 프레임워크 런타임도 실제로 그 프레임워크를 쓰는 아일랜드가 페이지에 있을 때만 로드됩니다.</b></p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이는 팀이 마이그레이션 중이거나, 서드파티 위젯이 특정 프레임워크로만 제공되는 경우처럼 여러 프레임워크가 공존해야 하는 상황에서 실질적인 이점이 됩니다. 다만 이 유연함에는 대가가 따르는데, 이는 아래 실무 포인트에서 다시 다루겠습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 서로 다른 하이드레이션 지시자 사용하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 Astro 컴포넌트 안에서 서로 다른 하이드레이션 지시자를 사용하는 예시입니다. Header는 지시자가 없어 정적 HTML로만 렌더링되고, 나머지 세 컴포넌트는 각자의 시점에 하이드레이션됩니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">---
+// src/pages/index.astro
+import Header from &#39;../components/Header.astro&#39;;
+import SearchBox from &#39;../components/SearchBox.jsx&#39;;   // React
+import CommentWidget from &#39;../components/Comments.vue&#39;; // Vue
+import Carousel from &#39;../components/Carousel.svelte&#39;;   // Svelte
+---
+&lt;html lang=&quot;ko&quot;&gt;
+  &lt;body&gt;
+    &lt;!-- 정적 HTML로만 렌더링, 자바스크립트 없음 --&gt;
+    &lt;Header /&gt;
+
+    &lt;!-- 페이지 로드 즉시 하이드레이션 --&gt;
+    &lt;SearchBox client:load /&gt;
+
+    &lt;!-- 뷰포트에 들어올 때만 하이드레이션 --&gt;
+    &lt;Carousel client:visible /&gt;
+
+    &lt;!-- 브라우저가 한가할 때 하이드레이션 --&gt;
+    &lt;CommentWidget client:idle /&gt;
+  &lt;/body&gt;
+&lt;/html&gt;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Header 컴포넌트는 어떤 지시자도 붙지 않았으므로 정적 HTML로만 렌더링되고 클라이언트 자바스크립트는 전혀 내려가지 않습니다. 반면 SearchBox, Carousel, CommentWidget은 각각의 지시자에 따라 서로 다른 시점에 자신의 프레임워크 런타임과 함께 하이드레이션됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 아일랜드 간 상태 공유가 어렵습니다</b> — 각 아일랜드는 독립적으로 하이드레이션되는 격리된 컴포넌트이므로, React 컨텍스트나 Vuex/Pinia 스토어처럼 프레임워크 내장 상태 관리로 아일랜드 사이 상태를 자연스럽게 공유하기 어렵습니다. 아일랜드를 넘나드는 상태가 필요하다면 URL 쿼리, 커스텀 이벤트, nanostores 같은 프레임워크 독립적인 경량 상태 라이브러리 등 별도의 통신 수단을 직접 마련해야 합니다.<br>
+<b>2. 페이지 대부분이 인터랙티브한 앱에는 적합하지 않을 수 있습니다</b> — 대시보드나 에디터처럼 페이지의 거의 모든 영역이 상태를 공유하며 실시간으로 상호작용해야 하는 애플리케이션이라면, 정적 렌더링을 기본값으로 하고 아일랜드 단위로 하이드레이션을 쪼개는 이점 자체가 크지 않습니다. 이런 경우는 오히려 Next.js, Nuxt처럼 클라이언트 라우팅과 전역 상태 관리를 프레임워크 차원에서 지원하는 도구가 더 자연스러울 수 있습니다.<br>
+<b>3. 지시자 선택은 콘텐츠의 위치와 우선순위를 함께 고려해야 합니다</b> — client:visible은 초기 로딩은 늦추지만 뷰포트 진입을 감지하는 별도의 관찰 로직이 붙고, client:load는 즉시 반응하지만 초기 번들에 포함됩니다. 페이지에서 해당 컴포넌트가 얼마나 중요하고 얼마나 빨리 보이는 위치에 있는지에 따라 지시자를 다르게 선택하는 편이 합리적입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① Astro는 모든 컴포넌트를 기본적으로 정적 HTML로 렌더링하고, 인터랙티브가 필요한 컴포넌트만 명시적으로 하이드레이션합니다.<br>
+② client:load, client:visible 등의 하이드레이션 지시자로 자바스크립트 실행 시점을 세밀하게 제어할 수 있고, React·Vue·Svelte 컴포넌트를 한 페이지에 섞어 쓸 수 있습니다.<br>
+③ 아일랜드 간 상태 공유가 자연스럽지 않으므로, 페이지 대부분이 긴밀하게 상호작용하는 앱이라면 다른 프레임워크가 더 적합할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 프론트엔드 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#Astro #아일랜드아키텍처 #IslandsArchitecture #프론트엔드 #SSG #웹성능최적화</p>
+
+</body>
+</html>
