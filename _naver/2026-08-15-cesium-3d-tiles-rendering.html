@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Cesium과 3D Tiles로 웹에서 3차원 공간 데이터 렌더링하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Cesium과 3D Tiles로 웹에서 3차원 공간 데이터 렌더링하기</div>
+<p style="font-size:14px; color:#999;">2026. 8. 15. · GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 도시 전체 3D 모델이나 포인트클라우드처럼 거대한 데이터를 브라우저에서 끊김 없이 보여주는 OGC 3D Tiles 표준과 CesiumJS의 LOD 스트리밍 구조, deck.gl과의 비교를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 3D 웹 지도일까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">디지털 트윈, 스마트시티 대시보드, 드론 매핑 결과물을 웹에서 그대로 보여주는 수요가 늘면서 "브라우저에서 도시 전체 3D 모델을 어떻게 끊김 없이 띄울 것인가"가 실무 문제로 떠올랐습니다. 문제는 데이터 크기입니다. 건물 모델링 데이터나 라이다 포인트클라우드는 전체를 한 번에 GPU 메모리에 올릴 수 없을 만큼 큽니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 문제를 표준 규격으로 푼 것이 OGC <b>3D Tiles</b>이고, 이를 가장 오래·널리 구현한 오픈소스 엔진이 <b>CesiumJS</b>입니다. 최근에도 CesiumJS는 3D Tiles 기반 벡터 타일 렌더링, 지형 클램핑 폴리라인, CAD 자산 검사용 커스텀 카메라 컨트롤러 등을 계속 추가하며 대용량 3차원 데이터 처리 표준으로 자리를 굳히고 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 구조: 3D Tiles의 LOD 트리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">3D Tiles는 하나의 거대한 3D 데이터셋을 계층적인 타일 트리로 쪼갭니다. 루트 타일은 전체 영역을 낮은 해상도로 표현하고, 카메라가 특정 영역에 가까워지면 그 부분의 자식 타일만 추가로 내려받아 세분화합니다. 이 판단 기준이 <b>화면 공간 오차(Screen Space Error, SSE)</b>입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8; text-align:center;"><img src="https://deicide5171.github.io/assets/images/posts/2026-08-15-cesium-3d-tiles-rendering-1.svg" alt="3D Tiles 타일셋 LOD 트리 구조" style="max-width:100%; height:auto; border:1px solid #eee;"></p>
+<p style="font-size:13px; color:#999; text-align:center;">3D Tiles 타일셋 LOD 트리 구조 — 카메라와 가까운 타일만 재귀적으로 세분화된다</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 구조 덕분에 카메라 시야 밖이나 멀리 있는 영역은 계속 성긴 상태로 남고, 실제로 보이는 근접 영역만 세밀한 메시·포인트클라우드를 스트리밍합니다. 결과적으로 <b>수백 GB 규모의 원본 데이터셋도 브라우저 메모리 예산 안에서 끊김 없이</b> 탐색할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">CesiumJS vs deck.gl 비교</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:18%;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">CesiumJS</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">deck.gl (Tile3DLayer)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">성격</td>
+<td style="border:1px solid #ddd; padding:10px;">완결된 지구본 뷰어 엔진</td>
+<td style="border:1px solid #ddd; padding:10px;">WebGL 레이어 프레임워크</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">3D Tiles 지원</td>
+<td style="border:1px solid #ddd; padding:10px;">1급 시민, 최신 확장 지속 추가</td>
+<td style="border:1px solid #ddd; padding:10px;">Tile3DLayer + TerrainController</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">적합한 상황</td>
+<td style="border:1px solid #ddd; padding:10px;">지구 규모 시각화, CAD 자산 점검</td>
+<td style="border:1px solid #ddd; padding:10px;">기존 웹앱에 3D 레이어 하나 얹기</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">학습 곡선</td>
+<td style="border:1px solid #ddd; padding:10px;">자체 API·카메라 모델 학습 필요</td>
+<td style="border:1px solid #ddd; padding:10px;">deck.gl 레이어 체계에 익숙하면 낮음</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: CesiumJS로 3D Tiles 타일셋 불러오기</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">import * as Cesium from "cesium";
+
+const viewer = new Cesium.Viewer("cesiumContainer", {
+  terrain: Cesium.Terrain.fromWorldTerrain(),
+});
+
+// OGC 3D Tiles 타일셋 로드
+const tileset = await Cesium.Cesium3DTileset.fromUrl(
+  "https://example.com/tileset/buildings/tileset.json"
+);
+viewer.scene.primitives.add(tileset);
+
+await viewer.zoomTo(tileset);
+
+// SSE 임계값을 낮추면 더 정밀한 타일을 적극적으로 요청한다
+tileset.maximumScreenSpaceError = 8;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">maximumScreenSpaceError 값이 낮을수록 더 정밀한 타일을 적극적으로 요청해 화질은 좋아지지만 네트워크·GPU 부담이 커집니다. 기본값(보통 16)에서 시작해 타깃 디바이스 성능에 맞춰 조정하는 것이 일반적입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">도입할 때 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 타일 생성 파이프라인부터 검증</b> — 원본 데이터를 3D Tiles로 변환하는 도구의 압축·양자화 옵션이 최종 화질과 전송량을 크게 좌우합니다<br>
+<b>2. SSE 임계값을 디바이스별로 분리</b> — 데스크톱과 모바일에 같은 값을 쓰면 한쪽은 과도하게 무겁거나 다른 쪽은 화질이 떨어집니다<br>
+<b>3. 메모리 예산을 명시적으로 관리</b> — 캐시 상한을 설정해두지 않으면 장시간 세션에서 GPU 메모리가 계속 쌓여 성능이 저하될 수 있습니다<br>
+<b>4. 좌표계·원점 정렬을 먼저 확인</b> — 3D Tiles는 지구 중심 좌표계 기반이라, 로컬 좌표 데이터는 변환 단계에서 원점·축 정렬을 미리 검증해야 합니다
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 3D Tiles는 거대한 3차원 데이터셋을 LOD 트리로 쪼개고, 화면 공간 오차 기준으로 카메라 근처만 세분화해 스트리밍하는 표준입니다.<br>
+② CesiumJS는 지구 규모의 완결된 뷰어로, deck.gl의 Tile3DLayer는 기존 웹앱에 3D 레이어를 얹는 용도로 각각 강점이 다릅니다.<br>
+③ 실제 도입 시에는 타일 생성 파이프라인의 압축 품질, SSE 임계값, 메모리 캐시 상한을 함께 튜닝해야 끊김 없는 경험을 만들 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#Cesium #3DTiles #WebGL #deckgl #디지털트윈 #GIS</p>
+
+</body>
+</html>
