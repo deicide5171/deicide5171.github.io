@@ -1,0 +1,72 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" role="img" aria-labelledby="title desc">
+  <title id="title">미디어 쿼리와 컨테이너 쿼리 비교</title>
+  <desc id="desc">같은 카드 컴포넌트가 미디어 쿼리에서는 뷰포트 기준으로 동일하게 유지되고, 컨테이너 쿼리에서는 자신을 감싼 컨테이너의 폭에 따라 세로형과 가로형으로 각각 바뀌는 것을 보여주는 개념도</desc>
+
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="32" text-anchor="middle" font-family="'Apple SD Gothic Neo','Malgun Gothic',sans-serif" font-size="20" font-weight="700" fill="#1f2328">미디어 쿼리 vs 컨테이너 쿼리</text>
+
+  <!-- LEFT: media query -->
+  <text x="210" y="65" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="700" fill="#c0392b">미디어 쿼리 — 화면(뷰포트) 기준</text>
+
+  <rect x="40" y="80" width="340" height="330" rx="8" fill="#fafafa" stroke="#c9ccd1" stroke-width="1.5"/>
+  <text x="210" y="100" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#8a8f98">브라우저 화면</text>
+
+  <!-- sidebar (narrow) -->
+  <rect x="55" y="112" width="95" height="285" rx="4" fill="#eef1f4" stroke="#c9ccd1"/>
+  <text x="102" y="128" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#5b6270">사이드바(좁음)</text>
+  <!-- card in sidebar: vertical layout -->
+  <rect x="66" y="140" width="73" height="60" rx="4" fill="#ffffff" stroke="#9aa0a8"/>
+  <rect x="76" y="148" width="53" height="18" rx="3" fill="#c9ccd1"/>
+  <rect x="76" y="171" width="53" height="6" rx="2" fill="#dfe2e6"/>
+  <rect x="76" y="182" width="38" height="6" rx="2" fill="#dfe2e6"/>
+
+  <!-- main (wide) -->
+  <rect x="163" y="112" width="207" height="285" rx="4" fill="#eef1f4" stroke="#c9ccd1"/>
+  <text x="266" y="128" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#5b6270">본문 영역(넓음)</text>
+  <!-- same card, still vertical layout (unchanged despite space) -->
+  <rect x="185" y="145" width="165" height="70" rx="4" fill="#ffffff" stroke="#9aa0a8"/>
+  <rect x="255" y="153" width="26" height="26" rx="4" fill="#c9ccd1"/>
+  <rect x="200" y="185" width="135" height="6" rx="2" fill="#dfe2e6"/>
+  <rect x="200" y="197" width="95" height="6" rx="2" fill="#dfe2e6"/>
+
+  <text x="266" y="235" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#c0392b">공간은 넓어도 카드 모양은 그대로</text>
+  <text x="266" y="250" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#c0392b">(뷰포트 폭만 보고 판단하기 때문)</text>
+
+  <rect x="55" y="345" width="315" height="50" rx="6" fill="#fdf1f0" stroke="#eab6ae"/>
+  <text x="212" y="365" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#8a3226">같은 컴포넌트라도 자신이 놓인</text>
+  <text x="212" y="382" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#8a3226">위치(폭)를 스스로 알 수 없음</text>
+
+  <!-- divider -->
+  <line x1="400" y1="60" x2="400" y2="420" stroke="#e2e5e9" stroke-width="2"/>
+
+  <!-- RIGHT: container query -->
+  <text x="590" y="65" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="700" fill="#1a7a4c">컨테이너 쿼리 — 자기 컨테이너 기준</text>
+
+  <rect x="420" y="80" width="340" height="330" rx="8" fill="#fafafa" stroke="#c9ccd1" stroke-width="1.5"/>
+  <text x="590" y="100" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#8a8f98">동일한 카드 컴포넌트 재사용</text>
+
+  <!-- sidebar container (narrow) -->
+  <rect x="435" y="112" width="95" height="285" rx="4" fill="#eefaf3" stroke="#a9d9bf"/>
+  <text x="482" y="128" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#1a7a4c">좁은 컨테이너</text>
+  <!-- card: vertical layout because container is narrow -->
+  <rect x="446" y="140" width="73" height="70" rx="4" fill="#ffffff" stroke="#6fb98d"/>
+  <rect x="463" y="148" width="38" height="26" rx="4" fill="#bfe6cf"/>
+  <rect x="456" y="181" width="53" height="6" rx="2" fill="#cdeedb"/>
+  <rect x="456" y="192" width="38" height="6" rx="2" fill="#cdeedb"/>
+  <text x="482" y="222" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#3d7a5a">세로 스택</text>
+
+  <!-- main container (wide) -->
+  <rect x="543" y="112" width="207" height="285" rx="4" fill="#eefaf3" stroke="#a9d9bf"/>
+  <text x="646" y="128" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#1a7a4c">넓은 컨테이너</text>
+  <!-- card: horizontal layout because container is wide -->
+  <rect x="565" y="150" width="165" height="55" rx="4" fill="#ffffff" stroke="#6fb98d"/>
+  <rect x="575" y="160" width="34" height="34" rx="4" fill="#bfe6cf"/>
+  <rect x="619" y="165" width="100" height="6" rx="2" fill="#cdeedb"/>
+  <rect x="619" y="177" width="70" height="6" rx="2" fill="#cdeedb"/>
+  <text x="646" y="222" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#3d7a5a">가로 배치</text>
+
+  <rect x="435" y="345" width="315" height="50" rx="6" fill="#eefaf3" stroke="#a9d9bf"/>
+  <text x="592" y="365" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#1a7a4c">같은 컴포넌트가 자신을 감싼</text>
+  <text x="592" y="382" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#1a7a4c">컨테이너 폭을 보고 스스로 반응</text>
+</svg>
