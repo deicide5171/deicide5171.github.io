@@ -72,6 +72,11 @@ excerpt: "글 요약 한 문장"
 
 경로: `_naver/YYYY-MM-DD-<slug>.html` — 같은 주제를 네이버 독자용(~습니다체)으로 다시 쓴 문서. 마크다운 문법 금지.
 
+**폴더 규칙**:
+- `_naver/` 루트 = **네이버 미게시 대기함** — 새 파일은 반드시 여기에 생성
+- `_naver/posted/` = **게시 완료 보관함** — 사용자가 네이버에 올린 뒤 옮기는 곳. **자동화는 이 폴더에 쓰기 금지(읽기만 허용)**
+- 스타일 참고용 최신 파일은 `_naver/` 루트에서 찾고, 루트가 비어 있으면 `_naver/posted/`의 최신 파일을 참고
+
 - 완전한 HTML 문서: `<!DOCTYPE html>` + `<html lang="ko">` + `<meta charset="utf-8">` + `<title>`
 - `<body style="background-color:#ffffff; padding:20px;">`
 - 본문 요소는 **전부 인라인 스타일만** (`<style>` 블록·class·script 금지 — 네이버 에디터엔 인라인만 살아남음)
