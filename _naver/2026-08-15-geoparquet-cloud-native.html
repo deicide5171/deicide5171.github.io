@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>GeoParquet과 클라우드 네이티브 공간 데이터, Shapefile을 대체하나</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">GeoParquet과 클라우드 네이티브 공간 데이터, Shapefile을 대체할까요</div>
+<p style="font-size:14px; color:#999;">2026. 8. 15. · GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 오래된 <b>Shapefile</b>의 구조적 한계와, 이를 보완하려는 클라우드 네이티브 공간 데이터 포맷 <b>GeoParquet</b>의 장점, 그리고 실무 도입 시 챙겨야 할 점을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 주제일까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">GIS 실무에서는 아직도 <b>Shapefile</b>이 가장 널리 쓰이고 있습니다. 하지만 이 포맷은 오래전 설계된 구조를 거의 그대로 유지하고 있어서, 최근 늘어난 대용량 위성·항공 데이터나 클라우드 기반 분석 파이프라인과는 잘 맞지 않는 부분들이 계속 드러나고 있습니다. 파일 하나가 아니라 여러 개의 파일로 나뉘어야 동작하고, 속성 필드 이름 길이에 제한이 있다는 점은 오래전부터 지적되어 온 문제입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이런 배경에서 최근 주목받고 있는 것이 <b>GeoParquet</b>입니다. 컬럼 기반 저장 포맷인 Apache Parquet에 지리공간 메타데이터 규격을 얹은 것으로, 여러 오픈 지도 데이터셋이 배포 포맷으로 채택하면서 도입 사례가 늘고 있는 것으로 보입니다. Shapefile을 완전히 대체했다고 단정하기는 아직 이르지만, 대용량·클라우드 환경에서는 확실히 대안으로 자리잡아가는 흐름입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Shapefile의 구조적 한계</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Shapefile은 하나의 데이터셋을 표현하는 데 <b>여러 개의 파일</b>이 함께 필요합니다. 지오메트리를 담는 .shp, 인덱스인 .shx, 속성 테이블인 .dbf가 기본이고, 좌표계 정보까지 포함하면 파일 관리가 번거로워집니다. 파일 중 하나라도 누락되거나 손상되면 데이터셋 전체를 열 수 없다는 점도 실무에서 자주 겪는 어려움입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">속성 필드 이름이 최대 10자로 제한되고, 하나의 지오메트리 타입만 담을 수 있으며, 대용량 데이터에서는 실질적인 크기 제약도 나타납니다. 무엇보다 클라우드 오브젝트 스토리지에 올려두고 필요한 부분만 골라 읽는 방식에는 애초부터 적합하지 않게 설계되어 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">GeoParquet과 클라우드 네이티브 흐름</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">GeoParquet은 Parquet의 <b>컬럼 기반 저장</b> 구조를 그대로 활용하면서, 지오메트리 컬럼을 WKB로 인코딩하고 좌표계·바운딩박스 등의 메타데이터를 파일 스키마에 함께 기록하는 규격입니다. 컬럼 단위로 저장되기 때문에 필요한 속성 몇 개만 골라 읽을 수 있고, Parquet이 제공하는 압축과 통계 정보를 통해 불필요한 데이터를 건너뛰는 최적화도 가능해집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">여기에 더해 클라우드 최적화 흐름에서는 파일 내부에 미리 공간 인덱스를 두거나, HTTP Range 요청으로 파일 일부만 내려받는 방식이 함께 논의되고 있습니다. 아직 표준화가 진행 중인 영역이라 도구별 지원 수준에 차이가 있다는 점은 감안하시는 게 좋습니다. 가장 큰 실무적 이점은 Spark, DuckDB, GeoPandas, BigQuery 등 이미 Parquet을 지원하는 <b>빅데이터 분석 도구 생태계</b>에 별도 변환 없이 자연스럽게 올라탈 수 있다는 점입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Shapefile vs GeoParquet 비교</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Shapefile</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">GeoParquet</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">파일 구성</td>
+<td style="border:1px solid #ddd; padding:10px;">여러 파일(.shp/.shx/.dbf 등)</td>
+<td style="border:1px solid #ddd; padding:10px;">단일 파일</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">속성 필드명</td>
+<td style="border:1px solid #ddd; padding:10px;">최대 10자 제한</td>
+<td style="border:1px solid #ddd; padding:10px;">제한 없음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">저장 방식</td>
+<td style="border:1px solid #ddd; padding:10px;">행 기반</td>
+<td style="border:1px solid #ddd; padding:10px;">컬럼 기반</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">부분 읽기</td>
+<td style="border:1px solid #ddd; padding:10px;">어려움</td>
+<td style="border:1px solid #ddd; padding:10px;">컬럼·행 그룹 단위로 용이</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">빅데이터 도구 연동</td>
+<td style="border:1px solid #ddd; padding:10px;">별도 변환이 필요한 경우가 많음</td>
+<td style="border:1px solid #ddd; padding:10px;">Spark·DuckDB 등과 친화적</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: GeoPandas와 DuckDB로 다뤄보기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">GeoPandas를 쓰면 Shapefile과 거의 동일한 방식으로 GeoParquet을 읽고 쓸 수 있습니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">import geopandas as gpd
+
+# Shapefile 읽기
+gdf = gpd.read_file("parcels.shp")
+
+# GeoParquet으로 저장
+gdf.to_parquet("parcels.parquet")
+
+# GeoParquet 다시 읽기
+gdf2 = gpd.read_parquet("parcels.parquet")
+print(gdf2.crs)
+print(gdf2.head())</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">DuckDB의 spatial 확장을 쓰면 파일 전체를 메모리에 올리지 않고도 조건에 맞는 행만 골라 조회할 수 있습니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">import duckdb
+
+con = duckdb.connect()
+con.execute("INSTALL spatial; LOAD spatial;")
+
+result = con.execute("""
+    SELECT name, geometry
+    FROM read_parquet('s3://my-bucket/parcels.parquet')
+    WHERE area_sqm &gt; 1000
+""").fetchdf()</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 도구 호환성 먼저 확인</b> — QGIS, ArcGIS 등 사내 GIS 소프트웨어의 GeoParquet 지원 버전을 먼저 확인하세요<br>
+<b>2. 좌표계 메타데이터 검증</b> — 변환 과정에서 CRS 정보가 누락될 수 있으니 변환 직후 반드시 확인하세요<br>
+<b>3. 점진적 전환</b> — 기존 자산을 한 번에 바꾸기보다 신규 대용량 데이터셋부터 적용해보세요<br>
+<b>4. 스펙 버전 확인</b> — GeoParquet 표준이 아직 발전 중이므로 데이터를 주고받는 상대방과 버전을 맞추세요
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① Shapefile은 파일 분산, 필드명 제한, 대용량 처리 비효율 등 오래된 구조적 한계를 가지고 있습니다.<br>
+② GeoParquet은 컬럼 기반 저장과 Parquet 생태계 호환성을 바탕으로 클라우드·빅데이터 환경에 더 적합한 대안으로 떠오르고 있습니다.<br>
+③ 다만 표준과 도구 지원이 계속 발전 중인 단계이므로, 도구 호환성 확인과 점진적 전환이 안전한 접근입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 실제 클라우드 파이프라인에 GeoParquet을 적용해본 경험을 다뤄보겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#GeoParquet #Shapefile #GIS #클라우드네이티브 #공간데이터</p>
+
+</body>
+</html>

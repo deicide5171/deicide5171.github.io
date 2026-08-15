@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>이벤트 소싱과 CDC, 무엇이 다른가</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">이벤트 소싱과 CDC, 상태 변화를 다루는 두 가지 방식</div>
+<p style="font-size:14px; color:#999;">2026. 8. 15. · 시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 애플리케이션이 이벤트를 직접 설계하는 <b>이벤트 소싱</b>과, DB 변경 로그를 캡처해 전파하는 <b>CDC(Change Data Capture)</b>를 비교하고, 실무에서 무엇을 언제 써야 하는지 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 비교가 필요할까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">서비스 규모가 커지면 여러 시스템 사이에 데이터를 동기화하거나, 캐시를 최신 상태로 유지하거나, 검색 색인을 실시간으로 갱신해야 하는 요구가 자주 생깁니다. 이때 "다른 시스템에 변경 사항을 어떻게 전달할 것인가"라는 질문에 대한 답으로 흔히 두 가지 방식이 거론됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">하나는 애플리케이션이 상태 변화 자체를 이벤트로 설계해 저장하는 <b>이벤트 소싱</b>이고, 다른 하나는 기존 데이터베이스의 변경 로그(binlog, WAL 등)를 캡처해 외부로 흘려보내는 <b>CDC</b>입니다. 겉보기에는 둘 다 변경 사항을 이벤트 스트림으로 만든다는 점에서 비슷해 보이지만, 이벤트가 어디서 발생하는지와 무엇을 진실의 원천으로 삼는지가 근본적으로 다릅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 차이를 이해하지 못한 채 도입하면 시스템 복잡도만 늘고 얻는 이점은 없는 경우가 많습니다. 그래서 오늘은 두 패턴의 개념 차이와 실무 적용 기준을 정리해보았습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 비교</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>이벤트 소싱</b>은 애플리케이션 계층에서 "무엇이 일어났는가"를 명시적인 이벤트로 모델링하고, 이 이벤트들의 누적이 곧 상태가 됩니다. 현재 상태는 이벤트를 순서대로 재생해서 얻는 파생 값이며, DB 테이블의 현재 행은 부차적인 조회용 캐시에 가깝습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>CDC</b>는 반대 방향으로 접근합니다. 애플리케이션은 평범하게 RDBMS에 CRUD를 수행하고, 진실의 원천은 여전히 테이블입니다. CDC 도구는 DB 내부의 트랜잭션 로그를 읽어 어떤 행이 어떻게 바뀌었는지를 이벤트로 변환해 다른 시스템에 전파합니다. 애플리케이션 코드는 CDC의 존재를 몰라도 그대로 동작합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:20%;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">이벤트 소싱</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">CDC</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">이벤트 출처</td>
+<td style="border:1px solid #ddd; padding:10px;">애플리케이션이 직접 발행</td>
+<td style="border:1px solid #ddd; padding:10px;">DB 트랜잭션 로그에서 파생</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">진실의 원천</td>
+<td style="border:1px solid #ddd; padding:10px;">이벤트 스트림 자체</td>
+<td style="border:1px solid #ddd; padding:10px;">기존 테이블(현재 상태)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">도입 난이도</td>
+<td style="border:1px solid #ddd; padding:10px;">높음 (설계 전면 변경)</td>
+<td style="border:1px solid #ddd; padding:10px;">상대적으로 낮음 (기존 DB에 얹음)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">감사 이력</td>
+<td style="border:1px solid #ddd; padding:10px;">자연스럽게 완전한 이력 확보</td>
+<td style="border:1px solid #ddd; padding:10px;">별도 설계 없이는 유실 가능</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">장단점과 선택 기준</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이벤트 소싱은 도메인 이벤트가 곧 비즈니스 언어이기 때문에 "왜 이 상태가 되었는가"를 코드 수준에서 설명할 수 있다는 강점이 있습니다. 감사 로그, 시점 조회, 이벤트 재생을 통한 버그 재현 등이 자연스럽습니다. 다만 기존 CRUD 기반 시스템을 이벤트 소싱으로 전환하는 비용은 상당하며, 이벤트 스키마 진화와 스냅샷 전략에 대한 팀 전체의 이해가 필요합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">CDC는 기존 시스템을 건드리지 않고도 실시간에 가까운 데이터 흐름을 만들 수 있어 도입 장벽이 낮습니다. 레거시 DB를 그대로 두면서 검색 색인 갱신, 캐시 무효화, 데이터 웨어하우스 적재 같은 작업을 붙일 수 있습니다. 다만 캡처되는 이벤트는 "로우가 바뀌었다"는 사실만 담고 있어 왜 바뀌었는지 비즈니스 맥락은 별도로 복원해야 하는 경우가 많습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실무에서는 새 도메인을 처음부터 이벤트 중심으로 설계할 여유가 있는지, 아니면 기존 DB를 그대로 두고 변경 사항만 흘려보내면 되는지로 판단하는 경우가 많습니다. 이벤트 소싱으로 도메인 서비스를 만들고, 그 결과를 다시 CDC로 다른 시스템에 전파하는 조합도 흔하게 쓰입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: 이벤트 스키마와 Debezium 설정</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">{
+  "eventId": "b3f1c9a2-1234-4a1a-9c1e-2b6a7f9d0001",
+  "eventType": "OrderPlaced",
+  "aggregateId": "order-98213",
+  "version": 1,
+  "occurredAt": "2026-08-15T09:12:03Z",
+  "payload": {
+    "customerId": "cust-4471",
+    "items": [
+      { "sku": "A-1002", "qty": 2 }
+    ],
+    "totalAmount": 45800
+  }
+}</pre>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">{
+  "name": "orders-cdc-connector",
+  "config": {
+    "connector.class": "io.debezium.connector.mysql.MySqlConnector",
+    "database.hostname": "mysql-primary",
+    "database.port": "3306",
+    "database.user": "cdc_user",
+    "topic.prefix": "shop",
+    "database.include.list": "shop_db",
+    "table.include.list": "shop_db.orders",
+    "schema.history.internal.kafka.topic": "schema-changes.shop"
+  }
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 이벤트 스키마 호환성 정책</b> — 필드 추가는 대체로 안전하지만 의미 변경·삭제는 전체 컨슈머에 영향을 줍니다<br>
+<b>2. 스냅샷 전략</b> — 이벤트가 오래 쌓이면 재생 비용이 커지므로 주기적인 스냅샷을 함께 설계하는 것이 안전합니다<br>
+<b>3. DB 스키마 변경 대응</b> — CDC 파이프라인은 컬럼 추가·삭제·타입 변경에 취약할 수 있어 스키마 레지스트리를 함께 검토합니다<br>
+<b>4. 최종 일관성 전제</b> — 강한 일관성이 필수인 경로에는 그대로 적용하기보다 별도의 동기 경로를 함께 고려하는 편이 안전합니다
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 이벤트 소싱은 애플리케이션이 도메인 이벤트를 진실의 원천으로 삼는 방식이고, CDC는 기존 DB 로그를 캡처해 변경 사항을 외부로 전파하는 방식입니다.<br>
+② 이벤트 소싱은 완전한 이력과 도메인 표현력을 얻는 대신 설계·운영 비용이 크고, CDC는 기존 시스템을 유지한 채 도입할 수 있지만 비즈니스 맥락 복원에 신경 써야 합니다.<br>
+③ 새 도메인을 이벤트 중심으로 설계할 여지가 있다면 이벤트 소싱을, 기존 DB를 그대로 두고 변경 전파만 필요하다면 Debezium 같은 CDC 도구를 우선 검토하는 것을 추천합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 실제 이벤트 소싱 도입 경험을 다뤄보겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#이벤트소싱 #CDC #Debezium #시스템설계 #아키텍처</p>
+
+</body>
+</html>

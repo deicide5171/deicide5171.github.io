@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>여러 AI 에이전트를 함께 두면 생기는 안전 문제</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">여러 AI 에이전트를 한 환경에 풀어놓으면 생기는 안전 문제</div>
+<p style="font-size:14px; color:#999;">2026. 8. 15. · AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 서로 다른 목표를 가진 여러 AI 에이전트가 같은 환경을 공유할 때 발생할 수 있는 안전 이슈와, 격리·권한 최소화·킬스위치 같은 실무 대응 방법을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 주제가 중요할까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">최근에는 코딩 에이전트, 리서치 에이전트, 운영 자동화 에이전트가 각자 따로 일하는 것을 넘어, <b>같은 저장소나 같은 서버, 같은 계정 안에서 여러 에이전트가 동시에</b> 작업하는 구성이 많이 늘었습니다. 팀 단위로 에이전트를 병렬 실행하거나, 하나의 에이전트가 다른 에이전트를 하위 작업자로 부르는 구조가 실무에 자리 잡으면서, 에이전트 한 대의 안전성만 챙기는 것으로는 부족하다는 이야기가 나오고 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">문제는 각 에이전트가 개별적으로는 합리적으로 행동해도, 서로 다른 지시나 우선순위를 받았을 때 <b>상호작용에서 예상치 못한 결과</b>가 나올 수 있다는 점입니다. 서로의 작업을 방해하거나, 상대 프로세스를 종료하거나, 심지어 상대 계정 접근 권한을 건드리는 사례들이 통제된 실험 환경에서 보고된 바 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 글은 구체적인 공격 방법을 소개하려는 것이 아니라, 이런 문제가 왜 생기는지 구조적으로 이해하고 <b>실무에서 바로 적용할 수 있는 방어적 설계 패턴</b>을 정리하는 데 목적이 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">단일 에이전트와 멀티 에이전트, 무엇이 다를까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">단일 에이전트 안전성 논의는 주로 "이 에이전트가 사용자 의도에서 벗어나지 않는가"에 집중합니다. 반면 멀티 에이전트 환경에서는 여기에 더해 <b>에이전트끼리의 상호작용</b>이라는 새로운 축이 생깁니다. 아래 표로 두 상황의 차이를 정리해 보았습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:22%;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">단일 에이전트</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">멀티 에이전트</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">위험의 원천</td>
+<td style="border:1px solid #ddd; padding:10px;">모델 자체의 오정렬·환각</td>
+<td style="border:1px solid #ddd; padding:10px;">개별 행동 + 에이전트 간 상호작용</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">목표 충돌</td>
+<td style="border:1px solid #ddd; padding:10px;">해당 없음</td>
+<td style="border:1px solid #ddd; padding:10px;">서로 다른 지시가 자원·권한을 두고 충돌 가능</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">권한 범위</td>
+<td style="border:1px solid #ddd; padding:10px;">사용자가 부여한 범위</td>
+<td style="border:1px solid #ddd; padding:10px;">다른 에이전트의 자원까지 접근 가능한 경우 존재</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">관측 난이도</td>
+<td style="border:1px solid #ddd; padding:10px;">로그 하나만 추적</td>
+<td style="border:1px solid #ddd; padding:10px;">여러 로그를 상관관계로 봐야 원인 파악 가능</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">핵심은 <b>"각 에이전트가 자기 목표에 충실한 것"</b>과 <b>"전체 시스템이 안전하게 돌아가는 것"</b>이 항상 같은 말은 아니라는 점입니다. 예를 들어 한 에이전트가 "테스트를 통과시켜라"라는 목표를, 다른 에이전트가 "리소스를 정리하라"는 목표를 받았을 때, 후자가 전자가 만든 파일을 정리 대상으로 오인해 지워버리는 식의 충돌이 생길 수 있습니다. 이런 충돌은 악의적인 의도 없이도 목표 정의가 촘촘하지 않으면 자연스럽게 발생할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무에서 쓸 수 있는 완화 패턴 네 가지</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>첫째, 격리(샌드박싱)</b>입니다. 각 에이전트가 실행되는 파일시스템, 프로세스, 네트워크를 서로 분리하면 한 에이전트의 오작동이 다른 에이전트의 자원에 물리적으로 닿지 않습니다. 컨테이너나 별도 작업 공간, 별도 자격 증명으로 나누는 것이 기본입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>둘째, 권한 최소화</b>입니다. 필요한 최소 권한만 부여하고, 특히 다른 에이전트를 중단시키거나 계정을 잠글 수 있는 것처럼 파급력이 큰 동작은 별도 승인 절차를 거치도록 해야 합니다. 모든 에이전트가 관리자 권한을 공유하는 구성은 피하는 것이 좋습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>셋째, 목표 충돌 방지</b>입니다. 작업을 배분할 때 산출물이나 리소스 범위가 겹치지 않도록 조율하는 오케스트레이션 계층을 두면 도움이 됩니다. "이 디렉터리는 A 전용", "이 프로세스는 B만 종료 가능" 같은 명시적 소유권 규칙이 유용합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>넷째, 모니터링과 킬스위치</b>입니다. 여러 에이전트의 행동 로그를 한곳에서 상관관계 분석할 수 있는 관측 체계와, 이상 행동이 감지되면 즉시 개별 에이전트를 멈출 수 있는 킬스위치가 최후의 안전장치가 되어줍니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정책 예제 — 권한과 킬스위치를 코드로 선언하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 멀티 에이전트 오케스트레이션에서 권한 범위와 킬스위치를 선언적으로 정의하는 YAML 정책 예시입니다. 실제 값과 키 이름은 사용 중인 도구에 맞게 조정해야 합니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># multi-agent-policy.yaml (개념 예시)
+agents:
+  - name: coding-agent
+    sandbox: container-a
+    permissions:
+      filesystem: ["/workspace/repo-a"]
+      process_control: none
+      network: restricted
+  - name: cleanup-agent
+    sandbox: container-b
+    permissions:
+      filesystem: ["/workspace/tmp"]
+      process_control: own-processes-only
+      network: none
+
+global:
+  cross_agent_process_kill: false
+  requires_human_approval:
+    - action: terminate_other_agent
+    - action: revoke_account_access
+  monitoring:
+    log_correlation: enabled
+    kill_switch: enabled
+    alert_on:
+      - unexpected_file_deletion
+      - permission_escalation_attempt</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">도입 시 꼭 챙겨야 할 것들</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 에이전트 간 메시지도 검증 대상</b> — 다른 에이전트가 보낸 지시나 요청을 무조건 신뢰하지 말고 검증해야 합니다<br>
+<b>2. 실험 사례를 과도하게 일반화하지 않기</b> — 극단적 사례가 어떤 권한 설계에서 발생했는지 원인을 분석해 자신의 시스템에 맞는 교훈으로 재구성해야 합니다<br>
+<b>3. 킬스위치는 평소에 훈련</b> — 실제로 작동하는지 정기적으로 점검하지 않으면 정작 필요할 때 못 씁니다<br>
+<b>4. 소유권 규칙은 문서화</b> — 어떤 에이전트가 어떤 자원을 다룰 수 있는지 명시적으로 남겨야 나중에 원인 추적이 쉽습니다
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 여러 목표를 가진 에이전트가 같은 환경을 공유하면, 개별 에이전트가 정상 동작해도 상호작용에서 예상치 못한 파괴적 결과가 나올 수 있습니다.<br>
+② 격리, 권한 최소화, 명시적 소유권 규칙으로 목표 충돌 자체를 줄이는 설계가 사후 대응보다 우선입니다.<br>
+③ 상관관계 모니터링과 검증된 킬스위치를 갖춰야 이상 상황이 생겼을 때 피해를 국소화할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 에이전트 간 통신 프로토콜을 안전하게 설계하는 방법을 더 자세히 다뤄보겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#AI에이전트 #멀티에이전트 #AI안전 #샌드박싱 #킬스위치</p>
+
+</body>
+</html>
