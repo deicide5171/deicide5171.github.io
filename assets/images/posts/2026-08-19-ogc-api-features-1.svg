@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="32" text-anchor="middle" font-size="19" font-weight="bold" fill="#1a1a1a">OGC API - Features 리소스 구조</text>
+  <text x="400" y="52" text-anchor="middle" font-size="12" fill="#666">모든 엔드포인트는 HTTP GET + JSON(GeoJSON)으로 접근한다</text>
+
+  <!-- Landing page root -->
+  <rect x="320" y="72" width="160" height="46" rx="6" fill="#0b5fa5" stroke="#083f6e" stroke-width="1.5"/>
+  <text x="400" y="92" text-anchor="middle" font-size="13" fill="#fff" font-weight="bold">GET /</text>
+  <text x="400" y="109" text-anchor="middle" font-size="10.5" fill="#dbeafe">Landing Page (서비스 진입점)</text>
+
+  <!-- connectors L0 -> L1 -->
+  <line x1="400" y1="118" x2="150" y2="176" stroke="#999" stroke-width="1.5"/>
+  <line x1="400" y1="118" x2="400" y2="176" stroke="#999" stroke-width="1.5"/>
+  <line x1="400" y1="118" x2="650" y2="176" stroke="#999" stroke-width="1.5"/>
+
+  <!-- Level 1 nodes -->
+  <rect x="70" y="176" width="160" height="46" rx="6" fill="#1877c9" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="150" y="196" text-anchor="middle" font-size="12" fill="#fff" font-weight="bold">GET /conformance</text>
+  <text x="150" y="212" text-anchor="middle" font-size="10" fill="#dbeafe">지원 표준 목록</text>
+
+  <rect x="320" y="176" width="160" height="46" rx="6" fill="#1877c9" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="400" y="196" text-anchor="middle" font-size="12" fill="#fff" font-weight="bold">GET /collections</text>
+  <text x="400" y="212" text-anchor="middle" font-size="10" fill="#dbeafe">제공 데이터셋 목록</text>
+
+  <rect x="570" y="176" width="160" height="46" rx="6" fill="#1877c9" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="650" y="196" text-anchor="middle" font-size="12" fill="#fff" font-weight="bold">GET /api</text>
+  <text x="650" y="212" text-anchor="middle" font-size="10" fill="#dbeafe">OpenAPI 정의서</text>
+
+  <!-- connectors collections -> collectionId -->
+  <line x1="400" y1="222" x2="400" y2="272" stroke="#999" stroke-width="1.5"/>
+
+  <rect x="300" y="272" width="200" height="46" rx="6" fill="#2fa84f" stroke="#1f7a38" stroke-width="1.5"/>
+  <text x="400" y="292" text-anchor="middle" font-size="12" fill="#fff" font-weight="bold">GET /collections/{collectionId}</text>
+  <text x="400" y="308" text-anchor="middle" font-size="10" fill="#eafff0">단일 컬렉션 메타데이터</text>
+
+  <!-- connectors collectionId -> items / item -->
+  <line x1="330" y1="318" x2="230" y2="368" stroke="#999" stroke-width="1.5"/>
+  <line x1="470" y1="318" x2="570" y2="368" stroke="#999" stroke-width="1.5"/>
+
+  <rect x="120" y="368" width="220" height="46" rx="6" fill="#c9821a" stroke="#8f5c10" stroke-width="1.5"/>
+  <text x="230" y="388" text-anchor="middle" font-size="12" fill="#fff" font-weight="bold">GET /collections/{id}/items</text>
+  <text x="230" y="404" text-anchor="middle" font-size="10" fill="#fff2df">GeoJSON FeatureCollection (bbox·limit 필터)</text>
+
+  <rect x="460" y="368" width="220" height="46" rx="6" fill="#c9821a" stroke="#8f5c10" stroke-width="1.5"/>
+  <text x="570" y="388" text-anchor="middle" font-size="12" fill="#fff" font-weight="bold">GET /collections/{id}/items/{fid}</text>
+  <text x="570" y="404" text-anchor="middle" font-size="10" fill="#fff2df">Feature 단건 (GeoJSON Feature)</text>
+
+  <text x="400" y="435" text-anchor="middle" font-size="11.5" fill="#555">모든 응답에는 links(self·next·alternate) 필드가 포함되어 다음 요청을 스스로 안내한다</text>
+</svg>
