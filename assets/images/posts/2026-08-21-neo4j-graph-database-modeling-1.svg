@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Segoe UI', 'Apple SD Gothic Neo', sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#222222">노드-관계-속성으로 이루어지는 그래프 모델</text>
+
+  <!-- relationship lines first (behind nodes) -->
+  <line x1="160" y1="120" x2="400" y2="120" stroke="#666666" stroke-width="1.5" marker-end="url(#arrowg)"/>
+  <line x1="400" y1="120" x2="640" y2="120" stroke="#666666" stroke-width="1.5" marker-end="url(#arrowg)"/>
+  <line x1="160" y1="145" x2="380" y2="300" stroke="#2f6fed" stroke-width="1.5" marker-end="url(#arrowb)"/>
+  <line x1="400" y1="150" x2="400" y2="290" stroke="#2f6fed" stroke-width="1.5" marker-end="url(#arrowb)"/>
+  <line x1="640" y1="145" x2="420" y2="300" stroke="#2f6fed" stroke-width="1.5" marker-end="url(#arrowb)"/>
+
+  <!-- relationship labels -->
+  <rect x="235" y="100" width="90" height="20" fill="#ffffff"/>
+  <text x="280" y="115" text-anchor="middle" font-size="11" fill="#444444">FRIEND_OF</text>
+  <rect x="475" y="100" width="90" height="20" fill="#ffffff"/>
+  <text x="520" y="115" text-anchor="middle" font-size="11" fill="#444444">FRIEND_OF</text>
+  <rect x="225" y="205" width="70" height="18" fill="#ffffff"/>
+  <text x="260" y="219" text-anchor="middle" font-size="10.5" fill="#1d4ed8">WORKS_AT</text>
+  <rect x="365" y="215" width="70" height="18" fill="#ffffff"/>
+  <text x="400" y="229" text-anchor="middle" font-size="10.5" fill="#1d4ed8">WORKS_AT</text>
+  <rect x="505" y="205" width="70" height="18" fill="#ffffff"/>
+  <text x="540" y="219" text-anchor="middle" font-size="10.5" fill="#1d4ed8">WORKS_AT</text>
+
+  <!-- Person nodes -->
+  <circle cx="150" cy="110" r="42" fill="#e8f5e9" stroke="#43a047" stroke-width="2"/>
+  <text x="150" y="105" text-anchor="middle" font-size="12" font-weight="bold" fill="#2e7d32">:Person</text>
+  <text x="150" y="120" text-anchor="middle" font-size="11" fill="#2e7d32">Alice</text>
+
+  <circle cx="400" cy="110" r="42" fill="#e8f5e9" stroke="#43a047" stroke-width="2"/>
+  <text x="400" y="105" text-anchor="middle" font-size="12" font-weight="bold" fill="#2e7d32">:Person</text>
+  <text x="400" y="120" text-anchor="middle" font-size="11" fill="#2e7d32">Bob</text>
+
+  <circle cx="650" cy="110" r="42" fill="#e8f5e9" stroke="#43a047" stroke-width="2"/>
+  <text x="650" y="105" text-anchor="middle" font-size="12" font-weight="bold" fill="#2e7d32">:Person</text>
+  <text x="650" y="120" text-anchor="middle" font-size="11" fill="#2e7d32">Carol</text>
+
+  <!-- Company node -->
+  <circle cx="400" cy="330" r="48" fill="#e3f2fd" stroke="#1976d2" stroke-width="2"/>
+  <text x="400" y="323" text-anchor="middle" font-size="12" font-weight="bold" fill="#0d47a1">:Company</text>
+  <text x="400" y="340" text-anchor="middle" font-size="11" fill="#0d47a1">Neo4j Inc</text>
+
+  <defs>
+    <marker id="arrowg" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#666666"/>
+    </marker>
+    <marker id="arrowb" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#2f6fed"/>
+    </marker>
+  </defs>
+
+  <rect x="30" y="385" width="740" height="55" rx="4" fill="#f9f9f9" stroke="#dddddd"/>
+  <text x="400" y="405" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#333333">노드(:Person, :Company)는 레이블과 속성을 가지고, 관계(FRIEND_OF, WORKS_AT)는 그 자체가 방향과 타입을 가진 1급 데이터다</text>
+  <text x="400" y="422" text-anchor="middle" font-size="11" fill="#666666">각 관계는 저장 시점에 양 끝 노드에 대한 포인터를 이미 들고 있어, 조회 시 별도의 조인 연산이 필요 없다</text>
+</svg>
