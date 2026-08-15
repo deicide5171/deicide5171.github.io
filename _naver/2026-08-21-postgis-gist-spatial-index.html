@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>PostGIS 공간 인덱스 파헤치기 — GiST로 빠른 반경 검색 구현하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">PostGIS 공간 인덱스 파헤치기 — GiST로 빠른 반경 검색 구현하기</div>
+<p style="font-size:14px; color:#999;">2026. 8. 21. · GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 위도·경도에 일반 인덱스를 걸어도 반경 검색이 빨라지지 않는 이유와, PostGIS의 <b>GiST 공간 인덱스</b>가 바운딩 박스 계층 구조(R-tree)로 후보를 빠르게 걸러내는 원리를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 B-tree 인덱스로는 반경 검색이 느릴까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"내 위치에서 반경 3km 이내 매장 찾기" 같은 쿼리를 처음 구현할 때, 위도(latitude)·경도(longitude) 컬럼에 일반 인덱스를 걸고 나면 얼추 될 것 같다는 착각이 들기 쉽습니다. 하지만 실제로 사각 범위 조건을 걸어보면 데이터가 조금만 늘어도 쿼리가 느려지는 경우가 많습니다. <b>B-tree 인덱스는 값 하나를 기준으로 줄을 세우는 데는 강하지만, 위도와 경도라는 두 축을 동시에 고려해야 하는 공간 관계 판정에는 근본적으로 맞지 않는 구조</b>이기 때문입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">더 근본적인 문제는 실제 반경 검색이 사각 범위 비교로 끝나지 않는다는 점입니다. 지구는 평면이 아니므로 정확한 거리 계산에는 구면 삼각법이나 타원체 모델이 들어가고, PostGIS에서는 이를 <b>ST_DWithin</b>, <b>ST_Distance</b> 같은 함수로 감싸 제공합니다. 이런 함수를 인덱스 없이 테이블 전체 행에 대해 매번 계산하면, 행 하나하나를 순차 스캔(Seq Scan)하면서 거리 함수를 실행하는 셈이라 데이터가 많아질수록 비용이 선형으로 늘어납니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 문제를 풀기 위해 PostGIS는 <b>geometry/geography 타입 컬럼에 GiST(Generalized Search Tree) 인덱스</b>를 사용합니다. B-tree가 값의 순서를 기준으로 트리를 구성하는 것과 달리, GiST 공간 인덱스는 도형을 감싸는 사각형(바운딩 박스)을 계층적으로 묶어, 계산량이 큰 정확한 거리 판정 전에 명백히 후보가 될 수 없는 행을 미리 걸러냅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — R-tree 기반 바운딩 박스 계층 구조</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">PostGIS의 공간 인덱스는 GiST라는 범용 인덱스 프레임워크 위에, 공간 데이터를 위한 R-tree류 연산자 클래스를 얹어 구현되어 있습니다. 핵심 아이디어는 각 도형(점, 선, 폴리곤)을 감싸는 최소 바운딩 사각형(MBR, Minimum Bounding Rectangle)을 계산한 뒤, 가까이 있는 MBR끼리 묶어 상위 노드의 더 큰 MBR로 감싸는 과정을 반복해 트리를 쌓는다는 점입니다. 리프 노드에는 실제 도형에 가까운 개별 MBR이, 루트에 가까운 상위 노드에는 그 아래 여러 MBR을 모두 포함하는 더 큰 MBR이 저장됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">검색할 때는 루트부터 시작해서, 쿼리 영역과 겹치지 않는 상위 MBR 전체를 한 번에 건너뜁니다. 겹치는 가지만 따라 내려가면서 후보를 좁히고, 최종적으로 리프 노드에서 실제 도형과의 정확한 관계(포함·교차·거리)를 계산합니다. 즉 GiST는 <b>정답을 정확히 찾아주는 인덱스가 아니라, 명백히 답이 아닌 영역을 빠르게 제외해주는 인덱스</b>에 가깝습니다. 아래 그림은 검색 반경과 겹치는 가지만 실제로 방문하고, 겹치지 않는 서브트리는 통째로 건너뛰는 과정을 나타낸 것입니다.</p>
+
+<p style="text-align:center;"><img src="https://deicide5171.github.io/assets/images/posts/2026-08-21-postgis-gist-spatial-index-1.svg" alt="GiST 공간 인덱스의 바운딩 박스 계층 구조와 트리 탐색 과정" style="width:100%;"></p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 공간 함수와 인덱스가 맞물리는 방식</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">PostGIS의 공간 연산자와 함수는 이 GiST 구조와 맞물리도록 설계되어 있습니다. <b>&&</b> 연산자(바운딩 박스 겹침)는 GiST 트리를 그대로 타면서 후보를 좁히는 데 쓰이고, ST_Intersects·ST_Contains·ST_DWithin 같은 함수는 내부적으로 이 연산자를 이용한 "인덱스 검색 + 정확한 재확인(recheck)" 2단계로 실행되도록 최적화되어 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">특히 반경 검색에 자주 쓰는 <b>ST_DWithin(geom1, geom2, distance)</b>는 겉보기엔 순수한 거리 계산 함수처럼 보이지만, 실제로는 실행 계획 단계에서 거리만큼 확장된 바운딩 박스로 GiST 인덱스를 먼저 탐색한 뒤, 남은 후보에 한해서만 정확한 거리 계산을 수행합니다. 그래서 ST_Distance(geom1, geom2) &lt; 3000 같은 식보다 ST_DWithin(geom1, geom2, 3000)을 쓰는 편이 인덱스를 확실히 태울 수 있어 권장됩니다. 전자는 옵티마이저 입장에서 인덱스를 활용하기 어려운 형태이기 때문입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">일반 B-tree와 GiST 공간 인덱스의 차이를 정리하면 아래 표와 같습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">B-tree</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">GiST(공간 인덱스)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">기본 구조</td>
+<td style="border:1px solid #ddd; padding:10px;">정렬된 값의 이진 트리</td>
+<td style="border:1px solid #ddd; padding:10px;">바운딩 박스 계층 트리(R-tree류)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">강한 연산</td>
+<td style="border:1px solid #ddd; padding:10px;">=, &lt;, &gt;, BETWEEN</td>
+<td style="border:1px solid #ddd; padding:10px;">&&, ST_Contains, ST_DWithin 등</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">다룰 수 있는 차원</td>
+<td style="border:1px solid #ddd; padding:10px;">사실상 1차원(정렬 가능한 값)</td>
+<td style="border:1px solid #ddd; padding:10px;">다차원 도형(점·선·폴리곤·바운딩 박스)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">판정 정확도</td>
+<td style="border:1px solid #ddd; padding:10px;">인덱스만으로 정확한 결과</td>
+<td style="border:1px solid #ddd; padding:10px;">후보 축소 후 recheck 필요</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">대표 대상 컬럼</td>
+<td style="border:1px solid #ddd; padding:10px;">id, 날짜, 문자열 등</td>
+<td style="border:1px solid #ddd; padding:10px;">geometry, geography</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — GiST 인덱스 생성과 실행 계획 확인</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 매장 위치 테이블에 GiST 공간 인덱스를 만들고, 반경 3km 조회가 실제로 인덱스를 타는지 EXPLAIN ANALYZE로 확인하는 예시입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">-- 매장 위치 테이블에 GiST 공간 인덱스 생성
+CREATE INDEX idx_stores_geom
+  ON stores
+  USING GIST (geom);
+
+-- 반경 3km 이내 매장 조회 (geography 캐스팅으로 미터 단위 사용)
+EXPLAIN ANALYZE
+SELECT id, name
+FROM stores
+WHERE ST_DWithin(
+  geom::geography,
+  ST_SetSRID(ST_MakePoint(127.0276, 37.4979), 4326)::geography,
+  3000
+);</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">EXPLAIN ANALYZE 결과에서 <b>Index Scan using idx_stores_geom</b> 또는 <b>Bitmap Index Scan</b>이 보이면 GiST 인덱스가 실제로 사용되고 있다는 뜻입니다. 반대로 <b>Seq Scan on stores</b>가 나온다면, 인덱스를 만들었더라도 옵티마이저가 이를 선택하지 않았다는 의미이므로 조건절 작성 방식이나 통계 정보를 다시 점검해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 필터 컬럼과 함께 복합 인덱스 전략을 짜야 합니다</b> — 반경 검색에 매장 상태(status = 'open')나 카테고리 같은 조건이 함께 붙는 경우가 많습니다. GiST 공간 인덱스 하나에만 의존하기보다, 자주 같이 쓰이는 일반 컬럼에 별도의 B-tree 인덱스를 두거나, 필요하다면 btree_gist 확장을 활용해 공간 조건과 일반 조건을 하나의 복합 GiST 인덱스로 묶는 방법도 검토할 만합니다.<br>
+<b>2. VACUUM과 통계 갱신을 소홀히 하면 안 됩니다</b> — 옵티마이저가 인덱스를 쓸지 순차 스캔을 쓸지는 테이블 통계에 크게 의존합니다. 대량 삽입·삭제가 잦은 테이블이라면 통계가 오래되어 있을 수 있으므로, 자동 VACUUM 설정을 점검하거나 필요 시 수동으로 VACUUM ANALYZE를 실행해 통계를 최신 상태로 유지하는 편이 안전합니다.<br>
+<b>3. geometry와 geography 선택도 성능에 영향을 줍니다</b> — geometry 타입은 평면 좌표 기준으로 빠르지만 정확한 거리 계산에는 좌표계 변환이 필요하고, geography는 구면 계산을 기본 제공하는 대신 일반적으로 더 무겁습니다. 데이터 규모와 정밀도 요구 수준에 맞춰 타입을 고르고, 그에 맞는 SRID를 명시적으로 지정해야 인덱스가 의도대로 동작합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 위도·경도에 B-tree 인덱스를 걸어도 반경 검색은 빨라지지 않습니다. B-tree는 다차원 공간 관계를 다루도록 설계되지 않았기 때문입니다.<br>
+② PostGIS의 GiST 공간 인덱스는 바운딩 박스를 계층적으로 묶은 R-tree류 구조로, 정확한 판정 전에 명백히 답이 아닌 후보를 빠르게 걸러줍니다.<br>
+③ ST_DWithin처럼 인덱스 친화적인 함수를 쓰고, EXPLAIN ANALYZE로 실제 인덱스 사용 여부를 확인하며, 통계 갱신과 복합 인덱스 전략을 함께 챙겨야 실무에서 효과를 봅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 GIS 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#PostGIS #GiST #공간인덱스 #PostgreSQL #SQL #GIS</p>
+
+</body>
+</html>
