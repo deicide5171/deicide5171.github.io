@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Web Worker로 메인 스레드 해방시키기 — 프론트엔드 성능의 마지막 퍼즐</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Web Worker로 메인 스레드 해방시키기 — 프론트엔드 성능의 마지막 퍼즐</div>
+<p style="font-size:14px; color:#999;">2026. 8. 22. · 프론트엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 무거운 연산 하나 때문에 스크롤과 클릭 응답이 멈춰버리는 메인 스레드 병목을, <b>Web Worker</b>로 별도 스레드에 위임해서 해소하는 방법과 통신 오버헤드 트레이드오프를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">메인 스레드가 막히면 왜 문제일까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">자바스크립트는 기본적으로 싱글 스레드에서 동작합니다. 화면을 그리는 렌더링, 클릭이나 스크롤 같은 입력 이벤트 처리, 그리고 우리가 작성한 로직 실행이 모두 같은 스레드 위에서 순서를 다투는 구조입니다. 문제는 이 중 하나가 오래 걸리면 나머지 전부가 멈춘다는 점입니다. 대용량 JSON을 파싱하거나 이미지를 픽셀 단위로 가공하는 작업을 동기적으로 돌리는 순간, 브라우저는 그 작업이 끝날 때까지 화면 갱신도 클릭 반응도 미룰 수밖에 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이런 병목은 <b>INP(Interaction to Next Paint)</b>라는 지표로 최근 더 뚜렷하게 드러나고 있습니다. INP는 사용자가 상호작용을 시작한 시점부터 다음 화면이 그려질 때까지의 지연을 측정하는데, 메인 스레드가 무거운 연산에 붙잡혀 있으면 이 값이 그대로 나빠집니다. <b>Web Worker</b>는 이 문제에 대한 브라우저 표준의 답으로, 메인 스레드와 별도로 동작하는 스레드를 하나 띄워 무거운 연산을 그쪽으로 넘기는 방식입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — Web Worker의 기본 동작 원리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Web Worker는 브라우저가 제공하는 <b>별도의 실행 스레드</b>입니다. 메인 스레드와 완전히 분리된 컨텍스트에서 자바스크립트 파일을 실행하기 때문에, 워커 안에서 아무리 무거운 연산을 돌려도 메인 스레드의 렌더링 루프나 이벤트 루프는 영향을 받지 않습니다. 다만 이 분리에는 대가가 따르는데, 워커는 <b>window 객체나 DOM에 직접 접근할 수 없습니다.</b> document.querySelector 같은 호출은 워커 안에서는 존재하지 않는 셈입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">대신 메인 스레드와 워커는 <b>postMessage</b>를 통해서만 데이터를 주고받습니다. 메인 스레드가 워커에게 작업 데이터를 보내면 워커는 그 데이터를 받아 연산을 수행하고, 결과를 다시 postMessage로 돌려보냅니다. 두 컨텍스트가 메모리를 공유하지 않기 때문에, 이 메시지는 참조가 아니라 값으로 전달된다는 점을 기억해둘 필요가 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 워커로 옮기기 좋은 연산 패턴</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">모든 무거운 작업이 워커로 옮길 가치가 있는 것은 아닙니다. 워커로 위임하기 적합한 대표적인 사례는 <b>대용량 텍스트·JSON 파싱, 이미지 리사이징이나 픽셀 단위 필터 처리, 정렬·검색 같은 CPU 집약적 연산, 암호화나 해시 계산</b>처럼 DOM과 무관하게 입력을 받아 출력을 계산하는 순수 연산들입니다. 이런 작업들은 공통적으로 &quot;입력 데이터를 받아 DOM 조작 없이 결과값만 계산한다&quot;는 특징을 가집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">반대로 DOM을 직접 조작해야 하거나 결과를 즉시 화면에 반영해야 하는 작업은 워커로 옮기기 어렵습니다. 실무에서는 무거운 계산 부분만 워커로 분리하고, 계산이 끝난 결과를 메인 스레드가 받아 DOM에 반영하는 식으로 역할을 나누는 패턴이 일반적입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 구조화 복제 비용과 Transferable Objects</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">postMessage로 데이터를 넘길 때 브라우저는 <b>구조화 복제 알고리즘(structured clone algorithm)</b>을 사용해 객체를 통째로 복제합니다. 이 복제는 참조 전달보다 안전하지만, 데이터 크기가 커질수록 복제 자체에 시간과 메모리가 듭니다. 특히 큰 배열이나 이미지 데이터를 매번 통째로 복제해서 주고받으면, 워커로 연산을 옮긴 이득이 통신 비용에 상쇄될 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이를 줄이기 위한 수단이 <b>Transferable Objects</b>입니다. ArrayBuffer처럼 전송 가능한 타입은 postMessage의 두 번째 인자로 명시하면 복제 없이 소유권 자체가 넘어갑니다. 데이터를 보낸 쪽에서는 그 시점부터 해당 버퍼에 접근할 수 없게 되지만, 대신 복제 비용이 사실상 사라집니다. 대용량 이진 데이터를 주고받는 경우라면 이 방식을 쓰는지 여부가 체감 성능을 크게 좌우합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 메인 스레드와 워커의 postMessage 통신</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 메인 스레드에서 워커를 생성해 무거운 연산을 위임하고 결과를 받는 기본 패턴입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">// main.js — 메인 스레드
+const worker = new Worker("worker.js");
+
+worker.postMessage({ type: "PROCESS", payload: largeArray });
+
+worker.onmessage = (event) =&gt; {
+  const { type, result } = event.data;
+  if (type === "DONE") {
+    // 결과를 받아 화면에 반영
+    renderResult(result);
+  }
+};
+
+worker.onerror = (err) =&gt; {
+  console.error("워커 에러:", err.message);
+};</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">// worker.js — 워커 스레드
+self.onmessage = (event) =&gt; {
+  const { type, payload } = event.data;
+  if (type === "PROCESS") {
+    // DOM 접근 없이 순수 연산만 수행
+    const result = payload.map((v) =&gt; heavyCompute(v));
+    self.postMessage({ type: "DONE", result });
+  }
+};
+
+function heavyCompute(value) {
+  let acc = value;
+  for (let i = 0; i &lt; 1e6; i++) acc = (acc * 31 + i) % 1_000_000_007;
+  return acc;
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 작은 작업에는 워커가 오히려 손해일 수 있습니다</b> — 워커 생성과 스크립트 로딩, 메시지 전달 자체에도 시간이 듭니다. 연산이 몇 밀리초 수준으로 가벼운 경우라면, 워커를 새로 띄우고 데이터를 주고받는 오버헤드가 연산 자체보다 커질 수 있습니다. 워커를 재사용하거나 워커 풀을 도입하는 것도 이 오버헤드를 줄이는 방법으로 고려할 만합니다<br>
+<b>2. 디버깅이 메인 스레드 코드보다 까다롭습니다</b> — 워커는 별도의 실행 컨텍스트이기 때문에 개발자 도구에서 스택 추적이나 브레이크포인트를 다루는 경험이 메인 스레드와 다르고, 콘솔 로그도 따로 확인해야 하는 경우가 많습니다. 워커 내부 에러가 조용히 묻히지 않도록 onerror 핸들러를 항상 등록해두는 습관이 필요합니다
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 자바스크립트는 싱글 스레드라 무거운 동기 연산이 렌더링과 입력 처리까지 막아버리며, 이는 INP 같은 지표로 체감됩니다.<br>
+② Web Worker는 별도 스레드에서 DOM 접근 없이 순수 연산을 수행하고 postMessage로 결과를 주고받는 방식으로 메인 스레드를 해방시킵니다.<br>
+③ 데이터가 크다면 구조화 복제 비용을 줄이기 위해 Transferable Objects를 고려하되, 작은 작업까지 워커로 옮기면 생성·통신 오버헤드가 오히려 손해가 될 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 프론트엔드 성능 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#프론트엔드 #WebWorker #성능최적화 #메인스레드 #자바스크립트 #INP #웹성능</p>
+
+</body>
+</html>

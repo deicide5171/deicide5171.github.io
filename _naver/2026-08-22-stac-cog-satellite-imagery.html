@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>STAC과 COG로 위성영상 다루기 — 클라우드 네이티브 지구관측 데이터</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">STAC과 COG로 위성영상 다루기 — 클라우드 네이티브 지구관측 데이터</div>
+<p style="font-size:14px; color:#999;">2026. 8. 22. · GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 위성영상 파일 전체를 내려받지 않고도 필요한 영역만 스트리밍해 쓸 수 있게 하는 <b>COG(Cloud Optimized GeoTIFF)</b> 포맷과, 방대한 영상 카탈로그를 검색 가능하게 만드는 <b>STAC(SpatioTemporal Asset Catalog)</b> 표준을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">위성영상, 왜 다루기가 까다로울까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">위성영상 한 장(scene)은 밴드 구성과 해상도에 따라 다르지만 수백 MB에서 수십 GB에 이르는 경우가 드물지 않습니다. 전통적인 GeoTIFF 워크플로우에서는 분석하려는 관심 영역이 전체 영상의 극히 일부라 해도, 파일 전체를 로컬로 내려받은 뒤에야 원하는 부분을 잘라 쓸 수 있었습니다. 클라우드 스토리지에 원본이 올라가 있는 지금도 이 문제는 형태만 바뀌었을 뿐 그대로 남아 있습니다. 다운로드 대역폭과 로컬 디스크 용량이 분석 파이프라인의 병목이 되는 일이 흔합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">여기에 더해 두 번째 문제가 있습니다. 원하는 시기와 영역, 구름 비율 조건을 만족하는 영상을 대규모 아카이브에서 찾아내는 일 자체가 쉽지 않다는 점입니다. 위성 데이터 제공자마다 메타데이터 형식과 검색 인터페이스가 제각각이라, 여러 소스를 넘나들며 분석을 하려면 그때마다 새로운 API 문서를 익히고 별도의 파서를 작성해야 했습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 글에서는 이 두 문제를 각각 해결하는 두 표준을 정리해보겠습니다. 파일 내부 구조를 바꿔 부분 읽기를 가능하게 하는 <b>COG</b>와, 카탈로그 메타데이터를 표준화해 검색을 가능하게 하는 <b>STAC</b>입니다. 두 표준은 서로 다른 계층을 다루지만, 실무에서는 거의 항상 짝을 이뤄 쓰입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — COG의 내부 구조: 타일링과 오버뷰</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">일반 GeoTIFF는 픽셀 데이터를 스트립(strip) 단위로 순차 저장하는 경우가 많아, 이미지의 특정 영역만 읽으려 해도 관련 없는 데이터를 함께 읽어야 하는 경우가 생깁니다. COG는 같은 GeoTIFF 컨테이너를 쓰면서도 내부 배치를 재구성합니다. 픽셀을 정사각형 타일 단위로 나눠 저장하고, 각 타일의 파일 내 오프셋과 길이를 헤더에 기록해두어, 특정 지리 좌표 영역에 해당하는 타일만 골라 읽을 수 있게 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">여기에 더해 COG는 원본 해상도 이미지 위에 여러 단계로 축소한 <b>오버뷰(overview)</b> 이미지를 함께 저장합니다. 전체 영역을 낮은 줌 레벨에서 훑어봐야 할 때는 원본 해상도 타일 대신 미리 계산된 저해상도 오버뷰를 읽으면 되므로, 지도 타일 서비스처럼 줌 레벨을 오가는 워크로드에서 불필요한 대용량 원본 읽기를 피할 수 있습니다. 이 타일-오버뷰 구조가 있어야, 클라이언트가 파일 헤더만 먼저 읽어 원하는 타일의 위치를 파악한 뒤 HTTP <b>Range</b> 요청으로 그 부분만 내려받는 것이 가능해집니다. 즉 COG 자체는 압축이나 좌표계를 새로 정의하는 포맷이 아니라, 기존 GeoTIFF를 부분 읽기 친화적으로 재배열한 규약에 가깝습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — STAC의 카탈로그·컬렉션·아이템 구조</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">STAC은 위성·항공 영상 등 시공간 데이터를 검색 가능하게 만들기 위한 메타데이터 명세입니다. 계층은 세 단계로 나뉩니다. 최상위의 <b>Catalog</b>는 하위 Collection이나 Item, 또는 다른 Catalog를 가리키는 링크 모음으로, 카탈로그 전체의 진입점 역할만 합니다. 그 아래 <b>Collection</b>은 공통 속성(제공 기관, 라이선스, 밴드 구성, 커버리지 범위 등)을 공유하는 데이터셋 단위를 묶습니다. 예를 들어 "Sentinel-2 Level-2A"가 하나의 Collection이 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 하위의 <b>Item</b>은 실제 촬영 1건에 대응하는 STAC의 핵심 단위로, GeoJSON Feature를 확장한 형태입니다. 촬영 지오메트리와 bbox, 촬영 시각(datetime), 구름 비율 같은 부가 속성을 properties에 담고, 실제 데이터 파일(주로 COG)이나 썸네일, 메타데이터 문서로의 링크를 assets에 담습니다. 이 구조 덕분에 STAC API 서버는 지리적 범위와 시간 범위, 속성 조건을 조합한 질의를 표준화된 방식으로 처리할 수 있고, 클라이언트는 검색 결과로 받은 Item의 asset 링크를 그대로 COG 부분 읽기에 넘길 수 있습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">계층</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">역할</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">예시</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Catalog</td>
+<td style="border:1px solid #ddd; padding:10px;">전체 카탈로그의 진입점(링크 모음)</td>
+<td style="border:1px solid #ddd; padding:10px;">전체 데이터 제공자 카탈로그</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Collection</td>
+<td style="border:1px solid #ddd; padding:10px;">공통 속성을 공유하는 데이터셋 단위</td>
+<td style="border:1px solid #ddd; padding:10px;">Sentinel-2 Level-2A</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Item</td>
+<td style="border:1px solid #ddd; padding:10px;">촬영 1건(GeoJSON Feature 확장)</td>
+<td style="border:1px solid #ddd; padding:10px;">특정 일자·타일의 촬영본</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 두 표준이 함께 쓰이는 이유</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">COG와 STAC은 서로 다른 문제를 풀지만 조합했을 때 시너지가 납니다. STAC은 "어떤 영상이 존재하고, 어디에 있으며, 언제 촬영됐는지"를 알려주는 역할을, COG는 "그 영상에서 실제로 필요한 부분만 어떻게 효율적으로 읽어올지"를 담당합니다. STAC Item의 assets 필드가 COG 파일의 URL을 직접 가리키는 구조가 관행으로 자리 잡으면서, 검색부터 데이터 접근까지 이어지는 파이프라인 전체를 다운로드 없이 클라우드 상에서 완결할 수 있게 됐습니다. 이런 흐름을 흔히 "클라우드 네이티브 지구관측(cloud-native geospatial)"이라 부릅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">두 표준 모두 특정 벤더에 종속되지 않는 개방형 명세라는 점도 확산에 크게 기여했습니다. AWS의 Sentinel-2, Landsat 오픈 데이터 버킷을 비롯해 Microsoft Planetary Computer, Element 84의 Earth Search 등 다수의 공개 STAC API가 COG 자산을 제공하고 있어, 동일한 클라이언트 코드로 여러 제공자의 데이터를 오갈 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-22-stac-cog-satellite-imagery-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — STAC 검색 요청과 COG 부분 읽기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 STAC API에 영역과 시간 범위, 구름 비율 조건을 걸어 검색하는 요청 예시입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">curl -X POST &quot;https://earth-search.aws.element84.com/v1/search&quot; \
+  -H &quot;Content-Type: application/json&quot; \
+  -d '{
+    &quot;collections&quot;: [&quot;sentinel-2-l2a&quot;],
+    &quot;bbox&quot;: [126.8, 37.4, 127.2, 37.7],
+    &quot;datetime&quot;: &quot;2026-06-01T00:00:00Z/2026-06-30T23:59:59Z&quot;,
+    &quot;query&quot;: { &quot;eo:cloud_cover&quot;: { &quot;lt&quot;: 20 } },
+    &quot;limit&quot;: 10
+  }'</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">검색 결과로 받은 STAC Item의 asset URL(COG)에서 관심 영역만 부분적으로 읽을 때는 rasterio(GDAL 기반)를 흔히 씁니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">import rasterio
+from rasterio.windows import from_bounds
+
+cog_url = &quot;https://.../S2A_..._B04.tif&quot;  # STAC Item의 assets에서 얻은 COG URL
+
+with rasterio.open(cog_url) as src:
+    # 관심 영역의 좌표(minx, miny, maxx, maxy)에 해당하는 창(window)만 계산
+    window = from_bounds(126.9, 37.5, 127.0, 37.6, transform=src.transform)
+    # 이 창에 해당하는 타일만 HTTP Range Request로 읽어온다
+    data = src.read(1, window=window)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">파일을 열 때부터 rasterio.open이 GDAL의 /vsicurl/ 계열 드라이버를 통해 원격 파일을 열고, window 인자로 필요한 영역만 지정하면 GDAL이 내부적으로 필요한 타일에 해당하는 바이트 범위만 HTTP Range 요청으로 가져옵니다. 전체 파일을 로컬에 내려받는 과정은 일어나지 않습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 오버뷰 레벨 생성 시 고려하세요</b> — COG를 생성할 때(gdal_translate, rio cogeo 등) 오버뷰를 몇 단계까지 만들지, 리샘플링 방법(최근접, 평균, bilinear 등)을 무엇으로 할지 정해야 합니다. 오버뷰 단계가 부족하면 축소 보기 시에도 원본 해상도 타일을 읽어야 해 이점이 줄고, 반대로 과도하게 많이 만들면 파일 크기와 생성 시간이 늘어납니다. 데이터 성격(연속값 래스터인지, 범주형 분류 결과인지)에 따라 적절한 리샘플링 방법이 달라지므로, 값의 의미가 왜곡되지 않는 방식을 선택해야 합니다.<br>
+<b>2. STAC 카탈로그 호스팅 옵션을 검토하세요</b> — 자체 STAC API 서버를 구축하려면 pgSTAC(PostgreSQL 기반)이나 stac-fastapi 같은 오픈소스 구현체를 활용할 수 있고, 별도 서버 없이 정적 JSON 파일만으로 카탈로그를 구성하는 정적 STAC(static STAC) 방식도 소규모 데이터셋에는 충분할 수 있습니다. 검색 질의량과 카탈로그 규모, 갱신 빈도를 함께 고려해 선택하는 편이 합리적입니다.<br>
+<b>3. 인증과 접근 제어를 별도로 설계하세요</b> — 공개 데이터가 아닌 자체 위성영상을 STAC/COG로 서비스한다면, asset URL에 대한 서명된 URL 발급이나 별도 인증 계층을 함께 설계해야 합니다. STAC 명세 자체는 인증 방식을 규정하지 않으므로 이 부분은 구현 시 별도로 챙겨야 하는 영역입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① COG는 GeoTIFF를 타일 단위로 재배열하고 오버뷰를 함께 저장해, HTTP Range Request로 필요한 영역만 부분적으로 읽을 수 있게 합니다.<br>
+② STAC은 Catalog-Collection-Item 계층으로 위성영상 메타데이터를 표준화해, 지리적·시간적 조건으로 원하는 영상을 검색 가능하게 만듭니다.<br>
+③ 두 표준은 STAC Item의 asset이 COG 파일을 직접 가리키는 방식으로 결합돼, 검색부터 데이터 접근까지 다운로드 없이 클라우드 상에서 처리하는 워크플로우를 가능하게 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 GIS 인프라 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#STAC #COG #위성영상 #클라우드네이티브 #원격탐사 #GIS</p>
+
+</body>
+</html>

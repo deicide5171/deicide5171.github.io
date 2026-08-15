@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>io_uring으로 리눅스 I/O 성능 한계 넘기 — epoll 다음 이야기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">io_uring으로 리눅스 I/O 성능 한계 넘기 — epoll 다음 이야기</div>
+<p style="font-size:14px; color:#999;">2026. 8. 22. · 인프라</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — epoll도 결국 read/write <b>시스템 콜 자체의 오버헤드</b>는 줄이지 못했는데, <b>io_uring</b>은 공유 링 버퍼로 커널과 통신해 이 벽을 넘습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">epoll로도 부족한 지점이 있습니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">epoll은 select/poll이 가진 "감시 대상이 늘어날수록 매번 전체 목록을 커널에 넘겨야 하는" 문제를 해결하면서, 오랫동안 리눅스에서 대규모 동시 연결을 다루는 표준 방식으로 자리 잡았습니다. 커널이 이벤트 발생 여부를 미리 추적해두고 준비된 파일 디스크립터만 골라 돌려주기 때문에, 감시 대상 수에 비례해 매 호출 비용이 커지는 문제는 확실히 줄어듭니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">그런데 epoll이 최적화하는 지점은 어디까지나 <b>"무엇이 준비됐는지 통지받는"</b> 단계입니다. 실제로 데이터를 읽고 쓰는 read/write 시스템 콜 자체는 여전히 이벤트 하나마다 별도로 호출해야 하고, 각 호출은 사용자 공간과 커널 공간을 오가는 컨텍스트 스위치 비용을 수반합니다. 초당 수만~수십만 건의 I/O를 처리하는 서버라면, 이 시스템 콜 자체의 누적 오버헤드가 무시할 수 없는 비중을 차지하게 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">io_uring은 이 문제를 다른 각도에서 접근합니다. 이벤트 통지 방식을 개선하는 대신, 애초에 시스템 콜 자체를 줄이거나 아예 없애는 쪽으로 설계됐습니다. 사용자 공간과 커널이 메모리를 공유하는 링 버퍼를 통해 요청과 결과를 주고받는 것이 핵심 아이디어입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — SQ/CQ, 커널과 공유하는 링 버퍼</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">io_uring의 핵심은 <b>io_uring_setup</b> 시스템 콜로 커널에 두 개의 링 버퍼를 만들고, 이를 mmap으로 사용자 공간에 매핑해 커널과 애플리케이션이 동일한 메모리를 직접 들여다보게 만드는 것입니다. 하나는 <b>제출 큐(Submission Queue, SQ)</b>로, 애플리케이션이 수행하고 싶은 I/O 요청(io_uring_sqe 구조체)을 채워 넣는 공간입니다. 다른 하나는 <b>완료 큐(Completion Queue, CQ)</b>로, 커널이 처리를 끝낸 요청의 결과(io_uring_cqe 구조체)를 채워 넣는 공간입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">두 큐 모두 링 버퍼이므로 헤드(head)와 테일(tail) 포인터로 위치를 관리합니다. 애플리케이션은 SQ의 테일을 옮겨 새 요청을 넣고, 커널은 SQ의 헤드를 옮겨 요청을 가져가 처리합니다. 반대로 커널은 CQ의 테일을 옮겨 완료 결과를 넣고, 애플리케이션은 CQ의 헤드를 옮겨 결과를 소비합니다. 이 포인터들 자체도 공유 메모리에 있기 때문에, <b>"무엇을 요청했고 무엇이 끝났는지"를 확인하는 데 시스템 콜이 필요 없습니다.</b></p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 배치 제출로 시스템 콜 횟수를 줄입니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">io_uring 이전 모델에서는 I/O 요청 하나마다 시스템 콜 하나가 대응됩니다. 반면 io_uring에서는 여러 개의 SQE를 SQ에 미리 채워둔 뒤, <b>io_uring_enter</b> 시스템 콜을 단 한 번만 호출해 지금까지 쌓아둔 요청을 한꺼번에 커널에 알리는 방식을 취할 수 있습니다. 즉 N개의 I/O 요청을 처리하는 데 필요한 시스템 콜 수가 N번이 아니라 1번(또는 그보다 적은 횟수)으로 줄어드는 구조입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">여기서 한 걸음 더 나아가면, <b>IORING_SETUP_SQPOLL</b> 옵션으로 커널 스레드가 SQ를 주기적으로 폴링하도록 설정할 수도 있습니다. 이 모드에서는 애플리케이션이 SQE를 채워 넣기만 하면 커널 스레드가 알아서 가져가 처리하므로, 이상적인 조건에서는 io_uring_enter 호출조차 매번 필요하지 않게 됩니다. 다만 이 방식은 커널 스레드가 지속적으로 CPU를 점유하게 되므로, CPU 자원과 지연시간 사이의 트레이드오프를 감안해 선택해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-22-linux-io-uring-performance-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — epoll과 io_uring, 구조로 비교하면</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">두 모델의 차이는 <b>"무엇을 커널과 협상하는가"</b>에서 갈립니다. epoll은 준비 상태(readiness)를 통지하는 데는 효율적이지만, 실제 데이터 전송은 여전히 개별 시스템 콜에 의존합니다. io_uring은 요청 제출과 완료 통지 모두를 공유 메모리 큐로 옮겨, 통지와 실행을 하나의 파이프라인 안에서 처리합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">epoll</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">io_uring</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">통지 방식</td>
+<td style="border:1px solid #ddd; padding:10px;">준비된 fd 목록을 시스템 콜로 반환</td>
+<td style="border:1px solid #ddd; padding:10px;">완료 결과를 공유 CQ에 적재</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">I/O 실행</td>
+<td style="border:1px solid #ddd; padding:10px;">이벤트마다 별도의 read/write 호출 필요</td>
+<td style="border:1px solid #ddd; padding:10px;">SQE 제출 후 커널이 비동기로 처리</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">시스템 콜 빈도</td>
+<td style="border:1px solid #ddd; padding:10px;">이벤트 수에 비례</td>
+<td style="border:1px solid #ddd; padding:10px;">배치 제출로 감소, SQPOLL로 추가 절감 가능</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">커널 요구 버전</td>
+<td style="border:1px solid #ddd; padding:10px;">오래전부터 안정적으로 지원</td>
+<td style="border:1px solid #ddd; padding:10px;">5.1 이상, 기능별로 더 최신 버전 필요</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — liburing으로 파일 읽기(C)</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 liburing을 사용해 파일 하나를 읽는 가장 기본적인 흐름을 정리한 예시입니다. 실제 프로덕션 코드에서는 오류 처리와 버퍼 관리가 훨씬 정교해야 하지만, SQ에 요청을 채우고 CQ에서 결과를 꺼내는 핵심 흐름은 이 구조를 벗어나지 않습니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">#include &lt;liburing.h&gt;
+#include &lt;fcntl.h&gt;
+#include &lt;stdio.h&gt;
+
+int main(void) {
+    struct io_uring ring;
+    struct io_uring_sqe *sqe;
+    struct io_uring_cqe *cqe;
+    struct iovec iov;
+    char buf[4096];
+
+    // 1) 링 초기화: SQ/CQ 각각 8개 엔트리 크기로 설정
+    io_uring_queue_init(8, &amp;ring, 0);
+
+    int fd = open("example.txt", O_RDONLY);
+    iov.iov_base = buf;
+    iov.iov_len = sizeof(buf);
+
+    // 2) SQ에 read 요청을 채워 넣는다 (시스템 콜 없이 메모리에만 기록)
+    sqe = io_uring_get_sqe(&amp;ring);
+    io_uring_prep_readv(sqe, fd, &amp;iov, 1, 0);
+
+    // 3) 지금까지 쌓인 SQE를 커널에 알린다 (여기서만 시스템 콜 발생)
+    io_uring_submit(&amp;ring);
+
+    // 4) 완료를 기다렸다가 CQ에서 결과를 꺼낸다
+    io_uring_wait_cqe(&amp;ring, &amp;cqe);
+    if (cqe-&gt;res &lt; 0) {
+        fprintf(stderr, "read 실패: %d\n", cqe-&gt;res);
+    } else {
+        printf("읽은 바이트 수: %d\n", cqe-&gt;res);
+    }
+
+    // 5) 처리 완료를 커널에 알려 CQE 슬롯을 회수시킨다
+    io_uring_cqe_seen(&amp;ring, cqe);
+
+    io_uring_queue_exit(&amp;ring);
+    close(fd);
+    return 0;
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">요청 하나만 다룬 예시지만, 실제로는 여러 개의 SQE를 연속으로 채운 뒤 io_uring_submit을 한 번만 호출하고, CQ를 순회하며 여러 결과를 한꺼번에 처리하는 배치 패턴으로 확장하는 것이 io_uring의 이점을 살리는 일반적인 사용법입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 커널 버전 호환성을 먼저 확인하세요</b> — io_uring은 리눅스 5.1에서 처음 도입됐지만, 초기 버전은 기능이 제한적이고 보안 이슈도 몇 차례 보고된 바 있습니다. IORING_SETUP_SQPOLL이나 파일 등록(io_uring_register) 같은 세부 기능은 도입 시점이 서로 다르므로, 대상 배포판의 커널 버전과 필요한 기능이 실제로 포함돼 있는지 사전에 확인해야 합니다.<br>
+<b>2. 컨테이너·클라우드 환경의 제약을 점검하세요</b> — 일부 관리형 컨테이너 런타임이나 클라우드 환경은 보안 정책상 io_uring 관련 시스템 콜을 seccomp 프로파일에서 차단하거나 제한적으로만 허용하는 경우가 있습니다. 배포 대상 환경에서 실제로 io_uring이 허용되는지 사전에 검증하는 절차가 필요합니다.<br>
+<b>3. 아직 io_uring을 채택하지 않은 런타임이 많다는 점을 감안하세요</b> — Node.js, 대부분의 JVM 기반 런타임, 여러 언어의 표준 네트워킹 라이브러리는 여전히 epoll 기반 이벤트 루프를 기본으로 사용합니다. 지원이 추가된 경우라도 실험적 단계이거나 일부 기능만 지원할 수 있으니, 도입 전 해당 생태계의 지원 범위를 확인하는 편이 안전합니다.<br>
+<b>4. 동기 폴백 경로를 함께 준비하세요</b> — io_uring이 비활성화된 환경에서도 서비스가 동작해야 한다면, epoll 기반 경로를 완전히 걷어내기보다는 두 구현을 함께 유지하며 런타임에 감지해 전환하는 구조를 고려할 만합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① epoll은 이벤트 통지는 효율화했지만 read/write 시스템 콜 자체의 호출 횟수와 오버헤드는 줄이지 못합니다.<br>
+② io_uring은 SQ/CQ라는 공유 링 버퍼로 요청 제출과 완료 통지를 커널과 직접 주고받아, 시스템 콜 횟수 자체를 배치 단위로 줄입니다.<br>
+③ 커널 버전 호환성과 런타임·라이브러리의 지원 성숙도를 먼저 점검한 뒤, epoll 경로와 병행하며 도입하는 편이 안전합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 인프라 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#io_uring #리눅스 #epoll #시스템콜 #성능최적화 #서버개발</p>
+
+</body>
+</html>

@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>AI 코딩 에이전트는 어떻게 코드베이스를 이해할까 — 컨텍스트 수집과 툴 콜 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">AI 코딩 에이전트는 어떻게 코드베이스를 이해할까 — 컨텍스트 수집과 툴 콜 설계</div>
+<p style="font-size:14px; color:#999;">2026. 8. 22. · AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — AI 코딩 에이전트는 코드베이스 전체를 한 번에 읽는 것이 아니라, <b>파일 탐색·검색 도구</b>를 반복 호출하며 필요한 코드만 그때그때 컨텍스트에 채워 넣습니다. 이 글에서는 그 점진적 컨텍스트 수집 원리를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">코드베이스 전체를 다 넣을 수 없는데 어떻게 이해할까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">수십만 줄 규모의 저장소를 다루는 AI 코딩 에이전트를 처음 접하면, 마치 코드베이스 전체를 한 번에 읽고 이해한 뒤 답하는 것처럼 보입니다. 하지만 실제로는 어떤 LLM도 그 정도 분량의 코드를 컨텍스트 윈도우에 통째로 넣을 수 없습니다. 컨텍스트 윈도우는 물리적으로 유한하고, 설령 여유가 있더라도 관련 없는 코드까지 잔뜩 채워 넣으면 모델이 정작 중요한 부분에 집중하지 못하는 부작용이 생깁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">그렇다면 에이전트가 <b>"코드베이스를 이해하는 것처럼"</b> 동작하는 비결은 무엇일까요. 답은 사전에 전체를 이해해두는 것이 아니라, 매 요청마다 필요한 만큼만 그때그때 찾아서 컨텍스트에 채워 넣는 데 있습니다. 파일 이름 패턴으로 후보를 좁히는 도구, 텍스트나 심볼로 내용을 검색하는 도구, 특정 파일을 실제로 열어 읽는 도구를 에이전트가 반복적으로 호출하면서, 질문에 답하는 데 꼭 필요한 최소한의 코드 조각만 컨텍스트에 누적시키는 방식입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 글에서는 이런 점진적 컨텍스트 수집이 실제로 어떻게 설계되는지, 그리고 도구 호출이 늘어날수록 커지는 컨텍스트 예산 문제를 에이전트 아키텍처가 어떻게 다루는지 정리해보겠습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 탐색·검색 도구로 컨텍스트를 점진적으로 좁힙니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">코딩 에이전트에 장착되는 도구는 보통 계층을 이룹니다. 가장 바깥쪽에는 디렉터리 구조나 파일명 패턴으로 후보를 추리는 탐색 도구(glob 패턴 매칭)가 있고, 그 안쪽에는 파일 내용에서 특정 문자열이나 정규식, 심볼 정의를 찾는 검색 도구(grep 계열, 코드 인덱스 기반 심볼 검색)가 있으며, 가장 안쪽에는 특정 파일의 특정 범위를 실제로 읽어 컨텍스트에 올리는 파일 읽기 도구가 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">에이전트는 이 세 층을 한 번에 다 쓰지 않고, 질문의 성격에 따라 순서를 바꿔가며 반복 호출합니다. 예를 들어 "인증 로직에 버그가 있다"는 요청이 들어오면, 먼저 키워드로 파일명을 훑거나 관련 함수명으로 전체 저장소를 검색한 뒤, 그 결과로 좁혀진 소수의 파일만 실제로 읽어 들입니다. 이 과정에서 매 단계의 결과가 다음 단계의 입력을 결정하므로, 에이전트의 동작은 사전에 정해진 파이프라인이 아니라 <b>관찰 → 계획 → 도구 호출</b>이라는 루프를 필요한 만큼 반복하는 형태를 띱니다. 코드베이스가 아무리 크더라도 실제로 컨텍스트에 올라가는 것은 이렇게 좁혀진 일부 파일뿐입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 도구 결과를 요약·압축해 컨텍스트 예산을 관리합니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">검색 도구 하나만 해도 결과가 수백 줄에 달할 수 있습니다. 특정 함수 호출을 검색했더니 저장소 전체에서 수백 군데가 걸리는 경우, 이 결과를 그대로 컨텍스트에 다 넣으면 정작 중요한 파일을 읽을 여유가 남지 않습니다. 그래서 실무에서 쓰이는 에이전트 설계는 대부분 도구 결과에 상한을 두거나(매칭 개수 제한, 파일당 표시 줄 수 제한), 결과가 많을 때는 파일 경로 목록만 우선 보여주고 실제 내용은 필요한 파일에 한해서만 다시 읽어오도록 유도하는 방식을 씁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">대화가 길어지고 도구 호출이 누적되면 컨텍스트 자체가 예산을 초과하는 문제도 생깁니다. 이를 다루는 흔한 전략은 오래된 도구 호출 결과나 지나간 대화 턴을 요약본으로 대체해 컨텍스트에서 차지하는 분량을 줄이는 것입니다. 다만 요약 과정에서 세부 정보가 손실될 위험은 항상 있으므로, 결정적으로 중요한 코드 조각(실제로 수정할 함수의 원문 등)은 요약하지 않고 그대로 남겨두는 예외 처리가 함께 쓰이는 경우가 많습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">전략</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">주의점</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">결과 상한</td>
+<td style="border:1px solid #ddd; padding:10px;">매칭 개수·표시 줄 수 제한</td>
+<td style="border:1px solid #ddd; padding:10px;">중요한 매칭이 잘릴 수 있음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">요약·압축</td>
+<td style="border:1px solid #ddd; padding:10px;">오래된 결과를 요약본으로 대체</td>
+<td style="border:1px solid #ddd; padding:10px;">세부 정보 손실 위험</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">서브에이전트 위임</td>
+<td style="border:1px solid #ddd; padding:10px;">탐색을 별도로 맡기고 결론만 회수</td>
+<td style="border:1px solid #ddd; padding:10px;">세부 근거가 메인에 남지 않음</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 서브에이전트로 작업을 위임해 메인 컨텍스트를 보호합니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">또 다른 접근은 탐색 작업 자체를 별도의 서브에이전트에 위임하는 것입니다. "이 저장소에서 설정 파일을 읽어오는 코드를 전부 찾아라" 같은 탐색성 작업은 그 과정에서 수십 개의 파일을 열어보고 실패한 시도도 여러 번 거치기 마련인데, 이 모든 중간 과정을 메인 에이전트의 컨텍스트에 그대로 쌓으면 정작 최종 판단에 필요한 여유가 줄어듭니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이럴 때 서브에이전트에게 "해당 작업을 수행하고 결론만 보고하라"는 형태로 위임하면, 메인 에이전트는 서브에이전트가 어떤 파일을 몇 번 열어봤는지는 신경 쓰지 않고 최종 요약 결과만 받아 컨텍스트에 반영할 수 있습니다. 이 패턴은 병렬로 여러 방향을 동시에 탐색할 때 특히 유용하며, 메인 컨텍스트를 탐색 과정의 잡음으로부터 분리해 보호하는 역할을 합니다. 다만 위임 범위와 보고 형식을 얼마나 구체적으로 지정하느냐가 결과 품질을 크게 좌우합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-22-ai-coding-agent-context-design-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 도구 호출 루프 의사코드(Python)</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 코딩 에이전트가 하나의 사용자 요청을 처리할 때 도구 호출 루프가 어떻게 진행되는지를 단순화한 의사코드입니다. 결과가 크면 요약해 컨텍스트 예산을 관리하는 부분에 주목해 보시면 좋습니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">context = [system_prompt, user_request]
+budget = MAX_CONTEXT_TOKENS
+
+while not task_done and tokens(context) &lt; budget:
+    # 1) 관찰: 지금까지의 컨텍스트를 바탕으로 다음 행동 계획
+    action = llm.plan_next_action(context)
+
+    if action.type == &quot;glob&quot;:
+        result = tool.glob(action.pattern)          # 파일명 패턴으로 후보 좁히기
+    elif action.type == &quot;grep&quot;:
+        result = tool.grep(action.query, max_matches=50)  # 내용 검색, 결과 상한
+    elif action.type == &quot;read_file&quot;:
+        result = tool.read(action.path, line_range=action.range)
+    elif action.type == &quot;spawn_subagent&quot;:
+        # 탐색성 작업을 위임하고 요약 결과만 회수
+        result = subagent.run(action.instruction).summary
+    elif action.type == &quot;answer&quot;:
+        task_done = True
+        result = action.text
+
+    # 2) 결과가 크면 요약해 컨텍스트 예산을 관리
+    if tokens(result) &gt; RESULT_SUMMARY_THRESHOLD:
+        result = llm.summarize(result, keep=&quot;핵심 발견만&quot;)
+
+    context.append(result)
+
+final_answer = context[-1]</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실제 구현에서는 각 도구 호출마다 결과 크기 상한, 재시도 횟수, 타임아웃이 함께 걸려 있고, 계획 단계에서 "이미 충분한 정보를 모았는가"를 판단해 루프를 조기에 끝내는 로직이 추가되는 것이 일반적입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 과도한 도구 호출로 인한 지연시간을 경계하세요</b> — 탐색 루프를 반복할수록 사용자가 체감하는 응답 지연은 늘어납니다. 검색 범위를 넉넉하게 잡아 안전하게 가려다 보면 불필요한 파일까지 열어보게 되므로, 검색 패턴을 최대한 구체적으로 좁히거나 초기 몇 번의 도구 호출로 답이 안 나오면 조기에 종료하는 조건을 두는 편이 체감 속도에 유리합니다.<br>
+<b>2. 컨텍스트 오염을 방지하세요</b> — 이전 시도에서 실패했거나 관련 없다고 판명된 검색 결과가 컨텍스트에 그대로 남아 있으면, 이후 추론이 그 잘못된 정보에 이끌려 엉뚱한 결론으로 흐를 위험이 있습니다. 실패한 경로나 더 이상 유효하지 않은 중간 결과는 명시적으로 제거하거나 "이 경로는 아니었다"로 압축해두는 관리가 필요합니다.<br>
+<b>3. 도구 결과의 신뢰 경계를 구분하세요</b> — grep이나 파일 읽기 결과는 신뢰할 수 있는 실제 코드지만, 서브에이전트의 요약이나 압축된 과거 대화는 손실이 있는 2차 가공물입니다. 결정적인 판단(실제 코드 수정 등)을 내리기 전에는 압축된 요약만 믿지 않고 원본 파일을 다시 확인하는 단계를 거치는 편이 안전합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 대규모 코드베이스는 컨텍스트 윈도우에 통째로 들어가지 않으므로, 에이전트는 사전 이해가 아니라 탐색·검색·읽기 도구를 반복 호출하며 필요한 만큼만 컨텍스트를 채웁니다.<br>
+② 도구 호출 결과가 누적되며 컨텍스트 예산을 압박하므로, 결과 상한과 요약·압축 전략으로 중요한 정보만 남기고 나머지는 걸러내는 관리가 필요합니다.<br>
+③ 탐색성 작업을 서브에이전트에 위임하면 메인 컨텍스트를 잡음으로부터 보호할 수 있지만, 위임 범위와 보고 형식을 구체적으로 지정해야 결과 품질이 보장됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 AI 인프라 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#AI코딩에이전트 #컨텍스트엔지니어링 #ToolUse #LLM #코드베이스이해</p>
+
+</body>
+</html>
