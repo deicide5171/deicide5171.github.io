@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="17" font-weight="bold" fill="#1a1a1a">패턴 조합 결정 매트릭스 — 두 질문으로 기본 조합 고르기</text>
+
+  <!-- Quadrant grid -->
+  <rect x="110" y="60" width="290" height="150" fill="#eaffef" stroke="#2fa84f" stroke-width="1.5"/>
+  <rect x="400" y="60" width="290" height="150" fill="#eaf3ff" stroke="#0b5fa5" stroke-width="2.5"/>
+  <rect x="110" y="210" width="290" height="150" fill="#f5f5f5" stroke="#aaaaaa" stroke-width="1.5"/>
+  <rect x="400" y="210" width="290" height="150" fill="#fff4e5" stroke="#c9701d" stroke-width="1.5"/>
+
+  <!-- Quadrant contents: top-left -->
+  <text x="255" y="95" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1f7a38">아웃박스 단독(또는 CDC)</text>
+  <text x="255" y="118" text-anchor="middle" font-size="11" fill="#1f7a38">단일 서비스 안에서</text>
+  <text x="255" y="136" text-anchor="middle" font-size="11" fill="#1f7a38">DB 커밋 + 이벤트 발행만</text>
+  <text x="255" y="154" text-anchor="middle" font-size="11" fill="#1f7a38">원자적으로 묶으면 되는 경우</text>
+  <text x="255" y="180" text-anchor="middle" font-size="10.5" fill="#3f8a54">예: 캐시 무효화, 검색 색인 갱신</text>
+
+  <!-- top-right (highlight, recommended default) -->
+  <text x="545" y="90" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#0b5fa5">사가(오케스트레이션) + 아웃박스</text>
+  <text x="545" y="112" text-anchor="middle" font-size="11" fill="#0b5fa5">여러 서비스 조율 + 각 단계의</text>
+  <text x="545" y="130" text-anchor="middle" font-size="11" fill="#0b5fa5">이벤트 발행 유실도 허용 안 됨</text>
+  <text x="545" y="152" text-anchor="middle" font-size="10.5" fill="#3f34a0" font-weight="bold">실무 기본값 — 주문·결제·재고형 흐름</text>
+  <text x="545" y="172" text-anchor="middle" font-size="10.5" fill="#0b5fa5">각 단계 로컬 트랜잭션에 outbox 기록</text>
+
+  <!-- bottom-left -->
+  <text x="255" y="245" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#555555">특별한 패턴 불필요</text>
+  <text x="255" y="268" text-anchor="middle" font-size="11" fill="#555555">단일 서비스, 단일 DB</text>
+  <text x="255" y="286" text-anchor="middle" font-size="11" fill="#555555">트랜잭션으로 충분</text>
+  <text x="255" y="308" text-anchor="middle" font-size="10.5" fill="#777777">일반 CRUD 대부분</text>
+
+  <!-- bottom-right -->
+  <text x="545" y="240" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#a3550f">사가(코레오그래피) 단독</text>
+  <text x="545" y="262" text-anchor="middle" font-size="11" fill="#a3550f">서비스 조율은 필요하나</text>
+  <text x="545" y="280" text-anchor="middle" font-size="11" fill="#a3550f">이벤트 유실을 재시도·모니터링으로</text>
+  <text x="545" y="298" text-anchor="middle" font-size="11" fill="#a3550f">감내 가능한 경우</text>
+  <text x="545" y="320" text-anchor="middle" font-size="10.5" fill="#8a5a2a">주의: 실무에서는 드묾 — 근거 있게 선택</text>
+
+  <!-- Axis labels -->
+  <text x="400" y="392" text-anchor="middle" font-size="12" font-weight="bold" fill="#333333">→ 여러 서비스에 걸친 트랜잭션 조율이 필요한가</text>
+  <text x="120" y="392" text-anchor="middle" font-size="11" fill="#666666">아니오</text>
+  <text x="680" y="392" text-anchor="middle" font-size="11" fill="#666666">예</text>
+
+  <text x="60" y="135" text-anchor="middle" font-size="11" fill="#666666" transform="rotate(-90 60 135)">예</text>
+  <text x="60" y="290" text-anchor="middle" font-size="11" fill="#666666" transform="rotate(-90 60 290)">아니오</text>
+  <text x="35" y="135" text-anchor="middle" font-size="12" font-weight="bold" fill="#333333" transform="rotate(-90 35 135)">↑ 이벤트 발행 안정성</text>
+
+  <!-- Bottom stacking notes -->
+  <rect x="60" y="405" width="330" height="35" rx="6" fill="#f0f0ff" stroke="#5a4fc9"/>
+  <text x="225" y="427" text-anchor="middle" font-size="11" fill="#3f34a0">+ 완전한 이력·재생 필요 → 이벤트소싱을 추가로 결합</text>
+
+  <rect x="410" y="405" width="330" height="35" rx="6" fill="#f0f0ff" stroke="#5a4fc9"/>
+  <text x="575" y="427" text-anchor="middle" font-size="11" fill="#3f34a0">+ 쓴 직후 조회 정합성 필요 → Read-Your-Writes 전략 추가</text>
+</svg>
