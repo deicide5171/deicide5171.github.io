@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="17" font-weight="bold" fill="#1a1a1a">HikariCP 커넥션 풀 상태 흐름</text>
+  <text x="400" y="46" text-anchor="middle" font-size="11.5" fill="#666">유휴 풀 → 대여 → 사용 중 → 반환, 그리고 대기열·누수 분기</text>
+
+  <defs>
+    <marker id="arrowH" markerWidth="9" markerHeight="9" refX="4.5" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <!-- Panel 1: IDLE POOL -->
+  <rect x="26" y="66" width="228" height="352" rx="8" fill="#eaf3ff" stroke="#0b5fa5" stroke-width="2"/>
+  <text x="140" y="90" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#0b5fa5">1 · 유휴 풀 (IDLE)</text>
+  <text x="140" y="107" text-anchor="middle" font-size="10.5" fill="#0b5fa5">minimumIdle ~ maximumPoolSize</text>
+
+  <circle cx="85" cy="140" r="14" fill="#ffffff" stroke="#0b5fa5"/>
+  <circle cx="140" cy="140" r="14" fill="#ffffff" stroke="#0b5fa5"/>
+  <circle cx="195" cy="140" r="14" fill="#ffffff" stroke="#0b5fa5"/>
+  <text x="140" y="145" text-anchor="middle" font-size="9.5" fill="#0b5fa5">idle</text>
+  <text x="85" y="145" text-anchor="middle" font-size="9" fill="#0b5fa5">•</text>
+
+  <rect x="42" y="168" width="196" height="60" rx="5" fill="#ffffff" stroke="#0b5fa5"/>
+  <text x="140" y="186" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#123">유휴 커넥션 관리</text>
+  <text x="140" y="202" text-anchor="middle" font-size="9.5" fill="#333">idleTimeout 지나면 초과분 제거</text>
+  <text x="140" y="217" text-anchor="middle" font-size="9.5" fill="#333">maxLifetime 지나면 커넥션 재생성</text>
+
+  <text x="140" y="255" text-anchor="middle" font-size="10" fill="#0b5fa5">getConnection() 호출 시</text>
+  <text x="140" y="271" text-anchor="middle" font-size="10" fill="#0b5fa5">풀에서 하나를 대여(borrow)</text>
+
+  <line x1="140" y1="290" x2="140" y2="310" stroke="#0b5fa5" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="140" y="330" text-anchor="middle" font-size="9.5" fill="#666">여유가 없으면</text>
+  <text x="140" y="344" text-anchor="middle" font-size="9.5" fill="#666">대기열(2번)로 이동</text>
+
+  <!-- Arrow 1 -> 2 -->
+  <line x1="254" y1="242" x2="284" y2="242" stroke="#555" stroke-width="2" marker-end="url(#arrowH)"/>
+  <text x="269" y="228" text-anchor="middle" font-size="9.5" fill="#555">borrow</text>
+
+  <!-- Panel 2: WAIT / TIMEOUT -->
+  <rect x="286" y="66" width="228" height="352" rx="8" fill="#fff4e5" stroke="#c9701d" stroke-width="2"/>
+  <text x="400" y="90" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#a3550f">2 · 대기열 (분기)</text>
+  <text x="400" y="107" text-anchor="middle" font-size="10.5" fill="#a3550f">풀이 가득 찼을 때만 진입</text>
+
+  <rect x="302" y="122" width="196" height="60" rx="5" fill="#ffffff" stroke="#c9701d"/>
+  <text x="400" y="140" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#333">모든 커넥션이 사용 중</text>
+  <text x="400" y="156" text-anchor="middle" font-size="9.5" fill="#333">요청 스레드가 대기</text>
+  <text x="400" y="171" text-anchor="middle" font-size="9.5" fill="#a3550f">connectionTimeout 만큼만 대기</text>
+
+  <rect x="302" y="192" width="196" height="66" rx="5" fill="#ffffff" stroke="#c9701d"/>
+  <text x="400" y="211" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#333">시간 내 반환되면</text>
+  <text x="400" y="227" text-anchor="middle" font-size="9.5" fill="#333">대기하던 스레드가 이어서</text>
+  <text x="400" y="243" text-anchor="middle" font-size="9.5" fill="#333">해당 커넥션을 대여</text>
+
+  <rect x="302" y="270" width="196" height="66" rx="5" fill="#fff0eb" stroke="#c0392b"/>
+  <text x="400" y="289" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#c0392b">시간 초과 시</text>
+  <text x="400" y="305" text-anchor="middle" font-size="9.5" fill="#c0392b">SQLTransientConnectionException</text>
+  <text x="400" y="321" text-anchor="middle" font-size="9.5" fill="#c0392b">"커넥션 부족" 증상의 실체</text>
+
+  <text x="400" y="360" text-anchor="middle" font-size="9.5" fill="#666">트래픽이 몰릴 때 일시적으로</text>
+  <text x="400" y="374" text-anchor="middle" font-size="9.5" fill="#666">발생, 트래픽 감소 시 정상화</text>
+
+  <!-- Arrow 1(back panel) return note omitted; Arrow 2 -> 3 -->
+  <line x1="514" y1="211" x2="544" y2="211" stroke="#555" stroke-width="2" marker-end="url(#arrowH)"/>
+  <text x="529" y="197" text-anchor="middle" font-size="9.5" fill="#555">획득 성공</text>
+
+  <!-- Panel 3: ACTIVE / RETURN -->
+  <rect x="546" y="66" width="228" height="352" rx="8" fill="#eaffef" stroke="#2fa84f" stroke-width="2"/>
+  <text x="660" y="90" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1f7a38">3 · 사용 중 (ACTIVE)</text>
+  <text x="660" y="107" text-anchor="middle" font-size="10.5" fill="#1f7a38">애플리케이션 스레드가 점유</text>
+
+  <rect x="562" y="122" width="196" height="60" rx="5" fill="#ffffff" stroke="#2fa84f"/>
+  <text x="660" y="140" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#333">쿼리 실행 중</text>
+  <text x="660" y="156" text-anchor="middle" font-size="9.5" fill="#333">try-with-resources 권장</text>
+  <text x="660" y="171" text-anchor="middle" font-size="9.5" fill="#1f7a38">정상 흐름: close() 시 즉시 반환</text>
+
+  <rect x="562" y="192" width="196" height="76" rx="5" fill="#fff0eb" stroke="#c0392b"/>
+  <text x="660" y="211" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#c0392b">누수 의심 흐름</text>
+  <text x="660" y="227" text-anchor="middle" font-size="9.5" fill="#c0392b">예외 발생 시 close() 누락</text>
+  <text x="660" y="243" text-anchor="middle" font-size="9.5" fill="#c0392b">leakDetectionThreshold 초과 시</text>
+  <text x="660" y="259" text-anchor="middle" font-size="9.5" fill="#c0392b">경고 로그(스택 트레이스) 기록</text>
+
+  <text x="660" y="292" text-anchor="middle" font-size="9.5" fill="#666">트래픽이 줄어도 active 수가</text>
+  <text x="660" y="306" text-anchor="middle" font-size="9.5" fill="#666">회복되지 않으면 "누수" 신호</text>
+
+  <line x1="660" y1="320" x2="660" y2="340" stroke="#2fa84f" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="660" y="360" text-anchor="middle" font-size="9.5" fill="#666">정상 반환 시 1번(유휴 풀)</text>
+  <text x="660" y="374" text-anchor="middle" font-size="9.5" fill="#666">으로 돌아가 재사용 대기</text>
+
+  <!-- Return arrow curving back to panel 1 -->
+  <path d="M 660 400 C 660 425, 140 425, 140 405" fill="none" stroke="#2fa84f" stroke-width="2" marker-end="url(#arrowH)" stroke-dasharray="5,3"/>
+  <text x="400" y="420" text-anchor="middle" font-size="10" fill="#1f7a38">close() → 풀로 반환(return)</text>
+
+  <text x="400" y="440" text-anchor="middle" font-size="11" fill="#555">"부족"은 대기열 타임아웃, "누수"는 반환되지 않는 active 커넥션 — 원인이 다르면 해법도 다르다</text>
+</svg>
