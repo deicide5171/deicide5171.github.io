@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1a1a1a">LLM 함수 호출(Tool Use) 왕복 흐름</text>
+
+  <!-- Step 1: request -->
+  <rect x="20" y="55" width="190" height="64" rx="6" fill="#eef2ff" stroke="#4c5fd5"/>
+  <text x="115" y="80" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#2f3a9e">① 질문 + tools 정의 전달</text>
+  <text x="115" y="97" text-anchor="middle" font-size="10.5" fill="#2f3a9e">name·description·</text>
+  <text x="115" y="111" text-anchor="middle" font-size="10.5" fill="#2f3a9e">input_schema 포함</text>
+
+  <line x1="210" y1="87" x2="248" y2="87" stroke="#4c5fd5" stroke-width="1.5" marker-end="url(#ar1)"/>
+
+  <!-- Step 2: decision -->
+  <rect x="250" y="55" width="190" height="64" rx="6" fill="#f3f0ff" stroke="#7c4fd5"/>
+  <text x="345" y="80" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#4a2f9e">② Claude가 판단</text>
+  <text x="345" y="97" text-anchor="middle" font-size="10.5" fill="#4a2f9e">stop_reason 확인:</text>
+  <text x="345" y="111" text-anchor="middle" font-size="10.5" fill="#4a2f9e">end_turn vs tool_use</text>
+
+  <!-- Branch A: end_turn -->
+  <line x1="440" y1="70" x2="580" y2="45" stroke="#2fa84f" stroke-width="1.5" marker-end="url(#ar2)"/>
+  <rect x="580" y="18" width="200" height="54" rx="6" fill="#eafff0" stroke="#2fa84f"/>
+  <text x="680" y="40" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1f7a38">stop_reason: end_turn</text>
+  <text x="680" y="57" text-anchor="middle" font-size="10.5" fill="#1f7a38">text 블록 즉시 반환</text>
+
+  <!-- Branch B: tool_use -->
+  <line x1="345" y1="119" x2="345" y2="152" stroke="#d99a1f" stroke-width="1.5" marker-end="url(#ar3)"/>
+  <rect x="250" y="154" width="190" height="54" rx="6" fill="#fff7e6" stroke="#d99a1f"/>
+  <text x="345" y="176" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#8a5a00">stop_reason: tool_use</text>
+  <text x="345" y="193" text-anchor="middle" font-size="10.5" fill="#8a5a00">tool_use 블록(함수명+JSON 인자)</text>
+
+  <line x1="345" y1="208" x2="345" y2="240" stroke="#d99a1f" stroke-width="1.5" marker-end="url(#ar3)"/>
+
+  <!-- Step 3: client executes -->
+  <rect x="250" y="242" width="190" height="54" rx="6" fill="#fff7e6" stroke="#d99a1f"/>
+  <text x="345" y="264" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#8a5a00">③ 클라이언트가 함수 실행</text>
+  <text x="345" y="281" text-anchor="middle" font-size="10.5" fill="#8a5a00">Claude는 절대 직접 실행하지 않음</text>
+
+  <line x1="440" y1="269" x2="478" y2="269" stroke="#d99a1f" stroke-width="1.5" marker-end="url(#ar3)"/>
+
+  <!-- Step 4: tool_result -->
+  <rect x="480" y="242" width="190" height="54" rx="6" fill="#fff7e6" stroke="#d99a1f"/>
+  <text x="575" y="264" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#8a5a00">④ tool_result를 대화에 추가</text>
+  <text x="575" y="281" text-anchor="middle" font-size="10.5" fill="#8a5a00">실행 결과를 user 메시지로 재전송</text>
+
+  <!-- loop back -->
+  <path d="M 480 258 C 420 340, 300 340, 250 210" fill="none" stroke="#7c4fd5" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#ar4)"/>
+  <text x="380" y="360" text-anchor="middle" font-size="10.5" fill="#4a2f9e">② 다시 판단 — end_turn이 될 때까지 반복</text>
+
+  <!-- divider -->
+  <line x1="20" y1="390" x2="780" y2="390" stroke="#ddd" stroke-width="1"/>
+  <text x="400" y="416" text-anchor="middle" font-size="11.5" fill="#555">구조화 출력(output_config.format)은 ②의 결과를 처음부터 JSON Schema로 강제해 파싱 단계를 없앤다</text>
+
+  <defs>
+    <marker id="ar1" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#4c5fd5"/>
+    </marker>
+    <marker id="ar2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#2fa84f"/>
+    </marker>
+    <marker id="ar3" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#d99a1f"/>
+    </marker>
+    <marker id="ar4" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#7c4fd5"/>
+    </marker>
+  </defs>
+</svg>
