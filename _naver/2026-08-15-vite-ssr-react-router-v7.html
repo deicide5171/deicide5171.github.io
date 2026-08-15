@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Vite에서 SSR 얻기 — React Router v7과 TanStack Start</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Vite 위에서 SSR 얻기 — React Router v7과 TanStack Start</div>
+<p style="font-size:14px; color:#999;">2026. 8. 15. · 웹개발</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — "Vite는 클라이언트 전용"이라는 인식이 옅어지고 있습니다. <b>React Router v7</b>의 프레임워크 모드와 <b>TanStack Start</b>가 Vite 위에서 SSR을 제공하기 시작하면서, Next.js 대신 선택할 수 있는 실용적인 대안이 생겼습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 이야기가 나올까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">몇 년 전까지는 "빠른 번들러가 필요하면 Vite, SSR이 필요하면 Next.js"라는 구분이 거의 상식처럼 통했습니다. 하지만 이 구분이 점점 흐려지고 있습니다. Remix 팀이 React Router에 합류하면서 나온 <b>React Router v7</b>의 프레임워크 모드는 Vite 위에서 SSR과 중첩 라우팅, 라우트 단위 데이터 로딩까지 제공합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">여기에 TanStack 진영의 <b>TanStack Start</b>까지 등장하면서, Vite 생태계 안에서도 풀스택 SSR 프레임워크를 선택할 수 있는 상황이 되었습니다. 이미 Vite 기반 SPA를 운영 중인 팀 입장에서는 전체 구조를 갈아엎지 않고도 서버 사이드 기능만 얹을 수 있다는 점이 큰 매력으로 다가옵니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 — 프레임워크 모드란 무엇인가요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">React Router는 원래 클라이언트 라우팅 라이브러리였지만, v7부터는 <b>프레임워크 모드</b>를 함께 제공합니다. 이 모드를 켜면 Vite 플러그인이 라우트 구조를 읽어 서버 진입점과 클라이언트 번들을 함께 생성하고, 각 라우트의 데이터 로딩 함수를 서버에서 실행해 미리 채워줍니다. 사실상 Remix가 하던 역할을 React Router 본체가 흡수한 셈입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>TanStack Start</b>는 접근 방식이 조금 다릅니다. TanStack Router의 타입 안전한 라우팅 위에 서버 함수와 SSR 진입점을 얹는 구조로, TanStack Query와의 결합을 전제로 설계되었습니다. 데이터 계층을 라우터에 통합할지, 별도 쿼리 라이브러리에 맡길지에서 두 프레임워크의 철학이 갈립니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Next.js와 비교하면 어떨까요</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Next.js</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">React Router v7 / TanStack Start</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">번들러</td>
+<td style="border:1px solid #ddd; padding:10px;">Turbopack/Webpack 자체</td>
+<td style="border:1px solid #ddd; padding:10px;">Vite</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">데이터 로딩</td>
+<td style="border:1px solid #ddd; padding:10px;">서버 컴포넌트 중심</td>
+<td style="border:1px solid #ddd; padding:10px;">라우트 loader / 서버 함수</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">기존 SPA 이관</td>
+<td style="border:1px solid #ddd; padding:10px;">구조가 달라 부담 큼</td>
+<td style="border:1px solid #ddd; padding:10px;">라우트 단위 점진적 이관 가능</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">생태계 성숙도</td>
+<td style="border:1px solid #ddd; padding:10px;">매우 높음</td>
+<td style="border:1px solid #ddd; padding:10px;">성장 중(Remix 자산 계승)</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">정리하면 Next.js는 서버 컴포넌트를 중심에 둔 완결형 프레임워크로 기능이 풍부하지만 그만큼 학습 곡선과 락인도 큽니다. 반면 React Router v7과 TanStack Start는 이미 익숙한 Vite와 React 방식에 SSR만 얹는다는 <b>실용주의적 접근</b>에 가깝습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">설정 예제로 감을 잡아봅니다</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">// vite.config.ts
+import { reactRouter } from "@react-router/dev/vite";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [reactRouter()],
+});</pre>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">// app/routes/products.$id.tsx
+import type { LoaderFunctionArgs } from "react-router";
+import { useLoaderData } from "react-router";
+
+export async function loader({ params }: LoaderFunctionArgs) {
+  const product = await getProduct(params.id);
+  return { product };
+}
+
+export default function ProductPage() {
+  const { product } = useLoaderData&lt;typeof loader&gt;();
+  return &lt;h1&gt;{product.name}&lt;/h1&gt;;
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">기존 라이브러리 모드 SPA에서 넘어온다면, 라우트 설정 파일을 추가하고 각 컴포넌트에 데이터 로딩 함수를 붙이는 순서로 <b>단계적 이관</b>이 가능하다는 점이 특징입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">도입 전 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 배포 타깃을 먼저 정하세요</b> — Node, Cloudflare Workers 등 어댑터별로 지원 범위와 성숙도가 다르니 실제 환경에서 먼저 검증하는 것이 안전합니다<br>
+<b>2. 서버 컴포넌트는 없습니다</b> — 두 프레임워크 모두 React 서버 컴포넌트를 기본 전제로 하지 않으므로, RSC가 꼭 필요하다면 Next.js가 아직 유리합니다<br>
+<b>3. 부가 기능은 직접 구성해야 합니다</b> — 미들웨어, 이미지 최적화, 캐싱 전략 등은 Next.js만큼 갖춰지지 않은 부분이 있습니다<br>
+<b>4. 점진적 도입을 우선 검토하세요</b> — 완전 전환보다 기존 Vite SPA에 라우트 단위로 SSR을 붙여나가는 경로가 위험 부담이 적습니다
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① React Router v7의 프레임워크 모드와 TanStack Start는 Vite 위에서 SSR과 데이터 로딩을 제공하는 실용적 대안으로 떠오르고 있습니다.<br>
+② Next.js는 서버 컴포넌트 중심의 완결형 프레임워크로 기능은 풍부하지만 락인이 크고, 두 대안은 기존 Vite·React 자산을 살리며 점진적으로 SSR을 도입하기 좋습니다.<br>
+③ 배포 어댑터 성숙도와 서버 컴포넌트 필요 여부를 먼저 확인한 뒤, 라우트 단위로 점진적으로 도입하는 것을 추천드립니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 실제 마이그레이션 사례를 다뤄보겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#Vite #ReactRouter #TanStackStart #SSR #Nextjs #웹개발</p>
+
+</body>
+</html>
