@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Spring Security 6 인가 모델 깊이 이해하기 — 커스텀 AuthorizationManager</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Spring Security 6 인가 모델 깊이 이해하기 — 커스텀 AuthorizationManager</div>
+<p style="font-size:14px; color:#999;">2026. 8. 22. · Backend/Spring</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — <b>WebSecurityConfigurerAdapter</b>가 사라진 Spring Security 6에서는 <b>SecurityFilterChain</b> 빈으로 설정하고, <b>AuthorizationManager</b> 인터페이스를 직접 구현해 hasRole()만으로는 표현하기 어려운 세밀한 인가 규칙을 적용할 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 인가 모델이 바뀌었을까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Spring Security 5.7 이전까지는 <b>WebSecurityConfigurerAdapter</b>를 상속해서 configure(HttpSecurity http)를 오버라이드하는 방식이 사실상 표준이었습니다. 이 방식은 익숙하긴 했지만 상속에 의존하다 보니 설정을 여러 조각으로 나누기 어렵고, 테스트를 위해 임의로 빈을 교체하기도 까다로웠습니다. 이후 버전들은 상속 대신 <b>SecurityFilterChain 빈</b>을 직접 등록하는 컴포넌트 기반 설정으로 전환됐고, Spring Security 6에서는 WebSecurityConfigurerAdapter 자체가 완전히 제거되면서 이 방식이 유일한 표준이 됐습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">설정 방식만 바뀐 게 아닙니다. 인가(authorization) 로직을 판단하는 내부 구조도 함께 재편됐습니다. 과거에는 AccessDecisionManager와 여러 AccessDecisionVoter가 투표하듯 접근 허용 여부를 결정했다면, Spring Security 6은 이를 단일 책임을 지는 <b>AuthorizationManager</b> 인터페이스로 단순화했습니다. 이 변화 덕분에 리소스 소유자 확인이나 여러 조건의 조합 판단처럼, hasRole()이나 hasAuthority()만으로는 표현하기 어려운 규칙을 개발자가 직접 끼워 넣을 수 있는 명확한 확장 지점이 생겼습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — SecurityFilterChain 빈 기반 설정</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Spring Security 6에서는 보안 설정을 @Configuration 클래스 안에서 <b>SecurityFilterChain</b> 타입의 빈을 반환하는 메서드로 작성합니다. HttpSecurity 객체를 인자로 받아 authorizeHttpRequests(), formLogin(), csrf() 같은 람다 기반 DSL로 설정을 조립한 뒤 build()를 호출해 필터 체인을 완성하는 구조입니다. 상속이 사라진 대신 빈 하나하나가 독립적으로 정의되므로, 프로필이나 조건에 따라 서로 다른 SecurityFilterChain 빈을 등록해서 요청 경로별로 다른 보안 정책을 적용하기도 쉬워졌습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">authorizeHttpRequests() 안에서는 requestMatchers()로 경로를 지정하고 그 뒤에 permitAll(), hasRole(), authenticated() 같은 판단 규칙을 이어 붙입니다. 이 규칙들은 내부적으로 각각의 <b>AuthorizationManager 구현체</b>로 변환되어 필터 체인에 등록되며, 요청이 들어올 때마다 매칭되는 규칙의 AuthorizationManager가 순서대로 호출되어 접근 허용 여부를 판단합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — AuthorizationManager의 역할과 커스텀 구현 지점</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>AuthorizationManager&lt;T&gt;</b>는 authorize(Supplier&lt;Authentication&gt;, T object) 형태의 메서드 하나로 정의되는 함수형 인터페이스에 가깝습니다. 여기서 T는 인가 판단의 대상 — HTTP 요청이라면 RequestAuthorizationContext, 메서드 호출이라면 MethodInvocation — 이 되며, 반환값인 AuthorizationDecision은 허용 여부(boolean)와 함께 판단 근거가 되는 부가 정보를 담을 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">hasRole()이나 hasAuthority() 같은 내장 규칙으로 표현할 수 없는 조건 — 리소스 소유자와 요청자가 같은지, 여러 권한의 조합을 판단해야 하는지, 외부 정책 서버의 응답이 필요한지 — 은 이 인터페이스를 직접 구현해서 해결합니다. <b>requestMatchers(...).access(customAuthorizationManager)</b> 형태로 필터 체인에 끼워 넣으면, 해당 경로에 대한 인가 판단을 완전히 위임할 수 있습니다. 여러 AuthorizationManager를 AuthorizationManagers.allOf()/anyOf() 같은 조합 유틸리티로 엮어서 복합 조건을 구성하는 것도 가능합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 메서드 시큐리티(@PreAuthorize)와의 관계</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">AuthorizationManager는 URL 단위의 필터 체인뿐 아니라 <b>메서드 시큐리티</b>에도 동일하게 적용되는 공통 추상화입니다. @PreAuthorize, @PostAuthorize, @Secured 같은 어노테이션 기반 판단은 내부적으로 PreAuthorizeAuthorizationManager, PostAuthorizeAuthorizationManager 같은 구현체를 통해 이뤄지며, 이들도 결국 같은 AuthorizationManager&lt;MethodInvocation&gt; 계약을 따릅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">즉 HTTP 요청 단위에서 커스텀 AuthorizationManager를 만드는 것과, 메서드 단위에서 SpEL 표현식으로 커스텀 빈의 메서드를 호출하는 것(@PreAuthorize(&quot;@myAuthorizer.check(#id)&quot;))은 같은 설계 철학의 두 표현이라 할 수 있습니다. 요청 경로에 걸기 애매한 세밀한 조건은 메서드 시큐리티로, 여러 엔드포인트에 공통으로 적용할 규칙은 필터 체인의 AuthorizationManager로 배치하는 식의 역할 분담이 실무에서 자주 쓰입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 커스텀 AuthorizationManager 구현 및 적용</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">다음은 리소스 소유자 여부를 확인하는 커스텀 AuthorizationManager를 구현하고, 이를 SecurityFilterChain에 적용하는 예시입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">public class ResourceOwnerAuthorizationManager
+        implements AuthorizationManager&lt;RequestAuthorizationContext&gt; {
+
+    private final ResourceRepository resourceRepository;
+
+    public ResourceOwnerAuthorizationManager(ResourceRepository resourceRepository) {
+        this.resourceRepository = resourceRepository;
+    }
+
+    @Override
+    public AuthorizationDecision check(Supplier&lt;Authentication&gt; authenticationSupplier,
+                                        RequestAuthorizationContext context) {
+        Authentication authentication = authenticationSupplier.get();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return new AuthorizationDecision(false);
+        }
+
+        String resourceId = context.getVariables().get("id");
+        boolean isOwner = resourceRepository
+                .findOwnerUsername(resourceId)
+                .map(owner -&gt; owner.equals(authentication.getName()))
+                .orElse(false);
+
+        return new AuthorizationDecision(isOwner);
+    }
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">@Configuration
+@EnableWebSecurity
+public class SecurityConfig {
+
+    @Bean
+    public SecurityFilterChain filterChain(HttpSecurity http,
+                                            ResourceRepository resourceRepository) throws Exception {
+        http
+            .authorizeHttpRequests(authorize -&gt; authorize
+                .requestMatchers("/api/public/**").permitAll()
+                .requestMatchers("/api/resources/{id}")
+                    .access(new ResourceOwnerAuthorizationManager(resourceRepository))
+                .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                .anyRequest().authenticated()
+            )
+            .formLogin(Customizer.withDefaults());
+
+        return http.build();
+    }
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">.access()에 커스텀 AuthorizationManager를 전달하면, 해당 경로 패턴에 매칭되는 요청은 내장 규칙 대신 이 구현체의 판단을 그대로 따르게 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 레거시 코드를 그대로 옮기지 않기</b> — WebSecurityConfigurerAdapter의 configure(HttpSecurity http) 안 명령형 호출 체인을 그대로 옮기려 하지 말고, 람다 기반 DSL로 다시 작성하는 편이 안전합니다. 여러 개의 서브클래스를 @Order로 순서를 매겨 쓰던 구조였다면, 각각을 독립된 SecurityFilterChain 빈으로 변환하면서 securityMatcher()로 적용 범위를 명시해야 여러 체인이 겹치는 문제를 피할 수 있습니다<br>
+<b>2. AccessDecisionVoter는 그대로 대응되지 않음</b> — 과거 AccessDecisionVoter를 직접 구현했던 코드가 있다면, 이를 그대로 옮길 수 있는 대응 인터페이스가 없으므로 AuthorizationManager 구현으로 새로 작성해야 합니다<br>
+<b>3. 인가 로직은 단위 테스트로 따로 검증하기</b> — spring-security-test의 @WithMockUser, SecurityMockMvcRequestPostProcessors로 다양한 권한 조합을 재현하는 통합 테스트뿐 아니라, 커스텀 AuthorizationManager 구현체 자체를 Authentication과 판단 대상 객체를 목(mock)으로 구성해 단위 테스트로 분리하면 원인 파악이 훨씬 쉬워집니다
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① Spring Security 6은 WebSecurityConfigurerAdapter를 완전히 제거하고 SecurityFilterChain 빈 기반의 컴포넌트 설정만을 지원합니다.<br>
+② 인가 판단은 AccessDecisionManager/Voter 조합 대신 단일 AuthorizationManager 인터페이스로 통일됐고, 이를 직접 구현하면 hasRole()로 표현하기 어려운 복잡한 규칙을 필터 체인이나 메서드 시큐리티에 그대로 적용할 수 있습니다.<br>
+③ 레거시 코드 마이그레이션 시에는 명령형 체인을 그대로 옮기기보다 DSL로 재작성하고, 커스텀 인가 로직은 필터 체인 통합 테스트와 AuthorizationManager 단위 테스트를 병행해 검증하는 것이 안전합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 백엔드 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#SpringSecurity #Spring부트 #인가 #AuthorizationManager #백엔드 #자바 #서버개발</p>
+
+</body>
+</html>
