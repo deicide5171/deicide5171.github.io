@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="32" text-anchor="middle" font-size="19" font-weight="bold" fill="#1a1a1a">MVCC 스냅샷 아이솔레이션 — 두 트랜잭션의 타임라인</text>
+
+  <!-- time axis -->
+  <line x1="60" y1="400" x2="740" y2="400" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="700" y="420" font-size="12" fill="#666">시간 →</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#888"/>
+    </marker>
+  </defs>
+
+  <!-- T1 lane -->
+  <text x="60" y="100" font-size="13" font-weight="bold" fill="#0b5fa5">T1</text>
+  <line x1="100" y1="110" x2="620" y2="110" stroke="#1877c9" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="100" cy="110" r="6" fill="#0b5fa5"/>
+  <text x="100" y="90" text-anchor="middle" font-size="11" fill="#0b5fa5">BEGIN</text>
+  <rect x="150" y="130" width="180" height="34" rx="5" fill="#eaf3ff" stroke="#1877c9"/>
+  <text x="240" y="152" text-anchor="middle" font-size="11.5" fill="#0b5fa5">스냅샷 확보 (잔액=100 읽음)</text>
+  <rect x="420" y="130" width="200" height="34" rx="5" fill="#fff0e0" stroke="#c9701d"/>
+  <text x="520" y="152" text-anchor="middle" font-size="11.5" fill="#a3550f">UPDATE 잔액 = 100-30</text>
+  <circle cx="620" cy="110" r="6" fill="#0b5fa5"/>
+  <text x="620" y="90" text-anchor="middle" font-size="11" fill="#0b5fa5">COMMIT (성공)</text>
+
+  <!-- T2 lane -->
+  <text x="60" y="230" font-size="13" font-weight="bold" fill="#1f7a38">T2</text>
+  <line x1="260" y1="240" x2="700" y2="240" stroke="#2fa84f" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="260" cy="240" r="6" fill="#1f7a38"/>
+  <text x="260" y="220" text-anchor="middle" font-size="11" fill="#1f7a38">BEGIN</text>
+  <rect x="300" y="260" width="180" height="34" rx="5" fill="#eafff0" stroke="#2fa84f"/>
+  <text x="390" y="282" text-anchor="middle" font-size="11.5" fill="#1f7a38">스냅샷 확보 (잔액=100 읽음)</text>
+  <rect x="500" y="260" width="200" height="34" rx="5" fill="#ffe8e8" stroke="#c0392b"/>
+  <text x="600" y="282" text-anchor="middle" font-size="11.5" fill="#a3281b">UPDATE 잔액 = 100-50</text>
+  <circle cx="700" cy="240" r="6" fill="#c0392b"/>
+  <text x="700" y="220" text-anchor="middle" font-size="11" fill="#c0392b">COMMIT 시도</text>
+
+  <!-- conflict marker -->
+  <line x1="640" y1="150" x2="700" y2="240" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <rect x="560" y="330" width="230" height="50" rx="6" fill="#fff7f0" stroke="#ff8a3d"/>
+  <text x="675" y="350" text-anchor="middle" font-size="11.5" fill="#a3550f" font-weight="bold">write-write 충돌 감지</text>
+  <text x="675" y="367" text-anchor="middle" font-size="10.5" fill="#a3550f">PostgreSQL: T2 abort (재시도 필요)</text>
+
+  <text x="400" y="30" font-size="1"> </text>
+  <text x="200" y="430" text-anchor="middle" font-size="11" fill="#555">같은 스냅샷을 본 두 트랜잭션이 같은 행을 수정 → 먼저 COMMIT한 쪽만 성공</text>
+</svg>
