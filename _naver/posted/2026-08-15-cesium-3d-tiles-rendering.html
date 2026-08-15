@@ -37,7 +37,7 @@
 
 <p style="font-size:16px; color:#333; line-height:1.8;">3D Tiles는 하나의 거대한 3D 데이터셋을 계층적인 타일 트리로 쪼갭니다. 루트 타일은 전체 영역을 낮은 해상도로 표현하고, 카메라가 특정 영역에 가까워지면 그 부분의 자식 타일만 추가로 내려받아 세분화합니다. 이 판단 기준이 <b>화면 공간 오차(Screen Space Error, SSE)</b>입니다.</p>
 
-<p style="font-size:16px; color:#333; line-height:1.8; text-align:center;"><img src="https://deicide5171.github.io/assets/images/posts/2026-08-15-cesium-3d-tiles-rendering-1.svg" alt="3D Tiles 타일셋 LOD 트리 구조" style="max-width:100%; height:auto; border:1px solid #eee;"></p>
+<p style="font-size:16px; color:#333; line-height:1.8; text-align:center;"><img src="https://deicide5171.github.io/assets/images/posts/2026-08-15-cesium-3d-tiles-rendering-1.svg" alt="3D Tiles 타일셋 LOD 트리 구조" style="width:100%; height:auto; border:1px solid #eee;"></p>
 <p style="font-size:13px; color:#999; text-align:center;">3D Tiles 타일셋 LOD 트리 구조 — 카메라와 가까운 타일만 재귀적으로 세분화된다</p>
 
 <p style="font-size:16px; color:#333; line-height:1.8;">이 구조 덕분에 카메라 시야 밖이나 멀리 있는 영역은 계속 성긴 상태로 남고, 실제로 보이는 근접 영역만 세밀한 메시·포인트클라우드를 스트리밍합니다. 결과적으로 <b>수백 GB 규모의 원본 데이터셋도 브라우저 메모리 예산 안에서 끊김 없이</b> 탐색할 수 있습니다.</p>

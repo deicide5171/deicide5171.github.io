@@ -1,4 +1,4 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
   <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
 
   <text x="400" y="32" text-anchor="middle" font-size="19" font-weight="bold" fill="#1a1a1a">3D Tiles 타일셋 계층 구조 (LOD 트리)</text>
