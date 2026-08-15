@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="17" font-weight="bold" fill="#1a1a1a">Expand-Contract 패턴 — 3단계로 나눠 스키마를 바꾼다</text>
+  <text x="400" y="46" text-anchor="middle" font-size="11.5" fill="#666">각 단계는 독립적으로 배포·롤백 가능해야 한다</text>
+
+  <defs>
+    <marker id="arrowB" markerWidth="9" markerHeight="9" refX="4.5" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <!-- Stage 1: EXPAND -->
+  <rect x="26" y="66" width="228" height="352" rx="8" fill="#eaf3ff" stroke="#0b5fa5" stroke-width="2"/>
+  <text x="140" y="90" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#0b5fa5">1단계 · EXPAND</text>
+  <text x="140" y="107" text-anchor="middle" font-size="10.5" fill="#0b5fa5">스키마만 확장(추가)</text>
+
+  <rect x="42" y="122" width="196" height="66" rx="5" fill="#ffffff" stroke="#0b5fa5"/>
+  <text x="140" y="140" text-anchor="middle" font-size="11" font-weight="bold" fill="#123" >users 테이블</text>
+  <text x="140" y="157" text-anchor="middle" font-size="10" fill="#333">name (기존, 계속 사용)</text>
+  <text x="140" y="173" text-anchor="middle" font-size="10" fill="#0b5fa5">+ name_new (신규, NULL 허용)</text>
+
+  <rect x="42" y="200" width="196" height="54" rx="5" fill="#ffffff" stroke="#0b5fa5"/>
+  <text x="140" y="219" text-anchor="middle" font-size="10.5" fill="#333">애플리케이션 v1</text>
+  <text x="140" y="238" text-anchor="middle" font-size="10" fill="#333">name 컬럼만 read/write</text>
+
+  <text x="140" y="278" text-anchor="middle" font-size="10" fill="#0b5fa5">컬럼 추가는 NOT NULL·</text>
+  <text x="140" y="294" text-anchor="middle" font-size="10" fill="#0b5fa5">DEFAULT 없이, 짧은 락으로</text>
+
+  <line x1="140" y1="305" x2="140" y2="325" stroke="#0b5fa5" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="140" y="345" text-anchor="middle" font-size="9.5" fill="#666">배포해도 기존 기능</text>
+  <text x="140" y="359" text-anchor="middle" font-size="9.5" fill="#666">영향 없음(순수 추가)</text>
+
+  <!-- Arrow 1->2 -->
+  <line x1="254" y1="242" x2="284" y2="242" stroke="#555" stroke-width="2" marker-end="url(#arrowB)"/>
+  <text x="269" y="228" text-anchor="middle" font-size="9.5" fill="#555">앱 v2 배포</text>
+
+  <!-- Stage 2: MIGRATE / BACKFILL -->
+  <rect x="286" y="66" width="228" height="352" rx="8" fill="#fff4e5" stroke="#c9701d" stroke-width="2"/>
+  <text x="400" y="90" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#a3550f">2단계 · MIGRATE</text>
+  <text x="400" y="107" text-anchor="middle" font-size="10.5" fill="#a3550f">이중 쓰기 + 배치 백필</text>
+
+  <rect x="302" y="122" width="196" height="66" rx="5" fill="#ffffff" stroke="#c9701d"/>
+  <text x="400" y="140" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">users 테이블</text>
+  <text x="400" y="157" text-anchor="middle" font-size="10" fill="#333">name / name_new 모두 채움</text>
+  <text x="400" y="173" text-anchor="middle" font-size="10" fill="#a3550f">백필 배치가 과거 행 복사</text>
+
+  <rect x="302" y="200" width="196" height="54" rx="5" fill="#ffffff" stroke="#c9701d"/>
+  <text x="400" y="219" text-anchor="middle" font-size="10.5" fill="#333">애플리케이션 v2</text>
+  <text x="400" y="238" text-anchor="middle" font-size="10" fill="#a3550f">dual write (두 컬럼 동시 저장)</text>
+
+  <text x="400" y="278" text-anchor="middle" font-size="10" fill="#a3550f">배치는 소량씩(batch) 처리해</text>
+  <text x="400" y="294" text-anchor="middle" font-size="10" fill="#a3550f">락 경합·리플리케이션 지연 방지</text>
+
+  <line x1="400" y1="305" x2="400" y2="325" stroke="#c9701d" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="400" y="345" text-anchor="middle" font-size="9.5" fill="#666">두 컬럼 값 불일치 여부를</text>
+  <text x="400" y="359" text-anchor="middle" font-size="9.5" fill="#666">모니터링해 검증한 뒤 다음 단계로</text>
+
+  <!-- Arrow 2->3 -->
+  <line x1="514" y1="242" x2="544" y2="242" stroke="#555" stroke-width="2" marker-end="url(#arrowB)"/>
+  <text x="529" y="228" text-anchor="middle" font-size="9.5" fill="#555">검증 통과 후</text>
+  <text x="529" y="264" text-anchor="middle" font-size="9.5" fill="#555">앱 v3 배포</text>
+
+  <!-- Stage 3: CONTRACT -->
+  <rect x="546" y="66" width="228" height="352" rx="8" fill="#eaffef" stroke="#2fa84f" stroke-width="2"/>
+  <text x="660" y="90" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1f7a38">3단계 · CONTRACT</text>
+  <text x="660" y="107" text-anchor="middle" font-size="10.5" fill="#1f7a38">옛 스키마 정리(축소)</text>
+
+  <rect x="562" y="122" width="196" height="66" rx="5" fill="#ffffff" stroke="#2fa84f"/>
+  <text x="660" y="140" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">users 테이블</text>
+  <text x="660" y="157" text-anchor="middle" font-size="10" fill="#333">name_new만 사용</text>
+  <text x="660" y="173" text-anchor="middle" font-size="10" fill="#1f7a38">name 컬럼 DROP(검증 후)</text>
+
+  <rect x="562" y="200" width="196" height="54" rx="5" fill="#ffffff" stroke="#2fa84f"/>
+  <text x="660" y="219" text-anchor="middle" font-size="10.5" fill="#333">애플리케이션 v3</text>
+  <text x="660" y="238" text-anchor="middle" font-size="10" fill="#1f7a38">name_new만 read/write</text>
+
+  <text x="660" y="278" text-anchor="middle" font-size="10" fill="#1f7a38">v3 배포 후 일정 기간</text>
+  <text x="660" y="294" text-anchor="middle" font-size="10" fill="#1f7a38">지켜본 뒤에만 DROP 실행</text>
+
+  <line x1="660" y1="305" x2="660" y2="325" stroke="#2fa84f" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="660" y="345" text-anchor="middle" font-size="9.5" fill="#666">DROP 전까지는 언제든</text>
+  <text x="660" y="359" text-anchor="middle" font-size="9.5" fill="#666">v2로 되돌릴 수 있는 롤백 여지</text>
+
+  <text x="400" y="435" text-anchor="middle" font-size="11" fill="#555">핵심은 &quot;스키마 변경&quot;과 &quot;애플리케이션 배포&quot;를 각각 되돌릴 수 있는 작은 단계로 쪼개는 것</text>
+</svg>

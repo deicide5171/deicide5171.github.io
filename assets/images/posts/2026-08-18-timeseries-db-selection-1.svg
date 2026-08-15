@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1a1a1a">시계열 데이터 저장 구조 비교</text>
+  <text x="400" y="48" text-anchor="middle" font-size="12" fill="#666">TimescaleDB의 하이퍼테이블/청크 vs InfluxDB의 TSM 엔진</text>
+
+  <!-- Panel A: TimescaleDB -->
+  <text x="200" y="80" text-anchor="middle" font-size="14" font-weight="bold" fill="#1f6ea3">TimescaleDB — 하이퍼테이블(Hypertable)</text>
+
+  <rect x="50" y="95" width="300" height="34" rx="4" fill="none" stroke="#1f6ea3" stroke-width="1.5"/>
+  <text x="200" y="117" text-anchor="middle" font-size="11.5" fill="#1f6ea3">논리적으로는 테이블 1개(SQL로 조회)</text>
+
+  <!-- chunks -->
+  <rect x="55" y="150" width="70" height="60" rx="4" fill="#e8f1fa" stroke="#1f6ea3"/>
+  <text x="90" y="172" text-anchor="middle" font-size="10.5" fill="#1a1a1a">청크 1</text>
+  <text x="90" y="188" text-anchor="middle" font-size="9.5" fill="#555">8/1~8/7</text>
+
+  <rect x="135" y="150" width="70" height="60" rx="4" fill="#e8f1fa" stroke="#1f6ea3"/>
+  <text x="170" y="172" text-anchor="middle" font-size="10.5" fill="#1a1a1a">청크 2</text>
+  <text x="170" y="188" text-anchor="middle" font-size="9.5" fill="#555">8/8~8/14</text>
+
+  <rect x="215" y="150" width="70" height="60" rx="4" fill="#d9edff" stroke="#1f6ea3" stroke-width="2"/>
+  <text x="250" y="172" text-anchor="middle" font-size="10.5" fill="#1a1a1a" font-weight="bold">청크 3</text>
+  <text x="250" y="188" text-anchor="middle" font-size="9.5" fill="#0b4f82" font-weight="bold">8/15~ (최신)</text>
+
+  <text x="200" y="232" text-anchor="middle" font-size="10.5" fill="#555">시간 구간별로 물리적으로 나뉜 청크</text>
+  <text x="200" y="248" text-anchor="middle" font-size="10.5" fill="#555">오래된 청크는 압축, 최신 청크에 쓰기 집중</text>
+
+  <rect x="50" y="270" width="300" height="90" rx="6" fill="#f2f8fd" stroke="#c8dcee"/>
+  <text x="65" y="292" font-size="11.5" fill="#1a1a1a" font-weight="bold">기반: PostgreSQL 엔진 그대로</text>
+  <text x="65" y="311" font-size="10.5" fill="#333">표준 SQL, JOIN, 트랜잭션, 인덱스,</text>
+  <text x="65" y="328" font-size="10.5" fill="#333">기존 ORM·백업 도구를 그대로 사용</text>
+  <text x="65" y="345" font-size="10.5" fill="#333">(하이퍼테이블 = 청크들을 통합한 뷰)</text>
+
+  <!-- divider -->
+  <line x1="400" y1="70" x2="400" y2="400" stroke="#ddd" stroke-width="1"/>
+
+  <!-- Panel B: InfluxDB -->
+  <text x="600" y="80" text-anchor="middle" font-size="14" font-weight="bold" fill="#a3550f">InfluxDB — TSM 엔진</text>
+
+  <rect x="450" y="95" width="120" height="34" rx="4" fill="#fdeee0" stroke="#c9701d"/>
+  <text x="510" y="117" text-anchor="middle" font-size="10.5" fill="#a3550f">쓰기 → WAL</text>
+
+  <text x="600" y="120" font-size="16" fill="#c9701d" text-anchor="middle">→</text>
+
+  <rect x="620" y="95" width="130" height="34" rx="4" fill="#fdeee0" stroke="#c9701d"/>
+  <text x="685" y="117" text-anchor="middle" font-size="10.5" fill="#a3550f">메모리 캐시</text>
+
+  <text x="600" y="150" text-anchor="middle" font-size="11" fill="#555">↓ 주기적으로 디스크에 정렬된 파일로 flush</text>
+
+  <rect x="460" y="165" width="60" height="45" rx="4" fill="#fdf3e8" stroke="#c9701d"/>
+  <text x="490" y="192" text-anchor="middle" font-size="9.5" fill="#333">TSM 파일</text>
+
+  <rect x="530" y="165" width="60" height="45" rx="4" fill="#fdf3e8" stroke="#c9701d"/>
+  <text x="560" y="192" text-anchor="middle" font-size="9.5" fill="#333">TSM 파일</text>
+
+  <rect x="600" y="165" width="60" height="45" rx="4" fill="#fdf3e8" stroke="#c9701d"/>
+  <text x="630" y="192" text-anchor="middle" font-size="9.5" fill="#333">TSM 파일</text>
+
+  <rect x="670" y="165" width="60" height="45" rx="4" fill="#fdf3e8" stroke="#c9701d"/>
+  <text x="700" y="192" text-anchor="middle" font-size="9.5" fill="#333">TSM 파일</text>
+
+  <text x="600" y="230" text-anchor="middle" font-size="11" fill="#555">↓ 백그라운드 컴팩션(병합·압축)</text>
+
+  <rect x="530" y="245" width="140" height="35" rx="4" fill="#fbe4cc" stroke="#c9701d" stroke-width="2"/>
+  <text x="600" y="267" text-anchor="middle" font-size="10.5" fill="#7a3d0a" font-weight="bold">병합된 압축 파일</text>
+
+  <rect x="450" y="300" width="300" height="60" rx="6" fill="#fdf5ea" stroke="#eecfa8"/>
+  <text x="465" y="322" font-size="11.5" fill="#1a1a1a" font-weight="bold">기반: 측정값 + 태그 + 필드</text>
+  <text x="465" y="341" font-size="10.5" fill="#333">태그는 인덱싱되어 조회에 최적화되지만,</text>
+  <text x="465" y="356" font-size="10.5" fill="#333">태그 값 종류가 많아지면 카디널리티 부담 증가</text>
+
+  <text x="400" y="425" text-anchor="middle" font-size="11" fill="#777">TimescaleDB는 익숙한 SQL 위에서, InfluxDB는 시계열 전용 구조로 쓰기·조회를 최적화한다</text>
+</svg>

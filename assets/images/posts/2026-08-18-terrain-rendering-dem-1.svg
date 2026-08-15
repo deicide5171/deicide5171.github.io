@@ -1,0 +1,118 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1a1a1a">DEM 높이맵 → 메시 변환, 그리고 지형 타일 LOD</text>
+
+  <defs>
+    <marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#0b5fa5"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#777"/>
+    </marker>
+    <marker id="arrowOrange" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#a56a00"/>
+    </marker>
+  </defs>
+
+  <!-- divider -->
+  <line x1="400" y1="58" x2="400" y2="405" stroke="#ccc" stroke-width="1.5" stroke-dasharray="6,4"/>
+
+  <text x="205" y="72" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#0b5fa5">1. DEM 높이맵 → 메시 변환</text>
+  <text x="600" y="72" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1f7a38">2. 지형 타일 LOD (거리 기반 해상도 전환)</text>
+
+  <!-- ===== LEFT: heightmap grid ===== -->
+  <text x="40" y="90" font-size="11" fill="#666">DEM 래스터(고도값, m)</text>
+
+  <!-- row0 -->
+  <rect x="40" y="95" width="35" height="35" fill="#4f9d5a"/><text x="57" y="116" text-anchor="middle" font-size="10" fill="#fff">80</text>
+  <rect x="75" y="95" width="35" height="35" fill="#7ab35c"/><text x="92" y="116" text-anchor="middle" font-size="10" fill="#fff">150</text>
+  <rect x="110" y="95" width="35" height="35" fill="#7ab35c"/><text x="127" y="116" text-anchor="middle" font-size="10" fill="#fff">220</text>
+  <rect x="145" y="95" width="35" height="35" fill="#7ab35c"/><text x="162" y="116" text-anchor="middle" font-size="10" fill="#fff">160</text>
+  <!-- row1 -->
+  <rect x="40" y="130" width="35" height="35" fill="#4f9d5a"/><text x="57" y="151" text-anchor="middle" font-size="10" fill="#fff">140</text>
+  <rect x="75" y="130" width="35" height="35" fill="#c9a15a"/><text x="92" y="151" text-anchor="middle" font-size="10" fill="#fff">320</text>
+  <rect x="110" y="130" width="35" height="35" fill="#a97b45"/><text x="127" y="151" text-anchor="middle" font-size="10" fill="#fff">480</text>
+  <rect x="145" y="130" width="35" height="35" fill="#c9a15a"/><text x="162" y="151" text-anchor="middle" font-size="10" fill="#fff">260</text>
+  <!-- row2 -->
+  <rect x="40" y="165" width="35" height="35" fill="#7ab35c"/><text x="57" y="186" text-anchor="middle" font-size="10" fill="#fff">210</text>
+  <rect x="75" y="165" width="35" height="35" fill="#a97b45"/><text x="92" y="186" text-anchor="middle" font-size="10" fill="#fff">460</text>
+  <rect x="110" y="165" width="35" height="35" fill="#f5f0e6" stroke="#bbb"/><text x="127" y="186" text-anchor="middle" font-size="10" fill="#555">780</text>
+  <rect x="145" y="165" width="35" height="35" fill="#a97b45"/><text x="162" y="186" text-anchor="middle" font-size="10" fill="#fff">390</text>
+  <!-- row3 -->
+  <rect x="40" y="200" width="35" height="35" fill="#4f9d5a"/><text x="57" y="221" text-anchor="middle" font-size="10" fill="#fff">130</text>
+  <rect x="75" y="200" width="35" height="35" fill="#7ab35c"/><text x="92" y="221" text-anchor="middle" font-size="10" fill="#fff">240</text>
+  <rect x="110" y="200" width="35" height="35" fill="#a97b45"/><text x="127" y="221" text-anchor="middle" font-size="10" fill="#fff">350</text>
+  <rect x="145" y="200" width="35" height="35" fill="#7ab35c"/><text x="162" y="221" text-anchor="middle" font-size="10" fill="#fff">200</text>
+
+  <rect x="40" y="95" width="140" height="140" fill="none" stroke="#999" stroke-width="1.5"/>
+  <text x="110" y="248" text-anchor="middle" font-size="10" fill="#888">셀 하나 = 격자 정점 하나</text>
+
+  <!-- arrow to mesh -->
+  <line x1="182" y1="165" x2="205" y2="165" stroke="#0b5fa5" stroke-width="2.5" marker-end="url(#arrowBlue)"/>
+  <text x="193" y="152" text-anchor="middle" font-size="9.5" fill="#0b5fa5" font-weight="bold">Z=값</text>
+
+  <!-- wireframe mesh (pseudo-3D, 3 rows x 6 cols) -->
+  <polyline points="190,292 222,282 254,258 286,242 318,270 350,288" fill="none" stroke="#6b8f52" stroke-width="1.6"/>
+  <polyline points="208,276 240,266 272,242 304,226 336,254 368,272" fill="none" stroke="#6b8f52" stroke-width="1.6"/>
+  <polyline points="226,260 258,250 290,226 322,210 354,238 386,256" fill="none" stroke="#6b8f52" stroke-width="1.6"/>
+  <line x1="190" y1="292" x2="208" y2="276" stroke="#6b8f52" stroke-width="1.2"/>
+  <line x1="222" y1="282" x2="240" y2="266" stroke="#6b8f52" stroke-width="1.2"/>
+  <line x1="254" y1="258" x2="272" y2="242" stroke="#6b8f52" stroke-width="1.2"/>
+  <line x1="286" y1="242" x2="304" y2="226" stroke="#6b8f52" stroke-width="1.2"/>
+  <line x1="318" y1="270" x2="336" y2="254" stroke="#6b8f52" stroke-width="1.2"/>
+  <line x1="350" y1="288" x2="368" y2="272" stroke="#6b8f52" stroke-width="1.2"/>
+  <line x1="208" y1="276" x2="226" y2="260" stroke="#6b8f52" stroke-width="1.2"/>
+  <line x1="240" y1="266" x2="258" y2="250" stroke="#6b8f52" stroke-width="1.2"/>
+  <line x1="272" y1="242" x2="290" y2="226" stroke="#6b8f52" stroke-width="1.2"/>
+  <line x1="304" y1="226" x2="322" y2="210" stroke="#6b8f52" stroke-width="1.2"/>
+  <line x1="336" y1="254" x2="354" y2="238" stroke="#6b8f52" stroke-width="1.2"/>
+  <line x1="368" y1="272" x2="386" y2="256" stroke="#6b8f52" stroke-width="1.2"/>
+
+  <text x="290" y="330" text-anchor="middle" font-size="10.5" fill="#555" font-weight="bold">삼각형 메시(TIN) — 정점 높이 = DEM 셀 값</text>
+  <text x="290" y="345" text-anchor="middle" font-size="10" fill="#888">격자 정점 4개마다 삼각형 2개로 분할</text>
+
+  <!-- ===== RIGHT: tile LOD ===== -->
+  <!-- far tile: coarse grid -->
+  <rect x="430" y="95" width="132" height="90" fill="#eef4ff" stroke="#0b5fa5" stroke-width="1.5"/>
+  <line x1="474" y1="95" x2="474" y2="185" stroke="#8fb3d9" stroke-width="1"/>
+  <line x1="518" y1="95" x2="518" y2="185" stroke="#8fb3d9" stroke-width="1"/>
+  <line x1="430" y1="125" x2="562" y2="125" stroke="#8fb3d9" stroke-width="1"/>
+  <line x1="430" y1="155" x2="562" y2="155" stroke="#8fb3d9" stroke-width="1"/>
+  <text x="496" y="112" text-anchor="middle" font-size="10.5" fill="#0b5fa5" font-weight="bold">Level 0</text>
+  <text x="496" y="202" text-anchor="middle" font-size="11" fill="#555">원거리 타일 · 저해상도 그리드</text>
+  <text x="496" y="215" text-anchor="middle" font-size="10" fill="#888">참고 예: 32×32 정점 수준</text>
+
+  <!-- near tile: dense grid -->
+  <rect x="608" y="235" width="150" height="105" fill="#eafcef" stroke="#1f7a38" stroke-width="1.5"/>
+  <line x1="633" y1="235" x2="633" y2="340" stroke="#a9d9b6" stroke-width="0.8"/>
+  <line x1="658" y1="235" x2="658" y2="340" stroke="#a9d9b6" stroke-width="0.8"/>
+  <line x1="683" y1="235" x2="683" y2="340" stroke="#a9d9b6" stroke-width="0.8"/>
+  <line x1="708" y1="235" x2="708" y2="340" stroke="#a9d9b6" stroke-width="0.8"/>
+  <line x1="733" y1="235" x2="733" y2="340" stroke="#a9d9b6" stroke-width="0.8"/>
+  <line x1="608" y1="256" x2="758" y2="256" stroke="#a9d9b6" stroke-width="0.8"/>
+  <line x1="608" y1="277" x2="758" y2="277" stroke="#a9d9b6" stroke-width="0.8"/>
+  <line x1="608" y1="298" x2="758" y2="298" stroke="#a9d9b6" stroke-width="0.8"/>
+  <line x1="608" y1="319" x2="758" y2="319" stroke="#a9d9b6" stroke-width="0.8"/>
+  <text x="683" y="251" text-anchor="middle" font-size="10.5" fill="#1f7a38" font-weight="bold">Level 3</text>
+  <text x="683" y="356" text-anchor="middle" font-size="11" fill="#555">근거리 타일 · 고해상도 그리드</text>
+  <text x="683" y="369" text-anchor="middle" font-size="10" fill="#888">참고 예: 256×256 정점 수준</text>
+
+  <!-- transition arrow far -> near -->
+  <line x1="510" y1="185" x2="640" y2="233" stroke="#777" stroke-width="1.8" stroke-dasharray="5,4" marker-end="url(#arrowGray)"/>
+  <text x="565" y="205" text-anchor="middle" font-size="10" fill="#7a4b00" font-weight="bold">접근 시 세분화</text>
+  <text x="565" y="218" text-anchor="middle" font-size="9.5" fill="#7a4b00">(정점 보간 = 지오모핑, 튐 방지)</text>
+
+  <!-- camera icon -->
+  <g transform="translate(735,395)">
+    <polygon points="0,0 40,-14 40,14" fill="#ffb020" stroke="#a56a00" stroke-width="1.5"/>
+    <circle cx="0" cy="0" r="5.5" fill="#a56a00"/>
+  </g>
+  <text x="700" y="415" text-anchor="middle" font-size="10.5" fill="#7a4b00" font-weight="bold">카메라 시점</text>
+  <line x1="705" y1="392" x2="683" y2="345" stroke="#ffb020" stroke-width="1.8" stroke-dasharray="4,3"/>
+
+  <text x="600" y="97" font-size="0" fill="none"></text>
+  <text x="600" y="42" text-anchor="middle" font-size="10.5" fill="#666">화면 공간 오차(SSE)가 클수록 더 세밀한 타일 요청</text>
+
+  <text x="400" y="428" text-anchor="middle" font-size="11.5" fill="#555">같은 지형을 해상도(정점 수)만 다르게 저장해두고, 카메라 거리에 맞는 레벨을 골라 로드한다</text>
+</svg>

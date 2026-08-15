@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <!-- Title -->
+  <text x="400" y="34" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">API 버저닝 3가지 전략 — 같은 요청, 다른 위치</text>
+
+  <!-- Client -->
+  <rect x="30" y="180" width="120" height="70" rx="8" fill="#eef2ff" stroke="#4f5bd5" stroke-width="2"/>
+  <text x="90" y="210" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#222">클라이언트</text>
+  <text x="90" y="230" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#555">GET /users/42</text>
+
+  <!-- Arrows to three strategies -->
+  <line x1="150" y1="215" x2="230" y2="90" stroke="#888" stroke-width="2"/>
+  <line x1="150" y1="215" x2="230" y2="215" stroke="#888" stroke-width="2"/>
+  <line x1="150" y1="215" x2="230" y2="340" stroke="#888" stroke-width="2"/>
+
+  <!-- Strategy 1: URI path -->
+  <rect x="230" y="55" width="230" height="70" rx="8" fill="#f0f7f4" stroke="#03c75a" stroke-width="2"/>
+  <text x="345" y="78" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#222">1. URI 경로 버저닝</text>
+  <text x="345" y="98" text-anchor="middle" font-family="monospace" font-size="12" fill="#333">/v2/users/42</text>
+  <text x="345" y="115" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#666">URL 자체가 버전을 명시</text>
+
+  <!-- Strategy 2: custom header -->
+  <rect x="230" y="180" width="230" height="70" rx="8" fill="#fff7f0" stroke="#ff8a3d" stroke-width="2"/>
+  <text x="345" y="203" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#222">2. 커스텀 헤더 버저닝</text>
+  <text x="345" y="223" text-anchor="middle" font-family="monospace" font-size="11" fill="#333">X-API-Version: 2</text>
+  <text x="345" y="240" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#666">URL은 그대로, 헤더로 지정</text>
+
+  <!-- Strategy 3: content negotiation -->
+  <rect x="230" y="305" width="230" height="70" rx="8" fill="#eef2ff" stroke="#4f5bd5" stroke-width="2"/>
+  <text x="345" y="328" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#222">3. 콘텐츠 협상(Accept)</text>
+  <text x="345" y="348" text-anchor="middle" font-family="monospace" font-size="10.5" fill="#333">Accept: vnd.api.v2+json</text>
+  <text x="345" y="365" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#666">미디어 타입에 버전 포함</text>
+
+  <!-- Arrows to server -->
+  <line x1="460" y1="90" x2="560" y2="215" stroke="#888" stroke-width="2"/>
+  <line x1="460" y1="215" x2="560" y2="215" stroke="#888" stroke-width="2"/>
+  <line x1="460" y1="340" x2="560" y2="215" stroke="#888" stroke-width="2"/>
+
+  <!-- Server / router -->
+  <rect x="560" y="160" width="90" height="110" rx="8" fill="#f5f5f5" stroke="#666" stroke-width="2"/>
+  <text x="605" y="200" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#222">서버</text>
+  <text x="605" y="218" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">버전</text>
+  <text x="605" y="235" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">라우팅</text>
+
+  <!-- Version handlers -->
+  <line x1="650" y1="185" x2="710" y2="150" stroke="#888" stroke-width="1.5"/>
+  <line x1="650" y1="215" x2="710" y2="215" stroke="#888" stroke-width="1.5"/>
+  <line x1="650" y1="245" x2="710" y2="280" stroke="#888" stroke-width="1.5"/>
+
+  <rect x="710" y="125" width="70" height="45" rx="6" fill="#ffffff" stroke="#03c75a" stroke-width="1.5"/>
+  <text x="745" y="152" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#03c75a">v1 핸들러</text>
+
+  <rect x="710" y="192" width="70" height="45" rx="6" fill="#ffffff" stroke="#03c75a" stroke-width="1.5"/>
+  <text x="745" y="219" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#03c75a">v2 핸들러</text>
+
+  <rect x="710" y="258" width="70" height="45" rx="6" fill="#ffffff" stroke="#999" stroke-width="1.5"/>
+  <text x="745" y="285" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#666">v3 핸들러</text>
+
+  <!-- caption -->
+  <text x="400" y="425" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#888">전략마다 버전 신호를 두는 위치(URL / 헤더 / 미디어 타입)만 다를 뿐, 서버는 결국 같은 방식으로 버전을 분기한다</text>
+</svg>
