@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="32" text-anchor="middle" font-size="19" font-weight="bold" fill="#1a1a1a">OpenLayers 아키텍처 — Map · View · Layer · Source 관계</text>
+
+  <!-- Map container (outer) -->
+  <rect x="40" y="60" width="720" height="340" rx="10" fill="#f7f9fb" stroke="#22577a" stroke-width="2"/>
+  <text x="70" y="86" font-size="15" font-weight="bold" fill="#1a4d6d">ol.Map</text>
+  <text x="70" y="104" font-size="11" fill="#5a7a8c">지도 컨테이너 — target DOM에 렌더링, 렌더러(WebGL/Canvas) 관리</text>
+
+  <!-- View box -->
+  <rect x="70" y="118" width="220" height="90" rx="8" fill="#0b5fa5" stroke="#083f6e" stroke-width="1.5"/>
+  <text x="180" y="140" text-anchor="middle" font-size="13" font-weight="bold" fill="#fff">ol.View</text>
+  <text x="180" y="158" text-anchor="middle" font-size="10.5" fill="#dbeafe">중심좌표(center)</text>
+  <text x="180" y="173" text-anchor="middle" font-size="10.5" fill="#dbeafe">줌 레벨(zoom)</text>
+  <text x="180" y="188" text-anchor="middle" font-size="10.5" fill="#dbeafe">좌표계(projection)</text>
+  <text x="180" y="200" text-anchor="middle" font-size="9.5" fill="#bcd8f5">← Map이 참조</text>
+
+  <!-- Map -> View arrow -->
+  <line x1="290" y1="150" x2="330" y2="150" stroke="#22577a" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Layers stack -->
+  <rect x="330" y="118" width="410" height="150" rx="8" fill="#ffffff" stroke="#22577a" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="345" y="136" font-size="12" font-weight="bold" fill="#1a4d6d">layers[] — 아래에서 위로 순서대로 렌더링</text>
+
+  <!-- Layer 1: Tile -->
+  <rect x="345" y="146" width="180" height="52" rx="6" fill="#1877c9" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="435" y="166" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">ol.layer.Tile</text>
+  <text x="435" y="182" text-anchor="middle" font-size="10" fill="#dbeafe">배경 지도(래스터 타일)</text>
+  <text x="435" y="193" text-anchor="middle" font-size="9" fill="#bcd8f5">source: XYZ / OSM</text>
+
+  <!-- Layer 2: Vector -->
+  <rect x="345" y="204" width="180" height="52" rx="6" fill="#2fa84f" stroke="#1f7a38" stroke-width="1.5"/>
+  <text x="435" y="224" text-anchor="middle" font-size="12" font-weight="bold" fill="#fff">ol.layer.Vector</text>
+  <text x="435" y="240" text-anchor="middle" font-size="10" fill="#eafff0">점·선·폴리곤 오버레이</text>
+  <text x="435" y="251" text-anchor="middle" font-size="9" fill="#c9f5d6">source: Vector(Feature)</text>
+
+  <!-- Sources for each layer -->
+  <rect x="545" y="146" width="175" height="52" rx="6" fill="#f2f7fc" stroke="#0b5fa5" stroke-width="1.3"/>
+  <text x="632" y="166" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#0b5fa5">Source: XYZ</text>
+  <text x="632" y="182" text-anchor="middle" font-size="9.5" fill="#33546e">타일 URL 템플릿</text>
+  <text x="632" y="193" text-anchor="middle" font-size="9.5" fill="#33546e">z/x/y 좌표 → 이미지 요청</text>
+
+  <rect x="545" y="204" width="175" height="52" rx="6" fill="#f0faf2" stroke="#1f7a38" stroke-width="1.3"/>
+  <text x="632" y="224" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1f7a38">Source: Vector</text>
+  <text x="632" y="240" text-anchor="middle" font-size="9.5" fill="#2c5c38">GeoJSON / Feature 배열</text>
+  <text x="632" y="251" text-anchor="middle" font-size="9.5" fill="#2c5c38">메모리 내 지오메트리 보관</text>
+
+  <!-- Layer -> Source arrows -->
+  <line x1="525" y1="172" x2="543" y2="172" stroke="#0b5fa5" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <line x1="525" y1="230" x2="543" y2="230" stroke="#1f7a38" stroke-width="1.6" marker-end="url(#arrow)"/>
+
+  <!-- Style below Vector layer -->
+  <rect x="345" y="616" width="1" height="1" fill="none"/>
+
+  <!-- Style box -->
+  <rect x="70" y="228" width="220" height="70" rx="8" fill="#ffb020" stroke="#a56a00" stroke-width="1.5"/>
+  <text x="180" y="250" text-anchor="middle" font-size="13" font-weight="bold" fill="#5a3600">ol.style.Style</text>
+  <text x="180" y="267" text-anchor="middle" font-size="10.5" fill="#5a3600">Fill / Stroke / Icon</text>
+  <text x="180" y="282" text-anchor="middle" font-size="10" fill="#6b4400">Vector 레이어에 적용</text>
+
+  <!-- Style -> Vector layer arrow -->
+  <line x1="290" y1="255" x2="343" y2="230" stroke="#a56a00" stroke-width="1.8" marker-end="url(#arrow2)"/>
+
+  <!-- Interaction box -->
+  <rect x="70" y="312" width="220" height="70" rx="8" fill="#e64980" stroke="#a02b57" stroke-width="1.5"/>
+  <text x="180" y="334" text-anchor="middle" font-size="13" font-weight="bold" fill="#fff">ol.interaction</text>
+  <text x="180" y="351" text-anchor="middle" font-size="10.5" fill="#ffe1ec">Select / Draw / Modify</text>
+  <text x="180" y="366" text-anchor="middle" font-size="10" fill="#ffe1ec">사용자 조작 → Feature 변경</text>
+
+  <!-- Interaction -> Map arrow (registered on map) -->
+  <line x1="180" y1="312" x2="180" y2="298" stroke="#a02b57" stroke-width="1.6" marker-end="url(#arrow3)"/>
+  <line x1="180" y1="382" x2="180" y2="392" stroke="#a02b57" stroke-width="0" />
+
+  <!-- Interaction -> Vector source (feedback loop) -->
+  <path d="M290,347 C 460,347 460,300 435,258" fill="none" stroke="#a02b57" stroke-width="1.6" stroke-dasharray="5,4" marker-end="url(#arrow3)"/>
+  <text x="470" y="300" font-size="9.5" fill="#a02b57">Feature 추가/수정</text>
+
+  <!-- Controls -->
+  <rect x="545" y="312" width="175" height="60" rx="8" fill="#eef1f4" stroke="#556" stroke-width="1.3"/>
+  <text x="632" y="334" text-anchor="middle" font-size="12" font-weight="bold" fill="#334">ol.control</text>
+  <text x="632" y="352" text-anchor="middle" font-size="10" fill="#556">Zoom, ScaleLine 등 UI 부가 요소</text>
+
+  <!-- Data flow label at bottom -->
+  <text x="400" y="410" text-anchor="middle" font-size="12" fill="#555">Source가 데이터를 공급하고, Style이 표현을 결정하며, View가 화면 좌표계를 정의한다</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#22577a"/>
+    </marker>
+    <marker id="arrow2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#a56a00"/>
+    </marker>
+    <marker id="arrow3" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#a02b57"/>
+    </marker>
+  </defs>
+</svg>
