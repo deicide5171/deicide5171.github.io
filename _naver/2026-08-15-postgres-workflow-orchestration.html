@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Postgres로 워크플로우 오케스트레이션하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">별도 오케스트레이터 없이, Postgres로 워크플로우를 관리하는 법</div>
+<p style="font-size:14px; color:#999;">2026. 8. 15. · 시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — Airflow 같은 별도 오케스트레이션 미들웨어 없이, <b>PostgreSQL 트랜잭션</b>만으로 워크플로우의 상태·재시도·복구를 관리하는 접근을 정리했습니다. 2026년 QCon SF에서 DBOS 등이 소개하며 다시 주목받고 있는 흐름입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 이 이야기가 지금 나오는 걸까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Airflow, Temporal, Step Functions 같은 워크플로우 오케스트레이터는 여러 서비스를 넘나드는 긴 작업을 안정적으로 관리하려고 만들어졌습니다. 그런데 이런 도구들도 결국 하나의 <b>분산 시스템</b>이어서, 오케스트레이터의 상태 저장소와 스케줄러 자체가 또 다른 장애 지점이 되곤 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">2026년 QCon San Francisco를 비롯한 여러 발표에서 DBOS 같은 팀이 제시한 아이디어는 <b>이미 신뢰하고 있는 PostgreSQL 트랜잭션</b> 위에 워크플로우 상태를 얹자는 것입니다. 새로운 미들웨어를 배포하는 대신, 애플리케이션이 이미 쓰고 있는 DB의 신뢰성을 그대로 재사용하자는 발상입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">다만 이 방식이 모든 워크플로우에 맞는 만능 해법은 아닙니다. 어떤 상황에서 유효하고, 어떤 상황에서는 여전히 전용 오케스트레이터가 나은지 구분하는 것이 실무에서 훨씬 중요합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">기존 오케스트레이터와 무엇이 다른가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">전통적인 오케스트레이터는 <b>실행 상태와 재시도 로직을 별도 컨트롤 플레인</b>이 관리합니다. 반면 Postgres 기반 접근은 각 워크플로우 단계를 하나의 트랜잭션으로 표현하고, 실행 결과와 다음 단계 전이를 같은 테이블에 원자적으로 기록합니다. 프로세스가 죽어도 마지막 커밋 상태를 그대로 읽어와 재개할 수 있다는 것이 핵심입니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">별도 오케스트레이터</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Postgres 기반 접근</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">상태 저장 위치</td>
+<td style="border:1px solid #ddd; padding:10px;">오케스트레이터 전용 메타 DB</td>
+<td style="border:1px solid #ddd; padding:10px;">애플리케이션이 쓰던 Postgres</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">추가 장애 지점</td>
+<td style="border:1px solid #ddd; padding:10px;">오케스트레이터 클러스터</td>
+<td style="border:1px solid #ddd; padding:10px;">기존 DB 신뢰성에 편승</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">가시성(모니터링)</td>
+<td style="border:1px solid #ddd; padding:10px;">전용 대시보드 제공</td>
+<td style="border:1px solid #ddd; padding:10px;">SQL 조회, 직접 구축 필요</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">적합한 규모</td>
+<td style="border:1px solid #ddd; padding:10px;">수백~수천 개 태스크 DAG</td>
+<td style="border:1px solid #ddd; padding:10px;">서비스 내부 국소적 장기 작업</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">기존 오케스트레이터에 대한 대표적인 불만은 두 가지입니다. 첫째는 <b>실패 처리의 복잡성</b>입니다. 재시도 정책과 보상 트랜잭션을 오케스트레이터 전용 DSL로 표현하다 보니 실제 비즈니스 로직과 괴리가 생기기 쉽습니다. 둘째는 <b>가시성 부족</b>입니다. 지금 워크플로우가 어느 단계에서 멈췄는지 알기 위해 오케스트레이터 UI와 애플리케이션 로그를 번갈아 확인해야 하는 경우가 많습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제로 보는 트랜잭션 기반 워크플로우</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">개념을 단순화한 예시입니다. 실제 DBOS류 라이브러리는 더 정교한 멱등성 키와 버전 관리를 제공하지만, 핵심 원리는 아래와 크게 다르지 않습니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">-- 워크플로우 단계 상태 테이블
+CREATE TABLE workflow_step (
+    workflow_id   UUID NOT NULL,
+    step_name     TEXT NOT NULL,
+    status        TEXT NOT NULL DEFAULT 'pending',
+    attempt       INT NOT NULL DEFAULT 0,
+    result        JSONB,
+    updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
+    PRIMARY KEY (workflow_id, step_name)
+);</pre>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">def run_step(conn, workflow_id, step_name, fn):
+    with conn.transaction():
+        row = conn.execute(
+            "SELECT status, attempt FROM workflow_step "
+            "WHERE workflow_id=%s AND step_name=%s FOR UPDATE",
+            (workflow_id, step_name),
+        ).fetchone()
+
+        if row and row["status"] == "done":
+            return row  # 이미 완료된 단계는 재실행하지 않음
+
+        conn.execute(
+            "UPDATE workflow_step SET status='running', attempt=attempt+1 "
+            "WHERE workflow_id=%s AND step_name=%s",
+            (workflow_id, step_name),
+        )
+
+        result = fn()  # 실제 비즈니스 로직 실행
+
+        conn.execute(
+            "UPDATE workflow_step SET status='done', result=%s "
+            "WHERE workflow_id=%s AND step_name=%s",
+            (result, workflow_id, step_name),
+        )</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">핵심은 <b>단계 실행과 상태 갱신이 같은 트랜잭션 경계</b> 안에 있다는 점입니다. 프로세스가 중간에 죽어도 status는 running으로 남아 있고, 재기동할 때 이 값을 보고 재시도 여부를 판단할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">도입 전 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 규모를 먼저 확인하세요</b> — 국소적이고 단계 수가 적은 워크플로우에는 적합하지만, 수백 개 태스크의 복잡한 DAG에는 부적합할 수 있습니다<br>
+<b>2. 장기 대기·승인 단계는 별도 검토</b> — 사람이 며칠씩 승인을 기다리는 단계가 있다면 전용 오케스트레이터가 여전히 유리합니다<br>
+<b>3. 트랜잭션 락 범위에 유의</b> — 트랜잭션이 오래 걸리면 DB 전체 처리량을 떨어뜨릴 수 있어 격리 수준 설계가 중요합니다<br>
+<b>4. 모니터링은 직접 구축해야 함</b> — 오케스트레이터의 대시보드 대신 SQL 기반 조회 도구를 별도로 준비해야 합니다<br>
+<b>5. 확정 수치는 문서로 재확인</b> — 발표마다 언급되는 벤치마크나 로드맵이 다를 수 있어 도입 전 공식 문서를 직접 확인하는 것이 안전합니다
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 워크플로우 상태·재시도·복구를 별도 오케스트레이터가 아니라 PostgreSQL 트랜잭션 위에서 관리하는 접근이 주목받고 있습니다.<br>
+② 기존 DB의 신뢰성을 재사용해 운영 부담과 장애 지점을 줄일 수 있지만, 가시성은 직접 구축해야 하는 트레이드오프가 있습니다.<br>
+③ 규모가 크지 않은 국소적 워크플로우에는 적합하지만, 대규모 DAG나 장기 승인 단계가 있다면 여전히 전용 오케스트레이터가 낫습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 실제 도입 사례를 좀 더 구체적으로 다뤄보겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#Postgres #워크플로우오케스트레이션 #DBOS #분산시스템 #시스템설계</p>
+
+</body>
+</html>
