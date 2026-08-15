@@ -1,0 +1,95 @@
+<svg viewBox="0 0 800 450" width="800" height="450" xmlns="http://www.w3.org/2000/svg" font-family="Helvetica, Arial, sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="34" text-anchor="middle" font-size="20" font-weight="bold" fill="#222222">행 지향 저장 vs 컬럼 지향 저장</text>
+
+  <!-- Row-oriented panel -->
+  <text x="200" y="66" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f6f4f">행 지향 저장 (OLTP)</text>
+  <rect x="60" y="80" width="280" height="150" rx="6" fill="#f5f9f7" stroke="#c7ddd2" stroke-width="1.5"/>
+
+  <!-- row 1 -->
+  <rect x="75" y="95" width="60" height="26" fill="#8fd0ac" stroke="#3f9f6f"/>
+  <rect x="135" y="95" width="60" height="26" fill="#8fd0ac" stroke="#3f9f6f"/>
+  <rect x="195" y="95" width="60" height="26" fill="#8fd0ac" stroke="#3f9f6f"/>
+  <rect x="255" y="95" width="60" height="26" fill="#8fd0ac" stroke="#3f9f6f"/>
+  <text x="105" y="112" text-anchor="middle" font-size="11" fill="#154029">id</text>
+  <text x="165" y="112" text-anchor="middle" font-size="11" fill="#154029">name</text>
+  <text x="225" y="112" text-anchor="middle" font-size="11" fill="#154029">amt</text>
+  <text x="285" y="112" text-anchor="middle" font-size="11" fill="#154029">date</text>
+
+  <!-- row 2 -->
+  <rect x="75" y="125" width="60" height="26" fill="#a9dcc0" stroke="#3f9f6f"/>
+  <rect x="135" y="125" width="60" height="26" fill="#a9dcc0" stroke="#3f9f6f"/>
+  <rect x="195" y="125" width="60" height="26" fill="#a9dcc0" stroke="#3f9f6f"/>
+  <rect x="255" y="125" width="60" height="26" fill="#a9dcc0" stroke="#3f9f6f"/>
+
+  <!-- row 3 -->
+  <rect x="75" y="155" width="60" height="26" fill="#8fd0ac" stroke="#3f9f6f"/>
+  <rect x="135" y="155" width="60" height="26" fill="#8fd0ac" stroke="#3f9f6f"/>
+  <rect x="195" y="155" width="60" height="26" fill="#8fd0ac" stroke="#3f9f6f"/>
+  <rect x="255" y="155" width="60" height="26" fill="#8fd0ac" stroke="#3f9f6f"/>
+
+  <!-- row 4 -->
+  <rect x="75" y="185" width="60" height="26" fill="#a9dcc0" stroke="#3f9f6f"/>
+  <rect x="135" y="185" width="60" height="26" fill="#a9dcc0" stroke="#3f9f6f"/>
+  <rect x="195" y="185" width="60" height="26" fill="#a9dcc0" stroke="#3f9f6f"/>
+  <rect x="255" y="185" width="60" height="26" fill="#a9dcc0" stroke="#3f9f6f"/>
+
+  <text x="200" y="245" text-anchor="middle" font-size="12" fill="#555555">한 행의 모든 컬럼이 디스크에 연속 저장</text>
+  <text x="200" y="262" text-anchor="middle" font-size="12" fill="#555555">→ 단건 조회·갱신에 유리</text>
+
+  <!-- Columnar panel -->
+  <text x="600" y="66" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f6f4f">컬럼 지향 저장 (OLAP)</text>
+  <rect x="460" y="80" width="280" height="150" rx="6" fill="#f5f9f7" stroke="#c7ddd2" stroke-width="1.5"/>
+
+  <!-- column id -->
+  <rect x="475" y="95" width="60" height="26" fill="#8fd0ac" stroke="#3f9f6f"/>
+  <rect x="475" y="125" width="60" height="26" fill="#8fd0ac" stroke="#3f9f6f"/>
+  <rect x="475" y="155" width="60" height="26" fill="#8fd0ac" stroke="#3f9f6f"/>
+  <rect x="475" y="185" width="60" height="26" fill="#8fd0ac" stroke="#3f9f6f"/>
+  <text x="505" y="215" text-anchor="middle" font-size="11" fill="#154029">id</text>
+
+  <!-- column name -->
+  <rect x="535" y="95" width="60" height="26" fill="#d8d8d8" stroke="#a8a8a8"/>
+  <rect x="535" y="125" width="60" height="26" fill="#d8d8d8" stroke="#a8a8a8"/>
+  <rect x="535" y="155" width="60" height="26" fill="#d8d8d8" stroke="#a8a8a8"/>
+  <rect x="535" y="185" width="60" height="26" fill="#d8d8d8" stroke="#a8a8a8"/>
+  <text x="565" y="215" text-anchor="middle" font-size="11" fill="#666666">name</text>
+
+  <!-- column amount (highlighted - the one query needs) -->
+  <rect x="595" y="95" width="60" height="26" fill="#3f9f6f" stroke="#1f6f4f"/>
+  <rect x="595" y="125" width="60" height="26" fill="#3f9f6f" stroke="#1f6f4f"/>
+  <rect x="595" y="155" width="60" height="26" fill="#3f9f6f" stroke="#1f6f4f"/>
+  <rect x="595" y="185" width="60" height="26" fill="#3f9f6f" stroke="#1f6f4f"/>
+  <text x="625" y="215" text-anchor="middle" font-size="11" font-weight="bold" fill="#ffffff">amt</text>
+
+  <!-- column date -->
+  <rect x="655" y="95" width="60" height="26" fill="#d8d8d8" stroke="#a8a8a8"/>
+  <rect x="655" y="125" width="60" height="26" fill="#d8d8d8" stroke="#a8a8a8"/>
+  <rect x="655" y="155" width="60" height="26" fill="#d8d8d8" stroke="#a8a8a8"/>
+  <rect x="655" y="185" width="60" height="26" fill="#d8d8d8" stroke="#a8a8a8"/>
+  <text x="685" y="215" text-anchor="middle" font-size="11" fill="#666666">date</text>
+
+  <text x="600" y="245" text-anchor="middle" font-size="12" fill="#555555">같은 컬럼끼리 모아 저장</text>
+  <text x="600" y="262" text-anchor="middle" font-size="12" fill="#555555">→ 필요한 컬럼(진한 색)만 읽어 집계</text>
+
+  <!-- Arrow -->
+  <path d="M 350 155 L 450 155" stroke="#999999" stroke-width="2" fill="none" marker-end="url(#arrow)"/>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#999999"/>
+    </marker>
+  </defs>
+
+  <!-- Bottom comparison box -->
+  <rect x="60" y="300" width="680" height="120" rx="6" fill="#fafafa" stroke="#e0e0e0" stroke-width="1"/>
+  <text x="400" y="325" text-anchor="middle" font-size="13" font-weight="bold" fill="#222222">SELECT avg(amt) FROM events 실행 시</text>
+
+  <text x="90" y="355" font-size="12" fill="#555555">행 지향:</text>
+  <text x="150" y="355" font-size="12" fill="#555555">id, name, amt, date 모든 컬럼을 4개 행 전부 디스크에서 읽어야 함</text>
+
+  <text x="90" y="380" font-size="12" fill="#1f6f4f" font-weight="bold">컬럼 지향:</text>
+  <text x="175" y="380" font-size="12" fill="#1f6f4f" font-weight="bold">amt 컬럼 블록만 읽으면 됨 (다른 컬럼은 디스크 접근 없음)</text>
+
+  <text x="90" y="405" font-size="12" fill="#777777">→ 읽어야 할 컬럼 수가 줄어들수록 컬럼 지향 저장의 이점이 커진다</text>
+</svg>

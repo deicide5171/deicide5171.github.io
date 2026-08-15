@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <!-- CLOSED -->
+  <circle cx="150" cy="120" r="80" fill="#e8f5e9" stroke="#2e7d32" stroke-width="3"/>
+  <text x="150" y="112" text-anchor="middle" font-size="20" font-weight="bold" fill="#1b5e20" font-family="sans-serif">CLOSED</text>
+  <text x="150" y="136" text-anchor="middle" font-size="13" fill="#2e7d32" font-family="sans-serif">정상 호출 통과</text>
+
+  <!-- OPEN -->
+  <circle cx="650" cy="120" r="80" fill="#ffebee" stroke="#c62828" stroke-width="3"/>
+  <text x="650" y="112" text-anchor="middle" font-size="20" font-weight="bold" fill="#b71c1c" font-family="sans-serif">OPEN</text>
+  <text x="650" y="136" text-anchor="middle" font-size="13" fill="#c62828" font-family="sans-serif">호출 즉시 차단</text>
+
+  <!-- HALF_OPEN -->
+  <circle cx="400" cy="340" r="90" fill="#fff8e1" stroke="#f9a825" stroke-width="3"/>
+  <text x="400" y="332" text-anchor="middle" font-size="19" font-weight="bold" fill="#e65100" font-family="sans-serif">HALF_OPEN</text>
+  <text x="400" y="356" text-anchor="middle" font-size="13" fill="#f57f17" font-family="sans-serif">제한된 호출로 탐색</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <!-- CLOSED -> OPEN -->
+  <path d="M230,105 C 380,60 480,60 570,100" fill="none" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="400" y="55" text-anchor="middle" font-size="13" fill="#333" font-family="sans-serif">실패율 ≥ 임계치</text>
+
+  <!-- OPEN -> HALF_OPEN -->
+  <path d="M610,190 C 560,260 480,300 460,310" fill="none" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="600" y="255" text-anchor="middle" font-size="13" fill="#333" font-family="sans-serif">대기 시간 경과</text>
+
+  <!-- HALF_OPEN -> CLOSED -->
+  <path d="M340,310 C 260,260 200,200 175,200" fill="none" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="205" y="270" text-anchor="middle" font-size="13" fill="#333" font-family="sans-serif">시험 호출 성공</text>
+
+  <!-- HALF_OPEN -> OPEN -->
+  <path d="M460,270 C 540,220 590,200 620,195" fill="none" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="580" y="255" text-anchor="middle" font-size="13" fill="#333" font-family="sans-serif">시험 호출 실패</text>
+</svg>
