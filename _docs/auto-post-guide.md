@@ -1,36 +1,45 @@
-# 데일리 기술 포스트 자동 생성 가이드
+# 데일리 기술 포스트 자동 생성 가이드 (v2 — 배치 모드)
 
-이 문서는 매일 자동으로 생성되는 기술 블로그 포스트의 **공식 스펙**이다.
+이 문서는 자동 생성되는 기술 블로그 포스트의 **공식 스펙**이다.
 자동화 에이전트(클라우드 루틴)는 이 파일이 저장소에 존재하면 아래 규칙을 최우선으로 따른다.
-형식을 바꾸고 싶으면 이 파일만 수정하면 된다.
+형식·규칙을 바꾸고 싶으면 이 파일만 수정하면 된다.
 
 ## 개요
 
-- **실행 주기**: 매일 1회 (루틴 스케줄: UTC 06:30 = 한국시간 15:30 = 인도시간 12:00)
-- **결과물**: 글 1편을 두 가지 형식으로 생성
+- **하루 목표: 5편** (필러당 1편). 각 편은 두 가지 형식으로 생성한다.
   1. 깃헙 블로그용 마크다운 → `_posts/YYYY-MM-DD-<slug>-post.md`
   2. 네이버 블로그용 HTML → `_naver/YYYY-MM-DD-<slug>.html`
-- **전달 방식**: `auto-post/YYYY-MM-DD` 브랜치에 커밋 후 master로 PR 생성
-  - PR을 merge하면 깃헙 블로그(GitHub Pages)에 자동 게시된다
-  - 네이버용 HTML은 `git pull` 후 브라우저로 열어 전체 복사 → 네이버 글쓰기에 붙여넣는다
-- `_naver/`, `_docs/` 폴더는 언더스코어로 시작하므로 Jekyll 빌드에서 제외된다(블로그에 노출 안 됨)
+- **실행 스케줄** (로컬 = Asia/Kolkata 기준):
+  - 평일(월~금): 저녁 21:00 (UTC 15:30) — 업무 시간 사용량 보호
+  - 주말(토·일): 낮 12:00 (UTC 06:30)
+  - 검증: 매일 22:00 로컬에 PR 상태 확인 (로컬 예약 작업)
+- **날짜 기준**: `TZ=Asia/Kolkata date +%F` — 파일명·브랜치·"오늘" 판정 모두 이 값 사용
+  (평일 21시 실행이 한국시간으로는 자정을 넘기 때문에 KST를 쓰면 날짜가 밀린다. 반드시 Kolkata 기준.)
+- **전달 방식**: 하루 1개 브랜치 `auto-post/YYYY-MM-DD` + master 대상 PR 1개에 모든 편 누적
+- **사용량 거버너**: rate limit 등으로 더 진행할 수 없으면, 진행 중인 편까지 마무리·push하고 중단한다.
+  우선순위 순서(아래 필러 순서)대로 만들기 때문에 중요한 것부터 남는다.
+- `_naver/`, `_docs/` 폴더는 Jekyll 빌드에서 제외된다(블로그에 노출 안 됨)
 
-## 주제 선정 규칙
+## 필러 (매일 5편, 이 순서대로 생성)
 
-4개 주제 축(필러)을 날짜 기준으로 순환한다.
+| 순서 | 필러 | categories 값 | 내용 |
+|---|---|---|---|
+| 1 | AI | `ai` | 모델·에이전트·활용법·생태계 최신 이슈 |
+| 2 | 아키텍처·시스템 설계 | `system-design` | 분산 시스템, DB, 캐싱, MSA, 확장성 패턴 |
+| 3 | 웹 개발 최신 트렌드 | `web-dev` | JS, Java, Spring, React, Next.js, Vite 중 가장 뉴스가치 있는 것 (최근 3회와 다른 기술 선택) |
+| 4 | GIS | `gis` | 지도 API, 공간 데이터, 좌표계, 타일링, 공간 DB(PostGIS), 위성영상 등 |
+| 5 | 추천 지식 | `dev-insight` | 이 블로그의 기존 글(웹, Flutter, 네이버클라우드, GIS, AI)을 참고해 저자가 다음으로 배우면 좋을 지식을 추천 이유와 함께 정리 (예: 테스팅 전략, 네트워크 심화, DB 인덱스 내부, 보안, Docker/CI, 자료구조 심화) |
 
-| 인덱스 | 필러 | categories 값 |
-|---|---|---|
-| 0 | AI (모델, 에이전트, 활용법, 생태계) | `ai` |
-| 1 | 아키텍처 및 시스템 설계 (분산 시스템, DB, 캐싱, MSA 등) | `system-design` |
-| 2 | 핫한 IT 트렌드 (새 릴리스, 업계 이슈, 기술 뉴스 분석) | `it-trend` |
-| 3 | 웹 개발 트렌드·핵심 개념 (프레임워크, 렌더링, 인증, 성능 등) | `web-dev` |
+- 웹 검색이 가능하면 각 필러의 최근 1~2주 이슈로 시의성을 확보하고, 불가능하면 evergreen 핵심 개념을 다룬다.
+- `_posts/`의 기존 파일명·title과 겹치는 주제는 피한다. 확인 안 된 수치·일정은 단정하지 않는다.
 
-- **오늘의 필러** = `TZ=Asia/Seoul date +%j`(연중 일수) % 4
-- 웹 검색이 가능하면 해당 필러의 최근 1~2주 이슈를 검색해 시의성 있는 주제를 고른다.
-  검색이 불가능하면 실무에서 중요한 evergreen 개념을 다룬다.
-- `_posts/`의 기존 파일명과 title을 확인해 **이미 다룬 주제는 피한다**.
-- 확인되지 않은 수치·일정·소문은 단정적으로 쓰지 않는다.
+## 중복 방지 & 이어쓰기 (배치 재개)
+
+1. `TODAY=$(TZ=Asia/Kolkata date +%F)`
+2. `git fetch origin` 후 `refs/heads/auto-post/${TODAY}` 존재 확인
+   - 있으면: 해당 브랜치를 checkout하고 **이어쓰기 모드** — `_posts/${TODAY}-*.md`들의 `categories`를 확인해 이미 있는 필러는 건너뛰고 **부족한 필러만** 생성
+   - 없으면: master에서 새 브랜치 생성 (master에 이미 오늘 날짜 글이 있으면 그 필러도 완료로 간주)
+3. 5개 필러가 모두 있으면 "오늘 배치 완료됨"만 보고하고 종료
 
 ## 형식 1: 깃헙 블로그용 마크다운
 
@@ -40,65 +49,42 @@
 ---
 layout: single
 title: "한국어 제목"
-date: YYYY-MM-DD 12:00:00 +0900
-categories: ai            # 필러에 해당하는 값 하나
+date: YYYY-MM-DD HH:MM:00 +0530
+categories: ai            # 필러 값 하나
 tags: ["소문자", "핵심", "키워드", "3~6개"]
 toc: true
 toc_sticky: true
 excerpt: "글 요약 한 문장"
 ---
-
-본문...
 ```
 
-본문 구조:
-
-1. **도입** — 왜 지금 이 주제인가 (2~3문단)
-2. **핵심 개념 설명** — `##` 섹션 2~4개, 표/비교 리스트 적극 활용
-3. **코드 또는 설정 예제** — 언어 명시한 코드블록 1~2개
-4. **실무 적용 포인트 / 주의사항**
-5. **마무리 요약** — 3줄 이내 불릿
-6. **참고 자료** — 공식 문서 위주 링크
-
-분량: 한국어 기준 1,500~3,000자.
+- `date`의 시각은 필러 순서대로 12:50(ai) / 12:40(system-design) / 12:30(web-dev) / 12:20(gis) / 12:10(dev-insight) — 목록에서 AI가 맨 위에 오도록
+- 본문 구조: 도입(왜 지금, 2~3문단) → 핵심 개념(## 섹션 2~4개, 표·비교 활용) → 코드/설정 예제 1~2개(언어 명시) → 실무 포인트/주의사항 → 마무리 요약(3줄 불릿) → 참고 자료(공식 문서 위주)
+- 분량: 한국어 1,500~3,000자
 
 ## 형식 2: 네이버 블로그용 HTML
 
-경로: `_naver/YYYY-MM-DD-<slug>.html`
+경로: `_naver/YYYY-MM-DD-<slug>.html` — 같은 주제를 네이버 독자용(~습니다체)으로 다시 쓴 문서. 마크다운 문법 금지.
 
-같은 주제를 네이버 독자용 문체(~습니다체, 조금 더 친근하게)로 다시 쓴 문서.
-**마크다운 문법이 남아 있으면 안 된다.**
+- 완전한 HTML 문서: `<!DOCTYPE html>` + `<html lang="ko">` + `<meta charset="utf-8">` + `<title>`
+- `<body style="background-color:#ffffff; padding:20px;">`
+- 본문 요소는 **전부 인라인 스타일만** (`<style>` 블록·class·script 금지 — 네이버 에디터엔 인라인만 살아남음)
+- 맨 위 HTML 주석으로 게시 방법 안내 (브라우저로 열기 → 전체선택·복사 → 네이버 글쓰기에 붙여넣기 → 제목은 제목칸, 해시태그는 태그칸으로)
+- 구성: 제목 줄(26px bold) → 날짜·카테고리 메타(회색 14px) → 요약 박스(배경 #f0f7f4 + border-left 4px #03c75a) → 소제목(21px + border-left 5px #03c75a) → 문단(16px, line-height 1.8, 3~4문장, 핵심 `<b>`) → 코드 `<pre>`(배경 #f4f4f4, monospace, `<`·`>` 이스케이프) → 표(border-collapse + 셀 border) → 여백 `<p>&nbsp;</p>` → 주의 박스(배경 #fff7f0 + 주황 border-left) → 해시태그 줄(#03c75a)
+- 외부 이미지·리소스 금지. 기존 `_naver/` 최신 파일과 스타일 일관성 유지.
 
-기술 규칙 (네이버 스마트에디터 붙여넣기 호환):
+## git 작업 규칙 (배치)
 
-- 완전한 HTML 문서로 작성 (`<!DOCTYPE html>` + `<meta charset="utf-8">` 필수)
-- `<body style="background-color:#ffffff; padding:20px;">` — 다크모드 브라우저에서도 동일하게 보이도록
-- 본문 요소는 **전부 인라인 스타일만** 사용 — `<style>` 블록, class, script 금지
-  (네이버 에디터에 붙여넣을 때 인라인 스타일만 살아남는다)
-- 파일 맨 위에 HTML 주석으로 게시 방법 안내 (주석은 복사되지 않음)
-- 구성 요소:
-  - 제목: `<div style="font-size:26px; font-weight:bold;">` — 사용자가 제목칸으로 옮김
-  - 요약 박스: 배경색 + 왼쪽 색 테두리(`border-left`)
-  - 소제목: `font-size:21px` + `border-left:5px solid #03c75a`
-  - 문단: `<p style="font-size:16px; line-height:1.8;">`, 3~4문장으로 짧게, 핵심 용어는 `<b>`
-  - 코드: `<pre style="background-color:#f4f4f4; font-family:monospace; white-space:pre-wrap;">`
-    (코드 안의 `<`, `>`는 `&lt;` `&gt;`로 이스케이프)
-  - 표: `border-collapse:collapse` + 셀마다 `border:1px solid #ddd; padding:10px`
-  - 섹션 사이 여백: `<p>&nbsp;</p>`
-  - 마지막 줄: 해시태그 제안 (`#키워드` 나열, 네이버 태그칸에 옮겨 쓰는 용도)
-- 외부 이미지·외부 리소스 사용 금지 (자체 완결 문서)
-
-## 자동화 에이전트의 git 작업 규칙
-
-1. `TODAY=$(TZ=Asia/Seoul date +%F)`
-2. `git ls-remote origin "refs/heads/auto-post/${TODAY}"` 결과가 있으면 **아무것도 하지 않고 종료** (중복 실행 방지)
-3. 브랜치 생성: `git checkout -b auto-post/${TODAY}`
-4. 새로 만든 두 파일만 add → commit (메시지: `post: <제목> (auto)`)
-5. `git push -u origin auto-post/${TODAY}`
-6. master 대상 PR 생성 시도. 불가능하면 브랜치 push까지만 하고 보고
-7. **금지**: master 직접 커밋/push, 기존 파일 수정·삭제, force push, `_config.yml` 변경
+1. 브랜치: `auto-post/${TODAY}` (위 이어쓰기 규칙대로 checkout/생성)
+2. **편 단위로 커밋·push**: 한 필러의 MD+HTML 페어를 완성할 때마다
+   `git add <두 파일> && git commit -m "post: <제목> (auto)" && git push -u origin auto-post/${TODAY}`
+   — 중간에 중단돼도 완성분은 남는다
+3. 모든 작업 후 master 대상 PR 확인: 없으면 생성(제목 `daily posts: ${TODAY} (N편)`), 이미 있으면 push만으로 자동 반영됨
+4. rate limit·오류로 중단 시: 마지막 완성 편까지 push됐는지 확인하고, 생성 편수/남은 필러를 보고
+5. **금지**: master 직접 커밋/push, 기존 파일 수정·삭제, force push, `_config.yml` 변경
+6. 완료 보고 후 가능하면 PushNotification으로 "N편 생성 완료 + PR 링크" 알림
 
 ## 스케줄 변경 방법
 
-루틴 관리: <https://claude.ai/code/routines>
-Claude Code에서 "루틴 시간 바꿔줘"라고 요청해도 된다. (cron은 UTC 기준)
+루틴 관리: <https://claude.ai/code/routines> (평일/주말 루틴 2개, cron은 UTC 기준)
+배치 크기를 줄이려면 이 문서의 필러 표에서 줄을 빼면 된다.
