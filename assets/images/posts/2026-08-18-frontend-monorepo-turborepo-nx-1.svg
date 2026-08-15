@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Segoe UI', 'Apple SD Gothic Neo', sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#222222">모노레포 의존성 그래프와 캐시 판단 흐름</text>
+
+  <!-- Left panel: dependency graph -->
+  <rect x="30" y="50" width="350" height="28" fill="#eef2f7" stroke="#cbd5e1"/>
+  <text x="205" y="69" text-anchor="middle" font-size="14" font-weight="bold" fill="#333333">패키지 의존성 그래프</text>
+
+  <rect x="45" y="95" width="130" height="42" rx="4" fill="#eaf1fd" stroke="#2f6fed"/>
+  <text x="110" y="121" text-anchor="middle" font-size="13" font-weight="bold" fill="#1d4ed8">apps/web</text>
+
+  <rect x="225" y="95" width="130" height="42" rx="4" fill="#eaf1fd" stroke="#2f6fed"/>
+  <text x="290" y="121" text-anchor="middle" font-size="13" font-weight="bold" fill="#1d4ed8">apps/admin</text>
+
+  <rect x="70" y="180" width="130" height="42" rx="4" fill="#fdf1e6" stroke="#e67e22"/>
+  <text x="135" y="206" text-anchor="middle" font-size="13" font-weight="bold" fill="#c2610d">packages/ui</text>
+
+  <rect x="230" y="180" width="130" height="42" rx="4" fill="#e9f8ef" stroke="#1f9d55"/>
+  <text x="295" y="206" text-anchor="middle" font-size="13" font-weight="bold" fill="#15803d">packages/utils</text>
+
+  <!-- edges -->
+  <line x1="110" y1="137" x2="135" y2="180" stroke="#888888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="150" y1="137" x2="290" y2="180" stroke="#888888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="290" y1="137" x2="150" y2="180" stroke="#888888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="290" y1="137" x2="290" y2="180" stroke="#888888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="180" y1="201" x2="230" y2="201" stroke="#888888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <text x="205" y="245" text-anchor="middle" font-size="11" fill="#666666">화살표 = "의존한다" 방향 (web, admin → ui → utils)</text>
+
+  <rect x="40" y="260" width="330" height="34" rx="4" fill="#f9f9f9" stroke="#dddddd"/>
+  <text x="205" y="281" text-anchor="middle" font-size="11.5" fill="#444444">utils 변경 시 → ui, web, admin까지 재빌드 대상 전파</text>
+
+  <!-- Right panel: task pipeline w/ cache -->
+  <rect x="420" y="50" width="350" height="28" fill="#eef2f7" stroke="#cbd5e1"/>
+  <text x="595" y="69" text-anchor="middle" font-size="14" font-weight="bold" fill="#333333">build 실행 시 캐시 판단</text>
+
+  <rect x="440" y="95" width="310" height="34" rx="4" fill="#fdecec" stroke="#d64545"/>
+  <text x="595" y="117" text-anchor="middle" font-size="12" fill="#b02a2a">utils — 소스 변경 → 캐시 미스, 실제 빌드 실행</text>
+  <line x1="595" y1="129" x2="595" y2="150" stroke="#888888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="440" y="152" width="310" height="34" rx="4" fill="#fdecec" stroke="#d64545"/>
+  <text x="595" y="174" text-anchor="middle" font-size="12" fill="#b02a2a">ui — 의존한 utils 해시 변경 → 캐시 미스, 재빌드</text>
+  <line x1="595" y1="186" x2="595" y2="207" stroke="#888888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="440" y="209" width="310" height="34" rx="4" fill="#fdecec" stroke="#d64545"/>
+  <text x="595" y="231" text-anchor="middle" font-size="12" fill="#b02a2a">web, admin — 상위 ui 변경 → 캐시 미스, 재빌드</text>
+  <line x1="595" y1="243" x2="595" y2="264" stroke="#888888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="440" y="266" width="310" height="34" rx="4" fill="#e9f8ef" stroke="#1f9d55"/>
+  <text x="595" y="288" text-anchor="middle" font-size="12" fill="#15803d">packages/config — 무관한 패키지 → 캐시 히트, 스킵</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#888888"/>
+    </marker>
+  </defs>
+
+  <!-- dashed correspondence lines connecting left graph to right pipeline -->
+  <line x1="295" y1="201" x2="440" y2="112" stroke="#1f9d55" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
+  <line x1="135" y1="201" x2="440" y2="169" stroke="#e67e22" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
+  <line x1="200" y1="116" x2="440" y2="226" stroke="#2f6fed" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
+
+  <rect x="30" y="405" width="740" height="34" rx="4" fill="#f9f9f9" stroke="#dddddd"/>
+  <text x="400" y="427" text-anchor="middle" font-size="12" fill="#444444">변경분에서 영향받는 노드까지만 재빌드하고, 나머지는 캐시에서 즉시 복원한다</text>
+</svg>
