@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="17" font-weight="bold" fill="#1a1a1a">정규화와 반정규화 — 같은 주문 데이터, 다른 테이블 구조</text>
+  <text x="400" y="46" text-anchor="middle" font-size="11.5" fill="#666">조회 성능과 데이터 무결성은 항상 맞바꿈 관계에 있다</text>
+
+  <defs>
+    <marker id="arrowB" markerWidth="9" markerHeight="9" refX="4.5" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <!-- LEFT: 반정규화 -->
+  <rect x="26" y="66" width="250" height="352" rx="8" fill="#fff4e5" stroke="#c9701d" stroke-width="2"/>
+  <text x="151" y="90" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#a3550f">반정규화(Denormalized)</text>
+  <text x="151" y="107" text-anchor="middle" font-size="10.5" fill="#a3550f">단일 테이블 · 조회 최적화</text>
+
+  <rect x="42" y="122" width="218" height="104" rx="5" fill="#ffffff" stroke="#c9701d"/>
+  <text x="151" y="140" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">orders_flat</text>
+  <text x="151" y="156" text-anchor="middle" font-size="9" fill="#666">order_id, customer_name,</text>
+  <text x="151" y="169" text-anchor="middle" font-size="9" fill="#666">product_name, price</text>
+  <text x="151" y="190" text-anchor="middle" font-size="9.5" fill="#333">1001 · 홍길동 · 키보드 · 30000</text>
+  <text x="151" y="205" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#a3550f">1002 · 홍길동 · 마우스 · 15000</text>
+  <text x="151" y="220" text-anchor="middle" font-size="9.5" fill="#333">1003 · 김영희 · 모니터 · 220000</text>
+
+  <text x="151" y="246" text-anchor="middle" font-size="9.5" fill="#a3550f">⚠ 두 행 모두 '홍길동' 정보 중복</text>
+
+  <text x="151" y="272" text-anchor="middle" font-size="10" fill="#a3550f">고객 이메일이 바뀌면</text>
+  <text x="151" y="288" text-anchor="middle" font-size="10" fill="#a3550f">중복된 모든 행을 UPDATE해야 함</text>
+
+  <line x1="151" y1="300" x2="151" y2="320" stroke="#c9701d" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="151" y="340" text-anchor="middle" font-size="9.5" fill="#666">장점: JOIN 없이 한 번에 조회</text>
+  <text x="151" y="354" text-anchor="middle" font-size="9.5" fill="#666">단점: 갱신 이상(update anomaly)</text>
+
+  <!-- MIDDLE ARROWS -->
+  <line x1="280" y1="180" x2="322" y2="180" stroke="#555" stroke-width="2" marker-end="url(#arrowB)"/>
+  <text x="301" y="168" text-anchor="middle" font-size="10" fill="#555">정규화</text>
+
+  <line x1="322" y1="260" x2="280" y2="260" stroke="#555" stroke-width="2" marker-end="url(#arrowB)"/>
+  <text x="301" y="274" text-anchor="middle" font-size="10" fill="#555">반정규화</text>
+
+  <!-- RIGHT: 정규화 3NF -->
+  <rect x="326" y="66" width="448" height="352" rx="8" fill="#eaffef" stroke="#2fa84f" stroke-width="2"/>
+  <text x="550" y="90" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1f7a38">정규화(Normalized, 3NF)</text>
+  <text x="550" y="107" text-anchor="middle" font-size="10.5" fill="#1f7a38">세 테이블로 분리 · 무결성 보장</text>
+
+  <rect x="342" y="122" width="170" height="64" rx="5" fill="#ffffff" stroke="#2fa84f"/>
+  <text x="427" y="140" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#333">customers</text>
+  <text x="427" y="156" text-anchor="middle" font-size="9" fill="#333">customer_id (PK)</text>
+  <text x="427" y="170" text-anchor="middle" font-size="9" fill="#333">name, email</text>
+
+  <rect x="522" y="122" width="234" height="64" rx="5" fill="#ffffff" stroke="#2fa84f"/>
+  <text x="639" y="140" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#333">products</text>
+  <text x="639" y="156" text-anchor="middle" font-size="9" fill="#333">product_id (PK)</text>
+  <text x="639" y="170" text-anchor="middle" font-size="9" fill="#333">name, price</text>
+
+  <line x1="427" y1="206" x2="427" y2="188" stroke="#2fa84f" stroke-width="1.5" marker-end="url(#arrowB)"/>
+  <line x1="639" y1="206" x2="639" y2="188" stroke="#2fa84f" stroke-width="1.5" marker-end="url(#arrowB)"/>
+
+  <rect x="342" y="206" width="414" height="90" rx="5" fill="#ffffff" stroke="#2fa84f"/>
+  <text x="549" y="224" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#333">orders</text>
+  <text x="549" y="240" text-anchor="middle" font-size="9" fill="#333">order_id (PK)</text>
+  <text x="549" y="254" text-anchor="middle" font-size="9" fill="#333">customer_id (FK) → customers</text>
+  <text x="549" y="268" text-anchor="middle" font-size="9" fill="#333">product_id (FK) → products</text>
+  <text x="549" y="282" text-anchor="middle" font-size="9" fill="#1f7a38">고객 정보는 customers에 단 1행만 존재</text>
+
+  <line x1="549" y1="298" x2="549" y2="316" stroke="#2fa84f" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="549" y="334" text-anchor="middle" font-size="9.5" fill="#1f7a38">고객 이메일 변경 시</text>
+  <text x="549" y="348" text-anchor="middle" font-size="9.5" fill="#1f7a38">customers 테이블 단 한 행만 UPDATE</text>
+
+  <text x="549" y="372" text-anchor="middle" font-size="9.5" fill="#666">장점: 무결성 보장, 갱신 지점 1곳</text>
+  <text x="549" y="386" text-anchor="middle" font-size="9.5" fill="#666">단점: 조회 시 JOIN 필요(비용 발생)</text>
+
+  <text x="400" y="436" text-anchor="middle" font-size="11" fill="#555">선택 기준 — 쓰기 일관성이 중요하면 정규화, 읽기 성능이 급하면 국소적 반정규화</text>
+</svg>
