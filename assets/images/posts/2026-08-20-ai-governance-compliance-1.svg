@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1a1a1a">EU AI Act 위험 기반 분류 체계 (개념도)</text>
+  <text x="400" y="46" text-anchor="middle" font-size="11" fill="#888">※ 세부 기준·시행일자는 최신 공식 발표(EU 공식 문서) 확인 필요</text>
+
+  <!-- Pyramid tiers (top -> bottom, narrow -> wide) -->
+  <!-- Tier 1: Unacceptable (top, narrowest) -->
+  <polygon points="345,70 455,70 480,122 320,122" fill="#fdecea" stroke="#c0392b" stroke-width="1.5"/>
+  <text x="400" y="92" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#8f2419">금지 위험</text>
+  <text x="400" y="108" text-anchor="middle" font-size="10" fill="#8f2419">(Unacceptable)</text>
+
+  <!-- Tier 2: High-risk -->
+  <polygon points="320,128 480,128 520,192 280,192" fill="#fff2e5" stroke="#d97706" stroke-width="1.5"/>
+  <text x="400" y="152" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#8a4a05">고위험 (High-risk)</text>
+  <text x="400" y="170" text-anchor="middle" font-size="10" fill="#8a4a05">채용·신용평가·의료기기 등</text>
+
+  <!-- Tier 3: Limited risk -->
+  <polygon points="280,198 520,198 560,262 240,262" fill="#fff9e0" stroke="#c9a400" stroke-width="1.5"/>
+  <text x="400" y="222" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#7a6400">제한적 위험 (Limited risk)</text>
+  <text x="400" y="240" text-anchor="middle" font-size="10" fill="#7a6400">챗봇·딥페이크 등 - 투명성 고지 의무</text>
+
+  <!-- Tier 4: Minimal risk (base, widest) -->
+  <polygon points="240,268 560,268 605,332 195,332" fill="#eafff0" stroke="#2fa84f" stroke-width="1.5"/>
+  <text x="400" y="292" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1f7a38">최소 위험 (Minimal risk)</text>
+  <text x="400" y="310" text-anchor="middle" font-size="10" fill="#1f7a38">스팸 필터·게임 AI 등 - 대부분의 AI 시스템</text>
+
+  <!-- divider -->
+  <line x1="20" y1="352" x2="780" y2="352" stroke="#ddd" stroke-width="1"/>
+
+  <text x="40" y="376" font-size="12.5" font-weight="bold" fill="#1a1a1a">등급이 올라갈수록 개발자 의무도 늘어난다</text>
+
+  <rect x="20" y="386" width="230" height="46" rx="6" fill="#f5f5f5" stroke="#bbb"/>
+  <text x="135" y="406" text-anchor="middle" font-size="10.5" fill="#333">위험 관리 체계 문서화</text>
+  <text x="135" y="421" text-anchor="middle" font-size="10.5" fill="#333">데이터 품질·거버넌스</text>
+
+  <rect x="285" y="386" width="230" height="46" rx="6" fill="#f5f5f5" stroke="#bbb"/>
+  <text x="400" y="406" text-anchor="middle" font-size="10.5" fill="#333">인간 감독(human oversight)</text>
+  <text x="400" y="421" text-anchor="middle" font-size="10.5" fill="#333">로그·감사추적(audit trail)</text>
+
+  <rect x="550" y="386" width="230" height="46" rx="6" fill="#f5f5f5" stroke="#bbb"/>
+  <text x="665" y="406" text-anchor="middle" font-size="10.5" fill="#333">정확성·강건성·보안성</text>
+  <text x="665" y="421" text-anchor="middle" font-size="10.5" fill="#333">적합성 평가·CE 마킹 대응</text>
+</svg>
