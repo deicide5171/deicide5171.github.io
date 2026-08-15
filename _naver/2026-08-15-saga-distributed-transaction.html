@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>사가 패턴으로 분산 트랜잭션 정합성 지키기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">분산 트랜잭션 — 사가 패턴으로 정합성 지키기</div>
+<p style="font-size:14px; color:#999;">2026. 8. 15. · 시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 2PC 대신 사가 패턴과 보상 트랜잭션으로 여러 서비스에 걸친 트랜잭션의 정합성을 관리하는 방법을 소개합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 분산 트랜잭션이 문제가 될까요</div>
+<p style="font-size:16px; color:#333; line-height:1.8;">마이크로서비스 구조에서는 주문, 결제, 재고가 각각 독립된 서비스와 데이터베이스로 나뉘어 있는 경우가 많습니다. 하나의 비즈니스 흐름이 이 여러 서비스에 걸쳐 <b>원자적으로 성공하거나 실패</b>해야 한다면, 단일 DB에서처럼 간단한 트랜잭션으로 해결할 수 없습니다. 전통적인 해법인 2단계 커밋(2PC)은 이런 환경에서 여러 한계를 드러내며, 그 대안으로 <b>사가(Saga) 패턴</b>이 널리 자리 잡았습니다.</p>
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">2PC의 한계</div>
+<p style="font-size:16px; color:#333; line-height:1.8;">2PC는 코디네이터가 모든 참여자의 커밋 준비 완료를 기다리는 방식이라 <b>한 노드만 느려도 전체가 블로킹</b>됩니다. 커밋이 끝날 때까지 리소스 락을 계속 유지해야 해서 동시성도 떨어집니다. 게다가 코디네이터가 장애를 겪으면 참여자들이 커밋도 롤백도 못 하고 대기 상태에 빠질 수 있습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f7f7f7; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f7f7f7; font-weight:bold;">2PC의 문제점</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">가용성</td>
+<td style="border:1px solid #ddd; padding:10px;">한 노드라도 응답이 늦으면 전체가 블로킹됨</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">락 유지 시간</td>
+<td style="border:1px solid #ddd; padding:10px;">커밋 완료까지 리소스 락을 계속 유지해야 함</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">장애 대응</td>
+<td style="border:1px solid #ddd; padding:10px;">코디네이터 장애 시 참여자들이 대기 상태에 빠질 수 있음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">이종 시스템 호환</td>
+<td style="border:1px solid #ddd; padding:10px;">서로 다른 벤더 DB/큐가 섞이면 지원이 어려운 경우가 많음</td>
+</tr>
+</table>
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">사가 패턴 — 코레오그래피와 오케스트레이션</div>
+<p style="font-size:16px; color:#333; line-height:1.8;">사가 패턴은 큰 트랜잭션을 <b>각자 로컬 트랜잭션으로 커밋되는 여러 단계</b>로 나누고, 중간에 실패하면 이미 끝난 단계들을 역순으로 되돌리는 <b>보상 트랜잭션</b>을 실행하는 방식입니다. 각 서비스가 이벤트를 주고받으며 자율적으로 진행하는 <b>코레오그래피</b> 방식과, 중앙 오케스트레이터가 흐름을 지휘하는 <b>오케스트레이션</b> 방식이 있으며, 단계가 많아질수록 오케스트레이션 방식이 관리하기 쉽다고 알려져 있습니다.</p>
+<p style="font-size:16px; color:#333; line-height:1.8;">오케스트레이션 방식의 사가 흐름을 의사코드로 표현하면 다음과 같습니다.</p>
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">def order_saga(order):
+    try:
+        reserve_inventory(order)
+        charge_payment(order)
+        confirm_order(order)
+    except PaymentFailed:
+        release_inventory(order)   # 보상 트랜잭션
+        cancel_order(order)
+    except InventoryUnavailable:
+        cancel_order(order)</pre>
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">보상 트랜잭션, 단순 취소가 아닙니다</div>
+<p style="font-size:16px; color:#333; line-height:1.8;">보상 트랜잭션은 원래 상태로 되돌리는 것을 넘어, <b>이미 외부에 노출된 부작용</b>까지 고려해야 합니다. 결제 승인의 보상은 취소가 아니라 환불일 수 있고, 재고 차감의 보상은 재고 복구이지만 그 사이 다른 주문이 같은 재고를 또 차감했을 가능성도 함께 고려해야 합니다. 각 단계는 재시도 시 중복 실행을 막기 위해 <b>멱등성</b>을 갖도록 설계해야 합니다.</p>
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 최종 일관성 전제</b> — 사가는 일시적 불일치를 허용하므로 사용자 경험 설계에도 이를 반영하세요.<br>
+<b>2. 실패 대응 경로 준비</b> — 보상 트랜잭션 자체가 실패했을 때의 알림과 수동 개입 프로세스를 마련하세요.<br>
+<b>3. 워크플로우 엔진 활용 검토</b> — Temporal, AWS Step Functions 등을 쓰면 직접 구현할 것이 줄어듭니다.<br>
+<b>4. 관찰 가능성 확보</b> — 각 단계의 성공/실패 로그와 트레이싱을 남겨야 장애 원인을 빠르게 찾을 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+<p style="font-size:16px; color:#333; line-height:1.8;">① 2PC는 가용성과 락 유지 문제로 마이크로서비스 환경에서는 기피되는 경향이 있습니다.<br>
+② 사가 패턴은 로컬 트랜잭션 연쇄와 보상 트랜잭션으로 정합성을 확보하며, 코레오그래피와 오케스트레이션 두 방식이 있습니다.<br>
+③ 보상 트랜잭션은 멱등성과 부작용을 함께 고려해 설계해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 실제 워크플로우 엔진을 활용한 사가 구현 예시를 좀 더 깊이 다뤄보겠습니다.</p>
+
+<p style="font-size:14px; color:#03c75a;">#사가패턴 #분산트랜잭션 #마이크로서비스 #보상트랜잭션 #시스템설계</p>
+
+</body>
+</html>
