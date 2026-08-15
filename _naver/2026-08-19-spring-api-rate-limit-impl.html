@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Spring Boot API 레이트 리밋 실전 구현 — Bucket4j로 토큰 버킷 붙이기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Spring Boot API 레이트 리밋 실전 구현 — Bucket4j로 토큰 버킷 붙이기</div>
+<p style="font-size:14px; color:#999;">2026. 8. 19. · 백엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 레이트 리밋 알고리즘 이론이 아니라, <b>Bucket4j 라이브러리로 Spring Boot에 실제로 요청 제한 코드를 붙이는 방법</b>을 필터·설정·분산 환경까지 실전 코드로 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 이야기인가요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">토큰 버킷이나 슬라이딩 윈도우 같은 레이트 리밋 알고리즘 자체는 이미 많이 소개되어 있습니다. 하지만 막상 <b>Spring Boot 프로젝트에 지금 바로 붙일 수 있는 코드</b>를 찾으면 의외로 정리된 자료가 많지 않습니다. 매번 카운터 로직을 손으로 짜는 대신, JVM 생태계에서 널리 쓰이는 레이트 리밋 라이브러리인 <b>Bucket4j</b>를 Spring Boot 필터에 연결하는 실전 패턴을 정리해보았습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Bucket4j의 장점은 로컬 메모리 버킷과 Redis·Hazelcast 등을 백엔드로 쓰는 분산 버킷을 <b>같은 API</b>로 다룰 수 있다는 점입니다. 로컬 개발 단계에서는 인메모리로 붙였다가, 인스턴스를 여러 대로 늘릴 때 백엔드 구현체만 바꾸면 되는 구조라 마이그레이션 부담이 적습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1: Bucket4j가 해결하는 문제</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Bucket4j의 핵심은 "버킷에 담긴 토큰을 요청마다 하나씩 소비하고, 정해진 속도로 토큰을 다시 채운다"는 토큰 버킷 알고리즘을 스레드 안전하게, 그리고 로컬·분산 환경 모두에서 동일한 API로 제공하는 것입니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:22%;">구성 요소</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">역할</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Bandwidth</td>
+<td style="border:1px solid #ddd; padding:10px;">용량(capacity)과 리필 속도(refill rate)를 정의하는 정책</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">BucketConfiguration</td>
+<td style="border:1px solid #ddd; padding:10px;">하나 이상의 Bandwidth를 묶은 버킷 설정</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Bucket</td>
+<td style="border:1px solid #ddd; padding:10px;">실제로 토큰을 소비(tryConsume)하는 인스턴스</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">ProxyManager</td>
+<td style="border:1px solid #ddd; padding:10px;">버킷 상태를 로컬 메모리 또는 외부 저장소(Redis 등)에 위임하는 계층</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">ConsumptionProbe</td>
+<td style="border:1px solid #ddd; padding:10px;">소비 성공 여부, 남은 토큰 수, 다음 리필까지 대기 시간을 담은 결과 객체</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2: 어디에 붙일 것인가 — Filter vs Interceptor vs AOP</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Spring Boot에서 레이트 리밋 로직을 끼워 넣을 수 있는 지점은 여러 곳이 있고, 각각 트레이드오프가 다릅니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:20%;">위치</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">장점</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">단점</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Servlet Filter</td>
+<td style="border:1px solid #ddd; padding:10px;">컨트롤러 진입 전에 차단, 전역 제어 용이</td>
+<td style="border:1px solid #ddd; padding:10px;">컨트롤러 메타데이터 접근은 별도 매핑 필요</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">HandlerInterceptor</td>
+<td style="border:1px solid #ddd; padding:10px;">커스텀 어노테이션과 결합 용이</td>
+<td style="border:1px solid #ddd; padding:10px;">필터보다 늦게 실행됨</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">AOP(@Around)</td>
+<td style="border:1px solid #ddd; padding:10px;">메서드 단위 세밀한 정책 분기</td>
+<td style="border:1px solid #ddd; padding:10px;">웹 계층 외까지 걸릴 수 있어 범위 관리 필요</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">전역적으로 모든 API에 기본 한도를 걸고 싶다면 <b>Filter</b>가 가장 단순하고, 엔드포인트별로 서로 다른 정책을 어노테이션으로 표현하고 싶다면 Interceptor나 AOP 조합이 유리합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-19-spring-api-rate-limit-impl-1.svg" alt="Bucket4j 기반 Spring Boot 레이트 리밋 흐름 — 필터가 버킷 키를 추출해 토큰을 소비하고, 분산 환경에서는 여러 인스턴스가 Redis를 공유 저장소로 사용하는 개념도" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: 필터 구현과 Redis 분산 설정 (Java)</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 클라이언트별(API Key 또는 IP) 버킷을 두고 요청마다 토큰을 소비하는 필터 예시입니다. 단일 인스턴스 기준이며, 분산 환경에서는 뒤이어 나오는 ProxyManager 방식으로 바꿔야 합니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">@Component
+public class RateLimitFilter extends OncePerRequestFilter {
+
+    private final Map&lt;String, Bucket&gt; buckets = new ConcurrentHashMap&lt;&gt;();
+
+    @Override
+    protected void doFilterInternal(HttpServletRequest request,
+                                     HttpServletResponse response,
+                                     FilterChain chain) throws ServletException, IOException {
+
+        String clientKey = resolveClientKey(request);
+        Bucket bucket = buckets.computeIfAbsent(clientKey, key -&gt; newBucket());
+
+        ConsumptionProbe probe = bucket.tryConsumeAndReturnRemaining(1);
+
+        if (probe.isConsumed()) {
+            response.addHeader("X-RateLimit-Remaining", String.valueOf(probe.getRemainingTokens()));
+            chain.doFilter(request, response);
+        } else {
+            long waitSeconds = probe.getNanosToWaitForRefill() / 1_000_000_000L;
+            response.setStatus(429);
+            response.addHeader("Retry-After", String.valueOf(waitSeconds));
+            response.getWriter().write("{\"error\":\"rate_limit_exceeded\"}");
+        }
+    }
+
+    private Bucket newBucket() {
+        // 분당 60개, 버스트 허용 정책 예시(값은 서비스 특성에 맞춰 조정)
+        Bandwidth limit = Bandwidth.classic(60, Refill.greedy(60, Duration.ofMinutes(1)));
+        return Bucket.builder().addLimit(limit).build();
+    }
+
+    private String resolveClientKey(HttpServletRequest request) {
+        String apiKey = request.getHeader("X-API-Key");
+        return apiKey != null ? apiKey : request.getRemoteAddr();
+    }
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">인스턴스가 여러 대면 위 코드의 ConcurrentHashMap은 인스턴스마다 별도로 카운트하므로 실제 허용량을 훌쩍 넘길 수 있습니다. Bucket4j는 <b>bucket4j-redis</b> 모듈로 이 문제를 해결합니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">@Configuration
+public class Bucket4jRedisConfig {
+
+    @Bean
+    public ProxyManager&lt;String&gt; proxyManager(RedisClient redisClient) {
+        // Lettuce 기반 Redis 커넥션을 Bucket4j ProxyManager에 위임
+        return LettuceBasedProxyManager.builderFor(redisClient).build();
+    }
+
+    public Bucket resolveBucket(ProxyManager&lt;String&gt; proxyManager, String key) {
+        Supplier&lt;BucketConfiguration&gt; configSupplier = () -&gt; BucketConfiguration.builder()
+            .addLimit(Bandwidth.classic(60, Refill.greedy(60, Duration.ofMinutes(1))))
+            .build();
+        return proxyManager.builder().build(key, configSupplier);
+    }
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">ProxyManager를 쓰면 버킷의 실제 상태(토큰 수, 마지막 리필 시각)가 Redis에 원자적으로 저장·갱신되므로, 인스턴스가 몇 대든 동일한 키에 대해 <b>일관된 카운트</b>를 유지합니다. 애플리케이션 코드 입장에서는 로컬 Bucket.builder()를 proxyManager.builder().build(key, ...)로 바꾸는 정도의 차이만 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 버킷 키 설계가 정책의 핵심</b> — API Key·사용자 ID·IP 중 무엇으로 묶을지에 따라 체감 한도가 달라지며, 프록시 뒤라면 X-Forwarded-For 신뢰 여부도 미리 정할 것<br>
+<b>2. 429 응답에 Retry-After 헤더 필수 포함</b> — 클라이언트가 대기 시간을 준수하며 재시도하도록 유도<br>
+<b>3. Redis 장애 시 동작을 미리 정의</b> — fail-open(허용)과 fail-closed(차단) 중 서비스 성격에 맞게 선택하고 반드시 로깅<br>
+<b>4. 필터 안 블로킹 I/O 인지</b> — Redis 호출 지연이 필터 체인 전체 지연에 더해지므로 타임아웃을 짧게 설정<br>
+<b>5. 정책 수치는 튜닝 대상</b> — 특정 값을 정답처럼 못박기보다 보수적으로 시작해 모니터링 지표를 보며 조정
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① Bucket4j는 토큰 버킷 알고리즘을 로컬 메모리와 분산(Redis 등) 환경 모두에서 같은 API로 다룰 수 있게 해주는 라이브러리입니다.<br>
+② Spring Boot에서는 OncePerRequestFilter로 전역 진입점을 막거나, Interceptor·AOP로 엔드포인트별 세밀한 정책을 어노테이션으로 표현할 수 있습니다.<br>
+③ 실제 도입 시에는 버킷 키 설계, Retry-After 응답, Redis 장애 시 fail-open/closed 전략까지 함께 설계해야 안정적으로 동작합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#Bucket4j #SpringBoot #레이트리밋 #Java #Redis #API설계</p>
+
+</body>
+</html>

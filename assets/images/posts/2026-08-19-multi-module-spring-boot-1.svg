@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="19" font-weight="bold" fill="#1a1a1a">멀티모듈 Spring Boot 프로젝트 의존 관계</text>
+
+  <!-- api-server module -->
+  <rect x="290" y="55" width="220" height="60" rx="8" fill="#eaf3ff" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="400" y="80" text-anchor="middle" font-size="13" font-weight="bold" fill="#0b5fa5">api-server</text>
+  <text x="400" y="98" text-anchor="middle" font-size="10.5" fill="#0b5fa5">실행 가능 모듈 (bootJar)</text>
+
+  <!-- batch module -->
+  <rect x="540" y="55" width="220" height="60" rx="8" fill="#eaf3ff" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="650" y="80" text-anchor="middle" font-size="13" font-weight="bold" fill="#0b5fa5">batch</text>
+  <text x="650" y="98" text-anchor="middle" font-size="10.5" fill="#0b5fa5">실행 가능 모듈 (bootJar)</text>
+
+  <!-- domain module -->
+  <rect x="290" y="185" width="220" height="60" rx="8" fill="#f5eeff" stroke="#6a3fb5" stroke-width="1.5"/>
+  <text x="400" y="210" text-anchor="middle" font-size="13" font-weight="bold" fill="#5a34a0">domain</text>
+  <text x="400" y="228" text-anchor="middle" font-size="10.5" fill="#5a34a0">엔티티·도메인 서비스 (jar)</text>
+
+  <!-- infra module -->
+  <rect x="540" y="185" width="220" height="60" rx="8" fill="#f5eeff" stroke="#6a3fb5" stroke-width="1.5"/>
+  <text x="650" y="210" text-anchor="middle" font-size="13" font-weight="bold" fill="#5a34a0">infra</text>
+  <text x="650" y="228" text-anchor="middle" font-size="10.5" fill="#5a34a0">JPA·외부 연동 구현체 (jar)</text>
+
+  <!-- common module -->
+  <rect x="30" y="185" width="220" height="60" rx="8" fill="#f5eeff" stroke="#6a3fb5" stroke-width="1.5"/>
+  <text x="140" y="210" text-anchor="middle" font-size="13" font-weight="bold" fill="#5a34a0">common</text>
+  <text x="140" y="228" text-anchor="middle" font-size="10.5" fill="#5a34a0">공통 유틸·예외 (jar)</text>
+
+  <!-- api module (contracts) -->
+  <rect x="290" y="315" width="220" height="60" rx="8" fill="#eafff0" stroke="#1f7a38" stroke-width="1.5"/>
+  <text x="400" y="340" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f7a38">api (contract)</text>
+  <text x="400" y="358" text-anchor="middle" font-size="10.5" fill="#1f7a38">DTO·인터페이스 정의 (jar)</text>
+
+  <!-- Arrows: api-server -> domain, infra, common -->
+  <line x1="400" y1="115" x2="400" y2="183" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="360" y1="115" x2="170" y2="183" stroke="#888" stroke-width="1.3" marker-end="url(#arrow)"/>
+
+  <!-- Arrows: batch -> domain, infra -->
+  <line x1="620" y1="115" x2="450" y2="183" stroke="#888" stroke-width="1.3" marker-end="url(#arrow)"/>
+  <line x1="650" y1="115" x2="650" y2="183" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Arrows: domain -> common -->
+  <line x1="330" y1="215" x2="252" y2="215" stroke="#888" stroke-width="1.3" marker-end="url(#arrow)"/>
+
+  <!-- Arrows: infra -> domain -->
+  <line x1="590" y1="215" x2="512" y2="215" stroke="#888" stroke-width="1.3" marker-end="url(#arrow)"/>
+
+  <!-- Arrows: domain -> api(contract), infra -> api(contract) -->
+  <line x1="400" y1="245" x2="400" y2="313" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="620" y1="245" x2="450" y2="313" stroke="#888" stroke-width="1.3" marker-end="url(#arrow)"/>
+
+  <!-- Legend -->
+  <rect x="30" y="400" width="14" height="14" fill="#eaf3ff" stroke="#0b5fa5"/>
+  <text x="50" y="411" font-size="11" fill="#333">실행 모듈</text>
+  <rect x="150" y="400" width="14" height="14" fill="#f5eeff" stroke="#6a3fb5"/>
+  <text x="170" y="411" font-size="11" fill="#333">라이브러리 모듈</text>
+  <rect x="290" y="400" width="14" height="14" fill="#eafff0" stroke="#1f7a38"/>
+  <text x="310" y="411" font-size="11" fill="#333">순수 계약 모듈(의존 최소)</text>
+  <text x="560" y="411" font-size="10.5" fill="#888">화살표 = "이 모듈에 의존한다"(compile 방향)</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#888"/>
+    </marker>
+  </defs>
+</svg>

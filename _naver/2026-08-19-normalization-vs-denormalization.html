@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>정규화와 반정규화 — 테이블을 쪼갤 때와 다시 합칠 때의 기준</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">정규화와 반정규화 — 테이블을 쪼갤 때와 다시 합칠 때의 기준</div>
+<p style="font-size:14px; color:#999;">2026. 8. 19. · DB·데이터 모델링</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 정규화는 왜 하는지 배우지만 언제 <b>반정규화</b>를 선택해도 되는지는 잘 안 알려줍니다. 두 접근의 트레이드오프를 기준 삼아 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 이야기인가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">신규 서비스의 스키마를 짤 때는 대체로 정규화 원칙을 충실히 따릅니다. 중복을 없애고, 하나의 사실은 한 곳에만 저장하고, 갱신 이상(update anomaly)이 생기지 않도록 테이블을 쪼갭니다. 문제는 서비스가 커진 뒤입니다. 주문 목록 하나를 보여주는 데 조인이 4~5개씩 붙기 시작하고, 리포팅 쿼리는 실행 계획이 점점 복잡해집니다. 이 시점에서 팀은 늘 같은 질문을 마주하게 됩니다. "이 테이블, 다시 합쳐도 되나요?"</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>정규화와 반정규화는 서로 반대되는 기법이 아니라, 같은 데이터를 두고 무엇을 우선할지 정하는 두 가지 답</b>입니다. 정규화는 쓰기 일관성과 저장 효율을, 반정규화는 읽기 성능을 우선합니다. 어느 쪽이 정답인지는 스키마 자체가 아니라 워크로드가 결정합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념: 정규화 단계 이해하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>정규화(Normalization)</b>는 테이블을 중복 없이, 각 데이터가 정확히 한 곳에만 존재하도록 분해하는 절차입니다. 실무에서 대부분의 OLTP 스키마는 <b>3정규형(3NF)</b>까지만 신경 쓰면 충분합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:12%;">단계</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">규칙</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">제거하는 문제</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">1NF</td>
+<td style="border:1px solid #ddd; padding:10px;">모든 컬럼 값이 원자값이어야 함, 반복 그룹 금지</td>
+<td style="border:1px solid #ddd; padding:10px;">한 셀에 여러 값을 콤마로 욱여넣는 구조</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">2NF</td>
+<td style="border:1px solid #ddd; padding:10px;">복합키의 일부에만 종속된 컬럼(부분 함수 종속)이 없어야 함</td>
+<td style="border:1px solid #ddd; padding:10px;">복합키 테이블에서 특정 컬럼이 키의 절반에만 의존하는 문제</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">3NF</td>
+<td style="border:1px solid #ddd; padding:10px;">기본키가 아닌 컬럼끼리 서로 종속(이행적 종속)되지 않아야 함</td>
+<td style="border:1px solid #ddd; padding:10px;">우편번호가 도시명을 결정하는 식의 간접 종속</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">3NF까지 적용하면 하나의 사실(예: 고객 이메일)은 정확히 한 테이블의 한 행에만 존재합니다. 그 값을 바꿀 때 갱신해야 할 곳도 정확히 한 곳뿐입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념: 반정규화는 언제 선택하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>반정규화(Denormalization)</b>는 정규화 규칙을 의도적으로 깨고 중복을 허용해, 조회 시 조인 횟수를 줄이거나 집계 연산을 미리 계산해두는 기법입니다. "정규화를 몰라서" 쓰는 게 아니라 <b>"정규화된 구조로는 특정 쿼리의 성능이 요구사항을 못 맞춰서"</b> 쓰는 선택입니다. 읽기 트래픽이 쓰기보다 압도적으로 많거나, 리포팅·대시보드처럼 여러 테이블을 묶어 집계하는 쿼리가 자주 도는 워크로드에서 주로 검토됩니다.</p>
+
+<p style="text-align:center;"><img src="https://deicide5171.github.io/assets/images/posts/2026-08-19-normalization-vs-denormalization-1.svg" alt="정규화와 반정규화 개념도 - 반정규화 단일 테이블과 3NF로 분리된 orders/customers/products 테이블 비교" style="width:100%; max-width:760px;"></p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:22%;">반정규화 기법</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방법</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">대가</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">컬럼 중복 저장</td>
+<td style="border:1px solid #ddd; padding:10px;">조인 없이 바로 쓰도록 참조 테이블 값을 복사</td>
+<td style="border:1px solid #ddd; padding:10px;">원본이 바뀌면 중복된 모든 곳을 함께 갱신</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">파생/집계 컬럼 캐싱</td>
+<td style="border:1px solid #ddd; padding:10px;">합계·개수 같은 계산 결과를 별도 컬럼에 미리 저장</td>
+<td style="border:1px solid #ddd; padding:10px;">트랜잭션마다 캐시 값도 함께 갱신해야 정합성 유지</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">구체화 뷰(Materialized View)</td>
+<td style="border:1px solid #ddd; padding:10px;">조인·집계 결과를 물리적으로 저장, 주기적 갱신</td>
+<td style="border:1px solid #ddd; padding:10px;">갱신 주기 동안 최신 데이터가 아닐 수 있음(staleness)</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: 정규화된 조회 vs 반정규화된 캐시 컬럼</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">먼저 정규화된 3개 테이블(orders, customers, products)을 조인해 주문 상세를 조회하는 기본 쿼리입니다. 고객·상품 정보가 바뀌어도 항상 최신 값을 정확히 반환합니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">-- 정규화(3NF): 조인으로 최신 값을 항상 정확히 조회
+SELECT o.order_id, c.name AS customer_name, p.name AS product_name,
+       o.qty, p.price, (o.qty * p.price) AS line_total
+FROM orders o
+JOIN customers c ON o.customer_id = c.customer_id
+JOIN products  p ON o.product_id  = p.product_id
+WHERE o.order_id = 1001;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">고객별 누적 주문 통계처럼 자주 조회되는 집계값까지 매번 이렇게 계산하면 비용이 커집니다. 이럴 때 반정규화로 집계 캐시 컬럼을 두는 방법을 검토할 수 있습니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">-- 반정규화: 자주 조회하는 집계값을 customers 테이블에 캐시 컬럼으로 저장
+ALTER TABLE customers ADD COLUMN total_orders INT NOT NULL DEFAULT 0;
+ALTER TABLE customers ADD COLUMN total_spent  DECIMAL(12,2) NOT NULL DEFAULT 0;
+
+-- 주문 생성 트랜잭션 안에서 원본 삽입과 캐시 갱신을 함께 커밋
+BEGIN;
+  INSERT INTO orders (customer_id, product_id, qty) VALUES (:customer_id, :product_id, :qty);
+  UPDATE customers
+     SET total_orders = total_orders + 1,
+         total_spent  = total_spent + :line_total
+   WHERE customer_id = :customer_id;
+COMMIT;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">캐시 컬럼은 조회 시 조인·집계 연산을 완전히 없애주지만, 이제 "주문 생성"이라는 하나의 이벤트가 두 테이블을 동시에 갱신해야 하는 트랜잭션이 됩니다. 둘 중 하나만 반영되면 데이터가 어긋난다는 점이 이 방식의 핵심 대가입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 기본값은 정규화, 반정규화는 예외로 취급</b> — 처음부터 반정규화된 스키마로 시작하면 이상현상의 원인 구분이 어려워짐<br>
+<b>2. 측정 없이 반정규화하지 않기</b> — 실행 계획으로 실제 병목을 확인한 쿼리에만 국소적으로 적용<br>
+<b>3. 캐시 컬럼은 원본과 같은 트랜잭션에서 갱신</b> — 별도 배치 동기화는 그 사이 불일치를 감수해야 함<br>
+<b>4. 구체화 뷰는 갱신 주기·staleness 허용 범위를 먼저 정의</b> — 실시간성이 중요한 값에는 부적합할 수 있음<br>
+<b>5. 반정규화 결정은 반드시 문서로 기록</b> — 이유가 남지 않으면 한쪽만 갱신하는 버그로 이어지기 쉬움
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 정규화는 데이터를 한 곳에만 두어 무결성을 보장하지만, 조회 시 조인 비용이 따릅니다.<br>
+② 반정규화는 중복을 허용해 읽기 성능을 얻는 대신, 여러 곳을 동시에 갱신해야 하는 쓰기 복잡도를 감수해야 합니다.<br>
+③ 선택 기준은 워크로드입니다 — 쓰기 일관성이 중요한 OLTP는 정규화를 기본으로 하고, 측정으로 확인된 병목에 한해 국소적으로 반정규화하는 것을 추천합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 실제 인덱스 튜닝 사례를 다뤄보겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#정규화 #반정규화 #데이터베이스설계 #스키마설계 #3NF #백엔드</p>
+
+</body>
+</html>

@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="26" text-anchor="middle" font-size="18" font-weight="bold" fill="#1a1a1a">이미지 CDN 파이프라인 — 포맷 협상과 온더플라이 변환</text>
+
+  <!-- Row 1: origin -> request -> edge transform -->
+  <rect x="20" y="65" width="150" height="70" rx="8" fill="#eef4ff" stroke="#5b8def"/>
+  <text x="95" y="93" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1a3d8f">원본 이미지 저장소</text>
+  <text x="95" y="110" text-anchor="middle" font-size="10.5" fill="#33507a">원본 해상도, PNG/JPEG</text>
+  <text x="95" y="124" text-anchor="middle" font-size="10.5" fill="#33507a">(S3 등 오브젝트 스토리지)</text>
+
+  <rect x="210" y="65" width="180" height="70" rx="8" fill="#eef4ff" stroke="#5b8def"/>
+  <text x="300" y="93" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1a3d8f">요청 수신</text>
+  <text x="300" y="110" text-anchor="middle" font-size="10.5" fill="#33507a">Accept 헤더로 지원 포맷 확인</text>
+  <text x="300" y="124" text-anchor="middle" font-size="10.5" fill="#33507a">(image/avif, image/webp 등)</text>
+
+  <rect x="430" y="65" width="180" height="70" rx="8" fill="#eaf7ee" stroke="#2fa84f"/>
+  <text x="520" y="93" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1f7a38">CDN 엣지 변환</text>
+  <text x="520" y="110" text-anchor="middle" font-size="10.5" fill="#2d6b3d">리사이즈 · 포맷 변환</text>
+  <text x="520" y="124" text-anchor="middle" font-size="10.5" fill="#2d6b3d">품질(quality) 조정</text>
+
+  <line x1="170" y1="100" x2="205" y2="100" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="390" y1="100" x2="425" y2="100" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- branch line down -->
+  <line x1="520" y1="135" x2="520" y2="160" stroke="#888" stroke-width="1.5"/>
+  <text x="520" y="153" text-anchor="middle" font-size="10.5" fill="#555">포맷 우선순위 결정</text>
+  <line x1="350" y1="160" x2="690" y2="160" stroke="#888" stroke-width="1.5"/>
+  <line x1="350" y1="160" x2="350" y2="183" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="520" y1="160" x2="520" y2="183" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="690" y1="160" x2="690" y2="183" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Row 2: format priority -->
+  <rect x="275" y="185" width="150" height="55" rx="8" fill="#fff7e6" stroke="#d9a52b"/>
+  <text x="350" y="205" text-anchor="middle" font-size="12" font-weight="bold" fill="#8a6410">① AVIF</text>
+  <text x="350" y="220" text-anchor="middle" font-size="10" fill="#7a5a13">최신 브라우저, 최고 압축률</text>
+  <text x="350" y="232" text-anchor="middle" font-size="10" fill="#7a5a13">우선 적용</text>
+
+  <rect x="445" y="185" width="150" height="55" rx="8" fill="#fff7e6" stroke="#d9a52b"/>
+  <text x="520" y="205" text-anchor="middle" font-size="12" font-weight="bold" fill="#8a6410">② WebP</text>
+  <text x="520" y="220" text-anchor="middle" font-size="10" fill="#7a5a13">AVIF 미지원 시</text>
+  <text x="520" y="232" text-anchor="middle" font-size="10" fill="#7a5a13">차선 대체</text>
+
+  <rect x="615" y="185" width="150" height="55" rx="8" fill="#fff7e6" stroke="#d9a52b"/>
+  <text x="690" y="205" text-anchor="middle" font-size="12" font-weight="bold" fill="#8a6410">③ JPEG</text>
+  <text x="690" y="220" text-anchor="middle" font-size="10" fill="#7a5a13">둘 다 미지원 시</text>
+  <text x="690" y="232" text-anchor="middle" font-size="10" fill="#7a5a13">최종 대체(레거시)</text>
+
+  <!-- converge down -->
+  <line x1="350" y1="240" x2="350" y2="262" stroke="#888" stroke-width="1.5"/>
+  <line x1="690" y1="240" x2="690" y2="262" stroke="#888" stroke-width="1.5"/>
+  <line x1="350" y1="262" x2="690" y2="262" stroke="#888" stroke-width="1.5"/>
+  <line x1="520" y1="240" x2="520" y2="262" stroke="#888" stroke-width="1.5"/>
+  <line x1="520" y1="262" x2="520" y2="280" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Row 3: edge cache -->
+  <rect x="400" y="282" width="240" height="55" rx="8" fill="#eef4ff" stroke="#5b8def"/>
+  <text x="520" y="303" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1a3d8f">엣지 캐시 저장</text>
+  <text x="520" y="320" text-anchor="middle" font-size="10.5" fill="#33507a">캐시 키 = URL + 포맷 + 너비(width)</text>
+
+  <line x1="520" y1="337" x2="520" y2="358" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Row 4: browser response -->
+  <rect x="380" y="360" width="280" height="55" rx="8" fill="#eafff0" stroke="#2fa84f"/>
+  <text x="520" y="381" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1f7a38">브라우저에 최적 포맷 전달</text>
+  <text x="520" y="398" text-anchor="middle" font-size="10.5" fill="#2d6b3d">&lt;picture&gt; 태그로 미지원 브라우저는 자동 대체</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#888"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="435" text-anchor="middle" font-size="11" fill="#555">원본은 한 번만 저장하고, 요청 시점의 브라우저 지원 포맷에 맞춰 엣지에서 변환·캐싱한다</text>
+</svg>

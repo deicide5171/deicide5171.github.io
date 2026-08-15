@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>HikariCP 커넥션 풀 튜닝 실전 — 커넥션 부족과 누수 잡기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">HikariCP 커넥션 풀 튜닝 실전 — 커넥션 부족과 누수 잡기</div>
+<p style="font-size:14px; color:#999;">2026. 8. 19. · DB·데이터 모델링</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 트래픽이 몰릴 때마다 반복되는 HikariCP 타임아웃 예외를 pool size만 키워서 넘기지 않도록, <b>커넥션 부족과 커넥션 누수</b>를 구분해서 진단하고 튜닝하는 방법을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 이야기인가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">트래픽이 몰리는 순간 로그에 <b>HikariPool-1 - Connection is not available, request timed out after 30000ms</b> 같은 예외가 쏟아지는 경험은 Spring Boot 서비스를 운영해본 분이라면 한 번쯤 마주쳤을 겁니다. Spring Boot 2.x 이후 기본 데이터소스 구현체로 HikariCP가 채택되면서 별도 설정 없이도 커넥션 풀이 잘 동작하지만, 그만큼 기본값을 그대로 둔 채 운영하다 트래픽이 늘어난 뒤에야 문제를 겪는 경우가 많습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">문제는 여기서 pool size를 무작정 키우는 대응입니다. 애플리케이션 서버의 스레드 수, DB 서버가 감당 가능한 총 커넥션 수, 각 요청이 커넥션을 붙잡고 있는 시간 사이의 관계를 이해하지 못한 채 숫자만 올리면, 이번엔 DB 서버의 <b>max_connections</b>를 초과하거나 느린 쿼리 하나가 커넥션 전체를 잠식하는 새로운 문제로 이어집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">특히 <b>커넥션 부족</b>과 <b>커넥션 누수</b>는 겉으로 보이는 증상 — 둘 다 결국 커넥션을 못 구해 타임아웃이 난다 — 이 비슷해 원인을 혼동하기 쉽습니다. 하지만 해법은 정반대에 가깝습니다. 이 둘을 구분하는 것이 튜닝의 출발점입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념: HikariCP 주요 파라미터</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:22%;">파라미터</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:18%;">기본값</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">의미</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">maximumPoolSize</td>
+<td style="border:1px solid #ddd; padding:10px;">10</td>
+<td style="border:1px solid #ddd; padding:10px;">풀이 유지할 수 있는 최대 커넥션 수(유휴+사용중 합)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">minimumIdle</td>
+<td style="border:1px solid #ddd; padding:10px;">maximumPoolSize와 동일</td>
+<td style="border:1px solid #ddd; padding:10px;">유휴 상태로 최소한 유지할 커넥션 수</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">connectionTimeout</td>
+<td style="border:1px solid #ddd; padding:10px;">30000ms</td>
+<td style="border:1px solid #ddd; padding:10px;">커넥션을 못 구했을 때 대기하다 예외를 던지기까지의 시간</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">idleTimeout</td>
+<td style="border:1px solid #ddd; padding:10px;">600000ms(10분)</td>
+<td style="border:1px solid #ddd; padding:10px;">유휴 커넥션을 풀에서 제거하기까지의 시간(minimumIdle 초과분만 대상)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">maxLifetime</td>
+<td style="border:1px solid #ddd; padding:10px;">1800000ms(30분)</td>
+<td style="border:1px solid #ddd; padding:10px;">커넥션 하나의 최대 수명, DB 측 idle timeout보다 짧게 잡는 것이 원칙</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">leakDetectionThreshold</td>
+<td style="border:1px solid #ddd; padding:10px;">0(비활성)</td>
+<td style="border:1px solid #ddd; padding:10px;">이 시간 이상 반환되지 않은 커넥션을 누수 의심으로 로깅</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 값들은 서로 독립적이지 않습니다. 예를 들어 <b>maxLifetime</b>을 DB 서버의 커넥션 타임아웃보다 길게 두면, DB가 먼저 끊어버린 죽은 커넥션을 풀이 살아있다고 착각해 애플리케이션에 넘겨주는 문제가 생길 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념: 커넥션 부족 vs 커넥션 누수</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:18%;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">증상</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">진단 방법</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">커넥션 부족<br>(Pool exhaustion)</td>
+<td style="border:1px solid #ddd; padding:10px;">트래픽 증가 시점에 몰려서 connectionTimeout 예외 다발, 트래픽이 줄면 정상화</td>
+<td style="border:1px solid #ddd; padding:10px;">요청량·응답시간 그래프와 예외 발생 시점을 겹쳐 확인</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">커넥션 누수<br>(Connection leak)</td>
+<td style="border:1px solid #ddd; padding:10px;">트래픽이 줄어도 active 커넥션 수가 회복되지 않고 서서히 누적</td>
+<td style="border:1px solid #ddd; padding:10px;">leakDetectionThreshold 설정 후 경고 로그의 스택 트레이스 확인, active 커넥션 추이 관찰</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">부족은 <b>"잠깐 몰렸다 풀리는"</b> 패턴을, 누수는 <b>"시간이 갈수록 쌓이기만 하는"</b> 패턴을 보인다는 점이 가장 실용적인 구분 기준입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: application.yml 설정과 누수 탐지</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">spring:
+  datasource:
+    hikari:
+      maximum-pool-size: 20
+      minimum-idle: 10
+      connection-timeout: 3000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      leak-detection-threshold: 60000</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">누수는 대부분 커넥션(또는 그 위의 트랜잭션 리소스)을 명시적으로 닫지 않는 코드 경로에서 발생합니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">// 누수 위험: 예외 발생 시 conn.close()가 실행되지 않음
+Connection conn = dataSource.getConnection();
+PreparedStatement ps = conn.prepareStatement(sql);
+ps.executeUpdate(); // 여기서 예외가 나면 conn이 반환되지 않는다
+
+// 안전한 패턴: try-with-resources로 예외 발생 여부와 무관하게 반환 보장
+try (Connection conn = dataSource.getConnection();
+     PreparedStatement ps = conn.prepareStatement(sql)) {
+    ps.executeUpdate();
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>leakDetectionThreshold</b>를 60초로 설정하면, 커넥션이 60초 넘게 반환되지 않을 때 아래와 같은 경고가 찍혀 누수 지점의 스택 트레이스를 바로 확인할 수 있습니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">2026-08-19 13:20:11 WARN HikariPool-1 - Connection leak detection triggered for
+com.zaxxer.hikari.pool.ProxyConnection@... on thread http-nio-8080-exec-7,
+stack trace follows</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="text-align:center;"><img src="https://deicide5171.github.io/assets/images/posts/2026-08-19-hikaricp-connection-pool-tuning-1.svg" alt="HikariCP 커넥션 풀 상태 흐름도 - 유휴 풀, 대여, 사용 중, 반환과 대기열/누수 탐지 분기" style="width:100%; max-width:760px;"></p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. pool size는 많을수록 좋은 게 아닙니다</b> — HikariCP 위키의 계산식은 어디까지나 출발점일 뿐, 실제 값은 부하 테스트로 검증하세요<br>
+<b>2. 애플리케이션 인스턴스 수를 곱해서 생각하세요</b> — 인스턴스 3대 × maximumPoolSize 20이면 DB에는 최대 60개 커넥션이 열립니다<br>
+<b>3. connectionTimeout은 너무 낮아도 너무 높아도 문제</b> — 너무 낮으면 스파이크에 예외 폭증, 너무 높으면 스레드 대기 누적<br>
+<b>4. leakDetectionThreshold는 오탐 가능성도 함께 고려</b> — 배치처럼 원래 오래 걸리는 작업과 구분되도록 여유 있게 설정<br>
+<b>5. active/idle/pending 지표를 상시 관찰</b> — 예외가 터지기 전에 대기 스레드 수 증가 추세를 먼저 포착할 수 있습니다
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 커넥션 예외가 터지면 pool size부터 키우기 전에, 트래픽에 따라 일시적으로 몰리는 "부족"인지 시간이 갈수록 누적되는 "누수"인지부터 구분합니다.<br>
+② 누수는 try-with-resources로 반환을 보장하고 leakDetectionThreshold로 미반환 커넥션의 스택 트레이스를 확인하는 방식으로 잡습니다.<br>
+③ pool size는 애플리케이션 인스턴스 수와 DB의 max_connections를 함께 고려해 계산하고, 확정적인 공식 수치보다는 부하 테스트로 검증한 값을 신뢰합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 실제 부하 테스트로 pool size를 검증한 경험을 다뤄보겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#HikariCP #커넥션풀 #커넥션누수 #스프링부트 #DB튜닝</p>
+
+</body>
+</html>

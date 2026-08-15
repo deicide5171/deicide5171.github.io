@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>AVIF·WebP로 이미지 용량 줄이기 — CDN 이미지 파이프라인 설계 전략</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">AVIF·WebP로 이미지 용량 줄이기 — CDN 이미지 파이프라인 설계 전략</div>
+<p style="font-size:14px; color:#999;">2026. 8. 19. · 프론트엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 페이지 용량의 절반 이상을 차지하는 이미지를 <b>AVIF·WebP 포맷</b>과 <b>CDN 온더플라이 변환 파이프라인</b>으로 줄이는 실전 전략을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이미지 최적화일까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">많은 웹페이지에서 전체 전송 용량 중 이미지가 차지하는 비중은 여전히 절반 안팎으로 가장 큽니다. JS 번들을 아무리 쪼개고 캐싱을 잘 해도, 히어로 이미지 하나가 수 MB짜리 원본 JPEG로 나가면 LCP는 쉽게 무너집니다. 다행히 최근 몇 년 사이 이 문제를 풀 수 있는 도구가 크게 늘었습니다. <b>AVIF</b>는 동일 화질 기준으로 JPEG 대비 상당한 용량 절감을 보여주는 코덱으로 주요 브라우저 대부분에서 지원되고 있고, <b>WebP</b>는 그보다 앞서 사실상 표준급 대체 포맷으로 자리 잡았습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">동시에 Cloudflare Images, Cloudinary, imgix, Vercel/Next.js Image Optimization 같은 <b>CDN 이미지 파이프라인</b> 서비스들이 "원본 하나만 올려두면 요청 시점에 최적 포맷으로 변환해 서빙"하는 방식을 기본값으로 밀어주면서, 직접 포맷별 파일을 미리 여러 개 만들어 둘 필요가 줄었습니다. 문제는 이런 자동화 뒤에서 실제로 어떤 판단(포맷 선택, 캐시 키, fallback)이 일어나는지 모르면 변환 비용 폭증이나 캐시 미스 같은 함정에 부딪히기 쉽다는 점입니다. 이번 글은 이미지 포맷 선택 기준과 CDN 파이프라인 구조 자체에 집중합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 이미지 포맷 비교</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">포맷</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">압축 특성</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">브라우저 지원</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">인코딩 비용</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">적합한 상황</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">JPEG</td>
+<td style="border:1px solid #ddd; padding:10px;">손실 압축, 오래된 표준</td>
+<td style="border:1px solid #ddd; padding:10px;">사실상 전부</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음</td>
+<td style="border:1px solid #ddd; padding:10px;">최종 fallback</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">WebP</td>
+<td style="border:1px solid #ddd; padding:10px;">JPEG 대비 용량 절감, 무손실도 지원</td>
+<td style="border:1px solid #ddd; padding:10px;">주요 브라우저 광범위 지원</td>
+<td style="border:1px solid #ddd; padding:10px;">중간</td>
+<td style="border:1px solid #ddd; padding:10px;">범용 대체 포맷</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">AVIF</td>
+<td style="border:1px solid #ddd; padding:10px;">WebP보다 더 나은 압축률(특히 저비트레이트)</td>
+<td style="border:1px solid #ddd; padding:10px;">최신 브라우저 위주(계속 확대 중)</td>
+<td style="border:1px solid #ddd; padding:10px;">높음(인코딩 느림)</td>
+<td style="border:1px solid #ddd; padding:10px;">정적·캐시 가능한 이미지</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">AVIF는 압축률이 좋은 대신 인코딩 연산이 무거워서, 요청마다 실시간으로 인코딩하면 오히려 응답 지연이나 서버 비용 증가로 이어질 수 있습니다. 그래서 실무에서는 <b>"처음 요청 시 한 번만 변환해 엣지에 캐시하고, 이후 요청은 캐시에서 서빙"</b>하는 구조를 씁니다. 반대로 자주 바뀌는 사용자 생성 이미지(썸네일 등)라면 WebP처럼 인코딩이 가벼운 포맷을 우선 검토할 만합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 포맷 협상과 CDN 파이프라인 구조</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-19-image-optimization-avif-cdn-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">브라우저는 요청 시 <b>Accept 헤더</b>로 자신이 지원하는 포맷을 알려줍니다(image/avif, image/webp 등). 서버나 CDN은 이 헤더를 보고 지원 우선순위(AVIF &gt; WebP &gt; JPEG)에 따라 실제로 내려줄 파일을 결정합니다. 이 협상을 마크업 레벨에서 명시적으로 하고 싶다면 <b>&lt;picture&gt;</b> 요소로 포맷별 소스를 나열하면 되고, CDN이 자동 협상을 지원한다면 &lt;img&gt; 하나만 두고 CDN에 위임할 수도 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">여기에 화면 크기별로 다른 해상도를 내려주는 반응형 이미지(srcset/sizes)까지 결합하면 "포맷 × 너비" 조합만큼 변형(variant)이 늘어납니다. 이 조합 전체를 미리 생성해두는 대신, <b>첫 요청 시 온더플라이로 변환하고 엣지에 캐시</b>하는 방식이 저장 공간과 빌드 시간 양쪽에서 유리합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 1 — &lt;picture&gt;로 포맷 fallback 명시하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 AVIF → WebP → JPEG 순서로 fallback을 명시한 기본 패턴입니다. 브라우저는 &lt;source&gt;를 위에서부터 검사해 지원하는 첫 번째 포맷을 선택하고, 아무것도 지원하지 않으면 마지막 &lt;img&gt;로 자연스럽게 떨어집니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">&lt;picture&gt;
+  &lt;source type=&quot;image/avif&quot; srcset=&quot;/img/hero-800.avif 800w, /img/hero-1600.avif 1600w&quot;&gt;
+  &lt;source type=&quot;image/webp&quot; srcset=&quot;/img/hero-800.webp 800w, /img/hero-1600.webp 1600w&quot;&gt;
+  &lt;img src=&quot;/img/hero-800.jpg&quot; srcset=&quot;/img/hero-800.jpg 800w, /img/hero-1600.jpg 1600w&quot;
+       sizes=&quot;(max-width: 600px) 100vw, 800px&quot;
+       alt=&quot;제품 히어로 이미지&quot; width=&quot;800&quot; height=&quot;450&quot;
+       loading=&quot;eager&quot; fetchpriority=&quot;high&quot;&gt;
+&lt;/picture&gt;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">LCP 후보가 되는 이미지라면 loading=&quot;lazy&quot; 대신 fetchpriority=&quot;high&quot;로 우선순위를 올리는 편이 낫습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 2 — CDN 온더플라이 변환 요청(예시 규칙)</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 원본 이미지 한 장을 요청 파라미터로 포맷·너비·품질을 지정해 변환 요청하는 예시입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># 원본 1장 → 요청 파라미터로 포맷/너비/품질 지정
+GET /cdn-cgi/image/format=auto,width=800,quality=80/uploads/hero.jpg</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">format=auto는 CDN이 요청 브라우저의 Accept 헤더를 보고 AVIF·WebP·JPEG 중 적합한 포맷을 골라주는 옵션입니다(구체적 파라미터명은 CDN 제품마다 다르므로 반드시 해당 서비스 공식 문서를 확인해야 합니다). 이 방식의 핵심은 <b>원본은 하나만 관리하고, 변형은 요청 시점에 만들어 캐시</b>한다는 것입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 이미 압축된 이미지를 재압축하지 않기</b> — 저품질 JPEG 원본을 AVIF로 재인코딩해도 화질은 개선되지 않고 아티팩트만 늘 수 있음<br>
+<b>2. 캐시 키에 포맷·너비를 반드시 포함</b> — 그렇지 않으면 서로 다른 변형이 같은 캐시 엔트리를 덮어써 엉뚱한 이미지가 나갈 수 있음<br>
+<b>3. AVIF 인코딩을 실시간 경로에서 피하기</b> — 트래픽 몰릴 때 캐시 미스가 겹치면 변환 큐가 밀리므로, 신규 업로드 시 주요 변형을 미리 워밍(warm)해두는 것도 방법<br>
+<b>4. 외부 이미지 핫링크 금지</b> — 저작권·트래픽 비용 문제가 있으니 반드시 자체 CDN·스토리지를 경유해 서빙<br>
+<b>5. LCP 이미지는 지연 로딩 대상에서 제외</b> — 뷰포트 안 첫 화면 이미지에 loading=&quot;lazy&quot;를 걸면 오히려 로딩이 늦어질 수 있음
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① AVIF는 WebP보다 압축률이 좋지만 인코딩이 무겁고, WebP는 그 중간 지점의 범용 대체 포맷이라 각각의 트레이드오프를 이해하고 골라야 합니다.<br>
+② &lt;picture&gt; 요소나 CDN의 format=auto 방식으로 브라우저 지원 포맷을 자동 협상하면 포맷별 파일을 수작업으로 관리하지 않아도 됩니다.<br>
+③ 온더플라이 변환 + 엣지 캐시 구조에서는 캐시 키에 포맷·너비를 포함하고, 첫 요청 지연을 줄이기 위한 워밍 전략을 함께 고려해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 프론트엔드 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#이미지최적화 #AVIF #WebP #CDN #반응형이미지 #프론트엔드</p>
+
+</body>
+</html>

@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1a1a1a">멀티모달 모델의 이미지+텍스트 처리 흐름</text>
+
+  <!-- Input: image -->
+  <rect x="30" y="60" width="170" height="70" rx="6" fill="#eef2ff" stroke="#4c5fd5"/>
+  <text x="115" y="88" text-anchor="middle" font-size="12" font-weight="bold" fill="#2f3a9e">이미지 입력</text>
+  <text x="115" y="106" text-anchor="middle" font-size="10.5" fill="#2f3a9e">영수증 / 차트 /</text>
+  <text x="115" y="120" text-anchor="middle" font-size="10.5" fill="#2f3a9e">스크린샷 등</text>
+
+  <!-- Input: text -->
+  <rect x="30" y="150" width="170" height="70" rx="6" fill="#eef2ff" stroke="#4c5fd5"/>
+  <text x="115" y="178" text-anchor="middle" font-size="12" font-weight="bold" fill="#2f3a9e">텍스트 지시문</text>
+  <text x="115" y="196" text-anchor="middle" font-size="10.5" fill="#2f3a9e">"합계 금액만</text>
+  <text x="115" y="210" text-anchor="middle" font-size="10.5" fill="#2f3a9e">뽑아줘" 등</text>
+
+  <!-- arrows into encoder -->
+  <line x1="200" y1="95" x2="248" y2="130" stroke="#4c5fd5" stroke-width="1.5" marker-end="url(#ar1)"/>
+  <line x1="200" y1="185" x2="248" y2="150" stroke="#4c5fd5" stroke-width="1.5" marker-end="url(#ar1)"/>
+
+  <!-- Image encoder -->
+  <rect x="250" y="60" width="180" height="70" rx="6" fill="#f3f0ff" stroke="#7c4fd5"/>
+  <text x="340" y="88" text-anchor="middle" font-size="12" font-weight="bold" fill="#4a2f9e">이미지 인코더</text>
+  <text x="340" y="106" text-anchor="middle" font-size="10.5" fill="#4a2f9e">픽셀 → 이미지</text>
+  <text x="340" y="120" text-anchor="middle" font-size="10.5" fill="#4a2f9e">토큰 시퀀스로 변환</text>
+
+  <!-- Token fusion -->
+  <rect x="250" y="150" width="180" height="70" rx="6" fill="#f3f0ff" stroke="#7c4fd5"/>
+  <text x="340" y="178" text-anchor="middle" font-size="12" font-weight="bold" fill="#4a2f9e">토큰 통합(Fusion)</text>
+  <text x="340" y="196" text-anchor="middle" font-size="10.5" fill="#4a2f9e">이미지 토큰 + 텍스트</text>
+  <text x="340" y="210" text-anchor="middle" font-size="10.5" fill="#4a2f9e">토큰을 한 시퀀스로 결합</text>
+
+  <line x1="340" y1="130" x2="340" y2="150" stroke="#7c4fd5" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+  <line x1="430" y1="185" x2="478" y2="185" stroke="#7c4fd5" stroke-width="1.5" marker-end="url(#ar2)"/>
+
+  <!-- LLM body -->
+  <rect x="480" y="120" width="190" height="130" rx="6" fill="#fff7e6" stroke="#d99a1f"/>
+  <text x="575" y="150" text-anchor="middle" font-size="12" font-weight="bold" fill="#8a5a00">언어 모델 본체</text>
+  <text x="575" y="170" text-anchor="middle" font-size="10.5" fill="#8a5a00">통합 시퀀스 기반</text>
+  <text x="575" y="185" text-anchor="middle" font-size="10.5" fill="#8a5a00">추론 · 생성</text>
+  <text x="575" y="205" text-anchor="middle" font-size="10.5" fill="#8a5a00">필요 시 Tool Use /</text>
+  <text x="575" y="220" text-anchor="middle" font-size="10.5" fill="#8a5a00">구조화 출력으로 검증</text>
+
+  <line x1="670" y1="185" x2="708" y2="185" stroke="#d99a1f" stroke-width="1.5" marker-end="url(#ar3)"/>
+
+  <!-- Output -->
+  <rect x="600" y="290" width="170" height="70" rx="6" fill="#eafff0" stroke="#2fa84f"/>
+  <text x="685" y="318" text-anchor="middle" font-size="12" font-weight="bold" fill="#1f7a38">응답 / 구조화 데이터</text>
+  <text x="685" y="336" text-anchor="middle" font-size="10.5" fill="#1f7a38">자유 텍스트 또는</text>
+  <text x="685" y="350" text-anchor="middle" font-size="10.5" fill="#1f7a38">JSON 스키마 결과</text>
+
+  <path d="M 710 250 C 710 270, 700 280, 685 290" fill="none" stroke="#2fa84f" stroke-width="1.5" marker-end="url(#ar4)"/>
+
+  <!-- divider -->
+  <line x1="20" y1="390" x2="780" y2="390" stroke="#ddd" stroke-width="1"/>
+  <text x="400" y="416" text-anchor="middle" font-size="11.5" fill="#555">이미지는 픽셀이 아니라 텍스트와 동일한 토큰으로 처리되므로, 해상도가 곧 비용에 직결된다</text>
+
+  <defs>
+    <marker id="ar1" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#4c5fd5"/>
+    </marker>
+    <marker id="ar2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#7c4fd5"/>
+    </marker>
+    <marker id="ar3" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#d99a1f"/>
+    </marker>
+    <marker id="ar4" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#2fa84f"/>
+    </marker>
+  </defs>
+</svg>
