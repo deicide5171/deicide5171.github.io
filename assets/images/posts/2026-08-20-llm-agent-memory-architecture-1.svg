@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Segoe UI', 'Apple SD Gothic Neo', sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#222222">에이전트 메모리 아키텍처 — 단기 메모리와 장기 메모리의 흐름</text>
+
+  <!-- Left: short-term memory -->
+  <rect x="30" y="70" width="210" height="150" rx="6" fill="#eaf1fd" stroke="#2f6fed"/>
+  <text x="135" y="95" text-anchor="middle" font-size="14" font-weight="bold" fill="#1d4ed8">단기 메모리</text>
+  <text x="135" y="112" text-anchor="middle" font-size="11" fill="#3b5bdb">(대화 버퍼, conversation buffer)</text>
+  <text x="135" y="136" text-anchor="middle" font-size="10.5" fill="#274690">최근 N턴 대화를</text>
+  <text x="135" y="152" text-anchor="middle" font-size="10.5" fill="#274690">그대로 유지</text>
+  <text x="135" y="176" text-anchor="middle" font-size="10.5" fill="#274690">버퍼 초과 시</text>
+  <text x="135" y="192" text-anchor="middle" font-size="10.5" fill="#274690">가장 오래된 구간 압축</text>
+
+  <!-- Center: Context window -->
+  <rect x="300" y="90" width="200" height="110" rx="6" fill="#fdf1e6" stroke="#e67e22" stroke-width="2"/>
+  <text x="400" y="118" text-anchor="middle" font-size="14" font-weight="bold" fill="#c2610d">컨텍스트 윈도우</text>
+  <text x="400" y="135" text-anchor="middle" font-size="11" fill="#c2610d">(LLM 입력)</text>
+  <text x="400" y="160" text-anchor="middle" font-size="10.5" fill="#7a4a1a">최근 대화 + 검색된 기억</text>
+  <text x="400" y="178" text-anchor="middle" font-size="10.5" fill="#7a4a1a">= 이번 턴에 실제로</text>
+  <text x="400" y="193" text-anchor="middle" font-size="10.5" fill="#7a4a1a">모델이 보는 전부</text>
+
+  <!-- Right: long-term memory -->
+  <rect x="560" y="70" width="210" height="150" rx="6" fill="#e9f8ef" stroke="#1f9d55"/>
+  <text x="665" y="95" text-anchor="middle" font-size="14" font-weight="bold" fill="#15803d">장기 메모리</text>
+  <text x="665" y="112" text-anchor="middle" font-size="11" fill="#1f9d55">(벡터 저장소)</text>
+  <text x="665" y="136" text-anchor="middle" font-size="10.5" fill="#166534">에피소드 기억 +</text>
+  <text x="665" y="152" text-anchor="middle" font-size="10.5" fill="#166534">시맨틱 기억(요약된 사실)</text>
+  <text x="665" y="176" text-anchor="middle" font-size="10.5" fill="#166534">임베딩 유사도로</text>
+  <text x="665" y="192" text-anchor="middle" font-size="10.5" fill="#166534">필요한 항목만 검색</text>
+
+  <!-- arrow: short-term -> context -->
+  <line x1="240" y1="145" x2="300" y2="145" stroke="#2f6fed" stroke-width="1.5" marker-end="url(#arrow1)"/>
+  <text x="270" y="135" text-anchor="middle" font-size="9.5" fill="#1d4ed8">최근 턴 삽입</text>
+
+  <!-- arrow: long-term -> context (retrieval) -->
+  <line x1="560" y1="145" x2="500" y2="145" stroke="#1f9d55" stroke-width="1.5" marker-end="url(#arrow2)"/>
+  <text x="530" y="135" text-anchor="middle" font-size="9.5" fill="#15803d">검색(retrieval)</text>
+
+  <!-- arrow: short-term -> long-term (compress & write) -->
+  <path d="M240,195 C350,260 550,260 660,225" fill="none" stroke="#888888" stroke-width="1.3" stroke-dasharray="3,3" marker-end="url(#arrow3)"/>
+  <text x="450" y="255" text-anchor="middle" font-size="10.5" fill="#666666">오래된 구간 요약 후 저장(압축·기록)</text>
+
+  <defs>
+    <marker id="arrow1" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#2f6fed"/>
+    </marker>
+    <marker id="arrow2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#1f9d55"/>
+    </marker>
+    <marker id="arrow3" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#888888"/>
+    </marker>
+  </defs>
+
+  <rect x="30" y="300" width="740" height="110" rx="4" fill="#f9f9f9" stroke="#dddddd"/>
+  <text x="400" y="325" text-anchor="middle" font-size="12" font-weight="bold" fill="#333333">핵심: 컨텍스트 윈도우는 "지금 이 순간의 작업대"일 뿐, 기억의 저장소가 아니다</text>
+  <text x="400" y="350" text-anchor="middle" font-size="11" fill="#666666">단기 메모리는 최근 흐름을 정확히 보존하고, 장기 메모리는 검색을 통해 관련된 과거만 선택적으로 불러온다</text>
+  <text x="400" y="370" text-anchor="middle" font-size="11" fill="#666666">에피소드 메모리(특정 사건)와 시맨틱 메모리(일반화된 사실)를 분리해 저장하면 검색 관련성이 높아진다</text>
+  <text x="400" y="390" text-anchor="middle" font-size="11" fill="#666666">압축 과정에서 손실되는 정보와 오염된 채 누적되는 오래된 사실을 항상 경계해야 한다</text>
+</svg>

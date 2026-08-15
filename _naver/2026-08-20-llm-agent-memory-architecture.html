@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>에이전트에게 기억을 주다 — LLM 메모리 아키텍처 설계 패턴</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">에이전트에게 기억을 주다 — LLM 메모리 아키텍처 설계 패턴</div>
+<p style="font-size:14px; color:#999;">2026. 8. 20. · AI/LLM</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 컨텍스트 윈도우가 아무리 커져도 대화를 전부 욱여넣을 수는 없습니다. <b>단기 메모리(대화 버퍼)</b>와 <b>장기 메모리(벡터 검색)</b>를 나누고, 요약 압축과 에피소드/시맨틱 메모리 구분으로 에이전트가 오래 기억하게 만드는 설계 패턴을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 메모리 설계가 필요할까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">요즘 LLM은 컨텍스트 윈도우가 크게 늘어나서, &quot;그냥 대화 기록을 전부 넣으면 되지 않을까&quot;라는 생각이 들 수 있습니다. 실제로 해보면 두 가지 벽에 부딪힙니다. 첫째는 비용과 지연 문제입니다. 매 요청마다 전체 대화를 다시 처리하면 토큰 비용이 계속 쌓이고 응답 속도도 느려집니다. 둘째는 더 근본적인 문제인데, 컨텍스트가 길어질수록 모델이 정말 중요한 정보를 놓치거나 희석시키는 경향이 있다는 점입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">대화가 며칠, 몇 주에 걸쳐 이어지는 에이전트라면 이 문제가 더 두드러집니다. 사람이 모든 대화를 토씨 하나까지 기억하지 않고 요약된 인상과 핵심 사실만 남기듯이, <b>에이전트도 무엇을 즉시 참조할지(단기 메모리)와 무엇을 장기적으로 보관하고 필요할 때 꺼내올지(장기 메모리)를 구분</b>해야 합니다. 이 글에서는 실무에서 자주 쓰이는 메모리 계층 구조 패턴을 정리해봤습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 단기 메모리와 장기 메모리는 역할이 다릅니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>단기 메모리</b>는 흔히 &quot;대화 버퍼(conversation buffer)&quot;라고 부르며, 최근 N턴의 대화를 그대로 컨텍스트에 유지하는 방식입니다. 구현이 단순하고 최근 맥락을 정확하게 보존한다는 장점이 있지만, 버퍼 크기를 넘어서는 순간 오래된 정보는 그냥 잘려나갑니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-20-llm-agent-memory-architecture-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>장기 메모리</b>는 대화 내용을 벡터 임베딩으로 변환해 벡터 데이터베이스(Pinecone, Weaviate, pgvector 등)에 저장하고, 현재 턴과 의미적으로 유사한 항목만 검색(retrieval)해서 컨텍스트에 넣어주는 방식입니다. 이 구조 덕분에 대화가 아무리 길어져도 컨텍스트 윈도우 크기에 구애받지 않고 과거 정보를 참조할 수 있습니다. 다만 검색 품질이 곧 메모리 품질이 되기 때문에, 임베딩 모델 선택과 청크(chunk) 분할 전략이 결과에 큰 영향을 줍니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실무에서는 이 둘을 함께 쓰는 경우가 많습니다. 단기 메모리로 최근 대화의 정확한 흐름을 보존하고, 장기 메모리로 오래된 맥락이나 사용자 프로필처럼 반복적으로 필요한 정보를 검색해 채워 넣는 방식입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 요약 기반 압축 전략</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">버퍼가 가득 차면 단순히 오래된 턴을 버리는 대신, 그 내용을 요약해 압축된 형태로 남기는 전략을 쓸 수 있습니다. 대표적으로 세 가지 방식이 있습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">전략</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">동작 방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">주의할 점</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">슬라이딩 윈도우 + 요약</td>
+<td style="border:1px solid #ddd; padding:10px;">임계값 초과 시 오래된 절반을 별도 LLM 호출로 요약</td>
+<td style="border:1px solid #ddd; padding:10px;">요약이 쌓일수록 프롬프트가 길어짐</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">점진적 요약</td>
+<td style="border:1px solid #ddd; padding:10px;">매 턴마다 이전 요약 + 새 턴을 다시 요약</td>
+<td style="border:1px solid #ddd; padding:10px;">반복 요약 중 세부 정보 누락 위험</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">계층적 요약</td>
+<td style="border:1px solid #ddd; padding:10px;">짧은 구간 요약을 다시 묶어 상위 요약 생성</td>
+<td style="border:1px solid #ddd; padding:10px;">아주 긴 세션에 적합하나 구조가 복잡</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">압축은 필연적으로 정보 손실을 동반하기 때문에, 사용자가 명시적으로 요청한 제약 조건이나 이미 결정된 사항처럼 <b>반드시 보존해야 하는 정보</b>는 요약 과정에서 빠지지 않도록 프롬프트 수준에서 명확히 지시하는 것이 중요합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 에피소드 메모리와 시맨틱 메모리 구분</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">인지과학에서 빌려온 구분이지만, 에이전트 메모리를 설계할 때도 유용합니다. <b>에피소드 메모리(episodic memory)</b>는 &quot;언제, 무슨 일이 있었는가&quot;에 대한 기록입니다. 특정 세션에서 사용자가 무엇을 물었고 에이전트가 어떻게 답했는지처럼, 시간 순서가 있는 구체적 사건을 저장합니다. 반면 <b>시맨틱 메모리(semantic memory)</b>는 개별 사건과 무관하게 축적된 일반화된 사실입니다. &quot;사용자는 Python을 선호한다&quot;, &quot;이 프로젝트의 배포 환경은 AWS다&quot;처럼 여러 대화에서 반복적으로 확인된 지식을 별도로 정제해 저장합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">두 메모리를 분리하면, 에피소드 메모리는 벡터 검색으로 관련 사건을 찾는 데 쓰고 시맨틱 메모리는 매 세션 시작 시 프로필 형태로 시스템 프롬프트에 주입하는 식으로 역할을 나눌 수 있습니다. 이 구분이 없으면 오래된 개별 사건과 안정적인 사실이 같은 저장소에 섞여, 검색 결과의 관련성이 떨어지기 쉽습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 메모리 저장·검색 흐름 의사코드</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 메모리 저장과 검색 흐름을 단순화한 Python 스타일 의사코드입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">class AgentMemory:
+    def __init__(self, vector_store, buffer_size=20):
+        self.buffer = []  # 단기 메모리: 최근 대화 턴
+        self.buffer_size = buffer_size
+        self.vector_store = vector_store  # 장기 메모리: 벡터 저장소
+
+    def add_turn(self, role, content):
+        self.buffer.append({"role": role, "content": content})
+        if len(self.buffer) &gt; self.buffer_size:
+            oldest = self.buffer[: self.buffer_size // 2]
+            summary = summarize(oldest)  # 별도 LLM 호출로 압축
+            self.vector_store.upsert(text=summary, metadata={"type": "summary"})
+            self.buffer = self.buffer[self.buffer_size // 2 :]
+
+    def build_context(self, query, top_k=5):
+        # 장기 메모리에서 현재 질의와 관련된 항목만 검색
+        retrieved = self.vector_store.search(query, top_k=top_k)
+        long_term_context = "\n".join(r.text for r in retrieved)
+        recent_context = "\n".join(f"{t['role']}: {t['content']}" for t in self.buffer)
+        return f"[관련 기억]\n{long_term_context}\n\n[최근 대화]\n{recent_context}"</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">여기서 <b>summarize</b>는 별도의 LLM 호출로 오래된 대화를 요약하는 함수이고, <b>vector_store</b>는 임베딩 기반 검색을 지원하는 저장소를 가리킵니다. 실제 구현에서는 임베딩 생성, 청크 분할, 메타데이터 필터링(사용자 ID·세션 ID별 격리 등)이 추가로 필요합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 메모리 오염(memory contamination) 경계하기</b> — 장기 메모리에 잘못되거나 더 이상 유효하지 않은 사실이 쌓이면 이후 모든 응답에 오류가 반복적으로 스며듭니다. 주기적 검증이나 만료(TTL) 정책이 필요합니다<br>
+<b>2. 검색 관련성 저하 대비하기</b> — 저장 항목이 많아지면 임베딩 유사도만으로 진짜 관련 있는 기억과 표면적으로만 비슷한 기억을 구분하기 어려워집니다. 메타데이터 필터링이나 재랭킹(re-ranking) 단계가 도움이 됩니다<br>
+<b>3. 압축 손실 누적 관리하기</b> — 점진적 요약을 반복하면 초기 대화의 세부 사항이 점점 흐려집니다. 결정적인 제약 조건은 요약과 별도로 구조화된 필드(JSON 등)에 명시적으로 보관하는 편이 안전합니다<br>
+<b>4. 사용자·세션 간 메모리 격리하기</b> — 멀티테넌트 환경에서 벡터 저장소를 공유할 경우, 메타데이터 필터를 빠뜨리면 다른 사용자의 기억이 섞여 들어갈 위험이 있습니다
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 컨텍스트 윈도우가 커져도 비용·지연·정보 희석 문제 때문에 단기(대화 버퍼)와 장기(벡터 검색) 메모리를 분리하는 설계가 필요합니다.<br>
+② 버퍼가 가득 찰 때는 단순 폐기 대신 슬라이딩 윈도우 요약이나 계층적 요약으로 압축하고, 에피소드 메모리와 시맨틱 메모리를 구분해 저장하면 검색 품질이 올라갑니다.<br>
+③ 실무에서는 메모리 오염, 검색 관련성 저하, 압축 손실 누적을 항상 염두에 두고 검증·만료·격리 정책을 함께 설계해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 AI 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#LLM #AI에이전트 #메모리아키텍처 #RAG #벡터DB #프롬프트엔지니어링</p>
+
+</body>
+</html>
