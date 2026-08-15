@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="17" font-weight="bold" fill="#1a1a1a">Read-Your-Writes 보장 전략 3가지</text>
+  <text x="400" y="46" text-anchor="middle" font-size="11.5" fill="#666">복제 지연이 있어도 "내가 방금 쓴 데이터"는 내가 볼 수 있어야 한다</text>
+
+  <defs>
+    <marker id="arrowR" markerWidth="9" markerHeight="9" refX="4.5" refY="4.5" orient="auto">
+      <path d="M0,0 L9,4.5 L0,9 Z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <!-- 공통 상단: Write -> Primary, Replica lag -->
+  <rect x="26" y="64" width="748" height="60" rx="6" fill="#f5f5f5" stroke="#bbb"/>
+  <rect x="42" y="76" width="120" height="36" rx="5" fill="#eaf3ff" stroke="#0b5fa5"/>
+  <text x="102" y="98" text-anchor="middle" font-size="11" font-weight="bold" fill="#0b5fa5">Primary DB</text>
+  <line x1="162" y1="94" x2="220" y2="94" stroke="#555" stroke-width="2" marker-end="url(#arrowR)" stroke-dasharray="4,3"/>
+  <text x="191" y="84" text-anchor="middle" font-size="9.5" fill="#a3550f">복제 지연(수십ms~수초)</text>
+  <rect x="222" y="76" width="120" height="36" rx="5" fill="#fff4e5" stroke="#c9701d"/>
+  <text x="282" y="98" text-anchor="middle" font-size="11" font-weight="bold" fill="#a3550f">Read Replica</text>
+  <text x="600" y="98" text-anchor="middle" font-size="10.5" fill="#555">쓰기 직후 같은 요청 흐름에서 복제본을 읽으면 "방금 쓴 값"이 아직 없을 수 있다</text>
+
+  <!-- 3 columns -->
+  <!-- Column 1: Sticky routing (session pinning) -->
+  <rect x="26" y="140" width="228" height="278" rx="8" fill="#eaf3ff" stroke="#0b5fa5" stroke-width="2"/>
+  <text x="140" y="164" text-anchor="middle" font-size="13" font-weight="bold" fill="#0b5fa5">전략 1 · Sticky Routing</text>
+  <text x="140" y="181" text-anchor="middle" font-size="10" fill="#0b5fa5">쓰기 후 일정 시간 Primary 고정</text>
+
+  <rect x="42" y="196" width="196" height="60" rx="5" fill="#ffffff" stroke="#0b5fa5"/>
+  <text x="140" y="214" text-anchor="middle" font-size="10.5" fill="#333">쓰기 발생 시각 기록</text>
+  <text x="140" y="230" text-anchor="middle" font-size="10.5" fill="#333">(세션/쿠키에 timestamp)</text>
+  <text x="140" y="246" text-anchor="middle" font-size="9.5" fill="#0b5fa5">TTL 내 조회는 Primary로</text>
+
+  <line x1="140" y1="256" x2="140" y2="272" stroke="#0b5fa5" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="140" y="288" text-anchor="middle" font-size="9.5" fill="#666">TTL 지나면 자동으로</text>
+  <text x="140" y="302" text-anchor="middle" font-size="9.5" fill="#666">Replica 라우팅으로 복귀</text>
+
+  <rect x="42" y="316" width="196" height="82" rx="5" fill="#ffffff" stroke="#0b5fa5"/>
+  <text x="140" y="334" text-anchor="middle" font-size="10" font-weight="bold" fill="#333">장점 / 주의</text>
+  <text x="140" y="350" text-anchor="middle" font-size="9.5" fill="#333">구현 단순, 별도 인프라 불필요</text>
+  <text x="140" y="366" text-anchor="middle" font-size="9.5" fill="#a3550f">TTL 너무 짧으면 여전히</text>
+  <text x="140" y="380" text-anchor="middle" font-size="9.5" fill="#a3550f">stale read 발생 가능</text>
+  <text x="140" y="394" text-anchor="middle" font-size="9.5" fill="#a3550f">Primary 부하 증가 트레이드오프</text>
+
+  <!-- Column 2: Version/token tracking -->
+  <rect x="286" y="140" width="228" height="278" rx="8" fill="#fff4e5" stroke="#c9701d" stroke-width="2"/>
+  <text x="400" y="164" text-anchor="middle" font-size="13" font-weight="bold" fill="#a3550f">전략 2 · 버전 토큰 추적</text>
+  <text x="400" y="181" text-anchor="middle" font-size="10" fill="#a3550f">쓰기 시점 LSN/버전을 클라이언트에 반환</text>
+
+  <rect x="302" y="196" width="196" height="60" rx="5" fill="#ffffff" stroke="#c9701d"/>
+  <text x="400" y="214" text-anchor="middle" font-size="10.5" fill="#333">쓰기 응답에 버전값 포함</text>
+  <text x="400" y="230" text-anchor="middle" font-size="10.5" fill="#333">(예: commit LSN, updated_at)</text>
+  <text x="400" y="246" text-anchor="middle" font-size="9.5" fill="#a3550f">다음 조회 요청에 함께 전달</text>
+
+  <line x1="400" y1="256" x2="400" y2="272" stroke="#c9701d" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="400" y="288" text-anchor="middle" font-size="9.5" fill="#666">Replica가 그 버전 이상을</text>
+  <text x="400" y="302" text-anchor="middle" font-size="9.5" fill="#666">따라잡을 때까지 대기/재시도</text>
+
+  <rect x="302" y="316" width="196" height="82" rx="5" fill="#ffffff" stroke="#c9701d"/>
+  <text x="400" y="334" text-anchor="middle" font-size="10" font-weight="bold" fill="#333">장점 / 주의</text>
+  <text x="400" y="350" text-anchor="middle" font-size="9.5" fill="#333">Primary 부하 없이 정확한 보장</text>
+  <text x="400" y="366" text-anchor="middle" font-size="9.5" fill="#a3550f">DB·드라이버가 버전 조회 API를</text>
+  <text x="400" y="380" text-anchor="middle" font-size="9.5" fill="#a3550f">지원해야 함(예: Postgres LSN)</text>
+  <text x="400" y="394" text-anchor="middle" font-size="9.5" fill="#a3550f">클라이언트-서버 프로토콜 변경 필요</text>
+
+  <!-- Column 3: Session-level consistency / read-after-write scope -->
+  <rect x="546" y="140" width="228" height="278" rx="8" fill="#eaffef" stroke="#2fa84f" stroke-width="2"/>
+  <text x="660" y="164" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f7a38">전략 3 · 쓰기 경로 캐시 우회</text>
+  <text x="660" y="181" text-anchor="middle" font-size="10" fill="#1f7a38">응답 자체를 캐싱/재사용</text>
+
+  <rect x="562" y="196" width="196" height="60" rx="5" fill="#ffffff" stroke="#2fa84f"/>
+  <text x="660" y="214" text-anchor="middle" font-size="10.5" fill="#333">쓰기 처리 후 응답 본문에</text>
+  <text x="660" y="230" text-anchor="middle" font-size="10.5" fill="#333">갱신된 결과를 그대로 포함</text>
+  <text x="660" y="246" text-anchor="middle" font-size="9.5" fill="#1f7a38">화면은 그 응답으로 즉시 갱신</text>
+
+  <line x1="660" y1="256" x2="660" y2="272" stroke="#2fa84f" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="660" y="288" text-anchor="middle" font-size="9.5" fill="#666">이후 새로고침 등 별도 조회는</text>
+  <text x="660" y="302" text-anchor="middle" font-size="9.5" fill="#666">여전히 지연 감수(범위 한정)</text>
+
+  <rect x="562" y="316" width="196" height="82" rx="5" fill="#ffffff" stroke="#2fa84f"/>
+  <text x="660" y="334" text-anchor="middle" font-size="10" font-weight="bold" fill="#333">장점 / 주의</text>
+  <text x="660" y="350" text-anchor="middle" font-size="9.5" fill="#333">추가 인프라·대기 없이 즉시 반영</text>
+  <text x="660" y="366" text-anchor="middle" font-size="9.5" fill="#1f7a38">"방금 이 화면"만 보장,</text>
+  <text x="660" y="380" text-anchor="middle" font-size="9.5" fill="#1f7a38">다른 화면·다른 기기는 별도 처리</text>
+  <text x="660" y="394" text-anchor="middle" font-size="9.5" fill="#1f7a38">UX 설계와 결합해야 효과적</text>
+
+  <text x="400" y="435" text-anchor="middle" font-size="11" fill="#555">세 전략은 배타적이지 않다 — 화면·API 특성에 맞춰 조합해서 쓰는 경우가 많다</text>
+</svg>
