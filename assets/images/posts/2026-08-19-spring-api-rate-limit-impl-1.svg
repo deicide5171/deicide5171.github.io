@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="19" font-weight="bold" fill="#1a1a1a">Bucket4j 기반 Spring Boot 레이트 리밋 흐름</text>
+
+  <!-- Client -->
+  <rect x="30" y="70" width="140" height="56" rx="8" fill="#eaf3ff" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="100" y="103" text-anchor="middle" font-size="13" font-weight="bold" fill="#0b5fa5">클라이언트</text>
+
+  <!-- Filter -->
+  <rect x="230" y="70" width="200" height="56" rx="8" fill="#f5eeff" stroke="#6a3fb5" stroke-width="1.5"/>
+  <text x="330" y="94" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#5a34a0">OncePerRequestFilter</text>
+  <text x="330" y="111" text-anchor="middle" font-size="10.5" fill="#5a34a0">API Key/IP로 버킷 키 추출</text>
+
+  <!-- Bucket4j core -->
+  <rect x="490" y="70" width="200" height="56" rx="8" fill="#eafff0" stroke="#1f7a38" stroke-width="1.5"/>
+  <text x="590" y="94" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1f7a38">Bucket4j</text>
+  <text x="590" y="111" text-anchor="middle" font-size="10.5" fill="#1f7a38">tryConsume(1) 토큰 소비</text>
+
+  <!-- Arrows client->filter->bucket4j -->
+  <line x1="170" y1="98" x2="228" y2="98" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="430" y1="98" x2="488" y2="98" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- Decision branch -->
+  <line x1="590" y1="126" x2="590" y2="165" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="600" y="150" font-size="10.5" fill="#333">ConsumptionProbe 확인</text>
+
+  <!-- Allow box -->
+  <rect x="450" y="175" width="160" height="56" rx="8" fill="#eafff0" stroke="#1f7a38" stroke-width="1.5"/>
+  <text x="530" y="199" text-anchor="middle" font-size="12" font-weight="bold" fill="#1f7a38">허용</text>
+  <text x="530" y="216" text-anchor="middle" font-size="10" fill="#1f7a38">컨트롤러로 전달 + 잔여량 헤더</text>
+
+  <!-- Reject box -->
+  <rect x="630" y="175" width="150" height="56" rx="8" fill="#fff0e0" stroke="#c9701d" stroke-width="1.5"/>
+  <text x="705" y="199" text-anchor="middle" font-size="12" font-weight="bold" fill="#a3550f">거부</text>
+  <text x="705" y="216" text-anchor="middle" font-size="10" fill="#a3550f">429 + Retry-After</text>
+
+  <line x1="560" y1="175" x2="540" y2="165" stroke="#888" stroke-width="0" />
+  <line x1="590" y1="165" x2="530" y2="175" stroke="#888" stroke-width="1.3" marker-end="url(#arrow)"/>
+  <line x1="590" y1="165" x2="700" y2="175" stroke="#888" stroke-width="1.3" marker-end="url(#arrow)"/>
+
+  <!-- Distributed section -->
+  <text x="400" y="270" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#333">분산 환경 — 여러 인스턴스가 상태를 공유해야 카운트가 정확함</text>
+
+  <rect x="90" y="295" width="150" height="52" rx="8" fill="#eaf3ff" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="165" y="316" text-anchor="middle" font-size="12" font-weight="bold" fill="#0b5fa5">인스턴스 A</text>
+  <text x="165" y="332" text-anchor="middle" font-size="10" fill="#0b5fa5">Bucket4j ProxyManager</text>
+
+  <rect x="325" y="295" width="150" height="52" rx="8" fill="#eaf3ff" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="400" y="316" text-anchor="middle" font-size="12" font-weight="bold" fill="#0b5fa5">인스턴스 B</text>
+  <text x="400" y="332" text-anchor="middle" font-size="10" fill="#0b5fa5">Bucket4j ProxyManager</text>
+
+  <rect x="560" y="295" width="150" height="52" rx="8" fill="#eaf3ff" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="635" y="316" text-anchor="middle" font-size="12" font-weight="bold" fill="#0b5fa5">인스턴스 C</text>
+  <text x="635" y="332" text-anchor="middle" font-size="10" fill="#0b5fa5">Bucket4j ProxyManager</text>
+
+  <rect x="285" y="375" width="230" height="56" rx="8" fill="#f0f0f0" stroke="#555" stroke-width="1.5"/>
+  <text x="400" y="399" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#333">Redis (공유 저장소)</text>
+  <text x="400" y="415" text-anchor="middle" font-size="10" fill="#555">버킷 상태(토큰 수·리필 시각) 원자적 갱신</text>
+
+  <line x1="165" y1="347" x2="330" y2="375" stroke="#888" stroke-width="1.3" marker-end="url(#arrow)"/>
+  <line x1="400" y1="347" x2="400" y2="375" stroke="#888" stroke-width="1.3" marker-end="url(#arrow)"/>
+  <line x1="635" y1="347" x2="470" y2="375" stroke="#888" stroke-width="1.3" marker-end="url(#arrow)"/>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#888"/>
+    </marker>
+  </defs>
+</svg>
