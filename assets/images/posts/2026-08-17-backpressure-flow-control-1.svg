@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="19" font-weight="bold" fill="#1a1a1a">생산자·소비자 속도 차이와 흐름 제어 전략</text>
+
+  <!-- Producer -->
+  <rect x="30" y="70" width="150" height="70" rx="8" fill="#eaf3ff" stroke="#3373b5" stroke-width="1.5"/>
+  <text x="105" y="98" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f4e78">생산자(Producer)</text>
+  <text x="105" y="118" text-anchor="middle" font-size="11.5" fill="#3373b5">빠른 속도로 데이터 생성</text>
+
+  <!-- arrow producer -> buffer -->
+  <line x1="180" y1="105" x2="308" y2="105" stroke="#888" stroke-width="1.5" marker-end="url(#a1)"/>
+  <text x="244" y="97" text-anchor="middle" font-size="11" fill="#333">빠름</text>
+
+  <!-- Buffer / Queue -->
+  <rect x="315" y="55" width="170" height="100" rx="8" fill="#fff5e8" stroke="#c9701d" stroke-width="1.5"/>
+  <text x="400" y="76" text-anchor="middle" font-size="13" font-weight="bold" fill="#a3550f">버퍼(큐)</text>
+  <!-- fill level bar -->
+  <rect x="335" y="88" width="130" height="18" fill="#ffffff" stroke="#c9701d" stroke-width="1"/>
+  <rect x="335" y="88" width="112" height="18" fill="#e2643a"/>
+  <text x="400" y="101" text-anchor="middle" font-size="10" fill="#ffffff" font-weight="bold">약 86% 적재</text>
+  <text x="400" y="126" text-anchor="middle" font-size="11" fill="#a3550f">한도 초과 시 →</text>
+  <text x="400" y="142" text-anchor="middle" font-size="11" font-weight="bold" fill="#c9302c">무엇을 할 것인가?</text>
+
+  <!-- arrow buffer -> consumer -->
+  <line x1="492" y1="105" x2="620" y2="105" stroke="#888" stroke-width="1.5" marker-end="url(#a1)"/>
+  <text x="556" y="97" text-anchor="middle" font-size="11" fill="#333">느림</text>
+
+  <!-- Consumer -->
+  <rect x="627" y="70" width="150" height="70" rx="8" fill="#eafff0" stroke="#2fa84f" stroke-width="1.5"/>
+  <text x="702" y="98" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f7a38">소비자(Consumer)</text>
+  <text x="702" y="118" text-anchor="middle" font-size="11.5" fill="#2fa84f">느린 속도로 데이터 처리</text>
+
+  <!-- divider -->
+  <line x1="30" y1="188" x2="770" y2="188" stroke="#ddd" stroke-width="1"/>
+  <text x="400" y="210" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#333">네 가지 흐름 제어 전략</text>
+
+  <!-- Strategy cards -->
+  <rect x="30" y="228" width="175" height="112" rx="6" fill="#fdecec" stroke="#c9302c" stroke-width="1.3"/>
+  <text x="117" y="252" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#c9302c">① Drop(유실)</text>
+  <text x="117" y="272" text-anchor="middle" font-size="10.5" fill="#333">초과분 메시지를</text>
+  <text x="117" y="288" text-anchor="middle" font-size="10.5" fill="#333">버리고 지연 최소화</text>
+  <text x="117" y="308" text-anchor="middle" font-size="10" fill="#8a2020">※ 데이터 손실 감수</text>
+
+  <rect x="220" y="228" width="175" height="112" rx="6" fill="#eaf3ff" stroke="#3373b5" stroke-width="1.3"/>
+  <text x="307" y="252" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1f4e78">② Block(대기)</text>
+  <text x="307" y="272" text-anchor="middle" font-size="10.5" fill="#333">생산자에 신호를 보내</text>
+  <text x="307" y="288" text-anchor="middle" font-size="10.5" fill="#333">생산 속도 자체를 늦춤</text>
+  <text x="307" y="308" text-anchor="middle" font-size="10" fill="#1f4e78">※ 손실 없음, 지연 증가</text>
+
+  <rect x="410" y="228" width="175" height="112" rx="6" fill="#fff5e8" stroke="#c9701d" stroke-width="1.3"/>
+  <text x="497" y="252" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#a3550f">③ 버퍼 확장</text>
+  <text x="497" y="272" text-anchor="middle" font-size="10.5" fill="#333">큐 용량을 늘려</text>
+  <text x="497" y="288" text-anchor="middle" font-size="10.5" fill="#333">순간 폭주를 흡수</text>
+  <text x="497" y="308" text-anchor="middle" font-size="10" fill="#a3550f">※ 메모리 사용량 증가</text>
+
+  <rect x="600" y="228" width="175" height="112" rx="6" fill="#eafff0" stroke="#2fa84f" stroke-width="1.3"/>
+  <text x="687" y="252" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1f7a38">④ 샘플링/병합</text>
+  <text x="687" y="272" text-anchor="middle" font-size="10.5" fill="#333">최신 값만 유지하거나</text>
+  <text x="687" y="288" text-anchor="middle" font-size="10.5" fill="#333">여러 이벤트를 합쳐 전달</text>
+  <text x="687" y="308" text-anchor="middle" font-size="10" fill="#1f7a38">※ 중간 상태 정보 손실</text>
+
+  <defs>
+    <marker id="a1" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#888"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="425" text-anchor="middle" font-size="11.5" fill="#555">전략 선택은 데이터 중요도(손실 허용 여부)와 지연 허용치에 따라 달라진다</text>
+</svg>
