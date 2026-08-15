@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="32" text-anchor="middle" font-size="19" font-weight="bold" fill="#1a1a1a">스타일 JSON 구조와 layers 배열의 렌더링 순서</text>
+
+  <!-- Left panel: style JSON structure -->
+  <rect x="36" y="64" width="300" height="340" rx="8" fill="#f7f9fb" stroke="#c7d0d9" stroke-width="1.5"/>
+  <text x="186" y="90" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1a1a1a">style.json (최상위 구조)</text>
+
+  <rect x="54" y="104" width="264" height="26" rx="4" fill="#eef2f7" stroke="#c7d0d9"/>
+  <text x="64" y="121" font-size="12.5" fill="#333" font-family="Consolas,Monaco,monospace">"version": 8</text>
+
+  <rect x="54" y="136" width="264" height="26" rx="4" fill="#eef2f7" stroke="#c7d0d9"/>
+  <text x="64" y="153" font-size="12.5" fill="#333" font-family="Consolas,Monaco,monospace">"sprite" / "glyphs": "..."</text>
+
+  <rect x="54" y="168" width="264" height="70" rx="4" fill="#dbeafe" stroke="#7fb0e0" stroke-width="1.5"/>
+  <text x="64" y="186" font-size="12.5" font-weight="bold" fill="#0b4a80" font-family="Consolas,Monaco,monospace">"sources": {</text>
+  <text x="74" y="204" font-size="11.5" fill="#0b4a80" font-family="Consolas,Monaco,monospace">"osm-tiles": {</text>
+  <text x="84" y="220" font-size="11.5" fill="#0b4a80" font-family="Consolas,Monaco,monospace">type: "vector", tiles: [...] }</text>
+  <text x="64" y="234" font-size="12.5" font-weight="bold" fill="#0b4a80" font-family="Consolas,Monaco,monospace">}</text>
+
+  <rect x="54" y="246" width="264" height="140" rx="4" fill="#e9f7ec" stroke="#7fc99a" stroke-width="1.5"/>
+  <text x="64" y="264" font-size="12.5" font-weight="bold" fill="#1f7a38" font-family="Consolas,Monaco,monospace">"layers": [</text>
+  <text x="74" y="282" font-size="11" fill="#1f7a38" font-family="Consolas,Monaco,monospace">{ id, type, source,</text>
+  <text x="90" y="296" font-size="11" fill="#1f7a38" font-family="Consolas,Monaco,monospace">source-layer,</text>
+  <text x="90" y="310" font-size="11" fill="#1f7a38" font-family="Consolas,Monaco,monospace">layout: {...},</text>
+  <text x="90" y="324" font-size="11" fill="#1f7a38" font-family="Consolas,Monaco,monospace">paint: {...} },</text>
+  <text x="74" y="342" font-size="11" fill="#1f7a38" font-family="Consolas,Monaco,monospace">{ ... }, { ... }</text>
+  <text x="64" y="360" font-size="12.5" font-weight="bold" fill="#1f7a38" font-family="Consolas,Monaco,monospace">]</text>
+  <text x="186" y="378" text-anchor="middle" font-size="10.5" fill="#3a8a55">배열 순서 = 그려지는 순서</text>
+
+  <!-- arrow from sources to a layer's source/source-layer reference -->
+  <path d="M318,203 C 400,203 360,290 460,304" fill="none" stroke="#7fb0e0" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowBlue)"/>
+  <defs>
+    <marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#7fb0e0"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#3a8a55"/>
+    </marker>
+  </defs>
+
+  <!-- arrow from layers array to the stack -->
+  <line x1="318" y1="340" x2="452" y2="380" stroke="#3a8a55" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowGreen)"/>
+
+  <!-- Right panel: rendering stack -->
+  <text x="620" y="90" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1a1a1a">화면에 그려지는 순서 (아래 → 위)</text>
+
+  <!-- stacked layers, bottom-most drawn first sits at bottom of stack visually -->
+  <rect x="460" y="360" width="320" height="40" rx="5" fill="#9aa5b1" stroke="#6b7480" stroke-width="1.5"/>
+  <text x="620" y="384" text-anchor="middle" font-size="12.5" fill="#fff" font-weight="bold">background — 배경색 채우기</text>
+
+  <rect x="460" y="308" width="320" height="40" rx="5" fill="#2fa84f" stroke="#1f7a38" stroke-width="1.5"/>
+  <text x="620" y="332" text-anchor="middle" font-size="12.5" fill="#fff" font-weight="bold">fill "land-use" — 면(폴리곤) 채색</text>
+
+  <rect x="460" y="256" width="320" height="40" rx="5" fill="#e08a2b" stroke="#a56a1a" stroke-width="1.5"/>
+  <text x="620" y="280" text-anchor="middle" font-size="12.5" fill="#fff" font-weight="bold">line "road" — 도로 선 스타일</text>
+
+  <rect x="460" y="204" width="320" height="40" rx="5" fill="#0b5fa5" stroke="#083f6e" stroke-width="1.5"/>
+  <text x="620" y="228" text-anchor="middle" font-size="12.5" fill="#fff" font-weight="bold">symbol "poi-label" — 라벨/아이콘</text>
+
+  <!-- upward arrow indicating draw order -->
+  <line x1="792" y1="398" x2="792" y2="206" stroke="#555" stroke-width="1.5" marker-end="url(#arrowUp)"/>
+  <defs>
+    <marker id="arrowUp" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#555"/>
+    </marker>
+  </defs>
+  <text x="784" y="200" text-anchor="end" font-size="10.5" fill="#555">나중에 그려질수록</text>
+  <text x="784" y="213" text-anchor="end" font-size="10.5" fill="#555">화면 위쪽에 보임</text>
+
+  <text x="620" y="424" text-anchor="middle" font-size="11.5" fill="#555">같은 source의 서로 다른 source-layer를 layers 배열 순서대로 겹쳐 그린 결과가 최종 지도 화면이다</text>
+</svg>
