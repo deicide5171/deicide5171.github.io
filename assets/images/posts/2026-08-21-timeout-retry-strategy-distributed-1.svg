@@ -1,0 +1,85 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <!-- Titles -->
+  <text x="200" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#b71c1c" font-family="sans-serif">재시도 폭풍 (Retry Storm)</text>
+  <text x="600" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#1b5e20" font-family="sans-serif">지수 백오프 + 지터</text>
+
+  <!-- divider -->
+  <line x1="400" y1="15" x2="400" y2="420" stroke="#ddd" stroke-width="2" stroke-dasharray="4 4"/>
+
+  <!-- LEFT PANEL: retry storm -->
+  <!-- clients -->
+  <circle cx="60" cy="90" r="20" fill="#ffebee" stroke="#c62828" stroke-width="2"/>
+  <circle cx="60" cy="150" r="20" fill="#ffebee" stroke="#c62828" stroke-width="2"/>
+  <circle cx="60" cy="210" r="20" fill="#ffebee" stroke="#c62828" stroke-width="2"/>
+  <text x="60" y="95" text-anchor="middle" font-size="11" fill="#b71c1c" font-family="sans-serif">C1</text>
+  <text x="60" y="155" text-anchor="middle" font-size="11" fill="#b71c1c" font-family="sans-serif">C2</text>
+  <text x="60" y="215" text-anchor="middle" font-size="11" fill="#b71c1c" font-family="sans-serif">C3</text>
+
+  <!-- server (overloaded) -->
+  <rect x="250" y="120" width="110" height="60" rx="8" fill="#fff3e0" stroke="#e65100" stroke-width="2"/>
+  <text x="305" y="145" text-anchor="middle" font-size="13" font-weight="bold" fill="#e65100" font-family="sans-serif">서버</text>
+  <text x="305" y="162" text-anchor="middle" font-size="11" fill="#e65100" font-family="sans-serif">과부하 / 지연↑</text>
+
+  <defs>
+    <marker id="arrowRed" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L8,3 z" fill="#c62828"/>
+    </marker>
+    <marker id="arrowGreen" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L8,3 z" fill="#2e7d32"/>
+    </marker>
+  </defs>
+
+  <!--동시 재시도 화살표 (전부 같은 타이밍, 굵게 겹쳐서) -->
+  <path d="M85,85 C150,80 200,110 245,130" fill="none" stroke="#c62828" stroke-width="2.5" marker-end="url(#arrowRed)"/>
+  <path d="M85,90 C150,95 200,120 245,140" fill="none" stroke="#c62828" stroke-width="2.5" marker-end="url(#arrowRed)"/>
+  <path d="M85,150 C150,150 200,150 245,150" fill="none" stroke="#c62828" stroke-width="2.5" marker-end="url(#arrowRed)"/>
+  <path d="M85,210 C150,205 200,175 245,155" fill="none" stroke="#c62828" stroke-width="2.5" marker-end="url(#arrowRed)"/>
+  <path d="M85,215 C150,215 200,190 245,165" fill="none" stroke="#c62828" stroke-width="2.5" marker-end="url(#arrowRed)"/>
+  <text x="165" y="70" text-anchor="middle" font-size="11" fill="#c62828" font-family="sans-serif">타임아웃 → 동시 재시도</text>
+
+  <!-- 부하 그래프 (급격한 스파이크) -->
+  <g transform="translate(30,260)">
+    <line x1="0" y1="130" x2="340" y2="130" stroke="#999" stroke-width="1.5"/>
+    <line x1="0" y1="0" x2="0" y2="130" stroke="#999" stroke-width="1.5"/>
+    <text x="-8" y="10" text-anchor="end" font-size="10" fill="#777" font-family="sans-serif">부하</text>
+    <text x="340" y="145" text-anchor="end" font-size="10" fill="#777" font-family="sans-serif">시간</text>
+    <path d="M0,120 L40,115 L70,20 L100,10 L130,105 L160,15 L190,5 L220,115 L260,20 L300,10 L340,110"
+          fill="none" stroke="#c62828" stroke-width="2.5"/>
+    <text x="170" y="-6" text-anchor="middle" font-size="12" font-weight="bold" fill="#b71c1c" font-family="sans-serif">동기화된 재시도 파동 → 서버 반복 과부하</text>
+  </g>
+
+  <!-- RIGHT PANEL: backoff + jitter -->
+  <circle cx="460" cy="90" r="20" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <circle cx="460" cy="150" r="20" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <circle cx="460" cy="210" r="20" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="460" y="95" text-anchor="middle" font-size="11" fill="#1b5e20" font-family="sans-serif">C1</text>
+  <text x="460" y="155" text-anchor="middle" font-size="11" fill="#1b5e20" font-family="sans-serif">C2</text>
+  <text x="460" y="215" text-anchor="middle" font-size="11" fill="#1b5e20" font-family="sans-serif">C3</text>
+
+  <rect x="650" y="120" width="110" height="60" rx="8" fill="#e8f5e9" stroke="#2e7d32" stroke-width="2"/>
+  <text x="705" y="145" text-anchor="middle" font-size="13" font-weight="bold" fill="#1b5e20" font-family="sans-serif">서버</text>
+  <text x="705" y="162" text-anchor="middle" font-size="11" fill="#1b5e20" font-family="sans-serif">정상 처리</text>
+
+  <!-- 분산된 재시도 화살표 (제각기 다른 지연) -->
+  <path d="M485,85 C550,70 600,95 645,125" fill="none" stroke="#2e7d32" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <path d="M485,95 C560,130 610,140 645,145" fill="none" stroke="#2e7d32" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <path d="M485,150 C540,160 600,160 645,155" fill="none" stroke="#2e7d32" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <path d="M485,210 C550,200 610,175 645,160" fill="none" stroke="#2e7d32" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <path d="M485,215 C560,210 615,190 645,168" fill="none" stroke="#2e7d32" stroke-width="2" marker-end="url(#arrowGreen)"/>
+  <text x="565" y="70" text-anchor="middle" font-size="11" fill="#2e7d32" font-family="sans-serif">각자 다른 지연으로 재시도</text>
+
+  <!-- 부하 그래프 (완만한 형태) -->
+  <g transform="translate(430,260)">
+    <line x1="0" y1="130" x2="340" y2="130" stroke="#999" stroke-width="1.5"/>
+    <line x1="0" y1="0" x2="0" y2="130" stroke="#999" stroke-width="1.5"/>
+    <text x="-8" y="10" text-anchor="end" font-size="10" fill="#777" font-family="sans-serif">부하</text>
+    <text x="340" y="145" text-anchor="end" font-size="10" fill="#777" font-family="sans-serif">시간</text>
+    <path d="M0,100 L40,95 L70,80 L100,90 L130,75 L160,85 L190,70 L220,80 L260,72 L300,78 L340,74"
+          fill="none" stroke="#2e7d32" stroke-width="2.5"/>
+    <text x="170" y="-6" text-anchor="middle" font-size="12" font-weight="bold" fill="#1b5e20" font-family="sans-serif">지터로 분산 → 완만하고 예측 가능한 부하</text>
+  </g>
+
+  <text x="400" y="440" text-anchor="middle" font-size="11" fill="#999" font-family="sans-serif">지수 백오프에 지터(jitter, 무작위 편차)를 더하면 재시도가 특정 시점에 몰리지 않는다</text>
+</svg>
