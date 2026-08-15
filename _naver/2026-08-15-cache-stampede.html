@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>캐시 스탬피드가 서비스를 무너뜨리는 이유</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">캐시 스탬피드, 트래픽 몰릴 때 캐시가 오히려 서비스를 무너뜨리는 이유</div>
+<p style="font-size:14px; color:#999;">2026. 8. 15. · 시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 인기 캐시 키 하나가 동시에 만료될 때 벌어지는 <b>캐시 스탬피드</b>의 원리와, 락·확률적 조기 갱신·백그라운드 리프레시 같은 실전 방지 전략을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 캐시 스탬피드인가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">캐시는 대개 "DB 부하를 줄이는 방패"로 소개되지만, 설계를 잘못하면 오히려 그 방패가 한순간에 사라지면서 DB를 직격하는 원인이 됩니다. 특히 조회량이 매우 많은 키(인기 상품, 메인 배너, 랭킹) 하나가 만료되는 순간, 그 짧은 틈에 몰린 수백~수천 개의 요청이 동시에 원본 데이터 소스로 몰려가는 <b>캐시 스탬피드(Thundering Herd)</b> 현상이 발생합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">트래픽이 계속 커지는 서비스에서 이 문제는 점점 더 자주 재발합니다. 캐시 TTL을 짧게 잡을수록, 히트율이 높을수록(=원본 조회 경로가 평소 거의 안 쓰일수록) 만료 순간의 충격이 더 크다는 역설이 있어, 시스템 설계 초기에 반드시 짚고 넘어가야 하는 주제입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">방지 전략 네 가지 비교</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:22%;">전략</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">원리</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">단점</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>분산 락</b></td>
+<td style="border:1px solid #ddd; padding:10px;">첫 요청만 원본 조회, 나머지는 대기</td>
+<td style="border:1px solid #ddd; padding:10px;">락 자체가 병목 가능</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>확률적 조기 만료</b></td>
+<td style="border:1px solid #ddd; padding:10px;">TTL 임박 시 확률적으로 미리 갱신</td>
+<td style="border:1px solid #ddd; padding:10px;">완벽한 방지는 아님</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>백그라운드 리프레시</b></td>
+<td style="border:1px solid #ddd; padding:10px;">별도 작업이 TTL 전에 미리 갱신</td>
+<td style="border:1px solid #ddd; padding:10px;">스케줄링·장애 처리 필요</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>Stale-While-Revalidate</b></td>
+<td style="border:1px solid #ddd; padding:10px;">만료 후에도 잠깐 오래된 값 서빙</td>
+<td style="border:1px solid #ddd; padding:10px;">짧게 오래된 데이터 노출</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실무에서는 인기 키에는 <b>백그라운드 리프레시</b>를, 나머지 키에는 <b>확률적 조기 만료</b>를 함께 쓰는 조합이 흔합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념: 확률적 조기 재계산(XFetch)</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 널리 알려진 경량 기법은 <b>확률적 조기 재계산</b>입니다. 캐시 값에 계산 소요 시간을 함께 저장해두고, TTL이 가까워질수록 "지금 미리 갱신할 확률"을 높여 요청들을 시간축에 분산시킵니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">핵심 아이디어는 TTL이 끝나기 직전 구간에서 소수의 요청만 먼저 나서서 캐시를 갱신하고, 나머지는 여전히 기존 값을 쓰게 만드는 것입니다. 이렇게 하면 만료 시각에 모든 요청이 한꺼번에 원본으로 몰리는 대신, 갱신 시점이 자연스럽게 흩어집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: XFetch 방식 의사 코드(Python)</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">def get_with_xfetch(key, compute_fn, ttl=60, beta=1.0):
+    value, expiry, delta = cache.get(key)  # delta: 이전 계산 소요 시간
+    now = time.time()
+
+    early_recompute = delta * beta * math.log(random.random())
+    if value is None or now - early_recompute &gt;= expiry:
+        start = time.time()
+        value = compute_fn()
+        delta = time.time() - start
+        cache.set(key, value, expiry=now + ttl, delta=delta)
+
+    return value</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">beta 값을 키우면 조기 갱신이 더 자주 일어나 안전해지지만, 원본 조회 빈도도 함께 늘어나므로 트래픽 패턴에 맞춰 조정해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 인기 키 먼저 식별</b> — 접근 로그로 상위 트래픽 키를 뽑아 그 키에만 리프레시·락 적용<br>
+<b>2. 락 타임아웃 필수</b> — 락을 잡은 요청이 지연되면 나머지가 무한 대기할 수 있으니 만료 시간을 반드시 설정<br>
+<b>3. 배포 시 캐시 예열</b> — 배포 직후 콜드 스타트도 스탬피드의 흔한 원인이므로 예열 단계를 배포 절차에 포함<br>
+<b>4. 지표 분리</b> — 캐시 히트율뿐 아니라 동시 원본 조회 수를 별도로 관찰
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 캐시 스탬피드는 인기 키 하나가 만료되는 순간 다수 요청이 동시에 원본으로 몰리는 현상입니다.<br>
+② 분산 락, 확률적 조기 만료, 백그라운드 리프레시, Stale-While-Revalidate를 조합해 만료 시점을 분산시키는 것이 핵심입니다.<br>
+③ 인기 키 식별, 락 타임아웃 설정, 배포 시 캐시 예열이 실무에서 가장 효과가 큰 조치입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 실제 부하 테스트로 스탬피드를 재현해본 결과를 다뤄보겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#캐싱 #캐시스탬피드 #시스템설계 #Redis #대규모트래픽</p>
+
+</body>
+</html>

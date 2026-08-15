@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Geohash vs H3, 공간 인덱스 뭘 써야 하나</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Geohash vs H3, 공간 인덱스 그리드는 뭘 써야 하나</div>
+<p style="font-size:14px; color:#999;">2026. 8. 15. · GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 위치 기반 검색·배차 시스템에서 널리 쓰이는 <b>Geohash</b>의 사각 그리드와 <b>H3</b>의 육각 그리드를 비교하고, 어떤 상황에 어느 쪽이 유리한지 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 공간 인덱스 그리드인가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"내 위치 반경 3km 안의 매장 찾기"처럼 위치 기반 검색은 위경도 좌표를 그대로 비교하면 성능이 나오지 않습니다. 그래서 지도를 일정한 격자로 나누고, 각 셀에 고유 ID를 부여해 인덱싱하는 방식이 널리 쓰입니다. 오랫동안 표준처럼 쓰인 <b>Geohash</b>에 이어, Uber가 만든 <b>H3</b>가 배차·물류·공간 분석 도구에서 채택 사례를 늘리고 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">두 방식 모두 좌표를 문자열/정수 하나로 바꿔 빠르게 검색하는 목적은 같지만, 그리드의 모양과 성질이 달라 적합한 상황이 갈립니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Geohash와 H3 비교</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:22%;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Geohash</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">H3</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>셀 모양</b></td>
+<td style="border:1px solid #ddd; padding:10px;">사각형</td>
+<td style="border:1px solid #ddd; padding:10px;">육각형(일부 오각형)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>이웃 셀</b></td>
+<td style="border:1px solid #ddd; padding:10px;">8개(대각선 왜곡 있음)</td>
+<td style="border:1px solid #ddd; padding:10px;">6개(균일한 인접 거리)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>접두어 관계</b></td>
+<td style="border:1px solid #ddd; padding:10px;">문자열 접두어 = 상위 영역</td>
+<td style="border:1px solid #ddd; padding:10px;">계층 인덱스는 있으나 접두어와 다름</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>대표 용도</b></td>
+<td style="border:1px solid #ddd; padding:10px;">DB 정렬/범위 쿼리</td>
+<td style="border:1px solid #ddd; padding:10px;">배차, 밀도 분석, 육각 집계</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Geohash는 문자열 접두어만으로 상위 영역을 알 수 있어 DB 인덱스와 궁합이 좋고, H3는 육각형 특유의 균일한 인접 구조 덕분에 <b>주변 셀 확장 탐색</b>이 더 자연스럽습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념: 왜 육각형인가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">사각 그리드는 인접 셀이 변으로 붙은 4개와 꼭짓점으로만 닿은 4개로 나뉘어, 이웃 간 거리가 방향에 따라 달라집니다. 이 때문에 반경 검색을 사각 그리드로 근사하면 방향에 따라 오차가 들쭉날쭉해집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">육각 그리드는 모든 이웃 6개가 중심으로부터 거의 동일한 거리에 있어, 밀도 추정이나 반경 근사가 더 균일합니다. H3는 이 성질을 살려 지구 전체를 육각형으로 덮고, 여러 해상도 레벨(0~15)을 계층적으로 제공합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: H3로 좌표를 셀로 변환(Python)</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">import h3
+
+lat, lng = 37.5665, 126.9780  # 서울시청
+resolution = 9  # 약 174m 육각형 셀
+
+cell = h3.latlng_to_cell(lat, lng, resolution)
+neighbors = h3.grid_disk(cell, 1)  # 자신 + 인접 6개
+
+print(cell)            # '891f2c4d2a7ffff' 형태의 H3 인덱스
+print(len(neighbors))  # 7</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">grid_disk로 반경 k셀 이내 이웃을 한 번에 구할 수 있어, 근접 검색 쿼리를 단순하게 짤 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 정렬·범위 쿼리 중심이면 Geohash</b> — 문자열 접두어 범위 검색만으로 근사 영역 조회 가능<br>
+<b>2. 반경 근사·집계 중심이면 H3</b> — 배차 앱의 주변 기사 찾기, 밀도 히트맵에 육각 그리드가 유리<br>
+<b>3. 해상도 선택이 성능을 좌우</b> — 너무 세밀하면 인덱스 폭증, 너무 성기면 오차 증가<br>
+<b>4. PostGIS와 병행 가능</b> — 정밀 폴리곤 연산은 PostGIS에, 후보군 1차 필터는 Geohash/H3에
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① Geohash는 사각 그리드와 문자열 접두어 구조 덕분에 DB 정렬·범위 쿼리에 강합니다.<br>
+② H3는 육각 그리드의 균일한 인접 거리 덕분에 반경 근사와 밀도 집계에 유리합니다.<br>
+③ 두 방식은 대체재가 아니라 상황별 도구이며, PostGIS와 함께 1차 필터로 병행하는 것이 흔한 패턴입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 실제 배차 시스템 사례로 H3 활용법을 다뤄보겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#GIS #H3 #Geohash #공간인덱스 #PostGIS</p>
+
+</body>
+</html>
