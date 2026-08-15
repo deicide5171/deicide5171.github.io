@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Segoe UI', 'Apple SD Gothic Neo', sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#222222">리밸런싱 전후 컨슈머 그룹과 파티션 재할당</text>
+
+  <!-- Before section -->
+  <text x="200" y="55" text-anchor="middle" font-size="13" font-weight="bold" fill="#1d4ed8">리밸런싱 전 (컨슈머 2대)</text>
+
+  <rect x="60" y="70" width="140" height="130" rx="6" fill="#eaf1fd" stroke="#2f6fed"/>
+  <text x="130" y="92" text-anchor="middle" font-size="12" font-weight="bold" fill="#1d4ed8">Consumer A</text>
+  <rect x="80" y="105" width="100" height="24" rx="3" fill="#ffffff" stroke="#2f6fed"/>
+  <text x="130" y="121" text-anchor="middle" font-size="10.5" fill="#274690">Partition 0</text>
+  <rect x="80" y="135" width="100" height="24" rx="3" fill="#ffffff" stroke="#2f6fed"/>
+  <text x="130" y="151" text-anchor="middle" font-size="10.5" fill="#274690">Partition 1</text>
+  <rect x="80" y="165" width="100" height="24" rx="3" fill="#ffffff" stroke="#2f6fed"/>
+  <text x="130" y="181" text-anchor="middle" font-size="10.5" fill="#274690">Partition 2</text>
+
+  <rect x="220" y="70" width="140" height="130" rx="6" fill="#eaf1fd" stroke="#2f6fed"/>
+  <text x="290" y="92" text-anchor="middle" font-size="12" font-weight="bold" fill="#1d4ed8">Consumer B</text>
+  <rect x="240" y="105" width="100" height="24" rx="3" fill="#ffffff" stroke="#2f6fed"/>
+  <text x="290" y="121" text-anchor="middle" font-size="10.5" fill="#274690">Partition 3</text>
+  <rect x="240" y="135" width="100" height="24" rx="3" fill="#ffffff" stroke="#2f6fed"/>
+  <text x="290" y="151" text-anchor="middle" font-size="10.5" fill="#274690">Partition 4</text>
+  <rect x="240" y="165" width="100" height="24" rx="3" fill="#ffffff" stroke="#2f6fed"/>
+  <text x="290" y="181" text-anchor="middle" font-size="10.5" fill="#999999" font-style="italic">처리 중 (미커밋)</text>
+
+  <!-- Arrow -->
+  <line x1="380" y1="135" x2="430" y2="135" stroke="#666666" stroke-width="2" marker-end="url(#arrow0)"/>
+  <text x="405" y="120" text-anchor="middle" font-size="10" fill="#666666">Consumer C</text>
+  <text x="405" y="150" text-anchor="middle" font-size="10" fill="#666666">그룹 합류</text>
+
+  <!-- After section -->
+  <text x="620" y="55" text-anchor="middle" font-size="13" font-weight="bold" fill="#c2610d">리밸런싱 후 (컨슈머 3대)</text>
+
+  <rect x="440" y="70" width="110" height="130" rx="6" fill="#fdf1e6" stroke="#e67e22"/>
+  <text x="495" y="92" text-anchor="middle" font-size="12" font-weight="bold" fill="#c2610d">Consumer A</text>
+  <rect x="455" y="105" width="80" height="24" rx="3" fill="#ffffff" stroke="#e67e22"/>
+  <text x="495" y="121" text-anchor="middle" font-size="10.5" fill="#7a4a1a">Partition 0</text>
+  <rect x="455" y="135" width="80" height="24" rx="3" fill="#ffffff" stroke="#e67e22"/>
+  <text x="495" y="151" text-anchor="middle" font-size="10.5" fill="#7a4a1a">Partition 1</text>
+
+  <rect x="560" y="70" width="110" height="130" rx="6" fill="#fdf1e6" stroke="#e67e22"/>
+  <text x="615" y="92" text-anchor="middle" font-size="12" font-weight="bold" fill="#c2610d">Consumer B</text>
+  <rect x="575" y="105" width="80" height="24" rx="3" fill="#ffffff" stroke="#e67e22"/>
+  <text x="615" y="121" text-anchor="middle" font-size="10.5" fill="#7a4a1a">Partition 2</text>
+  <rect x="575" y="135" width="80" height="24" rx="3" fill="#ffffff" stroke="#e67e22"/>
+  <text x="615" y="151" text-anchor="middle" font-size="10.5" fill="#7a4a1a">Partition 3</text>
+
+  <rect x="680" y="70" width="100" height="130" rx="6" fill="#fdf1e6" stroke="#e67e22" stroke-width="2"/>
+  <text x="730" y="92" text-anchor="middle" font-size="12" font-weight="bold" fill="#c2610d">Consumer C</text>
+  <text x="730" y="108" text-anchor="middle" font-size="9.5" fill="#c2610d">(신규)</text>
+  <rect x="695" y="118" width="70" height="24" rx="3" fill="#ffffff" stroke="#e67e22"/>
+  <text x="730" y="134" text-anchor="middle" font-size="10.5" fill="#7a4a1a">Partition 4</text>
+
+  <defs>
+    <marker id="arrow0" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#666666"/>
+    </marker>
+  </defs>
+
+  <rect x="30" y="230" width="740" height="115" rx="4" fill="#fff7f0" stroke="#ff8a3d"/>
+  <text x="400" y="255" text-anchor="middle" font-size="12" font-weight="bold" fill="#c2610d">핵심: Partition 4는 커밋되지 않은 채로 넘어갔다</text>
+  <text x="400" y="278" text-anchor="middle" font-size="11" fill="#7a4a1a">Consumer B가 Partition 4를 처리하던 중 리밸런싱이 시작되면 onPartitionsRevoked() 콜백이 호출된다</text>
+  <text x="400" y="298" text-anchor="middle" font-size="11" fill="#7a4a1a">이 시점까지 처리했지만 커밋하지 않은 오프셋은 반영되지 않은 채 Consumer C에게 파티션 소유권이 넘어간다</text>
+  <text x="400" y="318" text-anchor="middle" font-size="11" fill="#7a4a1a">Consumer C는 마지막 커밋 오프셋부터 다시 읽으므로, 이미 처리된 메시지가 중복 처리될 수 있다</text>
+
+  <rect x="30" y="360" width="740" height="70" rx="4" fill="#f9f9f9" stroke="#dddddd"/>
+  <text x="400" y="385" text-anchor="middle" font-size="12" font-weight="bold" fill="#333333">대응: revoke 콜백에서 동기 커밋 + 애플리케이션 멱등성 처리 + Cooperative Sticky Assignor</text>
+  <text x="400" y="408" text-anchor="middle" font-size="11" fill="#666666">점진적 리밸런싱은 재할당이 필요한 파티션만 옮겨, 그대로 유지되는 파티션의 재처리 위험을 줄여준다</text>
+</svg>
