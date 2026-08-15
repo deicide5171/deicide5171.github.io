@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>CQRS, 읽기와 쓰기를 나눠야 할 때</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">CQRS, 읽기와 쓰기를 나눠야 할 때</div>
+<p style="font-size:14px; color:#999;">2026. 8. 15. · 시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — CQRS는 데이터를 저장하는 방식(이벤트소싱)과는 별개로, 읽기와 쓰기 모델을 나누는 것만으로도 충분히 적용할 수 있는 패턴입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 읽기와 쓰기를 나눌까요</div>
+<p style="font-size:16px; color:#333; line-height:1.8;">하나의 서비스 안에서도 <b>데이터를 저장하는 방식</b>과 <b>데이터를 보여주는 방식</b>이 크게 다른 경우가 많습니다. 예를 들어 주문 데이터를 저장할 때는 무결성이 중요하지만, 대시보드나 검색 화면에서는 이미 가공된 형태로 빠르게 보여주는 것이 더 중요합니다. 이럴 때 등장하는 패턴이 바로 <b>CQRS(명령과 조회의 책임 분리)</b>입니다.</p>
+<p style="font-size:16px; color:#333; line-height:1.8;">CQRS는 종종 이벤트소싱과 함께 소개되다 보니, "이벤트소싱을 써야만 CQRS를 쓸 수 있다"고 오해하기 쉽습니다. 하지만 실제로는 두 패턴이 <b>서로 독립적</b>이며, 이벤트소싱 없이 CQRS만 도입하는 경우가 훨씬 흔합니다.</p>
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전통적인 방식과 CQRS 비교</div>
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;">
+<td style="border:1px solid #ddd; padding:10px; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; font-weight:bold;">전통적인 CRUD</td>
+<td style="border:1px solid #ddd; padding:10px; font-weight:bold;">CQRS</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">모델 수</td>
+<td style="border:1px solid #ddd; padding:10px;">읽기·쓰기 공용 1개</td>
+<td style="border:1px solid #ddd; padding:10px;">쓰기 모델과 조회 모델 분리</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">데이터 형태</td>
+<td style="border:1px solid #ddd; padding:10px;">정규화된 테이블</td>
+<td style="border:1px solid #ddd; padding:10px;">조회용은 비정규화된 전용 스토어</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">적합한 상황</td>
+<td style="border:1px solid #ddd; padding:10px;">단순한 CRUD 서비스</td>
+<td style="border:1px solid #ddd; padding:10px;">읽기·쓰기 패턴 차이가 큰 서비스</td>
+</tr>
+</table>
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">코드로 보는 예시</div>
+<p style="font-size:16px; color:#333; line-height:1.8;">쓰기 모델은 정규화된 테이블로, 읽기 모델은 화면에 바로 쓸 수 있는 비정규화 테이블로 나눈 예시입니다.</p>
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">-- 쓰기 모델
+CREATE TABLE orders (
+    id UUID PRIMARY KEY,
+    customer_id UUID NOT NULL,
+    status VARCHAR(20) NOT NULL,
+    total_amount NUMERIC(12,2) NOT NULL
+);
+
+-- 읽기 모델 (대시보드용 비정규화 뷰)
+CREATE TABLE order_summary_view (
+    order_id UUID PRIMARY KEY,
+    customer_name TEXT,
+    status_label TEXT,
+    total_amount NUMERIC(12,2)
+);</pre>
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 지연을 사용자에게 어떻게 설명할지 정하세요</b> — 읽기 모델이 쓰기 모델을 따라가는 데 시간이 걸릴 수 있습니다.<br>
+<b>2. 조회 뷰가 단순하다면 과한 설계일 수 있습니다</b> — 규모가 작은 서비스라면 CQRS가 오히려 복잡도만 늘릴 수 있습니다.<br>
+<b>3. 동기화 로직도 장애 지점입니다</b> — 읽기 모델 갱신이 실패했을 때의 재처리 전략을 마련하세요.<br>
+<b>4. 이벤트소싱과 혼동하지 마세요</b> — 두 패턴은 각각 필요한 만큼만 독립적으로 적용해도 됩니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+<p style="font-size:16px; color:#333; line-height:1.8;">① CQRS는 읽기와 쓰기 모델을 분리하는 패턴이며 이벤트소싱과는 독립적으로 적용됩니다.<br>
+② 읽기 모델은 조회 성능을 위해 비정규화된 전용 스토어로 두는 경우가 많습니다.<br>
+③ 조회 패턴이 단순하다면 CQRS는 오히려 오버엔지니어링이 될 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 서비스의 읽기·쓰기 패턴이 얼마나 다른지 먼저 살펴보신 뒤 CQRS 도입 여부를 판단해 보시길 권해 드립니다.</p>
+
+<p style="font-size:14px; color:#03c75a;">#CQRS #시스템설계 #소프트웨어아키텍처 #백엔드 #개발자블로그</p>
+
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>지오코딩 정확도 높이는 법</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">지오코딩 정확도 높이기, 주소 매칭이 실패하는 이유</div>
+<p style="font-size:14px; color:#999;">2026. 8. 15. · GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 지오코딩 실패는 주소 표준화 미비와 데이터 최신성 문제가 겹쳐 생기며, 정규화와 다중 지오코더 폴백으로 실패율을 줄일 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 주소가 지도에 잘 안 찍힐까요</div>
+<p style="font-size:16px; color:#333; line-height:1.8;">배달, 물류, 부동산 등 위치 기반 서비스를 다루다 보면 <b>"주소가 좌표로 잘 안 바뀐다"</b>는 문제를 반드시 마주치게 됩니다. 지오코딩은 단순한 문자열-좌표 변환처럼 보이지만, 실제로는 주소 표기 방식의 다양성과 데이터 최신성 문제 때문에 실패율이 생각보다 높습니다. 특히 국내는 도로명주소와 지번주소가 병행 사용되고, 신축 건물은 DB 반영에 시차가 있을 수 있어 오매칭이 자주 발생하는 것으로 보입니다.</p>
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">대표적인 실패 원인</div>
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f7f7f7; font-weight:bold;">원인</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f7f7f7; font-weight:bold;">설명</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">주소 표준화 미비</td>
+<td style="border:1px solid #ddd; padding:10px;">띄어쓰기, 약어, 오탈자 등으로 문자열이 정규화되지 않은 경우</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">도로명/지번 혼용</td>
+<td style="border:1px solid #ddd; padding:10px;">같은 장소를 서로 다른 주소 체계로 섞어 입력하면 매칭 기준이 흔들림</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">신축 건물 데이터 지연</td>
+<td style="border:1px solid #ddd; padding:10px;">신규 건축물의 DB 반영 시차로 최신 주소일수록 실패율이 높아지는 경향</td>
+</tr>
+</table>
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">개선 기법 예시 코드</div>
+<p style="font-size:16px; color:#333; line-height:1.8;">정규화와 다중 지오코더 폴백을 함께 적용하면 성공률을 높일 수 있습니다.</p>
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">def normalize_address(addr: str) -> str:
+    addr = addr.strip()
+    addr = re.sub(r"\s+", " ", addr)
+    addr = addr.replace("서울시", "서울특별시")
+    return addr
+
+def geocode_with_fallback(addr: str, geocoders: list):
+    normalized = normalize_address(addr)
+    for geocoder in geocoders:
+        result = geocoder.geocode(normalized)
+        if result and result.confidence &gt;= 0.7:
+            return result
+    return None  # 검수 큐로 전달</pre>
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 정규화 규칙은 계속 보강</b> — 실패 사례를 주기적으로 모아 규칙을 업데이트하세요.<br>
+<b>2. 신뢰도 임계값 조정</b> — 너무 낮으면 오매칭, 너무 높으면 검수 큐 과부하로 이어집니다.<br>
+<b>3. 좌표계 일치 확인</b> — 지오코더마다 응답 좌표계가 다를 수 있어 통합 전 반드시 확인하세요.<br>
+<b>4. 신축 밀집 지역은 별도 보정</b> — 신도시 등은 실패율이 높을 수 있어 수동 보정 프로세스가 필요합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+<p style="font-size:16px; color:#333; line-height:1.8;">① 지오코딩 실패는 표준화 미비, 도로명/지번 혼용, 데이터 지연 등 여러 원인이 겹쳐서 발생합니다.<br>
+② 정규화, 퍼지 매칭, 다중 지오코더 폴백, 신뢰도 점수 활용을 조합하면 실패율을 낮출 수 있습니다.<br>
+③ 신뢰도 임계값과 좌표계 일치는 실무에서 놓치기 쉬운 세부 조정 포인트입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음에는 더 유익한 개발 이야기로 찾아오겠습니다.</p>
+
+<p style="font-size:14px; color:#03c75a;">#지오코딩 #주소매칭 #GIS #데이터정제 #위치기반서비스</p>
+
+</body>
+</html>

@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>[추천 지식] 로그 다음은 메트릭과 트레이싱</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">[추천 지식] 다음으로 파봐야 할 것 — 옵저버빌리티, 메트릭과 트레이싱</div>
+<p style="font-size:14px; color:#999;">2026. 8. 15. · 추천 지식</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 로그 설계만으로는 채워지지 않는 지점을 짚고, 다음 학습 주제로 메트릭과 분산 트레이싱을 추천합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">로그만으로는 부족한 지점이 있습니다</div>
+<p style="font-size:16px; color:#333; line-height:1.8;">그동안 장애 대응, 로그 설계 같은 주제를 통해 시스템을 안정적으로 운영하는 방법을 다뤄왔습니다. 로그는 "특정 순간에 무슨 일이 있었는지"를 알려주는 가장 기본적인 도구이지만, <b>"지금 시스템 전체가 건강한가"</b>라는 질문에는 잘 답하지 못합니다. 하나의 요청이 여러 마이크로서비스를 거칠 때, 로그만으로는 어디서 지연이 발생했는지 재구성하기도 매우 어렵습니다.</p>
+<p style="font-size:16px; color:#333; line-height:1.8;">이 지점에서 필요한 것이 <b>메트릭(metrics)</b>과 <b>분산 트레이싱(distributed tracing)</b>입니다. 로그, 메트릭, 트레이싱은 흔히 "옵저버빌리티의 세 기둥"으로 불리며, 로그 설계를 다뤄본 다음 단계로 이 두 가지를 추천하는 이유가 여기에 있습니다.</p>
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">학습 로드맵</div>
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f7f7f7; font-weight:bold;">단계</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f7f7f7; font-weight:bold;">학습 주제</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f7f7f7; font-weight:bold;">목표</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">1단계</td>
+<td style="border:1px solid #ddd; padding:10px;">메트릭 기초</td>
+<td style="border:1px solid #ddd; padding:10px;">카운터·게이지·히스토그램 이해</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">2단계</td>
+<td style="border:1px solid #ddd; padding:10px;">Prometheus 등 수집 도구</td>
+<td style="border:1px solid #ddd; padding:10px;">메트릭 수집·저장·질의 실습</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">3단계</td>
+<td style="border:1px solid #ddd; padding:10px;">분산 트레이싱, OpenTelemetry</td>
+<td style="border:1px solid #ddd; padding:10px;">요청 전체 흐름 추적 이해</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">4단계</td>
+<td style="border:1px solid #ddd; padding:10px;">대시보드/알림 설계</td>
+<td style="border:1px solid #ddd; padding:10px;">시각화와 경보 체계 구축</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">5단계</td>
+<td style="border:1px solid #ddd; padding:10px;">SLO/SLI 연계</td>
+<td style="border:1px solid #ddd; padding:10px;">메트릭을 서비스 목표와 연결</td>
+</tr>
+</table>
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">로그·메트릭·트레이싱의 삼각형</div>
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>로그</b>는 특정 시점의 이산적 이벤트를, <b>메트릭</b>은 시간에 따라 집계된 수치를, <b>트레이싱</b>은 하나의 요청이 여러 서비스를 거치는 전체 경로를 보여줍니다. 최근에는 이 세 가지를 통합해서 계측하는 <b>OpenTelemetry</b>가 사실상의 표준으로 자리 잡아가는 것으로 보입니다.</p>
+<p style="font-size:16px; color:#333; line-height:1.8;">Node.js 애플리케이션에 OpenTelemetry로 트레이싱을 계측하는 간단한 예시입니다.</p>
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">const { NodeSDK } = require('@opentelemetry/sdk-node');
+const { getNodeAutoInstrumentations } = require('@opentelemetry/auto-instrumentations-node');
+const { OTLPTraceExporter } = require('@opentelemetry/exporter-trace-otlp-http');
+
+const sdk = new NodeSDK({
+  traceExporter: new OTLPTraceExporter({ url: 'http://otel-collector:4318/v1/traces' }),
+  instrumentations: [getNodeAutoInstrumentations()],
+});
+
+sdk.start();</pre>
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 샘플링 전략 설계</b> — 트레이싱을 100% 수집하면 비용 부담이 크므로 샘플링 전략을 함께 설계하세요.<br>
+<b>2. 메트릭 카디널리티 주의</b> — 레이블 조합이 과도하게 늘어나면 저장 비용이 급격히 커질 수 있습니다.<br>
+<b>3. 세 데이터를 서로 연결</b> — trace ID를 로그에 남기는 식으로 연결해야 원인을 오가며 추적할 수 있습니다.<br>
+<b>4. SLO 기반 알림 설계</b> — 단순 임계치보다 사용자 경험에 실제 영향을 주는 신호에 집중해 알림 피로를 줄이세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+<p style="font-size:16px; color:#333; line-height:1.8;">① 로그는 개별 이벤트를, 메트릭은 추세를, 트레이싱은 요청의 전체 흐름을 보여줍니다.<br>
+② OpenTelemetry가 세 데이터를 통합 계측하는 사실상의 표준으로 자리 잡아가고 있습니다.<br>
+③ 다음 학습 단계로 메트릭 수집 도구, 분산 트레이싱, 대시보드/알림 설계 순으로 로드맵을 잡는 것을 추천합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 [추천 지식] 편에서는 SLO/SLI를 실제 알림 체계와 연결하는 방법을 좀 더 다뤄보겠습니다.</p>
+
+<p style="font-size:14px; color:#03c75a;">#옵저버빌리티 #메트릭 #분산트레이싱 #OpenTelemetry #추천지식</p>
+
+</body>
+</html>
