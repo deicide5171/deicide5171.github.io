@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Segoe UI', 'Apple SD Gothic Neo', sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#222222">관찰 → 계획 → 도구 호출 루프로 컨텍스트를 좁혀가는 코딩 에이전트</text>
+
+  <!-- Loop nodes -->
+  <rect x="40" y="70" width="150" height="80" rx="6" fill="#eaf1fd" stroke="#2f6fed"/>
+  <text x="115" y="100" text-anchor="middle" font-size="13" font-weight="bold" fill="#1d4ed8">관찰</text>
+  <text x="115" y="120" text-anchor="middle" font-size="10.5" fill="#274690">지금까지의 컨텍스트와</text>
+  <text x="115" y="135" text-anchor="middle" font-size="10.5" fill="#274690">도구 결과를 확인</text>
+
+  <rect x="325" y="70" width="150" height="80" rx="6" fill="#fdf1e6" stroke="#e67e22"/>
+  <text x="400" y="100" text-anchor="middle" font-size="13" font-weight="bold" fill="#c2610d">계획</text>
+  <text x="400" y="120" text-anchor="middle" font-size="10.5" fill="#7a4a1a">다음에 무엇을</text>
+  <text x="400" y="135" text-anchor="middle" font-size="10.5" fill="#7a4a1a">찾을지 판단</text>
+
+  <rect x="610" y="70" width="150" height="80" rx="6" fill="#e9f8ef" stroke="#1f9d55"/>
+  <text x="685" y="100" text-anchor="middle" font-size="13" font-weight="bold" fill="#15803d">도구 호출</text>
+  <text x="685" y="120" text-anchor="middle" font-size="10.5" fill="#166534">glob / grep /</text>
+  <text x="685" y="135" text-anchor="middle" font-size="10.5" fill="#166534">파일 읽기 실행</text>
+
+  <!-- arrows top row -->
+  <line x1="190" y1="110" x2="325" y2="110" stroke="#666666" stroke-width="1.5" marker-end="url(#arrowA)"/>
+  <line x1="475" y1="110" x2="610" y2="110" stroke="#666666" stroke-width="1.5" marker-end="url(#arrowA)"/>
+
+  <!-- return arrow (loop) -->
+  <path d="M685,150 C685,200 115,200 115,150" fill="none" stroke="#999999" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrowB)"/>
+  <text x="400" y="195" text-anchor="middle" font-size="11" fill="#666666">결과를 컨텍스트에 반영하고, 답을 찾을 때까지 반복</text>
+
+  <!-- three tool tiers -->
+  <rect x="60" y="235" width="200" height="70" rx="5" fill="#f5f5f5" stroke="#999999"/>
+  <text x="160" y="258" text-anchor="middle" font-size="12" font-weight="bold" fill="#444444">glob (파일 탐색)</text>
+  <text x="160" y="277" text-anchor="middle" font-size="10.5" fill="#666666">파일명·경로 패턴으로</text>
+  <text x="160" y="292" text-anchor="middle" font-size="10.5" fill="#666666">후보 파일 범위 좁히기</text>
+
+  <rect x="300" y="235" width="200" height="70" rx="5" fill="#f5f5f5" stroke="#999999"/>
+  <text x="400" y="258" text-anchor="middle" font-size="12" font-weight="bold" fill="#444444">grep (내용 검색)</text>
+  <text x="400" y="277" text-anchor="middle" font-size="10.5" fill="#666666">문자열·심볼로</text>
+  <text x="400" y="292" text-anchor="middle" font-size="10.5" fill="#666666">관련 위치 찾기</text>
+
+  <rect x="540" y="235" width="200" height="70" rx="5" fill="#f5f5f5" stroke="#999999"/>
+  <text x="640" y="258" text-anchor="middle" font-size="12" font-weight="bold" fill="#444444">파일 읽기</text>
+  <text x="640" y="277" text-anchor="middle" font-size="10.5" fill="#666666">좁혀진 파일만</text>
+  <text x="640" y="292" text-anchor="middle" font-size="10.5" fill="#666666">실제 내용 로드</text>
+
+  <line x1="160" y1="235" x2="160" y2="150" stroke="#cccccc" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="400" y1="235" x2="400" y2="150" stroke="#cccccc" stroke-width="1" stroke-dasharray="3,2"/>
+  <line x1="640" y1="235" x2="640" y2="150" stroke="#cccccc" stroke-width="1" stroke-dasharray="3,2"/>
+
+  <defs>
+    <marker id="arrowA" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#666666"/>
+    </marker>
+    <marker id="arrowB" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#999999"/>
+    </marker>
+  </defs>
+
+  <rect x="30" y="330" width="740" height="100" rx="4" fill="#f9f9f9" stroke="#dddddd"/>
+  <text x="400" y="355" text-anchor="middle" font-size="12" font-weight="bold" fill="#333333">핵심: 코드베이스 전체가 아니라 좁혀진 일부만 컨텍스트에 올린다</text>
+  <text x="400" y="378" text-anchor="middle" font-size="11" fill="#666666">탐색 → 검색 → 읽기 순으로 범위를 좁히고, 결과가 크면 요약해 예산을 관리한다</text>
+  <text x="400" y="398" text-anchor="middle" font-size="11" fill="#666666">탐색성 작업은 서브에이전트에 위임해 메인 컨텍스트를 잡음으로부터 보호할 수 있다</text>
+  <text x="400" y="418" text-anchor="middle" font-size="11" fill="#666666">충분한 정보가 모였다고 판단되면 루프를 멈추고 최종 답을 생성한다</text>
+</svg>
