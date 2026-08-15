@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>React Compiler 1.0, useMemo는 그만 써도 될까</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">React Compiler 1.0, 이제 useMemo는 그만 써도 될까</div>
+<p style="font-size:14px; color:#999;">2026. 8. 15. · 웹 개발</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 리액트가 안정 버전에 접어든 <b>React Compiler</b>로 수동 메모이제이션 시대를 끝내려 하고 있습니다. 동작 원리와 도입 방법, 주의점을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 React Compiler인가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">React로 성능 튜닝을 해보신 분이라면 <b>useMemo</b>, <b>useCallback</b>, <b>React.memo</b>를 얼마나 조심스럽게 다뤄야 하는지 아실 거예요. 의존성 배열 하나만 빼먹어도 최적화가 무력화되거나, 오히려 오래된 값을 참조하는 버그가 생기곤 했습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 수동 메모이제이션은 지난 몇 년간 React 코드에서 가장 반복적이고 실수하기 쉬운 작업이었습니다. React 팀은 이 문제를 언어가 아니라 <b>컴파일러 차원</b>에서 풀기로 했고, 그 결과물이 빌드 시점에 코드를 분석해 불필요한 재렌더링을 자동으로 막아주는 <b>React Compiler</b>입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">안정 버전이 나온 뒤 Vite, Next.js, Expo 같은 주요 도구들과의 통합이 이어지면서 실무 도입 사례가 빠르게 늘고 있습니다. "수동 최적화가 당연하던 시대"에서 "평범하게 짜도 빠른 시대"로 넘어가는 전환점이라 지금 짚어볼 가치가 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">무엇을 자동으로 해주나요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">기존에는 개발자가 직접 "이 값은 재계산할 필요 없다", "이 함수는 다시 만들 필요 없다"를 판단해서 표시해야 했습니다. React Compiler는 이 판단을 <b>컴파일 타임 정적 분석</b>으로 대신 해줍니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:25%;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">기존 방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Compiler 도입 후</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>메모이제이션</b></td>
+<td style="border:1px solid #ddd; padding:10px;">직접 useMemo/useCallback 작성</td>
+<td style="border:1px solid #ddd; padding:10px;">컴파일러가 자동 삽입</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>실수 위험</b></td>
+<td style="border:1px solid #ddd; padding:10px;">의존성 배열 누락 등</td>
+<td style="border:1px solid #ddd; padding:10px;">정적 분석이라 누락 없음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>가독성</b></td>
+<td style="border:1px solid #ddd; padding:10px;">최적화 코드와 로직이 뒤섞임</td>
+<td style="border:1px solid #ddd; padding:10px;">로직만 남아 깔끔함</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>전제 조건</b></td>
+<td style="border:1px solid #ddd; padding:10px;">없음</td>
+<td style="border:1px solid #ddd; padding:10px;">"Rules of React" 준수 필요</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">단, 전제 조건이 있어요. 컴포넌트가 렌더링 중 부수효과를 일으키거나 훅 규칙을 어기면 컴파일러가 최적화를 건너뛸 수 있습니다. 그래서 관련 린트 플러그인을 함께 켜서 위반 지점을 빌드 전에 잡아내는 걸 권장합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">코드로 보면 이렇게 다릅니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">기존에는 비용이 있는 계산을 이렇게 감쌌습니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">// Before: 수동 메모이제이션
+function ProductList({ products, keyword }) {
+  const filtered = useMemo(
+    () =&gt; products.filter((p) =&gt; p.name.includes(keyword)),
+    [products, keyword]
+  );
+
+  const handleSelect = useCallback(
+    (id) =&gt; console.log("selected", id),
+    []
+  );
+
+  return filtered.map((p) =&gt; (
+    &lt;ProductRow key={p.id} product={p} onSelect={handleSelect} /&gt;
+  ));
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">React Compiler를 적용하면 같은 로직을 최적화 코드 없이 작성해도 동일한 효과를 컴파일러가 만들어줍니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">// After: React Compiler가 자동 최적화
+function ProductList({ products, keyword }) {
+  const filtered = products.filter((p) =&gt; p.name.includes(keyword));
+
+  const handleSelect = (id) =&gt; console.log("selected", id);
+
+  return filtered.map((p) =&gt; (
+    &lt;ProductRow key={p.id} product={p} onSelect={handleSelect} /&gt;
+  ));
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">빌드 설정은 번들러 플러그인 형태로 추가합니다(Vite 예시).</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">// vite.config.js
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+export default defineConfig({
+  plugins: [
+    react({
+      babel: {
+        plugins: [["babel-plugin-react-compiler", {}]],
+      },
+    }),
+  ],
+});</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 점진 도입이 기본</b> — 전체 코드베이스를 한 번에 돌리기보다 디렉토리 단위로 opt-in하며 린트 경고부터 해소<br>
+<b>2. 기존 코드 급하게 안 지워도 됨</b> — 기존 useMemo/useCallback과 공존 가능, 신규 코드부터 자연스럽게<br>
+<b>3. "Rules of React" 준수가 핵심 전제</b> — 렌더링 중 부수효과나 조건부 훅 호출이 있으면 최적화가 제대로 안 됨<br>
+<b>4. React Native에도 동일 적용</b> — 웹 전용 기능이 아니라 모바일 코드베이스도 혜택<br>
+<b>5. 측정 없이 맹신 금지</b> — 실제 개선 폭은 컴포넌트 구조·데이터 크기마다 다르니 프로파일링으로 확인
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① React Compiler는 빌드 타임 정적 분석으로 useMemo/useCallback 없이도 불필요한 재렌더링을 제거해줍니다.<br>
+② 도입 전제조건은 "Rules of React" 준수이며, 관련 린트 규칙으로 위반 지점을 먼저 잡는 게 안전합니다.<br>
+③ 기존 메모이제이션 코드와 공존 가능해서 전체 재작성 없이 점진적으로 옮겨갈 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 실제 프로젝트에 React Compiler를 도입하면서 겪은 이슈들을 다뤄보겠습니다. 궁금한 점은 댓글로 남겨주세요 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#React #ReactCompiler #프론트엔드 #웹개발 #자바스크립트 #개발트렌드</p>
+
+</body>
+</html>

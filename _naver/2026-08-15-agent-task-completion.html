@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>AI 에이전트, 이제는 완료로 평가받는다</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">AI 에이전트, 이제는 '대화'가 아니라 '완료'로 평가받는다</div>
+<p style="font-size:14px; color:#999;">2026. 8. 15. · AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — AI 에이전트를 평가하는 기준이 <b>대화의 자연스러움</b>에서 <b>작업의 실제 완료 여부</b>로 옮겨가고 있습니다. 왜 그런지, 완료 중심 평가를 어떻게 설계하는지 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 '완료율'인가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">지난 몇 년간 LLM을 평가하는 방식은 대체로 "답변이 자연스러운가", "사람이 쓴 것과 비슷한가"에 초점이 맞춰져 있었습니다. 챗봇 시대에는 합리적인 기준이었죠. 사용자가 모델과 나누는 것은 결국 대화였으니까요.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">하지만 에이전트 시대에는 이 기준이 무의미해집니다. 최근에는 소비자용 에이전트가 매장에 전화를 걸어 재고를 확인하고 실제로 주문까지 완료하는 사례처럼, 에이전트가 실제 세계의 작업을 끝까지 수행하는 방향으로 무게중심이 옮겨가고 있습니다. 이런 에이전트에게 진짜 중요한 질문은 하나입니다. <b>일이 실제로 끝났는가.</b></p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">동시에 컨텍스트 윈도우가 100만 토큰 수준으로 늘어나면서, 에이전트가 긴 작업 이력과 여러 도구 호출 결과를 한 번에 들고 있을 수 있게 됐습니다. 능력이 늘어난 만큼, 그 능력을 "끝까지 해냈는가"로 측정하는 평가 체계가 뒤따라야 하는 시점입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">대화 평가 vs 완료 평가</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:22%;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">대화 중심 평가</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">완료 중심 평가</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>측정 대상</b></td>
+<td style="border:1px solid #ddd; padding:10px;">응답의 유창함·관련성</td>
+<td style="border:1px solid #ddd; padding:10px;">작업의 최종 상태</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>채점 방식</b></td>
+<td style="border:1px solid #ddd; padding:10px;">사람/LLM이 텍스트 비교</td>
+<td style="border:1px solid #ddd; padding:10px;">실행 결과(파일·DB·외부 상태) 검증</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>대표 사례</b></td>
+<td style="border:1px solid #ddd; padding:10px;">챗봇 QA, 요약 품질 평가</td>
+<td style="border:1px solid #ddd; padding:10px;">코딩 에이전트 테스트 통과, 예약·구매 완료</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">핵심은 <b>"그럴듯함"과 "성공"을 분리</b>한다는 점입니다. 에이전트가 자신감 있게 "완료했습니다"라고 말해도, 실제로 파일이 저장되지 않았거나 API 호출이 실패했다면 그 결과물은 실패로 채점되어야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">완료 중심 평가, 이렇게 설계하세요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>1) 검증 가능한 종료 상태를 정의</b>합니다. "적절히 답했는가"가 아니라 "DB에 레코드가 생겼는가", "테스트가 통과했는가"처럼 코드로 확인 가능한 조건을 기준으로 삼습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>2) 중간 과정이 아니라 최종 상태</b>를 봅니다. 도구를 몇 번 호출했는지보다, 그 결과로 세계 상태가 원하는 대로 바뀌었는지가 중요합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>3) 실패를 구분</b>합니다. 아예 시도하지 않은 실패와, 시도했지만 부작용을 남기고 실패한 경우(파일을 절반만 쓰고 중단 등)는 위험도가 다릅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 "결과 파일에 원하는 내용이 실제로 기록됐는가"를 기준으로 채점하는 간단한 예제입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># eval_task_completion.py
+from pathlib import Path
+import json
+
+def grade(task_dir: Path) -&gt; dict:
+    output = task_dir / "result.json"
+    if not output.exists():
+        return {"completed": False, "reason": "출력 파일 없음"}
+
+    data = json.loads(output.read_text())
+    if data.get("status") != "success":
+        return {"completed": False, "reason": f"status={data.get('status')}"}
+
+    return {"completed": True, "reason": "ok"}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">에이전트의 최종 응답 텍스트는 채점 기준에서 아예 제외하고, 오직 실행 결과로 남은 산출물만 확인하는 것이 포인트입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무에 적용할 때 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 만족도 설문보다 실제 시스템 상태</b> — 사내 에이전트 도입 시 "답변 만족도" 대신 티켓 상태·배포 성공 여부 같은 실제 지표로 성공률을 집계하세요<br>
+<b>2. 규제 흐름과도 맞닿아 있음</b> — AI가 무엇을 했는지 추적 가능하게 만드는 방향의 규제가 늘고 있어, 완료 중심 평가 체계는 감사 대응에도 유리합니다<br>
+<b>3. 완료율만 맹신하지 말 것</b> — 완료율만 좇다 보면 에이전트가 부작용을 감수하고 "일단 완료 처리"하는 위험이 생길 수 있어, 부작용 여부도 함께 채점해야 합니다
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① AI 에이전트 평가는 "대화가 자연스러운가"에서 "작업이 실제로 끝났는가"로 무게중심이 옮겨가고 있습니다.<br>
+② 완료 중심 평가는 응답 텍스트가 아니라 실행 후 남은 상태(파일, DB, 외부 시스템)를 검증합니다.<br>
+③ 완료율 지표를 도입할 때는 부작용 여부도 함께 채점해야 안전합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 실제로 완료 중심 평가 파이프라인을 구축한 사례를 다뤄보겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#AI에이전트 #LLM #에이전트평가 #벤치마크 #AI트렌드</p>
+
+</body>
+</html>
