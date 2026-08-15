@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="26" text-anchor="middle" font-size="18" font-weight="bold" fill="#1a1a1a">Node.js 이벤트 루프 단계(phase)와 마이크로태스크 처리 시점</text>
+  <text x="400" y="46" text-anchor="middle" font-size="11.5" fill="#666">매 단계 전환 전, 콜백 하나를 마칠 때마다 microtask 큐를 전부 비운 뒤 다음으로 넘어간다</text>
+
+  <!-- Phase row -->
+  <!-- Timers -->
+  <rect x="30" y="95" width="130" height="66" rx="8" fill="#e8f0fe" stroke="#3b6fd6" stroke-width="1.5"/>
+  <text x="95" y="122" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f3a7a">Timers</text>
+  <text x="95" y="140" text-anchor="middle" font-size="10" fill="#1f3a7a">타이머 단계</text>
+  <text x="95" y="178" text-anchor="middle" font-size="9.5" fill="#555">setTimeout</text>
+  <text x="95" y="191" text-anchor="middle" font-size="9.5" fill="#555">setInterval</text>
+
+  <!-- Pending callbacks -->
+  <rect x="182" y="95" width="130" height="66" rx="8" fill="#e8f0fe" stroke="#3b6fd6" stroke-width="1.5"/>
+  <text x="247" y="122" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f3a7a">Pending</text>
+  <text x="247" y="140" text-anchor="middle" font-size="10" fill="#1f3a7a">대기 콜백 단계</text>
+  <text x="247" y="178" text-anchor="middle" font-size="9.5" fill="#555">일부 시스템</text>
+  <text x="247" y="191" text-anchor="middle" font-size="9.5" fill="#555">레벨 콜백</text>
+
+  <!-- Poll -->
+  <rect x="335" y="95" width="130" height="66" rx="8" fill="#e8f0fe" stroke="#3b6fd6" stroke-width="1.5"/>
+  <text x="400" y="122" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f3a7a">Poll</text>
+  <text x="400" y="140" text-anchor="middle" font-size="10" fill="#1f3a7a">폴 단계</text>
+  <text x="400" y="178" text-anchor="middle" font-size="9.5" fill="#555">I/O 콜백 실행</text>
+  <text x="400" y="191" text-anchor="middle" font-size="9.5" fill="#555">·새 이벤트 대기</text>
+
+  <!-- Check -->
+  <rect x="487" y="95" width="130" height="66" rx="8" fill="#e8f0fe" stroke="#3b6fd6" stroke-width="1.5"/>
+  <text x="552" y="122" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f3a7a">Check</text>
+  <text x="552" y="140" text-anchor="middle" font-size="10" fill="#1f3a7a">체크 단계</text>
+  <text x="552" y="178" text-anchor="middle" font-size="9.5" fill="#555">setImmediate</text>
+
+  <!-- Close callbacks -->
+  <rect x="639" y="95" width="130" height="66" rx="8" fill="#e8f0fe" stroke="#3b6fd6" stroke-width="1.5"/>
+  <text x="704" y="122" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f3a7a">Close</text>
+  <text x="704" y="140" text-anchor="middle" font-size="10" fill="#1f3a7a">종료 콜백 단계</text>
+  <text x="704" y="178" text-anchor="middle" font-size="9.5" fill="#555">socket.on</text>
+  <text x="704" y="191" text-anchor="middle" font-size="9.5" fill="#555">('close', ...)</text>
+
+  <!-- Arrows between phases -->
+  <line x1="160" y1="128" x2="180" y2="128" stroke="#3b6fd6" stroke-width="1.6" marker-end="url(#arrowBlue)"/>
+  <line x1="312" y1="128" x2="333" y2="128" stroke="#3b6fd6" stroke-width="1.6" marker-end="url(#arrowBlue)"/>
+  <line x1="465" y1="128" x2="485" y2="128" stroke="#3b6fd6" stroke-width="1.6" marker-end="url(#arrowBlue)"/>
+  <line x1="617" y1="128" x2="637" y2="128" stroke="#3b6fd6" stroke-width="1.6" marker-end="url(#arrowBlue)"/>
+
+  <!-- microtask drain markers -->
+  <g>
+    <circle cx="170" cy="105" r="9" fill="#efe6ff" stroke="#7c4fd6" stroke-width="1.2"/>
+    <text x="170" y="108.5" text-anchor="middle" font-size="9" font-weight="bold" fill="#5a2fb0">μ</text>
+    <circle cx="322" cy="105" r="9" fill="#efe6ff" stroke="#7c4fd6" stroke-width="1.2"/>
+    <text x="322" y="108.5" text-anchor="middle" font-size="9" font-weight="bold" fill="#5a2fb0">μ</text>
+    <circle cx="475" cy="105" r="9" fill="#efe6ff" stroke="#7c4fd6" stroke-width="1.2"/>
+    <text x="475" y="108.5" text-anchor="middle" font-size="9" font-weight="bold" fill="#5a2fb0">μ</text>
+    <circle cx="627" cy="105" r="9" fill="#efe6ff" stroke="#7c4fd6" stroke-width="1.2"/>
+    <text x="627" y="108.5" text-anchor="middle" font-size="9" font-weight="bold" fill="#5a2fb0">μ</text>
+  </g>
+  <text x="400" y="90" text-anchor="middle" font-size="9.5" fill="#5a2fb0">μ = 콜백 하나 실행 직후 microtask 큐(Promise·queueMicrotask, nextTick 우선) 비우기</text>
+
+  <!-- loop back arrow -->
+  <path d="M 704 161 C 704 225, 95 225, 95 161" fill="none" stroke="#999" stroke-width="1.4" stroke-dasharray="5,3" marker-end="url(#arrowGray)"/>
+  <text x="400" y="222" text-anchor="middle" font-size="10.5" fill="#666">다음 이벤트 루프 반복(tick)으로 — 콜 스택·microtask 큐가 모두 비어야 다음 단계 진입</text>
+
+  <!-- Bottom comparison panels -->
+  <text x="195" y="252" text-anchor="middle" font-size="13" font-weight="bold" fill="#5a2fb0">마이크로태스크 — 콜백 하나마다 즉시 비움</text>
+  <rect x="60" y="264" width="270" height="150" rx="8" fill="#f5f0ff" stroke="#a78bdb" stroke-width="1.5"/>
+  <text x="80" y="288" font-size="11" fill="#3d2a70">① <tspan font-weight="bold">process.nextTick()</tspan></text>
+  <text x="90" y="303" font-size="10" fill="#3d2a70">— 같은 종류 중 가장 먼저 실행</text>
+  <text x="80" y="324" font-size="11" fill="#3d2a70">② <tspan font-weight="bold">Promise.then/catch/finally</tspan></text>
+  <text x="90" y="339" font-size="10" fill="#3d2a70">— nextTick 큐를 비운 다음 처리</text>
+  <text x="80" y="360" font-size="11" fill="#3d2a70">③ <tspan font-weight="bold">queueMicrotask()</tspan></text>
+  <text x="90" y="375" font-size="10" fill="#3d2a70">— Promise와 동일한 큐 사용</text>
+  <text x="80" y="396" font-size="9.5" fill="#5a2fb0">→ 새 마이크로태스크가 큐에 추가되면</text>
+  <text x="80" y="408" font-size="9.5" fill="#5a2fb0">그것도 이번 비우기에서 함께 처리된다</text>
+
+  <text x="605" y="252" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f3a7a">매크로태스크 — 단계별로 분산 실행</text>
+  <rect x="470" y="264" width="270" height="150" rx="8" fill="#eef3fe" stroke="#8ab0e8" stroke-width="1.5"/>
+  <text x="490" y="288" font-size="11" fill="#1f3a7a">① <tspan font-weight="bold">setTimeout / setInterval</tspan></text>
+  <text x="500" y="303" font-size="10" fill="#1f3a7a">— Timers 단계에서 실행</text>
+  <text x="490" y="324" font-size="11" fill="#1f3a7a">② <tspan font-weight="bold">I/O 콜백</tspan> (파일·네트워크)</text>
+  <text x="500" y="339" font-size="10" fill="#1f3a7a">— Poll 단계에서 실행</text>
+  <text x="490" y="360" font-size="11" fill="#1f3a7a">③ <tspan font-weight="bold">setImmediate</tspan></text>
+  <text x="500" y="375" font-size="10" fill="#1f3a7a">— Check 단계에서 실행</text>
+  <text x="490" y="396" font-size="9.5" fill="#1f3a7a">→ 한 단계당 콜백을 하나씩만 처리해도</text>
+  <text x="490" y="408" font-size="9.5" fill="#1f3a7a">그 사이사이 microtask 큐가 항상 먼저 비워진다</text>
+
+  <text x="400" y="436" text-anchor="middle" font-size="10.5" fill="#555">마이크로태스크는 매크로태스크 하나와 하나 사이에 반드시 끼어들어 실행된다</text>
+
+  <defs>
+    <marker id="arrowBlue" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#3b6fd6"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#999"/>
+    </marker>
+  </defs>
+</svg>
