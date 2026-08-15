@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>서비스 메시, 어디부터 붙여야 할까 — Istio vs Linkerd 도입 실전 가이드</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">서비스 메시, 어디부터 붙여야 할까 — Istio vs Linkerd 도입 실전 가이드</div>
+<p style="font-size:14px; color:#999;">2026. 8. 18. · 인프라</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 서비스 메시는 어떤 도구를 고르느냐보다 <b>어떤 순서로, 얼마나 넓은 범위에</b> 적용하느냐가 성패를 가릅니다. Istio와 Linkerd의 아키텍처 차이와 단계적 도입 절차를 실전 중심으로 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 실전 도입 절차를 고민해야 하나요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">서비스 메시를 쓸지 말지는 이미 많이 다뤄진 질문입니다. 지금 실무에서 부딪히는 진짜 질문은 다릅니다. 도입하기로 정한 뒤 <b>어느 도구를 고를지, 그리고 그 도구를 어떤 순서로 클러스터에 붙여나갈지</b>입니다. Istio를 통째로 설치하고 나서 사이드카 리소스 사용량에 놀라거나, Linkerd로 가볍게 시작했다가 나중에 세밀한 트래픽 제어가 필요해져 다시 검토하는 사례가 반복되는 이유도 여기에 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 글은 API Gateway와 Service Mesh의 책임 범위를 나누는 개념 비교가 아니라, 이미 Service Mesh를 쓰기로 한 팀이 실제로 Istio와 Linkerd 중 무엇을 고르고 어떤 절차로 붙여나가는지에 초점을 맞춥니다. 아키텍처 차이가 실제 운영 부담으로 어떻게 이어지는지, 그리고 전체 클러스터에 한 번에 켜지 않고 단계적으로 도입하는 방법을 정리해보겠습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1: Istio와 Linkerd, 아키텍처가 다른 이유</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">두 프로젝트 모두 사이드카 프록시를 통해 mTLS·재시도·관측성을 제공한다는 목표는 같지만, 그 목표에 도달하는 방식과 그로 인한 운영 부담은 다릅니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:20%;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Istio</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Linkerd</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">데이터 플레인</td>
+<td style="border:1px solid #ddd; padding:10px;">Envoy (범용, 기능 풍부)</td>
+<td style="border:1px solid #ddd; padding:10px;">linkerd2-proxy (Rust, 경량 전용)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">컨트롤 플레인</td>
+<td style="border:1px solid #ddd; padding:10px;">Istiod (단일 바이너리 통합)</td>
+<td style="border:1px solid #ddd; padding:10px;">linkerd-controller (컴포넌트 분리)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">사이드카 없는 모드</td>
+<td style="border:1px solid #ddd; padding:10px;">Ambient 모드 제공(성숙도는 도입 시점 직접 확인)</td>
+<td style="border:1px solid #ddd; padding:10px;">사이드카 모델이 기본</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">트래픽 제어 세밀도</td>
+<td style="border:1px solid #ddd; padding:10px;">매우 높음(EnvoyFilter, WASM 확장)</td>
+<td style="border:1px solid #ddd; padding:10px;">상대적으로 단순(핵심 기능 집중)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">진입 장벽</td>
+<td style="border:1px solid #ddd; padding:10px;">설정 항목이 많아 학습 곡선이 가파름</td>
+<td style="border:1px solid #ddd; padding:10px;">CLI·기본값이 단순해 초기 도입이 빠른 편</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 차이는 어떤 기능을 지원하느냐보다 <b>장애가 났을 때 무엇을 디버깅해야 하는가</b>에서 더 크게 체감됩니다. Istio는 세밀한 제어가 가능한 만큼 설정 리소스(VirtualService, DestinationRule, EnvoyFilter 등)가 서로 얽힐 여지가 많고, Linkerd는 기능을 의도적으로 좁게 유지해 설정 표면이 작습니다. 팀의 운영 인력 규모와 트래픽 제어 요구 수준을 먼저 냉정하게 가늠하는 것이 도구 선택보다 우선입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2: 한 번에 다 켜지 않는다 — 단계적 도입 전략</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">서비스 메시 장애 사례 대부분은 "기능이 부족해서"가 아니라 <b>"한 번에 너무 많은 네임스페이스에 동시 적용해서"</b> 생깁니다. 아래와 같은 단계적 롤아웃이 안전합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:10%;">단계</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">범위</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">목표</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">1</td>
+<td style="border:1px solid #ddd; padding:10px;">컨트롤 플레인만 설치</td>
+<td style="border:1px solid #ddd; padding:10px;">사이드카 주입 없이 컨트롤 플레인 안정성부터 확인</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">2</td>
+<td style="border:1px solid #ddd; padding:10px;">테스트 네임스페이스 1개</td>
+<td style="border:1px solid #ddd; padding:10px;">사이드카 주입·리소스 오버헤드 실측</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">3</td>
+<td style="border:1px solid #ddd; padding:10px;">mTLS PERMISSIVE 모드</td>
+<td style="border:1px solid #ddd; padding:10px;">평문·mTLS 트래픽을 동시 허용하며 점진 전환</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">4</td>
+<td style="border:1px solid #ddd; padding:10px;">핵심 서비스 일부 확대</td>
+<td style="border:1px solid #ddd; padding:10px;">회로 차단·재시도 정책을 실제 트래픽에 검증</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">5</td>
+<td style="border:1px solid #ddd; padding:10px;">mTLS STRICT 전환 + 전체 확대</td>
+<td style="border:1px solid #ddd; padding:10px;">검증된 네임스페이스부터 순차적으로 강제 적용</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">특히 3단계의 PERMISSIVE 모드를 건너뛰고 곧바로 STRICT를 적용하면, 아직 사이드카가 붙지 않은 서비스와의 통신이 갑자기 끊기는 사고로 이어지기 쉽습니다. 전환 일정은 팀 내부 사정에 따라 다르므로 특정 기간을 못박기보다, 각 단계에서 오류율·지연시간 지표가 안정된 뒤 다음 단계로 넘어가는 기준을 팀 내에서 합의해두는 편이 안전합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: Istio 네임스페이스 단위 주입 &amp; Linkerd 재시도 예산</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 Istio에서 특정 네임스페이스에만 사이드카를 주입하고 mTLS를 단계적으로 전환하는 설정입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">
+# 1) 특정 네임스페이스에만 사이드카 자동 주입 라벨 적용
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: checkout
+  labels:
+    istio-injection: enabled
+---
+# 2) 해당 네임스페이스에 mTLS를 PERMISSIVE로 먼저 적용
+apiVersion: security.istio.io/v1beta1
+kind: PeerAuthentication
+metadata:
+  name: default
+  namespace: checkout
+spec:
+  mtls:
+    mode: PERMISSIVE   # 검증 끝난 뒤 STRICT로 전환
+</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>istio-injection</b> 라벨을 네임스페이스 단위로 붙이면 클러스터 전체가 아니라 지정한 네임스페이스의 파드에만 사이드카가 주입됩니다. mode를 PERMISSIVE로 시작해 평문·mTLS 트래픽을 함께 받아들이며 지표를 관찰한 뒤, 문제가 없을 때 STRICT로 바꿔 mTLS를 강제하는 순서가 안전합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 Linkerd에서 서비스별 재시도 예산을 제한하는 설정입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">
+# linkerd CLI로 클러스터 사전 점검 (설치 전 필수)
+# $ linkerd check --pre
+# $ linkerd install | kubectl apply -f -
+# $ linkerd check
+
+# 서비스별 재시도 예산을 제한하는 ServiceProfile 예시
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: orders.checkout.svc.cluster.local
+  namespace: checkout
+spec:
+  routes:
+    - name: GET /orders
+      condition:
+        method: GET
+        pathRegex: /orders
+      isRetryable: true
+  retryBudget:
+    retryRatio: 0.2        # 원본 요청 대비 재시도 허용 비율
+    minRetriesPerSecond: 10
+    ttl: 10s
+</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Linkerd는 설치 전 <b>linkerd check --pre</b>로 클러스터 사전 요건을 검증하는 단계를 CLI에 내장하고 있습니다. ServiceProfile의 retryBudget은 재시도를 무제한 허용하지 않고 원본 트래픽 대비 일정 비율로 제한해, 장애 시 재시도가 트래픽을 눈덩이처럼 불리는 상황(retry storm)을 막아줍니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-18-service-mesh-istio-linkerd-1.svg" alt="사이드카 프록시 구조 — 컨트롤 플레인이 각 파드의 사이드카에 설정을 전달하고, 사이드카 간 mTLS 트래픽과 관측성 데이터 수집을 보여주는 개념도" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 사이드카 리소스 요청·제한 필수 지정</b> — 사이드카도 컨테이너이므로 CPU·메모리 request/limit 미지정 시 파드 스케줄링·QoS에 영향<br>
+<b>2. 컨트롤 플레인 업그레이드 전략 사전 수립</b> — Istio revision 기반 신구 병행 운영 등 버전 불일치 구간 대비<br>
+<b>3. 관측성 도구는 처음부터 함께 연동</b> — Istio는 Kiali·Grafana, Linkerd는 linkerd viz로 트래픽 시각화<br>
+<b>4. 모든 네임스페이스 동시 강제 금지</b> — 조직별 도입 속도 차이를 인정하고 네임스페이스별 롤아웃 체크리스트 운영<br>
+<b>5. 전환 일정은 지표 기반으로 결정</b> — 특정 날짜를 못박기보다 오류율·지연시간 안정화를 다음 단계 진입 조건으로 삼기
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① Istio는 세밀한 트래픽 제어와 확장성을, Linkerd는 단순한 설정 표면과 가벼운 데이터 플레인을 우선한다는 아키텍처 차이가 실제 운영 부담을 가릅니다.<br>
+② 서비스 메시 장애는 대개 기능 부족이 아니라 한 번에 너무 넓은 범위에 적용해서 발생하므로, 네임스페이스 단위·PERMISSIVE→STRICT mTLS 전환 같은 단계적 롤아웃이 안전합니다.<br>
+③ 사이드카 리소스 실측, 컨트롤 플레인 업그레이드 전략, 관측성 도구 연동을 도입 초기부터 함께 설계해야 나중에 디버깅 비용을 줄일 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#서비스메시 #Istio #Linkerd #쿠버네티스 #사이드카 #mTLS</p>
+
+</body>
+</html>
