@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>에이전트끼리 대화하는 A2A 프로토콜</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">MCP만으로는 부족하다 — 에이전트끼리 대화하는 A2A 프로토콜</div>
+<p style="font-size:14px; color:#999;">2026. 8. 15. · AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 도구 연결 표준인 <b>MCP</b>에 이어, 서로 다른 회사·프레임워크의 에이전트끼리 작업을 위임하는 <b>A2A(Agent2Agent)</b> 프로토콜이 왜 필요한지 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 A2A인가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">한동안 "에이전트 상호운용성" 논의는 <b>MCP</b> 하나로 수렴되는 듯 보였습니다. 하지만 MCP는 에이전트가 도구·데이터 소스에 접근하는 방식을 표준화한 것이지, 서로 다른 벤더가 만든 <b>에이전트끼리</b> 작업을 위임하고 진행 상황을 주고받는 문제는 다루지 않습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실무에서 여러 팀이 각자 프레임워크로 에이전트를 만들다 보면, "내 에이전트가 파트너사 에이전트에게 작업을 맡기고 결과를 받는" 협업이 필요해집니다. 이 빈틈을 메우려는 시도가 <b>Agent2Agent(A2A)</b> 계열 프로토콜이며, MCP와 상호 보완적으로 함께 논의되는 경우가 늘고 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">MCP와 A2A, 무엇이 다른가</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:20%;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">MCP</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">A2A</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>연결 대상</b></td>
+<td style="border:1px solid #ddd; padding:10px;">도구, 데이터 소스</td>
+<td style="border:1px solid #ddd; padding:10px;">다른 에이전트(원격 서비스)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>핵심 단위</b></td>
+<td style="border:1px solid #ddd; padding:10px;">Tool, Resource</td>
+<td style="border:1px solid #ddd; padding:10px;">Task, Agent Card</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>통신 방향</b></td>
+<td style="border:1px solid #ddd; padding:10px;">단방향 호출</td>
+<td style="border:1px solid #ddd; padding:10px;">양방향, 장시간 작업</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>대표 시나리오</b></td>
+<td style="border:1px solid #ddd; padding:10px;">DB 조회, 파일 읽기</td>
+<td style="border:1px solid #ddd; padding:10px;">하위 에이전트에 조사·예약 위임</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">두 프로토콜은 경쟁 관계라기보다, MCP가 <b>에이전트-도구</b> 축을, A2A가 <b>에이전트-에이전트</b> 축을 맡는 형태로 자리를 잡아가고 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념: Agent Card와 Task 생명주기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">A2A에서 각 에이전트는 자신의 능력을 알리는 <b>Agent Card</b>(JSON 메타데이터)를 공개합니다. 여기엔 지원하는 스킬, 인증 방식, 입출력 형식이 담기며, 요청자는 이 카드를 보고 어떤 에이전트에게 작업을 맡길지 판단합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">작업은 <b>Task</b>로 표현되며, 생성 → 진행 중 → (필요 시) 추가 입력 요청 → 완료/실패의 생명주기를 갖습니다. 단순 요청-응답이 아니라 "사람 승인 대기" 같은 장시간 상호작용을 표준적으로 표현하기 위함입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: Agent Card 선언</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">{
+  "name": "flight-search-agent",
+  "description": "항공권 검색 및 가격 비교 에이전트",
+  "url": "https://partner.example.com/a2a",
+  "capabilities": { "streaming": true, "pushNotifications": false },
+  "skills": [
+    { "id": "search-flight", "description": "출발지/도착지/날짜로 항공권 검색" }
+  ]
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">요청 에이전트는 이 카드의 skills를 보고 search-flight 작업을 Task로 생성해 위임합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 아직 표준이 유동적</b> — 초기 단계라 사양이 바뀔 수 있으니 추상화 계층을 얇게 유지<br>
+<b>2. 신뢰 경계를 먼저 설계</b> — 외부 에이전트에 작업을 위임하는 순간 새 공격 표면이 생기므로 Agent Card 출처 검증 필수<br>
+<b>3. MCP와 역할 구분</b> — 도구 접근인지, 다른 에이전트 위임인지 먼저 구분하고 프로토콜 선택<br>
+<b>4. Task 상태 로깅</b> — 장시간 비동기 작업이 많으므로 상태 전이를 추적해야 장애 원인 파악이 쉬움
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① MCP가 에이전트와 도구를 연결한다면, A2A는 서로 다른 벤더의 에이전트끼리 작업을 위임·협상하는 계층을 표준화하려 합니다.<br>
+② 핵심 단위는 능력을 알리는 Agent Card와, 상태 전이를 갖는 Task입니다.<br>
+③ 아직 표준이 유동적인 초기 단계이므로 얇은 추상화와 신뢰 경계 설계가 우선입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 실제 A2A 구현체를 붙여본 경험을 다뤄보겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#AI에이전트 #A2A #MCP #멀티에이전트 #프로토콜</p>
+
+</body>
+</html>
