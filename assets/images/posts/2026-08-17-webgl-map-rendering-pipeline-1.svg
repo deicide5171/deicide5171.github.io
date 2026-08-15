@@ -1,0 +1,78 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#1a1a1a">WebGL 지도 렌더링 파이프라인 — 벡터 타일에서 화면 픽셀까지</text>
+
+  <defs>
+    <marker id="arrowB" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#0b5fa5"/>
+    </marker>
+    <marker id="arrowG" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#1f7a38"/>
+    </marker>
+    <marker id="arrowGray" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#777"/>
+    </marker>
+  </defs>
+
+  <!-- CPU section label -->
+  <text x="20" y="58" font-size="13" font-weight="bold" fill="#0b5fa5">CPU 단계 · JavaScript 메인 스레드</text>
+
+  <!-- Row 1: CPU boxes -->
+  <rect x="20" y="68" width="230" height="60" rx="6" fill="#1877c9" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="135" y="92" text-anchor="middle" font-size="12.5" fill="#fff" font-weight="bold">벡터 타일 수신</text>
+  <text x="135" y="109" text-anchor="middle" font-size="10.5" fill="#dbeafe">MVT(protobuf) 좌표·속성 인코딩</text>
+
+  <rect x="285" y="68" width="230" height="60" rx="6" fill="#1877c9" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="400" y="92" text-anchor="middle" font-size="12.5" fill="#fff" font-weight="bold">디코딩 + 삼각분할</text>
+  <text x="400" y="109" text-anchor="middle" font-size="10.5" fill="#dbeafe">폴리곤 → 삼각형(Tessellation)</text>
+
+  <rect x="550" y="68" width="230" height="60" rx="6" fill="#1877c9" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="665" y="92" text-anchor="middle" font-size="12.5" fill="#fff" font-weight="bold">정점 버퍼 생성</text>
+  <text x="665" y="109" text-anchor="middle" font-size="10.5" fill="#dbeafe">Float32Array(VBO) · 인덱스 버퍼</text>
+
+  <line x1="250" y1="98" x2="283" y2="98" stroke="#0b5fa5" stroke-width="2" marker-end="url(#arrowB)"/>
+  <line x1="515" y1="98" x2="548" y2="98" stroke="#0b5fa5" stroke-width="2" marker-end="url(#arrowB)"/>
+
+  <!-- boundary -->
+  <line x1="20" y1="150" x2="780" y2="150" stroke="#999" stroke-width="1.5" stroke-dasharray="6,4"/>
+  <text x="400" y="145" text-anchor="middle" font-size="11.5" fill="#8a4b00" font-weight="bold">버퍼 업로드 — gl.bufferData() : CPU 메모리 → GPU 메모리 (프레임당 1회, 변경분만)</text>
+  <line x1="665" y1="128" x2="665" y2="160" stroke="#777" stroke-width="2" marker-end="url(#arrowGray)"/>
+
+  <!-- GPU section label -->
+  <text x="20" y="188" font-size="13" font-weight="bold" fill="#1f7a38">GPU 단계 · 셰이더 코어 병렬 처리</text>
+
+  <!-- Row 2: GPU boxes -->
+  <rect x="20" y="198" width="230" height="60" rx="6" fill="#2fa84f" stroke="#1f7a38" stroke-width="1.5"/>
+  <text x="135" y="222" text-anchor="middle" font-size="12.5" fill="#fff" font-weight="bold">버텍스 셰이더</text>
+  <text x="135" y="239" text-anchor="middle" font-size="10.5" fill="#eafff0">모델→클립 좌표 변환(투영)</text>
+
+  <rect x="285" y="198" width="230" height="60" rx="6" fill="#2fa84f" stroke="#1f7a38" stroke-width="1.5"/>
+  <text x="400" y="222" text-anchor="middle" font-size="12.5" fill="#fff" font-weight="bold">래스터화</text>
+  <text x="400" y="239" text-anchor="middle" font-size="10.5" fill="#eafff0">삼각형 → 픽셀(프래그먼트) 후보 생성</text>
+
+  <rect x="550" y="198" width="230" height="60" rx="6" fill="#2fa84f" stroke="#1f7a38" stroke-width="1.5"/>
+  <text x="665" y="222" text-anchor="middle" font-size="12.5" fill="#fff" font-weight="bold">프래그먼트 셰이더</text>
+  <text x="665" y="239" text-anchor="middle" font-size="10.5" fill="#eafff0">픽셀 단위 색상·텍스처 계산</text>
+
+  <line x1="250" y1="228" x2="283" y2="228" stroke="#1f7a38" stroke-width="2" marker-end="url(#arrowG)"/>
+  <line x1="515" y1="228" x2="548" y2="228" stroke="#1f7a38" stroke-width="2" marker-end="url(#arrowG)"/>
+
+  <!-- final output -->
+  <line x1="400" y1="258" x2="400" y2="300" stroke="#777" stroke-width="2" marker-end="url(#arrowGray)"/>
+
+  <rect x="230" y="305" width="340" height="55" rx="6" fill="#ffb020" stroke="#a56a00" stroke-width="1.5"/>
+  <text x="400" y="328" text-anchor="middle" font-size="13" fill="#4a2e00" font-weight="bold">프레임버퍼 → 화면 출력</text>
+  <text x="400" y="345" text-anchor="middle" font-size="10.5" fill="#5c3d00">60fps 기준 ≈16.6ms 이내 전 과정 반복</text>
+
+  <!-- side annotations -->
+  <rect x="20" y="380" width="360" height="55" rx="5" fill="#f5f8fc" stroke="#c9dbee" stroke-width="1"/>
+  <text x="35" y="398" font-size="11.5" fill="#0b5fa5" font-weight="bold">병목이 되기 쉬운 지점</text>
+  <text x="35" y="414" font-size="10.5" fill="#333">삼각분할(CPU 연산량) · 버퍼 업로드(대역폭) ·</text>
+  <text x="35" y="427" font-size="10.5" fill="#333">드로우콜 수(배치 안 하면 프레임당 호출 폭증)</text>
+
+  <rect x="420" y="380" width="360" height="55" rx="5" fill="#f4fbf6" stroke="#bfe6cc" stroke-width="1"/>
+  <text x="435" y="398" font-size="11.5" fill="#1f7a38" font-weight="bold">카메라·줌이 바뀔 때</text>
+  <text x="435" y="414" font-size="10.5" fill="#333">CPU 재계산 없이 버텍스 셰이더의 투영 행렬만</text>
+  <text x="435" y="427" font-size="10.5" fill="#333">갱신 — 지오메트리는 그대로 재사용(GPU 유리)</text>
+</svg>

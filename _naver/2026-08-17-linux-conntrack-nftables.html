@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>리눅스 방화벽 밑바닥 들여다보기 — conntrack 연결 추적과 nftables 규칙 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">리눅스 방화벽 밑바닥 들여다보기 — conntrack 연결 추적과 nftables 규칙 설계</div>
+<p style="font-size:14px; color:#999;">2026. 8. 17. · 인프라</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 리눅스 방화벽 규칙이 실제로 어떻게 동작하는지는 커널이 별도로 유지하는 <b>연결 추적 테이블(conntrack)</b>을 알아야 이해할 수 있습니다. conntrack이 무엇을 기억하는지, nftables가 iptables와 무엇이 다른지, 두 시스템이 어떻게 맞물려 동작하는지를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 conntrack과 nftables인가요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">많은 개발자·운영자에게 리눅스 방화벽은 "규칙을 외워서 붙여넣는" 대상입니다. 포트를 열고 막는 규칙은 검색해서 복사하면 되지만, 정작 <b>"이 규칙이 왜 되돌아오는 응답 패킷은 자동으로 허용하는지</b>", <b>"NAT을 거친 패킷이 어떻게 원래 목적지로 돌아가는지"</b>는 설명하지 못하는 경우가 많습니다. 그 답은 규칙 자체가 아니라 커널이 별도로 유지하는 연결 추적 테이블, 즉 <b>conntrack</b>에 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">최근 여러 배포판이 기존 iptables 대신 <b>nftables</b>를 기본 방화벽 프레임워크로 채택하는 추세이고, 컨테이너·Kubernetes 환경의 네트워크 구성 요소들도 nftables 기반 규칙을 점점 더 많이 활용합니다. 문법은 바뀌었지만 conntrack이 연결 상태를 기억하고 방화벽 규칙이 그 상태를 참조하는 근본 구조는 그대로입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">오늘은 conntrack이 무엇을 기억하는지, nftables가 iptables와 무엇이 다른지, 두 시스템이 실제로 어떻게 맞물려 동작하는지를 정리해보겠습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1: conntrack — 커널의 연결 상태 테이블</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">conntrack은 리눅스 커널의 netfilter 서브시스템이 관리하는 메모리 내 테이블로, 커널을 통과하는 패킷을 <b>5-tuple</b>(프로토콜, 출발지 IP·포트, 목적지 IP·포트) 기준으로 식별해 하나의 "연결"로 묶어 기억합니다. 방화벽이 패킷마다 독립적으로 판단하는 대신 "이 패킷이 이미 진행 중인 연결의 일부인지"를 먼저 물어볼 수 있는 것은 이 테이블 덕분입니다. conntrack이 각 연결에 부여하는 상태는 크게 네 가지입니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:20%;">상태</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">의미</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">NEW</td>
+<td style="border:1px solid #ddd; padding:10px;">테이블에 없던 5-tuple의 첫 패킷 — 새 연결 시도</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">ESTABLISHED</td>
+<td style="border:1px solid #ddd; padding:10px;">양방향으로 패킷이 오간 것이 확인된 연결</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">RELATED</td>
+<td style="border:1px solid #ddd; padding:10px;">기존 연결과 연관되어 파생된 새 연결(예: FTP 데이터 채널)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">INVALID</td>
+<td style="border:1px solid #ddd; padding:10px;">어떤 추적 중인 연결과도 맞지 않는, 상태 판별 불가능한 패킷</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 상태 정보 덕분에 방화벽 규칙은 "새 연결만 검사하고, 이미 허가한 연결의 응답 패킷은 규칙을 다시 타지 않고 곧바로 통과시킨다"는 식으로 설계할 수 있습니다. NAT(SNAT/DNAT) 역시 conntrack이 원본 5-tuple과 변환된 5-tuple을 함께 기억하기 때문에, 응답 패킷이 들어왔을 때 역방향 변환을 정확히 적용할 수 있는 것입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2: iptables에서 nftables로 — 무엇이 달라졌나요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">nftables는 iptables/ip6tables/arptables/ebtables로 나뉘어 있던 도구들을 하나의 프레임워크로 통합한 후속 프레임워크입니다. 규칙을 다루는 방식 자체가 다릅니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:20%;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">iptables</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">nftables</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">규칙 문법</td>
+<td style="border:1px solid #ddd; padding:10px;">명령줄 옵션 나열 방식</td>
+<td style="border:1px solid #ddd; padding:10px;">선언적 규칙 언어(nft 문법)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">테이블/체인</td>
+<td style="border:1px solid #ddd; padding:10px;">프로토콜별 고정 테이블(filter, nat 등)</td>
+<td style="border:1px solid #ddd; padding:10px;">table 안에 chain을 자유롭게 정의</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">프로토콜 통합</td>
+<td style="border:1px solid #ddd; padding:10px;">IPv4/IPv6를 별도 도구로 관리</td>
+<td style="border:1px solid #ddd; padding:10px;">inet family로 통합 관리 가능</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">도구</td>
+<td style="border:1px solid #ddd; padding:10px;">iptables, ip6tables 등 별도 실행 파일</td>
+<td style="border:1px solid #ddd; padding:10px;">nft 단일 실행 파일</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 체감되는 차이는 <b>하나의 table inet 안에서 IPv4·IPv6 규칙을 함께 관리할 수 있다는 점</b>입니다. 다만 conntrack이라는 하부 개념 자체는 iptables 시절과 동일하게 유지됩니다 — 바뀐 것은 정보를 참조하는 문법이지, 정보를 기억하는 메커니즘이 아닙니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3: conntrack과 nftables가 만나는 지점</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">nftables 규칙에서 conntrack 정보를 읽는 문법이 바로 <b>ct 표현식</b>입니다. <b>ct state established,related accept</b>처럼 쓰면, 커널이 conntrack 테이블에서 해당 패킷의 상태를 조회한 뒤 그 결과에 따라 규칙을 적용합니다. 이 한 줄이 사실상 상태 기반(stateful) 방화벽의 핵심입니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-17-linux-conntrack-nftables-1.svg" alt="패킷이 conntrack 조회를 거쳐 nftables chain에서 평가되고 conntrack 테이블이 갱신되는 흐름도" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">패킷이 인터페이스로 들어오면 먼저 conntrack이 5-tuple로 테이블을 조회해 상태를 분류하고, 이 결과를 nftables의 input·forward 같은 chain이 ct state 매치로 참조해 최종 판정을 내립니다. 판정 이후에는 결과가 다시 conntrack 테이블에 반영되어 다음 패킷 처리 시 곧바로 참조됩니다. NAT 규칙(snat/dnat) 역시 이 테이블을 거쳐야만 역방향 변환이 가능하므로, conntrack 없이는 nftables의 NAT 기능 자체가 성립하지 않습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: 상태 기반 nftables 룰셋</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 conntrack 상태를 활용한 기본 방화벽 룰셋입니다. 이미 추적 중인 연결의 응답 패킷을 먼저 허용하도록 규칙을 배치한 것이 핵심입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">#!/usr/sbin/nft -f
+
+flush ruleset
+
+table inet filter {
+    chain input {
+        type filter hook input priority 0; policy drop;
+
+        ct state established,related accept   # 기존 연결의 응답/연관 패킷은 허용
+        ct state invalid drop                  # 어떤 연결과도 안 맞는 패킷 차단
+        iif lo accept                          # 루프백은 항상 허용
+
+        tcp dport 22 ct state new accept       # 새 SSH 연결만 허용
+        tcp dport 443 ct state new accept      # 새 HTTPS 연결만 허용
+    }
+
+    chain forward {
+        type filter hook forward priority 0; policy drop;
+        ct state established,related accept
+        ct state invalid drop
+    }
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">규칙 순서가 성능과 직결됩니다. <b>ct state established,related accept</b>를 최상단에 두면 이미 허가된 연결의 트래픽 대부분이 이 한 줄에서 걸러지고, 나머지 규칙은 새 연결(NEW)에 대해서만 평가됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">conntrack의 현재 상태는 아래처럼 확인합니다. 테이블이 가득 차기 전에 여유를 두고 조정하는 것이 안전합니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># 현재 추적 중인 연결 수 확인
+$ cat /proc/sys/net/netfilter/nf_conntrack_count
+48213
+
+# 테이블 최대 크기 확인 (기본값은 배포판·메모리 용량에 따라 다름 — 반드시 직접 확인)
+$ cat /proc/sys/net/netfilter/nf_conntrack_max
+65536
+
+# conntrack-tools 패키지로 실시간 연결 목록 조회
+$ conntrack -L | head -3
+tcp 6 431999 ESTABLISHED src=10.0.0.5 dst=10.0.0.20 sport=51000 dport=443
+    src=10.0.0.20 dst=10.0.0.5 sport=443 dport=51000 [ASSURED]
+
+# 테이블이 가득 차기 전에 임계값 조정 (환경에 맞게 검증 후 적용)
+$ sysctl -w net.netfilter.nf_conntrack_max=131072</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. conntrack 테이블 고갈 = 신규 연결 거부</b> — NAT 게이트웨이·아웃바운드 연결이 많은 서버는 nf_conntrack_count가 max에 근접하는지 반드시 모니터링<br>
+<b>2. 타임아웃 값을 이해하고 조정</b> — established 상태의 기본 타임아웃은 길게 잡혀 있어 유휴 연결이 슬롯을 오래 점유할 수 있음<br>
+<b>3. notrack은 신중하게 사용</b> — 추적 대상에서 제외하면 ct state 기반 규칙이 그 트래픽에 더 이상 적용되지 않아 정책 우회 위험<br>
+<b>4. 컨테이너·Kubernetes 환경은 규칙 수와 conntrack 부하를 함께 관찰</b> — 서비스·파드가 늘수록 추적 연결 수도 함께 증가<br>
+<b>5. 자주 매치되는 조건을 규칙 앞쪽에 배치</b> — 체인 평가 비용을 줄이는 가장 단순하고 효과적인 방법
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① conntrack은 커널이 5-tuple 기준으로 연결 상태(NEW/ESTABLISHED/RELATED/INVALID)를 기억하는 테이블이며, 이 상태 정보가 상태 기반 방화벽과 NAT의 기반이 됩니다.<br>
+② nftables는 iptables의 문법과 도구를 통합·정리한 후속 프레임워크로, ct state 표현식을 통해 conntrack 테이블을 직접 참조해 규칙을 적용합니다.<br>
+③ 실무에서는 conntrack 테이블 고갈·타임아웃·notrack 오용을 주의하고, 자주 매치되는 규칙을 앞쪽에 배치해야 안전하고 효율적인 방화벽을 유지할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#리눅스 #conntrack #nftables #netfilter #방화벽 #데브옵스</p>
+
+</body>
+</html>

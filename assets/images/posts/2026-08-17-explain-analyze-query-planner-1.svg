@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1a1a1a">실행 계획 트리 읽는 법</text>
+  <text x="400" y="48" text-anchor="middle" font-size="12" fill="#666">SELECT * FROM orders o JOIN customers c ON o.customer_id = c.id WHERE c.grade = 'VIP'</text>
+
+  <!-- Root node: Hash Join -->
+  <rect x="290" y="70" width="220" height="72" rx="6" fill="#eaf3ff" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="400" y="92" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#0b5fa5">Hash Join</text>
+  <text x="400" y="110" text-anchor="middle" font-size="11" fill="#333">cost=54.00..1120.30 rows=820</text>
+  <text x="400" y="127" text-anchor="middle" font-size="11" fill="#c94040" font-weight="bold">actual time=0.6..14.2 rows=795 loops=1</text>
+
+  <!-- Left child: Seq Scan on orders -->
+  <line x1="330" y1="142" x2="180" y2="200" stroke="#999" stroke-width="1.5"/>
+  <rect x="70" y="200" width="220" height="72" rx="6" fill="#fff4ea" stroke="#c9701d" stroke-width="1.5"/>
+  <text x="180" y="222" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#a3550f">Seq Scan on orders</text>
+  <text x="180" y="240" text-anchor="middle" font-size="11" fill="#333">cost=0.00..820.00 rows=40000</text>
+  <text x="180" y="257" text-anchor="middle" font-size="11" fill="#c94040" font-weight="bold">actual time=0.02..8.1 rows=40000 loops=1</text>
+
+  <!-- Right child: Hash -->
+  <line x1="470" y1="142" x2="620" y2="200" stroke="#999" stroke-width="1.5"/>
+  <rect x="510" y="200" width="220" height="60" rx="6" fill="#f0f0f0" stroke="#777" stroke-width="1.5"/>
+  <text x="620" y="222" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#444">Hash</text>
+  <text x="620" y="240" text-anchor="middle" font-size="11" fill="#333">cost=42.50..42.50 rows=180</text>
+  <text x="620" y="253" text-anchor="middle" font-size="10.5" fill="#c94040">actual time=0.5..0.5 rows=175 loops=1</text>
+
+  <!-- Grandchild: Index Scan on customers -->
+  <line x1="620" y1="260" x2="620" y2="300" stroke="#999" stroke-width="1.5"/>
+  <rect x="510" y="300" width="220" height="72" rx="6" fill="#eafaf0" stroke="#1f7a38" stroke-width="1.5"/>
+  <text x="620" y="322" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f7a38">Index Scan on customers</text>
+  <text x="620" y="339" text-anchor="middle" font-size="10.5" fill="#333">cost=0.29..42.10 rows=180</text>
+  <text x="620" y="355" text-anchor="middle" font-size="10.5" fill="#c94040" font-weight="bold">actual time=0.01..0.4 rows=175 loops=1</text>
+  <text x="620" y="369" text-anchor="middle" font-size="9.5" fill="#555">Index Cond: (grade = 'VIP')</text>
+
+  <!-- execution direction arrow -->
+  <line x1="80" y1="390" x2="80" y2="278" stroke="#0b5fa5" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="80" y="405" text-anchor="middle" font-size="10.5" fill="#0b5fa5">실행은 리프(아래)부터</text>
+  <text x="80" y="419" text-anchor="middle" font-size="10.5" fill="#0b5fa5">위로 결과를 전달</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#0b5fa5"/>
+    </marker>
+  </defs>
+
+  <!-- legend -->
+  <text x="345" y="410" text-anchor="middle" font-size="11" fill="#333">cost=시작..종료(추정 비용, 단위 없음)  rows=예상 행수  actual time=시작..종료(ms, 실측)  loops=반복 횟수</text>
+  <text x="345" y="428" text-anchor="middle" font-size="11" fill="#c94040" font-weight="bold">rows(예상) vs actual rows(실측) 차이가 크면 통계가 낡았다는 신호</text>
+</svg>

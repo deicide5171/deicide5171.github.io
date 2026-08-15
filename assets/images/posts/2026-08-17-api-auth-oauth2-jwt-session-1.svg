@@ -1,0 +1,103 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1a1a1a">API 인증 방식별 흐름 비교</text>
+
+  <!-- column dividers -->
+  <line x1="270" y1="45" x2="270" y2="420" stroke="#e5e5e5" stroke-width="1"/>
+  <line x1="535" y1="45" x2="535" y2="420" stroke="#e5e5e5" stroke-width="1"/>
+
+  <!-- column headers -->
+  <text x="135" y="55" text-anchor="middle" font-size="14" font-weight="bold" fill="#0b5fa5">세션(Session)</text>
+  <text x="400" y="55" text-anchor="middle" font-size="14" font-weight="bold" fill="#1f7a38">JWT</text>
+  <text x="670" y="55" text-anchor="middle" font-size="14" font-weight="bold" fill="#a3550f">OAuth2(위임 인가)</text>
+
+  <!-- ===== Session column ===== -->
+  <rect x="30" y="70" width="210" height="42" rx="6" fill="#eaf2fb" stroke="#7fa8d6"/>
+  <text x="135" y="87" text-anchor="middle" font-size="11" fill="#0b5fa5">① ID/PW로 로그인 요청</text>
+  <text x="135" y="102" text-anchor="middle" font-size="11" fill="#0b5fa5">(서버가 자격 증명 직접 검증)</text>
+
+  <line x1="135" y1="112" x2="135" y2="128" stroke="#7fa8d6" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="30" y="130" width="210" height="42" rx="6" fill="#eaf2fb" stroke="#7fa8d6"/>
+  <text x="135" y="147" text-anchor="middle" font-size="11" fill="#0b5fa5">② 서버가 세션 생성</text>
+  <text x="135" y="162" text-anchor="middle" font-size="11" fill="#0b5fa5">(메모리/Redis에 상태 저장)</text>
+
+  <line x1="135" y1="172" x2="135" y2="188" stroke="#7fa8d6" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="30" y="190" width="210" height="42" rx="6" fill="#eaf2fb" stroke="#7fa8d6"/>
+  <text x="135" y="207" text-anchor="middle" font-size="11" fill="#0b5fa5">③ 세션ID만 쿠키로 전달</text>
+  <text x="135" y="222" text-anchor="middle" font-size="11" fill="#0b5fa5">(HttpOnly, Secure)</text>
+
+  <line x1="135" y1="232" x2="135" y2="248" stroke="#7fa8d6" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="30" y="250" width="210" height="42" rx="6" fill="#eaf2fb" stroke="#7fa8d6"/>
+  <text x="135" y="267" text-anchor="middle" font-size="11" fill="#0b5fa5">④ 요청마다 세션 스토어</text>
+  <text x="135" y="282" text-anchor="middle" font-size="11" fill="#0b5fa5">조회로 상태 확인(stateful)</text>
+
+  <rect x="30" y="360" width="210" height="46" rx="6" fill="#f5f9fd" stroke="#c8d8ec"/>
+  <text x="135" y="380" text-anchor="middle" font-size="10.5" fill="#0b5fa5">즉시 무효화 쉬움</text>
+  <text x="135" y="396" text-anchor="middle" font-size="10.5" fill="#0b5fa5">서버 확장 시 세션 공유 필요</text>
+
+  <!-- ===== JWT column ===== -->
+  <rect x="295" y="70" width="210" height="42" rx="6" fill="#eafff0" stroke="#7fcf94"/>
+  <text x="400" y="87" text-anchor="middle" font-size="11" fill="#1f7a38">① 로그인 성공 시</text>
+  <text x="400" y="102" text-anchor="middle" font-size="11" fill="#1f7a38">서버가 서명된 JWT 발급</text>
+
+  <line x1="400" y1="112" x2="400" y2="128" stroke="#7fcf94" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="295" y="130" width="210" height="42" rx="6" fill="#eafff0" stroke="#7fcf94"/>
+  <text x="400" y="147" text-anchor="middle" font-size="11" fill="#1f7a38">② 클라이언트가 토큰 보관</text>
+  <text x="400" y="162" text-anchor="middle" font-size="11" fill="#1f7a38">(메모리/쿠키 권장)</text>
+
+  <line x1="400" y1="172" x2="400" y2="188" stroke="#7fcf94" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="295" y="190" width="210" height="42" rx="6" fill="#eafff0" stroke="#7fcf94"/>
+  <text x="400" y="207" text-anchor="middle" font-size="11" fill="#1f7a38">③ 매 요청 Authorization</text>
+  <text x="400" y="222" text-anchor="middle" font-size="11" fill="#1f7a38">헤더로 토큰 전송</text>
+
+  <line x1="400" y1="232" x2="400" y2="248" stroke="#7fcf94" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="295" y="250" width="210" height="42" rx="6" fill="#eafff0" stroke="#7fcf94"/>
+  <text x="400" y="267" text-anchor="middle" font-size="11" fill="#1f7a38">④ 서버는 서명만 검증</text>
+  <text x="400" y="282" text-anchor="middle" font-size="11" fill="#1f7a38">(DB 조회 없이 stateless)</text>
+
+  <rect x="295" y="360" width="210" height="46" rx="6" fill="#f4fdf7" stroke="#c8e6cf"/>
+  <text x="400" y="380" text-anchor="middle" font-size="10.5" fill="#1f7a38">수평 확장에 유리</text>
+  <text x="400" y="396" text-anchor="middle" font-size="10.5" fill="#1f7a38">만료 전 즉시 폐기 어려움</text>
+
+  <!-- ===== OAuth2 column ===== -->
+  <rect x="560" y="70" width="210" height="42" rx="6" fill="#fff0e0" stroke="#e0ac6e"/>
+  <text x="665" y="87" text-anchor="middle" font-size="11" fill="#a3550f">① 인가 서버로 리다이렉트</text>
+  <text x="665" y="102" text-anchor="middle" font-size="11" fill="#a3550f">(사용자 동의 화면)</text>
+
+  <line x1="665" y1="112" x2="665" y2="128" stroke="#e0ac6e" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="560" y="130" width="210" height="42" rx="6" fill="#fff0e0" stroke="#e0ac6e"/>
+  <text x="665" y="147" text-anchor="middle" font-size="11" fill="#a3550f">② 동의 후 인가 코드 발급</text>
+  <text x="665" y="162" text-anchor="middle" font-size="11" fill="#a3550f">(authorization code)</text>
+
+  <line x1="665" y1="172" x2="665" y2="188" stroke="#e0ac6e" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="560" y="190" width="210" height="42" rx="6" fill="#fff0e0" stroke="#e0ac6e"/>
+  <text x="665" y="207" text-anchor="middle" font-size="11" fill="#a3550f">③ 코드를 access token으로</text>
+  <text x="665" y="222" text-anchor="middle" font-size="11" fill="#a3550f">교환(백채널)</text>
+
+  <line x1="665" y1="232" x2="665" y2="248" stroke="#e0ac6e" stroke-width="1.5" marker-end="url(#arr)"/>
+
+  <rect x="560" y="250" width="210" height="42" rx="6" fill="#fff0e0" stroke="#e0ac6e"/>
+  <text x="665" y="267" text-anchor="middle" font-size="11" fill="#a3550f">④ 리소스 서버가 토큰</text>
+  <text x="665" y="282" text-anchor="middle" font-size="11" fill="#a3550f">검증 후 위임 권한 내 응답</text>
+
+  <rect x="560" y="360" width="210" height="46" rx="6" fill="#fffaf3" stroke="#f0d9c0"/>
+  <text x="665" y="380" text-anchor="middle" font-size="10.5" fill="#a3550f">제3자 위임에 특화</text>
+  <text x="665" y="396" text-anchor="middle" font-size="10.5" fill="#a3550f">그 자체로 인증 프로토콜은 아님</text>
+
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#999"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="425" text-anchor="middle" font-size="11" fill="#555">세션은 서버 상태 관리, JWT는 무상태 자체 검증, OAuth2는 제3자에게 권한을 위임하는 인가(authorization) 프레임워크</text>
+</svg>

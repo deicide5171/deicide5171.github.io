@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="30" text-anchor="middle" font-size="19" font-weight="bold" fill="#1a1a1a">N+1 문제가 발생하는 구조 vs Fetch Join으로 해결한 구조</text>
+
+  <!-- LEFT PANEL: N+1 problem -->
+  <text x="195" y="60" text-anchor="middle" font-size="14" font-weight="bold" fill="#a3550f">지연 로딩(LAZY) 그대로 순회 — 쿼리 1+N번</text>
+  <rect x="60" y="75" width="270" height="300" rx="8" fill="#fff7f0" stroke="#e0a866" stroke-width="1.5"/>
+
+  <rect x="80" y="92" width="230" height="30" rx="4" fill="#ffe4c4" stroke="#c9701d"/>
+  <text x="195" y="112" text-anchor="middle" font-size="10.5" fill="#8a4a10">쿼리 ① SELECT * FROM orders</text>
+
+  <line x1="195" y1="122" x2="195" y2="138" stroke="#c9701d" stroke-width="1.2" marker-end="url(#a1)"/>
+  <text x="195" y="150" text-anchor="middle" font-size="10" fill="#8a4a10">주문 5건 조회됨 (member는 프록시)</text>
+
+  <text x="195" y="170" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#8a1a1a">for (Order o : orders) { o.getMember() }</text>
+
+  <rect x="80" y="182" width="105" height="24" rx="4" fill="#ffd7d7" stroke="#c94040"/>
+  <text x="132" y="198" text-anchor="middle" font-size="9.5" fill="#8a1a1a">쿼리 ② member #1</text>
+  <rect x="80" y="210" width="105" height="24" rx="4" fill="#ffd7d7" stroke="#c94040"/>
+  <text x="132" y="226" text-anchor="middle" font-size="9.5" fill="#8a1a1a">쿼리 ③ member #2</text>
+  <rect x="80" y="238" width="105" height="24" rx="4" fill="#ffd7d7" stroke="#c94040"/>
+  <text x="132" y="254" text-anchor="middle" font-size="9.5" fill="#8a1a1a">쿼리 ④ member #3</text>
+  <rect x="205" y="182" width="105" height="24" rx="4" fill="#ffd7d7" stroke="#c94040"/>
+  <text x="257" y="198" text-anchor="middle" font-size="9.5" fill="#8a1a1a">쿼리 ⑤ member #4</text>
+  <rect x="205" y="210" width="105" height="24" rx="4" fill="#ffd7d7" stroke="#c94040"/>
+  <text x="257" y="226" text-anchor="middle" font-size="9.5" fill="#8a1a1a">쿼리 ⑥ member #5</text>
+  <rect x="205" y="238" width="105" height="24" rx="4" fill="#ffecec" stroke="#c94040" stroke-dasharray="3,2"/>
+  <text x="257" y="254" text-anchor="middle" font-size="9.5" fill="#8a1a1a">주문 수만큼 반복</text>
+
+  <rect x="80" y="272" width="230" height="46" rx="6" fill="#ffecec" stroke="#c94040" stroke-dasharray="4,3"/>
+  <text x="195" y="291" text-anchor="middle" font-size="10.5" fill="#8a1a1a">총 쿼리 수 = 1 (목록) + N (건수)</text>
+  <text x="195" y="305" text-anchor="middle" font-size="10.5" fill="#8a1a1a">데이터가 많을수록 DB 왕복이 선형으로 증가</text>
+
+  <text x="195" y="340" text-anchor="middle" font-size="10.5" fill="#a3550f">연관관계마다 매번 새 쿼리 발행</text>
+  <text x="195" y="357" text-anchor="middle" font-size="10.5" fill="#a3550f">→ 트래픽이 몰릴수록 DB 부하가 급격히 누적</text>
+
+  <!-- RIGHT PANEL: solution -->
+  <text x="605" y="60" text-anchor="middle" font-size="14" font-weight="bold" fill="#1f7a38">Fetch Join / EntityGraph 적용 — 쿼리 1번</text>
+  <rect x="470" y="75" width="270" height="300" rx="8" fill="#eafff0" stroke="#7cc492" stroke-width="1.5"/>
+
+  <rect x="490" y="95" width="230" height="46" rx="4" fill="#d6f5df" stroke="#2fa84f"/>
+  <text x="605" y="114" text-anchor="middle" font-size="10" fill="#1f7a38">쿼리 ① SELECT o.*, m.*</text>
+  <text x="605" y="128" text-anchor="middle" font-size="10" fill="#1f7a38">FROM orders o JOIN member m ...</text>
+
+  <line x1="605" y1="141" x2="605" y2="160" stroke="#2fa84f" stroke-width="1.2" marker-end="url(#a2)"/>
+
+  <rect x="490" y="164" width="230" height="80" rx="6" fill="#f4fbf6" stroke="#7cc492"/>
+  <text x="605" y="184" text-anchor="middle" font-size="9.5" fill="#1f7a38">주문 #1 — 회원A (같은 결과셋에 포함)</text>
+  <text x="605" y="200" text-anchor="middle" font-size="9.5" fill="#1f7a38">주문 #2 — 회원B (같은 결과셋에 포함)</text>
+  <text x="605" y="216" text-anchor="middle" font-size="9.5" fill="#1f7a38">주문 #3 — 회원C (같은 결과셋에 포함)</text>
+  <text x="605" y="232" text-anchor="middle" font-size="9.5" fill="#1f7a38">... 주문 #4, #5 동일 (추가 쿼리 없음)</text>
+
+  <rect x="490" y="272" width="230" height="46" rx="6" fill="#eafff0" stroke="#2fa84f" stroke-dasharray="4,3"/>
+  <text x="605" y="291" text-anchor="middle" font-size="10.5" fill="#1f7a38">총 쿼리 수 = 1 (조인으로 한 번에 조회)</text>
+  <text x="605" y="305" text-anchor="middle" font-size="10.5" fill="#1f7a38">건수가 늘어도 DB 왕복 횟수는 그대로</text>
+
+  <text x="605" y="340" text-anchor="middle" font-size="10.5" fill="#1f7a38">단, 컬렉션을 두 개 이상 fetch join하거나</text>
+  <text x="605" y="357" text-anchor="middle" font-size="10.5" fill="#1f7a38">페이징과 함께 쓸 때는 별도 주의가 필요</text>
+
+  <defs>
+    <marker id="a1" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#c9701d"/>
+    </marker>
+    <marker id="a2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#2fa84f"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="405" text-anchor="middle" font-size="11.5" fill="#555">같은 화면 하나를 그리는 데 필요한 쿼리 수가 데이터 건수에 비례하는지 여부가 핵심 차이다</text>
+</svg>

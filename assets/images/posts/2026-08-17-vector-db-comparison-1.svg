@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1a1a1a">벡터 DB 선택 흐름 — 상황별 출발점</text>
+
+  <defs>
+    <marker id="ar" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#888"/>
+    </marker>
+  </defs>
+
+  <!-- 시작 -->
+  <rect x="330" y="52" width="140" height="46" rx="8" fill="#f3f0fb" stroke="#6a4fa8"/>
+  <text x="400" y="80" text-anchor="middle" font-size="13" fill="#4b3480" font-weight="bold">벡터 DB 선택</text>
+
+  <line x1="400" y1="98" x2="400" y2="120" stroke="#888" stroke-width="1.5" marker-end="url(#ar)"/>
+
+  <!-- 질문1 -->
+  <polygon points="400,112 500,152 400,192 300,152" fill="#eaf2fb" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="400" y="146" text-anchor="middle" font-size="11.5" fill="#0b5fa5" font-weight="bold">이미 Postgres</text>
+  <text x="400" y="161" text-anchor="middle" font-size="11.5" fill="#0b5fa5" font-weight="bold">운영 중?</text>
+
+  <!-- Yes -> pgvector -->
+  <line x1="300" y1="152" x2="150" y2="152" stroke="#2fa84f" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="222" y="142" text-anchor="middle" font-size="11" fill="#1f7a38">예</text>
+  <rect x="40" y="128" width="110" height="48" rx="8" fill="#eafff0" stroke="#2fa84f"/>
+  <text x="95" y="149" text-anchor="middle" font-size="12" fill="#1f7a38" font-weight="bold">pgvector</text>
+  <text x="95" y="164" text-anchor="middle" font-size="9.5" fill="#1f7a38">기존 DB에 확장 추가</text>
+
+  <!-- No -> 질문2 -->
+  <line x1="400" y1="192" x2="400" y2="215" stroke="#888" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="420" y="207" text-anchor="middle" font-size="11" fill="#333">아니오</text>
+
+  <polygon points="400,208 520,255 400,302 280,255" fill="#eaf2fb" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="400" y="246" text-anchor="middle" font-size="11.5" fill="#0b5fa5" font-weight="bold">하이브리드 검색</text>
+  <text x="400" y="261" text-anchor="middle" font-size="11.5" fill="#0b5fa5" font-weight="bold">(BM25+벡터) 필수?</text>
+  <text x="400" y="276" text-anchor="middle" font-size="11.5" fill="#0b5fa5" font-weight="bold">/ 필터 성능 중요?</text>
+
+  <!-- Yes -> Weaviate/Qdrant -->
+  <line x1="280" y1="255" x2="150" y2="255" stroke="#2fa84f" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="212" y="245" text-anchor="middle" font-size="11" fill="#1f7a38">예</text>
+  <rect x="20" y="230" width="130" height="50" rx="8" fill="#eafff0" stroke="#2fa84f"/>
+  <text x="85" y="251" text-anchor="middle" font-size="12" fill="#1f7a38" font-weight="bold">Weaviate / Qdrant</text>
+  <text x="85" y="266" text-anchor="middle" font-size="9.5" fill="#1f7a38">검색 특화 오픈소스</text>
+
+  <!-- No -> 질문3 -->
+  <line x1="400" y1="302" x2="400" y2="325" stroke="#888" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="420" y="317" text-anchor="middle" font-size="11" fill="#333">아니오</text>
+
+  <polygon points="400,318 520,362 400,406 280,362" fill="#eaf2fb" stroke="#0b5fa5" stroke-width="1.5"/>
+  <text x="400" y="357" text-anchor="middle" font-size="11.5" fill="#0b5fa5" font-weight="bold">운영 인력</text>
+  <text x="400" y="372" text-anchor="middle" font-size="11.5" fill="#0b5fa5" font-weight="bold">최소화 우선?</text>
+
+  <!-- Yes -> Pinecone -->
+  <line x1="520" y1="362" x2="650" y2="362" stroke="#2fa84f" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="585" y="352" text-anchor="middle" font-size="11" fill="#1f7a38">예</text>
+  <rect x="652" y="336" width="120" height="50" rx="8" fill="#eafff0" stroke="#2fa84f"/>
+  <text x="712" y="357" text-anchor="middle" font-size="12" fill="#1f7a38" font-weight="bold">Pinecone</text>
+  <text x="712" y="372" text-anchor="middle" font-size="9.5" fill="#1f7a38">완전관리형 전용 서비스</text>
+
+  <!-- No -> Weaviate/Qdrant 자체호스팅 -->
+  <line x1="400" y1="406" x2="400" y2="425" stroke="#888" stroke-width="1.5" marker-end="url(#ar)"/>
+  <text x="424" y="418" text-anchor="middle" font-size="11" fill="#333">아니오</text>
+  <rect x="290" y="424" width="220" height="20" rx="6" fill="#fff4e5" stroke="#c9701d"/>
+  <text x="400" y="438" text-anchor="middle" font-size="11" fill="#a3550f" font-weight="bold">Weaviate / Qdrant 자체 호스팅 + 관리형 클라우드 검토</text>
+
+</svg>

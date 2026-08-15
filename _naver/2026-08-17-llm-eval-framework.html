@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>감으로 배포하지 않기 — LLM 애플리케이션 Eval 프레임워크</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">감으로 배포하지 않기 — LLM 애플리케이션 Eval 프레임워크 설계하기</div>
+<p style="font-size:14px; color:#999;">2026. 8. 17. · AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 프롬프트나 모델을 바꿀 때마다 품질이 널뛰는 LLM 애플리케이션을, 골든 데이터셋과 LLM-as-judge로 구성한 Eval 파이프라인으로 회귀 없이 배포하는 방법을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 Eval 프레임워크인가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">프롬프트를 한 문장 다듬었더니 다른 케이스에서 답변 품질이 떨어지는 경험, LLM 애플리케이션을 다뤄보셨다면 한 번쯤 겪으셨을 겁니다. 출력이 비결정적이고 &quot;정답&quot;이 하나로 고정되지 않기 때문에, 전통적인 단위 테스트의 <b>같다/다르다 비교 방식</b>은 대부분 통하지 않습니다. 그렇다고 매번 사람이 눈으로 응답을 확인하는 방식은 프롬프트나 모델 버전이 바뀔 때마다 확장이 되지 않습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 문제를 구조적으로 푸는 방법이 <b>Eval(평가) 프레임워크</b>입니다. 정답이 하나가 아닌 출력을 여러 방식으로 채점하고, 변경 전후를 같은 데이터셋으로 비교해 회귀를 잡아내는 자동화 계층을 애플리케이션 파이프라인 안에 넣는 것입니다. RAG 설계나 벡터DB 선택처럼 &quot;무엇을 넣을지&quot;를 정하는 결정이 아니라, &quot;지금 나온 결과가 이전보다 나빠지지 않았는지&quot;를 검증하는 품질 게이트에 가깝습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1: 세 가지 평가 방식</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Eval은 보통 한 가지 방법만으로는 충분하지 않고, 아래 세 가지를 조합해서 씁니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">설명</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">한계</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">규칙 기반</td>
+<td style="border:1px solid #ddd; padding:10px;">정규식·JSON 스키마·키워드 포함 여부 검사</td>
+<td style="border:1px solid #ddd; padding:10px;">자유 형식 답변의 &quot;의미&quot;는 못 봄</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">유사도 기반</td>
+<td style="border:1px solid #ddd; padding:10px;">참조 답변과의 임베딩 코사인 유사도 측정</td>
+<td style="border:1px solid #ddd; padding:10px;">임계값 튜닝 필요, 미묘한 오류는 놓칠 수 있음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">LLM-as-judge</td>
+<td style="border:1px solid #ddd; padding:10px;">별도 LLM이 루브릭 기준으로 채점</td>
+<td style="border:1px solid #ddd; padding:10px;">채점 비용·지연, judge 자체의 편향 존재</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실무에서는 규칙 기반으로 형식 오류를 먼저 걸러내고, 남은 케이스만 LLM-as-judge로 채점해 비용을 줄이는 조합이 흔합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2: 골든 데이터셋 구성</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">평가기보다 먼저 갖춰야 하는 것이 테스트 케이스 자체입니다. 코드 리뷰하듯 데이터셋도 버전 관리하고 리뷰해야 합니다. 보통 <b>정상 케이스</b>(가장 흔한 요청 패턴), <b>엣지 케이스</b>(빈 입력·아주 긴 입력·모호한 질문), <b>적대적 케이스</b>(프롬프트 인젝션 시도), <b>회귀 케이스</b>(과거에 실제로 실패했던 사례)로 나눠 구성합니다. 운영 로그에서 실패 사례를 발견할 때마다 회귀 케이스로 편입하면, 데이터셋이 실제 트래픽을 따라 계속 두꺼워집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-17-llm-eval-framework-1.svg" alt="LLM Eval 파이프라인 - 골든 데이터셋에서 후보 응답 생성, 병렬 평가기 채점, 점수 집계, 배포 게이트까지의 흐름" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3: 배포 파이프라인에 게이트로 넣기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Eval을 한 번 실행하고 끝내는 것이 아니라, 프롬프트·모델·RAG 설정이 바뀔 때마다 CI에서 자동으로 돌리고 임계값 미달 시 배포를 막는 게 핵심입니다. 이렇게 하면 &quot;왜 갑자기 답변이 이상해졌지&quot;를 배포 후 사용자 문의로 알게 되는 대신, 머지 전에 잡을 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: LLM-as-judge 채점 스크립트 (Python)</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 Anthropic SDK로 후보 응답을 루브릭 기준에 따라 채점하는 최소 예시입니다. 출력 형식을 JSON 스키마로 강제해 파싱 실패 걱정 없이 결과를 집계할 수 있습니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">import anthropic
+
+client = anthropic.Anthropic()
+
+RUBRIC = &quot;&quot;&quot;다음 기준으로 1~5점을 매기고 이유를 한 문장으로 설명하라.
+- 질문에 직접 답했는가
+- 근거 없는 사실을 지어내지 않았는가
+- 톤이 요청된 형식을 지켰는가&quot;&quot;&quot;
+
+def judge(question, candidate_answer):
+    response = client.messages.create(
+        model=&quot;claude-opus-5&quot;,
+        max_tokens=1024,
+        output_config={
+            &quot;format&quot;: {
+                &quot;type&quot;: &quot;json_schema&quot;,
+                &quot;schema&quot;: {
+                    &quot;type&quot;: &quot;object&quot;,
+                    &quot;properties&quot;: {
+                        &quot;score&quot;: {&quot;type&quot;: &quot;integer&quot;},
+                        &quot;reason&quot;: {&quot;type&quot;: &quot;string&quot;},
+                    },
+                    &quot;required&quot;: [&quot;score&quot;, &quot;reason&quot;],
+                    &quot;additionalProperties&quot;: False,
+                },
+            }
+        },
+        messages=[{
+            &quot;role&quot;: &quot;user&quot;,
+            &quot;content&quot;: f&quot;{RUBRIC}\n\n질문: {question}\n답변: {candidate_answer}&quot;,
+        }],
+    )
+    text = next(b.text for b in response.content if b.type == &quot;text&quot;)
+    return text  # JSON 문자열 — 파싱해서 score/reason으로 사용</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. judge 모델은 평가 대상 모델과 같거나 더 강한 모델 사용</b> — 약한 judge는 미묘한 오류를 못 잡습니다<br>
+<b>2. judge의 채점 편향을 의심할 것</b> — 특정 문체·길이를 선호할 수 있어 일부 샘플은 사람이 주기적으로 교차 검수<br>
+<b>3. 전수 실행과 샘플링을 구분</b> — 회귀 케이스는 항상 전수 실행, 정상 케이스는 샘플링으로 비용 절충<br>
+<b>4. 임계값은 한 번 정하고 끝내지 않기</b> — 데이터셋이 커지면 통과 기준도 재검토 필요<br>
+<b>5. 데이터셋은 코드처럼 버전 관리</b> — 실패 사례가 나올 때마다 회귀 케이스로 편입
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① LLM 응답은 비결정적이라 전통적 단위 테스트로는 검증이 안 되므로, 규칙 기반·유사도·LLM-as-judge를 조합한 Eval 프레임워크가 필요합니다.<br>
+② 정상·엣지·적대적·회귀 케이스로 구성된 골든 데이터셋을 코드처럼 버전 관리하고, 실패 사례가 나올 때마다 회귀 케이스로 편입합니다.<br>
+③ 프롬프트나 모델이 바뀔 때마다 CI에서 자동 실행하고 임계값 미달 시 배포를 막는 게이트로 운영해야 회귀를 배포 전에 잡을 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 실제 골든 데이터셋을 어떻게 운영 로그에서 뽑아내는지 다뤄보겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#LLM평가 #Eval프레임워크 #LLMasJudge #AI테스트자동화 #프롬프트엔지니어링</p>
+
+</body>
+</html>

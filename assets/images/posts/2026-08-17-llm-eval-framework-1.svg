@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1a1a1a">LLM 애플리케이션 Eval 파이프라인</text>
+
+  <!-- Step 1: golden dataset -->
+  <rect x="20" y="55" width="170" height="64" rx="6" fill="#eef2ff" stroke="#4c5fd5"/>
+  <text x="105" y="80" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#2f3a9e">골든 데이터셋</text>
+  <text x="105" y="97" text-anchor="middle" font-size="10.5" fill="#2f3a9e">정상·엣지케이스·</text>
+  <text x="105" y="111" text-anchor="middle" font-size="10.5" fill="#2f3a9e">회귀 테스트 케이스</text>
+
+  <!-- Step 2: candidate generation -->
+  <rect x="230" y="55" width="170" height="64" rx="6" fill="#eef2ff" stroke="#4c5fd5"/>
+  <text x="315" y="80" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#2f3a9e">후보 응답 생성</text>
+  <text x="315" y="97" text-anchor="middle" font-size="10.5" fill="#2f3a9e">변경된 프롬프트 ·</text>
+  <text x="315" y="111" text-anchor="middle" font-size="10.5" fill="#2f3a9e">모델 버전으로 실행</text>
+
+  <line x1="190" y1="87" x2="228" y2="87" stroke="#4c5fd5" stroke-width="1.5" marker-end="url(#ar1)"/>
+
+  <!-- Step 3: evaluators (parallel) -->
+  <text x="500" y="55" font-size="12" font-weight="bold" fill="#1f7a38">평가기 (병렬 실행)</text>
+
+  <rect x="440" y="65" width="150" height="42" rx="5" fill="#eafff0" stroke="#2fa84f"/>
+  <text x="515" y="90" text-anchor="middle" font-size="11" fill="#1f7a38">규칙 기반 검사</text>
+
+  <rect x="440" y="115" width="150" height="42" rx="5" fill="#eafff0" stroke="#2fa84f"/>
+  <text x="515" y="140" text-anchor="middle" font-size="11" fill="#1f7a38">의미 유사도 비교</text>
+
+  <rect x="440" y="165" width="150" height="42" rx="5" fill="#eafff0" stroke="#2fa84f"/>
+  <text x="515" y="190" text-anchor="middle" font-size="11" fill="#1f7a38">LLM-as-judge 채점</text>
+
+  <line x1="400" y1="87" x2="438" y2="87" stroke="#4c5fd5" stroke-width="1.5" marker-end="url(#ar1)"/>
+  <line x1="400" y1="87" x2="438" y2="137" stroke="#4c5fd5" stroke-width="1.5" marker-end="url(#ar1)"/>
+  <line x1="400" y1="87" x2="438" y2="187" stroke="#4c5fd5" stroke-width="1.5" marker-end="url(#ar1)"/>
+
+  <!-- Step 4: aggregated score -->
+  <rect x="640" y="115" width="140" height="42" rx="5" fill="#fff7e6" stroke="#d99a1f"/>
+  <text x="710" y="140" text-anchor="middle" font-size="11" fill="#8a5a00">점수 집계</text>
+
+  <line x1="590" y1="87" x2="710" y2="113" stroke="#2fa84f" stroke-width="1.3" marker-end="url(#ar2)"/>
+  <line x1="590" y1="137" x2="638" y2="137" stroke="#2fa84f" stroke-width="1.3" marker-end="url(#ar2)"/>
+  <line x1="590" y1="187" x2="710" y2="159" stroke="#2fa84f" stroke-width="1.3" marker-end="url(#ar2)"/>
+
+  <!-- divider -->
+  <line x1="20" y1="240" x2="780" y2="240" stroke="#ddd" stroke-width="1"/>
+
+  <text x="40" y="265" font-size="13" font-weight="bold" fill="#b3261e">배포 게이트 (임계값 미달 시 차단)</text>
+
+  <rect x="20" y="278" width="360" height="60" rx="6" fill="#fdecea" stroke="#c0392b"/>
+  <text x="200" y="303" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#8f2419">기준 미달 → 배포 차단</text>
+  <text x="200" y="322" text-anchor="middle" font-size="10.5" fill="#8f2419">회귀 리포트 생성, 담당자 알림, PR 머지 보류</text>
+
+  <rect x="420" y="278" width="360" height="60" rx="6" fill="#eafff0" stroke="#2fa84f"/>
+  <text x="600" y="303" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1f7a38">기준 통과 → 배포 승인</text>
+  <text x="600" y="322" text-anchor="middle" font-size="10.5" fill="#1f7a38">점수·응답 스냅샷을 기록해 다음 비교의 기준선으로 사용</text>
+
+  <line x1="710" y1="157" x2="710" y2="200" stroke="#d99a1f" stroke-width="1.3"/>
+  <line x1="710" y1="200" x2="200" y2="200" stroke="#d99a1f" stroke-width="1.3"/>
+  <line x1="200" y1="200" x2="200" y2="276" stroke="#d99a1f" stroke-width="1.3" marker-end="url(#ar3)"/>
+  <line x1="710" y1="200" x2="710" y2="276" stroke="#d99a1f" stroke-width="1.3" marker-end="url(#ar3)"/>
+
+  <text x="400" y="430" text-anchor="middle" font-size="11" fill="#555">핵심은 "한 번 통과"가 아니라, 변경마다 같은 데이터셋으로 반복 비교해 회귀를 잡는 것</text>
+
+  <defs>
+    <marker id="ar1" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#4c5fd5"/>
+    </marker>
+    <marker id="ar2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#2fa84f"/>
+    </marker>
+    <marker id="ar3" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#d99a1f"/>
+    </marker>
+  </defs>
+</svg>

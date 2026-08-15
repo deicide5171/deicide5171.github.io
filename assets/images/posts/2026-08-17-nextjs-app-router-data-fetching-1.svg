@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Segoe UI', 'Apple SD Gothic Neo', sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#222222">Next.js App Router — 병렬 페칭과 스트리밍 흐름</text>
+
+  <!-- Left panel -->
+  <rect x="30" y="50" width="350" height="28" fill="#eef2f7" stroke="#cbd5e1"/>
+  <text x="205" y="69" text-anchor="middle" font-size="14" font-weight="bold" fill="#333333">서버: 컴포넌트 트리</text>
+
+  <rect x="145" y="95" width="120" height="38" rx="4" fill="#f5f5f5" stroke="#888888"/>
+  <text x="205" y="119" text-anchor="middle" font-size="13" fill="#222222">page.tsx</text>
+
+  <text x="205" y="150" text-anchor="middle" font-size="11" fill="#666666">각 컴포넌트에서 개별적으로 fetch 시작 (동시 실행)</text>
+
+  <!-- arrows from page to three children -->
+  <line x1="185" y1="133" x2="100" y2="170" stroke="#888888" stroke-width="1.5"/>
+  <line x1="205" y1="133" x2="205" y2="170" stroke="#888888" stroke-width="1.5"/>
+  <line x1="225" y1="133" x2="320" y2="170" stroke="#888888" stroke-width="1.5"/>
+
+  <rect x="45" y="172" width="110" height="52" rx="4" fill="#eaf1fd" stroke="#2f6fed"/>
+  <text x="100" y="193" text-anchor="middle" font-size="12" fill="#1d4ed8" font-weight="bold">Header</text>
+  <text x="100" y="210" text-anchor="middle" font-size="11" fill="#1d4ed8">fetch (빠름)</text>
+
+  <rect x="150" y="172" width="110" height="52" rx="4" fill="#e9f8ef" stroke="#1f9d55" stroke-dasharray="4,3"/>
+  <text x="205" y="193" text-anchor="middle" font-size="12" fill="#15803d" font-weight="bold">Feed</text>
+  <text x="205" y="210" text-anchor="middle" font-size="11" fill="#15803d">fetch (Suspense)</text>
+
+  <rect x="265" y="172" width="110" height="52" rx="4" fill="#fdf1e6" stroke="#e67e22" stroke-dasharray="4,3"/>
+  <text x="320" y="193" text-anchor="middle" font-size="12" fill="#c2610d" font-weight="bold">Comments</text>
+  <text x="320" y="210" text-anchor="middle" font-size="11" fill="#c2610d">fetch (Suspense)</text>
+
+  <text x="205" y="245" text-anchor="middle" font-size="11" fill="#666666">클라이언트 인터랙션이 필요한 부분만 "use client" 분리</text>
+  <rect x="120" y="255" width="170" height="30" rx="4" fill="#fff7f0" stroke="#ff8a3d"/>
+  <text x="205" y="274" text-anchor="middle" font-size="12" fill="#7a3b0f">LikeButton (Client Component)</text>
+
+  <!-- Right panel -->
+  <rect x="420" y="50" width="350" height="28" fill="#eef2f7" stroke="#cbd5e1"/>
+  <text x="595" y="69" text-anchor="middle" font-size="14" font-weight="bold" fill="#333333">브라우저에 도달하는 순서 (스트리밍)</text>
+
+  <rect x="440" y="95" width="310" height="34" rx="4" fill="#f1f1f1" stroke="#888888"/>
+  <text x="595" y="117" text-anchor="middle" font-size="12" fill="#333333">HTML Shell + 레이아웃 즉시 전송</text>
+  <line x1="595" y1="129" x2="595" y2="150" stroke="#888888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="440" y="152" width="310" height="34" rx="4" fill="#eaf1fd" stroke="#2f6fed"/>
+  <text x="595" y="174" text-anchor="middle" font-size="12" fill="#1d4ed8">① Header 데이터 도착 → 즉시 렌더</text>
+  <line x1="595" y1="186" x2="595" y2="207" stroke="#888888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="440" y="209" width="310" height="34" rx="4" fill="#e9f8ef" stroke="#1f9d55"/>
+  <text x="595" y="231" text-anchor="middle" font-size="12" fill="#15803d">② Feed 도착 → Suspense fallback 대체</text>
+  <line x1="595" y1="243" x2="595" y2="264" stroke="#888888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="440" y="266" width="310" height="34" rx="4" fill="#fdf1e6" stroke="#e67e22"/>
+  <text x="595" y="288" text-anchor="middle" font-size="12" fill="#c2610d">③ Comments 도착 → 마지막 렌더</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#888888"/>
+    </marker>
+  </defs>
+
+  <!-- dashed correspondence lines -->
+  <line x1="155" y1="198" x2="440" y2="169" stroke="#2f6fed" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
+  <line x1="260" y1="198" x2="440" y2="226" stroke="#1f9d55" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
+  <line x1="375" y1="198" x2="440" y2="283" stroke="#e67e22" stroke-width="1" stroke-dasharray="3,3" opacity="0.5"/>
+
+  <rect x="30" y="405" width="740" height="34" rx="4" fill="#f9f9f9" stroke="#dddddd"/>
+  <text x="400" y="427" text-anchor="middle" font-size="12" fill="#444444">가장 느린 요청 하나가 전체 페이지 렌더링을 막지 않는다 — Suspense 경계 단위로 점진적 스트리밍</text>
+</svg>

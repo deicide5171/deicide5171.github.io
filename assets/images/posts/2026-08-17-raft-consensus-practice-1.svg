@@ -1,0 +1,110 @@
+<svg viewBox="0 0 800 450" width="800" height="450" xmlns="http://www.w3.org/2000/svg" font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <!-- Divider -->
+  <line x1="400" y1="20" x2="400" y2="430" stroke="#e0e0e0" stroke-width="1.5" stroke-dasharray="4,4"/>
+
+  <!-- Section titles -->
+  <text x="200" y="30" text-anchor="middle" font-size="16" font-weight="bold" fill="#222">리더 선출 (Leader Election)</text>
+  <text x="600" y="30" text-anchor="middle" font-size="16" font-weight="bold" fill="#222">로그 복제 (Log Replication)</text>
+
+  <!-- ===== LEFT: state machine ===== -->
+  <!-- Follower -->
+  <circle cx="120" cy="130" r="46" fill="#eef2ff" stroke="#4f6df5" stroke-width="2"/>
+  <text x="120" y="126" text-anchor="middle" font-size="14" font-weight="bold" fill="#2a3ab0">Follower</text>
+  <text x="120" y="144" text-anchor="middle" font-size="10" fill="#5b6b8c">대기 상태</text>
+
+  <!-- Candidate -->
+  <circle cx="280" cy="250" r="46" fill="#fff7e6" stroke="#e0a020" stroke-width="2"/>
+  <text x="280" y="246" text-anchor="middle" font-size="14" font-weight="bold" fill="#8a5a00">Candidate</text>
+  <text x="280" y="264" text-anchor="middle" font-size="10" fill="#8a6a2a">투표 요청</text>
+
+  <!-- Leader -->
+  <circle cx="120" cy="360" r="46" fill="#eafaf0" stroke="#03c75a" stroke-width="2"/>
+  <text x="120" y="356" text-anchor="middle" font-size="14" font-weight="bold" fill="#0a7a3c">Leader</text>
+  <text x="120" y="374" text-anchor="middle" font-size="10" fill="#2a8a5a">하트비트 전송</text>
+
+  <!-- Arrows -->
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#666"/>
+    </marker>
+  </defs>
+
+  <!-- Follower -> Candidate (timeout) -->
+  <path d="M 155,160 C 200,190 240,210 258,222" fill="none" stroke="#666" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="185" y="185" font-size="10" fill="#444">election timeout</text>
+
+  <!-- Candidate -> Leader (majority votes) -->
+  <path d="M 258,278 C 210,320 170,340 155,346" fill="none" stroke="#666" stroke-width="1.6" marker-end="url(#arrow)"/>
+  <text x="178" y="325" font-size="10" fill="#444">과반 득표</text>
+
+  <!-- Candidate -> Follower (higher term seen) -->
+  <path d="M 250,222 C 210,190 165,160 148,148" fill="none" stroke="#999" stroke-width="1.4" stroke-dasharray="3,3" marker-end="url(#arrow)"/>
+  <text x="222" y="180" font-size="10" fill="#777">더 높은 term 발견</text>
+
+  <!-- Leader -> Follower (new leader with higher term) -->
+  <path d="M 90,320 C 40,260 40,190 90,158" fill="none" stroke="#999" stroke-width="1.4" stroke-dasharray="3,3" marker-end="url(#arrow)"/>
+  <text x="10" y="245" font-size="10" fill="#777">새 leader 발견</text>
+
+  <!-- Candidate self-loop: split vote -->
+  <path d="M 320,220 C 350,190 350,150 315,140" fill="none" stroke="#999" stroke-width="1.4" stroke-dasharray="3,3" marker-end="url(#arrow)"/>
+  <text x="330" y="175" font-size="10" fill="#777">표 분산</text>
+  <text x="330" y="188" font-size="10" fill="#777">(재선출)</text>
+
+  <!-- ===== RIGHT: log replication ===== -->
+  <!-- Leader log -->
+  <text x="440" y="70" font-size="12" font-weight="bold" fill="#0a7a3c">Leader</text>
+  <g>
+    <rect x="440" y="78" width="34" height="26" fill="#eafaf0" stroke="#03c75a" stroke-width="1.5"/>
+    <rect x="474" y="78" width="34" height="26" fill="#eafaf0" stroke="#03c75a" stroke-width="1.5"/>
+    <rect x="508" y="78" width="34" height="26" fill="#eafaf0" stroke="#03c75a" stroke-width="1.5"/>
+    <rect x="542" y="78" width="34" height="26" fill="#fff7e6" stroke="#e0a020" stroke-width="1.5"/>
+    <text x="457" y="96" text-anchor="middle" font-size="11" fill="#333">1</text>
+    <text x="491" y="96" text-anchor="middle" font-size="11" fill="#333">2</text>
+    <text x="525" y="96" text-anchor="middle" font-size="11" fill="#333">3</text>
+    <text x="559" y="96" text-anchor="middle" font-size="11" fill="#333">4</text>
+  </g>
+  <text x="600" y="96" font-size="10" fill="#8a6a2a">4번 = 미확정</text>
+
+  <!-- AppendEntries arrows to followers -->
+  <path d="M 460,110 L 460,155" fill="none" stroke="#666" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <path d="M 460,110 L 460,255" fill="none" stroke="#666" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <text x="466" y="135" font-size="10" fill="#444">AppendEntries</text>
+
+  <!-- Follower 1 log -->
+  <text x="440" y="168" font-size="12" font-weight="bold" fill="#2a3ab0">Follower A</text>
+  <g>
+    <rect x="440" y="176" width="34" height="26" fill="#eef2ff" stroke="#4f6df5" stroke-width="1.5"/>
+    <rect x="474" y="176" width="34" height="26" fill="#eef2ff" stroke="#4f6df5" stroke-width="1.5"/>
+    <rect x="508" y="176" width="34" height="26" fill="#eef2ff" stroke="#4f6df5" stroke-width="1.5"/>
+    <text x="457" y="194" text-anchor="middle" font-size="11" fill="#333">1</text>
+    <text x="491" y="194" text-anchor="middle" font-size="11" fill="#333">2</text>
+    <text x="525" y="194" text-anchor="middle" font-size="11" fill="#333">3</text>
+  </g>
+
+  <!-- Follower 2 log -->
+  <text x="440" y="268" font-size="12" font-weight="bold" fill="#2a3ab0">Follower B</text>
+  <g>
+    <rect x="440" y="276" width="34" height="26" fill="#eef2ff" stroke="#4f6df5" stroke-width="1.5"/>
+    <rect x="474" y="276" width="34" height="26" fill="#eef2ff" stroke="#4f6df5" stroke-width="1.5"/>
+    <rect x="508" y="276" width="34" height="26" fill="#eef2ff" stroke="#4f6df5" stroke-width="1.5"/>
+    <text x="457" y="294" text-anchor="middle" font-size="11" fill="#333">1</text>
+    <text x="491" y="294" text-anchor="middle" font-size="11" fill="#333">2</text>
+    <text x="525" y="294" text-anchor="middle" font-size="11" fill="#333">3</text>
+  </g>
+
+  <!-- ACK arrows back -->
+  <path d="M 520,176 L 520,112" fill="none" stroke="#999" stroke-width="1.3" stroke-dasharray="3,3" marker-end="url(#arrow)"/>
+  <path d="M 520,276 L 520,112" fill="none" stroke="#999" stroke-width="1.3" stroke-dasharray="3,3" marker-end="url(#arrow)"/>
+  <text x="528" y="230" font-size="10" fill="#777">ACK (복제 성공)</text>
+
+  <!-- Commit index note -->
+  <rect x="440" y="330" width="320" height="70" fill="#f4f4f4" stroke="#ccc" stroke-width="1"/>
+  <text x="452" y="350" font-size="11" fill="#333" font-weight="bold">commit index 규칙</text>
+  <text x="452" y="368" font-size="10.5" fill="#333">엔트리 1~3번은 과반(Leader+A+B)에 복제되어</text>
+  <text x="452" y="382" font-size="10.5" fill="#333">commit 확정. 4번은 아직 과반 ACK 전이라 미확정.</text>
+  <text x="452" y="396" font-size="10.5" fill="#333">확정된 엔트리만 상태 머신에 적용된다.</text>
+
+  <text x="600" y="425" text-anchor="middle" font-size="10" fill="#999">Raft: 리더 선출 상태 전이 (좌) / 로그 복제와 커밋 확정 (우)</text>
+</svg>
