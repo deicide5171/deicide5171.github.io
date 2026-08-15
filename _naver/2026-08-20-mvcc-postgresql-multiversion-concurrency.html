@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>MVCC 완전 정복 — PostgreSQL은 락 없이 어떻게 동시성을 처리할까</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">MVCC 완전 정복 — PostgreSQL은 락 없이 어떻게 동시성을 처리할까</div>
+<p style="font-size:14px; color:#999;">2026. 8. 20. · 데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — PostgreSQL이 읽기와 쓰기를 서로 기다리게 하지 않고 동시에 처리할 수 있는 비결인 <b>MVCC(다중 버전 동시성 제어)</b>의 튜플 버전 관리 방식과, 그 대가로 따라오는 VACUUM·블로트 문제를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 MVCC를 알아야 할까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">여러 트랜잭션이 같은 테이블에 동시에 접근할 때 가장 먼저 떠오르는 걱정은 "누가 읽는 동안 다른 누군가 쓰면 어떻게 되는가"입니다. 락 기반 동시성 제어를 쓰는 시스템이라면 답은 단순합니다. 읽기 락과 쓰기 락이 서로를 막아서, 한쪽이 끝날 때까지 다른 쪽은 대기하게 됩니다. 이 방식은 이해하기는 쉽지만, 읽기와 쓰기가 빈번한 서비스에서는 대기 행렬이 곧 성능 병목으로 이어지곤 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">PostgreSQL을 비롯한 대부분의 현대 관계형 DBMS는 이 문제를 다른 방식으로 풉니다. 바로 <b>MVCC(Multi-Version Concurrency Control)</b>입니다. 핵심 아이디어는 데이터를 수정할 때 기존 값을 그 자리에서 덮어쓰지 않고, 새 버전을 별도로 만들어두는 것입니다. 그러면 읽는 트랜잭션은 쓰기 작업이 끝나기를 기다릴 필요 없이, 자신이 시작된 시점에 유효했던 버전을 그대로 읽으면 됩니다. "읽기가 쓰기를 막지 않고, 쓰기가 읽기를 막지 않는다"는 PostgreSQL의 오래된 설계 원칙이 바로 이 구조에서 나옵니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">다만 공짜는 아닙니다. 옛 버전을 계속 만들어내는 만큼, 더는 어떤 트랜잭션도 볼 필요가 없어진 버전을 청소하는 작업이 별도로 필요합니다. 이 글에서는 MVCC가 튜플 단위로 버전을 어떻게 관리하는지, 격리 수준에 따라 그 버전이 어떻게 다르게 보이는지, 그리고 그 대가로 따라오는 VACUUM과 블로트 문제까지 순서대로 정리해보겠습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 튜플마다 xmin/xmax로 버전을 관리합니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">PostgreSQL은 테이블의 각 행(튜플)에 사용자가 정의하지 않은 시스템 컬럼을 몇 개 더 붙여서 저장합니다. 그중 MVCC의 핵심은 <b>xmin</b>과 <b>xmax</b>입니다. xmin은 이 튜플 버전을 만든(INSERT한) 트랜잭션의 ID이고, xmax는 이 튜플 버전을 무효화한(DELETE하거나 UPDATE로 대체한) 트랜잭션의 ID입니다. 아직 유효한 버전이라면 xmax는 비어 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">UPDATE는 실제로는 "기존 튜플의 xmax를 현재 트랜잭션 ID로 채우고, 변경된 내용을 담은 새 튜플을 xmin이 현재 트랜잭션 ID인 채로 새로 삽입"하는 동작입니다. 물리적으로 값을 고쳐 쓰는 것이 아니라, 옛 버전은 그대로 두고 새 버전을 옆에 하나 더 만드는 셈입니다. DELETE도 마찬가지로 튜플을 즉시 지우지 않고 xmax만 채워서 <b>"이 시점부터는 무효"</b>라고 표시합니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-20-mvcc-postgresql-multiversion-concurrency-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이렇게 만들어진 여러 버전은 논리적으로 하나의 행이 시간 순서대로 이어진 체인을 이룹니다. 각 트랜잭션은 스캔 시점에 자신의 트랜잭션 ID와 각 튜플의 xmin/xmax를 비교해서, 그 버전이 자신에게 보여야 하는 버전인지를 판단합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 스냅샷 격리와 격리 수준별 차이</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">트랜잭션이 시작되면 PostgreSQL은 그 시점의 <b>스냅샷</b>을 하나 확보합니다. 스냅샷은 대략 "이 시점에 이미 커밋된 트랜잭션들의 변경 결과만 보이고, 아직 진행 중이거나 이후에 시작된 트랜잭션의 변경은 보이지 않는다"는 가시성 규칙의 집합입니다. 이 스냅샷을 언제 새로 갱신하느냐가 격리 수준의 차이를 만듭니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">격리 수준</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">스냅샷 갱신 시점</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">특징</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Read Committed (기본값)</td>
+<td style="border:1px solid #ddd; padding:10px;">각 SQL 문(statement)마다</td>
+<td style="border:1px solid #ddd; padding:10px;">같은 트랜잭션 내에서도 문장 사이 커밋 결과가 다음 문장부터 보일 수 있음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Repeatable Read</td>
+<td style="border:1px solid #ddd; padding:10px;">트랜잭션 시작(첫 쿼리) 시점 1회 고정</td>
+<td style="border:1px solid #ddd; padding:10px;">트랜잭션이 끝날 때까지 같은 쿼리는 같은 결과를 보장</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">두 격리 수준 모두 "쓰기가 읽기를 블로킹하지 않는다"는 MVCC의 기본 성질은 동일하게 누립니다. 차이는 같은 트랜잭션 내에서 스냅샷이 몇 번 갱신되느냐, 그리고 그로 인해 반복 조회 시 결과가 달라질 수 있는지 여부에 있습니다. Repeatable Read는 이름 그대로 같은 쿼리를 반복해도 같은 결과를 보장하지만, 그 대가로 동시에 같은 행을 수정하려는 트랜잭션 간에는 직렬화 오류(serialization failure)가 발생할 수 있어 재시도 로직이 필요해집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — VACUUM이 필요한 이유와 테이블 블로트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">UPDATE와 DELETE가 튜플을 그 자리에서 지우지 않고 새 버전을 계속 추가하는 방식이라면, 자연스러운 질문이 따라옵니다. 옛 버전은 언제 없어질까요. 답은 "아무도 그 버전을 볼 필요가 없어졌을 때"입니다. 더는 어떤 활성 트랜잭션의 스냅샷도 참조하지 않는 튜플 버전을 PostgreSQL은 <b>죽은 튜플(dead tuple)</b>이라고 부르고, 이를 정리하는 작업이 바로 <b>VACUUM</b>입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">VACUUM은 죽은 튜플이 차지하던 공간을 회수해서 이후 INSERT/UPDATE가 재사용할 수 있게 표시합니다. 이 작업이 제때 일어나지 않으면 테이블 파일 크기가 실제 살아있는 데이터양보다 훨씬 커지는 현상이 나타나는데, 이를 흔히 <b>테이블 블로트(bloat)</b>라고 부릅니다. 블로트가 심해지면 같은 데이터를 스캔하는 데도 더 많은 디스크 I/O가 필요해지고, 인덱스에도 죽은 엔트리가 쌓여 조회 성능이 점진적으로 나빠집니다. PostgreSQL은 이 청소를 자동으로 수행하는 autovacuum 프로세스를 기본으로 제공하지만, 테이블 크기나 트랜잭션 트래픽 특성에 따라 기본 설정만으로는 청소 속도가 쌓이는 속도를 못 따라가는 경우가 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — psql 두 세션으로 가시성 확인하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 두 개의 psql 세션을 열어 Read Committed와 Repeatable Read의 가시성 차이를 직접 확인하는 예시입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">-- 세션 A: 기본 격리 수준(Read Committed)으로 트랜잭션 시작
+BEGIN;
+SELECT balance FROM accounts WHERE id = 1;  -- 예: 1000
+
+-- (이 시점에 세션 B가 별도로 실행됨)
+-- 세션 B: UPDATE accounts SET balance = 2000 WHERE id = 1; COMMIT;
+
+-- 세션 A에서 같은 트랜잭션 안에서 다시 조회
+SELECT balance FROM accounts WHERE id = 1;  -- Read Committed: 2000 (변경분이 보임)
+COMMIT;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">-- 세션 A: Repeatable Read로 트랜잭션 시작
+BEGIN ISOLATION LEVEL REPEATABLE READ;
+SELECT balance FROM accounts WHERE id = 1;  -- 예: 1000
+
+-- (이 시점에 세션 B가 별도로 실행됨)
+-- 세션 B: UPDATE accounts SET balance = 2000 WHERE id = 1; COMMIT;
+
+-- 세션 A에서 같은 트랜잭션 안에서 다시 조회
+SELECT balance FROM accounts WHERE id = 1;  -- Repeatable Read: 여전히 1000 (스냅샷 고정)
+COMMIT;
+
+-- COMMIT 이후 새 트랜잭션에서 조회하면 그때는 2000이 보입니다</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">두 예제 모두 세션 B의 UPDATE가 세션 A의 SELECT를 블로킹하지 않는다는 점, 즉 MVCC 덕분에 읽기와 쓰기가 서로를 기다리지 않는다는 점은 동일합니다. 다만 세션 A 내부에서 같은 쿼리를 반복했을 때 그 결과가 격리 수준에 따라 달라집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무에서 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 장시간 트랜잭션을 방치하지 마세요</b> — 트랜잭션이 오래 열려 있으면 그 이후 생긴 죽은 튜플들을 VACUUM이 회수하지 못합니다<br>
+<b>2. pg_stat_activity에서 idle in transaction 세션을 주기적으로 확인하세요</b> — 커넥션 풀·타임아웃 설정으로 방치를 예방하는 것이 근본 대책입니다<br>
+<b>3. autovacuum_vacuum_scale_factor를 테이블 특성에 맞게 조정하세요</b> — 갱신이 잦은 큰 테이블은 기본 비율로는 트리거가 너무 늦어질 수 있습니다<br>
+<b>4. pg_stat_user_tables의 n_dead_tup으로 블로트 위험 테이블을 미리 파악하세요</b>
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① PostgreSQL은 UPDATE/DELETE 시 튜플을 덮어쓰지 않고 xmin/xmax로 버전을 관리하는 MVCC 방식을 써서, 읽기와 쓰기가 서로를 블로킹하지 않습니다.<br>
+② Read Committed는 문장마다, Repeatable Read는 트랜잭션 시작 시점에 스냅샷을 고정하며, 이 차이가 같은 트랜잭션 내 반복 조회 결과에 영향을 줍니다.<br>
+③ 옛 버전(죽은 튜플)은 VACUUM이 정리해야 하며, 장시간 트랜잭션이 이를 막으면 테이블 블로트로 이어지므로 autovacuum 설정과 방치된 트랜잭션 감시가 실무에서 중요합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 데이터베이스 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#PostgreSQL #MVCC #데이터베이스 #동시성제어 #트랜잭션 #VACUUM</p>
+
+</body>
+</html>
