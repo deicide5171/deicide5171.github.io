@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>멱등성 키(Idempotency Key) 설계 — 결제 API가 중복 청구를 막는 법</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">멱등성 키(Idempotency Key) 설계 — 결제 API가 중복 요청을 견디는 법</div>
+<p style="font-size:14px; color:#999;">2026. 8. 21. · 시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 네트워크 재시도가 결제를 두 번 청구하지 않도록, 클라이언트가 만든 <b>멱등성 키</b>로 서버가 중복 요청을 감지하고 캐시된 응답을 돌려주는 설계를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">타임아웃 후 재시도가 왜 위험할까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">결제 요청을 보낸 클라이언트가 응답을 받지 못한 채 타임아웃이 나는 경우를 생각해봅시다. 서버는 결제 처리를 이미 끝냈는데 응답 패킷만 유실됐을 수도 있고, 서버가 처리를 시작하기 전에 요청 자체가 끊겼을 수도 있습니다. 클라이언트 입장에서는 이 두 상황을 구분할 방법이 없습니다. 안전을 위해 재시도를 하면, 앞의 경우에는 같은 결제가 두 번 청구됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 문제는 네트워크가 불안정한 환경이나, 모바일 앱처럼 연결이 자주 끊기는 클라이언트에서 특히 자주 발생합니다. 결제, 주문 생성, 포인트 적립처럼 부작용이 있고 되돌리기 번거로운 API일수록 재시도로 인한 중복 실행의 대가가 큽니다. 단순히 재시도하지 말라는 답은 현실적이지 않습니다. 네트워크 오류에 대한 재시도는 클라이언트의 정상적인 복원력 전략이고, 진짜 문제는 서버가 같은 요청을 알아보지 못한다는 데 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 키는 클라이언트가 만듭니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">멱등성 키 설계에서 가장 중요한 전제는, 이 키를 서버가 아니라 <b>클라이언트</b>가 생성한다는 점입니다. 서버가 키를 발급하려면 발급 자체가 별도의 요청-응답을 거쳐야 하는데, 그 요청도 실패할 수 있으니 문제가 근본적으로 해결되지 않습니다. 대신 클라이언트가 요청을 시도하기 전에 UUID 같은 고유 값을 하나 만들어 <b>Idempotency-Key</b> 헤더에 실어 보내고, 타임아웃이나 연결 실패로 재시도할 때도 동일한 키를 그대로 재사용합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">여기서 실수하기 쉬운 지점은, 재시도 로직이 매번 새 키를 생성해버리는 경우입니다. 이렇게 되면 서버 입장에서는 매번 새로운 요청으로 보이므로 멱등성 키를 붙인 의미가 사라집니다. 키는 사용자의 결제 버튼 클릭 시점처럼 재시도 루프 바깥에서 한 번만 생성하고, 이후의 재전송에는 계속 같은 값을 써야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 서버는 키와 응답을 함께 캐싱합니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">서버는 들어온 요청의 멱등성 키를 별도 저장소(Redis 같은 키-값 스토어나 별도 테이블)에 기록해두고, 같은 키로 다시 들어온 요청은 실제 로직을 다시 실행하는 대신 <b>처음 처리했을 때의 응답을 그대로 반환</b>합니다. 저장소에는 키 값, 요청 상태(처리 중·완료·실패), 완료된 경우의 응답 본문과 상태 코드, 요청 바디의 해시, 생성 시각과 만료(TTL) 시각 정도가 들어갑니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">키는 영구히 보관하지 않고 TTL을 둡니다. 결제 재시도는 대개 초 단위에서 길어야 몇 분 안에 끝나므로 이 시간대만 커버하면 충분합니다. TTL을 너무 짧게 두면 늦게 도착한 재시도가 캐시를 놓쳐 중복 처리로 이어지고, 너무 길게 두면 저장소 용량이 계속 불어납니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 동시에 들어온 요청은 어떻게 처리할까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">같은 멱등성 키로 두 요청이 거의 동시에 도착하는 경우도 고려해야 합니다. 클라이언트가 타임아웃을 짧게 잡고 재시도를 너무 빨리 보내면, 첫 번째 요청이 아직 처리 중인 상태에서 두 번째 요청이 도착할 수 있습니다. 이때 두 번째 요청까지 그대로 로직을 실행해버리면 멱등성이 깨집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이를 막으려면 키를 저장소에 기록하는 시점에 원자적인(atomic) 조건부 쓰기를 사용해야 합니다. 예를 들어 <b>키가 존재하지 않을 때만 생성</b>하는 방식(SET NX 같은 연산)으로 첫 번째 요청만 처리 권한을 얻고, 뒤따라온 요청은 상태가 처리 중인 것을 보고 409 Conflict를 반환하거나 첫 요청이 끝날 때까지 짧게 대기하는 편이 안전합니다. 애플리케이션 로직에서 별도의 락을 직접 구현하기보다, 저장소가 제공하는 원자적 연산에 기대는 편이 낫습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">저장 항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">역할</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">멱등성 키</td>
+<td style="border:1px solid #ddd; padding:10px;">요청을 식별하는 고유 값(클라이언트 생성)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">상태</td>
+<td style="border:1px solid #ddd; padding:10px;">처리 중 / 완료 / 실패</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">응답 캐시</td>
+<td style="border:1px solid #ddd; padding:10px;">완료된 요청의 응답 본문과 상태 코드</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">요청 바디 해시</td>
+<td style="border:1px solid #ddd; padding:10px;">같은 키의 다른 본문 재사용 여부 검증</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">TTL</td>
+<td style="border:1px solid #ddd; padding:10px;">재시도 정책에 맞춘 만료 시각</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 멱등성 키 처리 미들웨어(의사코드)</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 멱등성 키 처리 미들웨어의 의사코드입니다. 실제 락 구현은 사용하는 저장소의 원자적 연산에 따라 달라집니다. 핵심은 키를 원자적으로 선점하는 단계와, 완료된 요청은 재실행 없이 저장된 응답을 돌려주는 단계를 분리하는 것입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">function handleRequest(request):
+    key = request.headers["Idempotency-Key"]
+    if key is None:
+        return process(request)  # 멱등성 키 없이 그냥 처리(선택 사항)
+
+    bodyHash = sha256(request.body)
+    record = store.getOrCreate(key, {
+        status: "processing",
+        bodyHash: bodyHash,
+        createdAt: now(),
+        ttl: 10분
+    })  # 원자적 연산: 이미 존재하면 기존 record 반환, 없으면 생성
+
+    if record.status == "completed":
+        if record.bodyHash != bodyHash:
+            return 422 "키가 이미 다른 요청 본문에 사용되었습니다"
+        return record.response  # 캐시된 응답 그대로 반환
+
+    if record.status == "processing" and record.createdAt != now():
+        return 409 "동일 키로 요청이 이미 처리 중입니다"
+
+    # 이 요청이 처리 권한을 획득한 경우
+    try:
+        response = process(request)
+        store.update(key, { status: "completed", response: response })
+        return response
+    except error:
+        store.update(key, { status: "failed" })
+        raise error</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실패로 끝난 요청은 상태를 failed로 남겨서 재시도가 다시 로직을 실행할 수 있게 열어두는 편이 일반적입니다. 실패한 결제를 그대로 캐시해서 영구히 막아버리면 안 되기 때문입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. TTL은 재시도 정책에 맞춰 정합니다</b> — 클라이언트의 최대 재시도 시간창보다 넉넉하게, 그러나 무한정 길지 않게 설정하세요. Stripe는 멱등성 키를 24시간 동안 보관한다고 문서에 명시하는데, 이는 참고할 만한 기준점이지 절대적인 정답은 아니며 서비스의 재시도 특성에 맞춰 조정해야 합니다.<br>
+<b>2. 요청 바디 해시로 키 오남용을 막습니다</b> — 같은 멱등성 키가 서로 다른 요청 본문과 함께 재사용되는 경우(버그거나 악의적인 재사용이거나)를 걸러내려면 최초 요청의 바디 해시를 함께 저장해두고, 이후 같은 키로 들어온 요청의 바디 해시가 다르면 에러로 거절해야 합니다. 이 검증이 없으면 키가 요청 식별자가 아니라 캐시 무효화 우회 통로로 잘못 쓰일 위험이 있습니다.<br>
+<b>3. 멱등성 보장 범위를 명확히 합니다</b> — 멱등성 키는 API 계층의 중복 실행을 막아줄 뿐, 그 안에서 외부 결제 게이트웨이 같은 다른 시스템을 호출하는 로직까지 자동으로 멱등하게 만들어주지는 않습니다. 하위 시스템 호출에도 동일한 키를 전달하거나 별도의 멱등성 처리를 두어야 전체 체인이 안전해집니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 네트워크 재시도는 정상적인 클라이언트 동작이지만, 서버가 같은 요청을 알아보지 못하면 결제 같은 부작용 있는 API에서 중복 실행으로 이어집니다.<br>
+② 클라이언트가 생성한 멱등성 키를 서버가 저장소에 캐싱해 완료된 응답을 재반환하고, 동시 요청은 원자적 선점으로 처리합니다.<br>
+③ TTL 설계와 요청 바디 해시 검증이 실무에서 멱등성 키를 안전하게 운영하는 핵심 디테일입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 시스템 설계 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#멱등성키 #Idempotency #API설계 #결제시스템 #시스템설계 #Reliability</p>
+
+</body>
+</html>
