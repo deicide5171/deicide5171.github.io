@@ -34,9 +34,9 @@
 | 2 | 아키텍처·시스템 설계 | `system-design` | 아키텍처 패턴, MSA, 확장성, 캐싱 전략, 이벤트 기반 설계, 대용량 트래픽 처리 |
 | 3 | 네트워크·OS·분산처리·DevOps | `infra` | TCP/HTTP/DNS, 리눅스 내부(프로세스·메모리·IO), 분산 합의·복제, Docker/K8s, CI/CD, 모니터링·관측성 |
 | 4 | DB·데이터 모델링 | `database` | RDB 설계·정규화, 인덱스, 트랜잭션·락·격리수준, NoSQL 모델링, 쿼리 튜닝, 마이그레이션 전략 |
-| 5 | 프론트엔드 | `frontend` | JS/TS, React, Next.js, CSS, 번들러(Vite 등), 웹 성능·접근성, 상태관리 |
-| 6 | 백엔드 | `backend` | Java/Spring, Node.js, API 설계, 인증·인가, 테스트 전략, JVM, 메시징 연동 |
-| 7 | GIS | `gis` | 지도 API, 공간 데이터, 좌표계, 타일링, 공간 DB(PostGIS), 위성영상, 라우팅 |
+| 5 | 프론트엔드 | `frontend` | 웹 개발 중심: JS/TypeScript, React, Next.js, Vite, CSS, 상태관리, 웹 성능·접근성 — **최신 릴리스·트렌드를 적극 섞어서** |
+| 6 | 백엔드 | `backend` | 웹 개발 중심: Java/Spring 위주(+Node.js), API 설계, 인증·인가, 테스트 전략, JVM — **최신 릴리스·트렌드를 적극 섞어서** |
+| 7 | GIS | `gis` | 온갖 GIS 주제: **OpenLayers, Mapbox GL, MapLibre, Cesium, deck.gl 등 웹 지도 라이브러리**, **3D 웹 지도(3D Tiles, 지형, 포인트클라우드, WebGL 렌더링)**, 공간 데이터, 좌표계, 타일링, PostGIS, 위성영상, 라우팅 — **하루 2편 중 1편 이상은 웹 지도 라이브러리 또는 3D 지도 주제** |
 
 - 기존 글의 옛 카테고리(`it-trend`, `web-dev`, `dev-insight`)는 수정하지 않고 그대로 둔다. 새 글은 위 7개 값만 사용한다.
 
@@ -71,6 +71,11 @@ excerpt: "글 요약 한 문장"
 - `date`의 시각: 1라운드는 12:50(ai) / 12:45(system-design) / 12:40(infra) / 12:35(database) / 12:30(frontend) / 12:25(backend) / 12:20(gis), 2라운드는 같은 매핑에 +1시간(13:50~13:20) — 목록에서 최신 라운드의 AI가 맨 위에 오도록
 - 본문 구조: 도입(왜 지금, 2~3문단) → 핵심 개념(## 섹션 2~4개, 표·비교 활용) → 코드/설정 예제 1~2개(언어 명시) → 실무 포인트/주의사항 → 마무리 요약(3줄 불릿) → 참고 자료(공식 문서 위주)
 - 분량: 한국어 1,500~3,000자
+- **이미지(SVG 다이어그램)**: GIS 글은 **필수 1개 이상**, 다른 필러도 개념도·구조도가 유용하면 포함.
+  에이전트가 직접 그린 SVG를 `assets/images/posts/YYYY-MM-DD-<slug>-<n>.svg`에 저장하고
+  MD에서 `![설명](/assets/images/posts/파일명.svg)`로 참조한다.
+  내용 예: 아키텍처 구조도, 좌표계·타일 피라미드 개념도, 데이터 흐름도. 간결한 도형+한글 라벨 위주로,
+  뷰박스는 `viewBox="0 0 800 450"` 기준. **외부 이미지 핫링크는 저작권 문제로 금지.**
 
 ## 형식 2: 네이버 블로그용 HTML
 
@@ -91,8 +96,8 @@ excerpt: "글 요약 한 문장"
 ## git 작업 규칙 (배치)
 
 1. 브랜치: `auto-post/${TODAY}` (위 이어쓰기 규칙대로 checkout/생성)
-2. **편 단위로 커밋·push**: 한 필러의 MD+HTML 페어를 완성할 때마다
-   `git add <두 파일> && git commit -m "post: <제목> (auto)" && git push -u origin auto-post/${TODAY}`
+2. **편 단위로 커밋·push**: 한 필러의 MD+HTML(+SVG 이미지) 파일들을 완성할 때마다
+   `git add <해당 글의 파일들> && git commit -m "post: <제목> (auto)" && git push -u origin auto-post/${TODAY}`
    — 중간에 중단돼도 완성분은 남는다
 3. 모든 작업 후 **open 상태**의 master 대상 PR 확인: 없으면 생성(제목 `daily posts: ${TODAY} (N편)`).
    같은 날 이전 PR이 이미 merge된 뒤의 추가 생성분이라면 새 PR을 만든다.
