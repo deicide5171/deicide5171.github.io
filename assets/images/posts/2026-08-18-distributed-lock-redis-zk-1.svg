@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="19" font-weight="bold" fill="#1a1a1a">분산 락 획득·해제 흐름 — Redis Redlock vs ZooKeeper</text>
+
+  <!-- divider labels -->
+  <text x="200" y="52" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#c9302c">Redis Redlock</text>
+  <text x="600" y="52" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#1f4e78">ZooKeeper</text>
+  <line x1="400" y1="60" x2="400" y2="400" stroke="#ddd" stroke-width="1"/>
+
+  <!-- ===== Redlock side ===== -->
+  <rect x="30" y="70" width="120" height="46" rx="6" fill="#fdecec" stroke="#c9302c" stroke-width="1.3"/>
+  <text x="90" y="98" text-anchor="middle" font-size="12" font-weight="bold" fill="#c9302c">클라이언트</text>
+
+  <!-- 5 redis nodes -->
+  <rect x="190" y="66" width="180" height="118" rx="6" fill="#fff8f6" stroke="#e58a8a" stroke-width="1"/>
+  <text x="280" y="80" text-anchor="middle" font-size="10.5" fill="#8a2020">독립 Redis N개 (예: 5)</text>
+  <rect x="200" y="88" width="45" height="24" rx="3" fill="#fdecec" stroke="#c9302c" stroke-width="1"/>
+  <text x="222" y="104" text-anchor="middle" font-size="9.5" fill="#c9302c">R1</text>
+  <rect x="250" y="88" width="45" height="24" rx="3" fill="#fdecec" stroke="#c9302c" stroke-width="1"/>
+  <text x="272" y="104" text-anchor="middle" font-size="9.5" fill="#c9302c">R2</text>
+  <rect x="300" y="88" width="45" height="24" rx="3" fill="#fdecec" stroke="#c9302c" stroke-width="1"/>
+  <text x="322" y="104" text-anchor="middle" font-size="9.5" fill="#c9302c">R3</text>
+  <rect x="200" y="120" width="45" height="24" rx="3" fill="#fdecec" stroke="#c9302c" stroke-width="1"/>
+  <text x="222" y="136" text-anchor="middle" font-size="9.5" fill="#c9302c">R4</text>
+  <rect x="250" y="120" width="45" height="24" rx="3" fill="#fdecec" stroke="#c9302c" stroke-width="1"/>
+  <text x="272" y="136" text-anchor="middle" font-size="9.5" fill="#c9302c">R5</text>
+  <text x="280" y="170" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#8a2020">과반(3/5) SET NX 성공 → 락 획득</text>
+
+  <line x1="150" y1="93" x2="188" y2="93" stroke="#888" stroke-width="1.3" marker-end="url(#a1)"/>
+
+  <rect x="80" y="200" width="240" height="60" rx="6" fill="#fdecec" stroke="#c9302c" stroke-width="1.3"/>
+  <text x="200" y="222" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#c9302c">TTL 만료 전 해제(DEL) 또는</text>
+  <text x="200" y="240" text-anchor="middle" font-size="11.5" fill="#8a2020">TTL 자동 만료로 락 소멸</text>
+
+  <rect x="60" y="285" width="280" height="70" rx="6" fill="#ffffff" stroke="#c9302c" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="200" y="305" text-anchor="middle" font-size="11" font-weight="bold" fill="#c9302c">주의: GC 정지·네트워크 지연으로</text>
+  <text x="200" y="322" text-anchor="middle" font-size="11" fill="#333">TTL이 먼저 끝나면 두 클라이언트가</text>
+  <text x="200" y="339" text-anchor="middle" font-size="11" fill="#333">동시에 락을 쥔 것처럼 동작 가능</text>
+
+  <!-- ===== ZooKeeper side ===== -->
+  <rect x="440" y="70" width="120" height="46" rx="6" fill="#eaf3ff" stroke="#1f4e78" stroke-width="1.3"/>
+  <text x="500" y="98" text-anchor="middle" font-size="12" font-weight="bold" fill="#1f4e78">클라이언트</text>
+
+  <line x1="560" y1="93" x2="598" y2="93" stroke="#888" stroke-width="1.3" marker-end="url(#a2)"/>
+
+  <rect x="600" y="66" width="170" height="118" rx="6" fill="#f5f9ff" stroke="#6ea3d8" stroke-width="1"/>
+  <text x="685" y="80" text-anchor="middle" font-size="10.5" fill="#1f4e78">/lock znode (ensemble 합의)</text>
+  <rect x="620" y="92" width="130" height="22" rx="3" fill="#eaf3ff" stroke="#1f4e78" stroke-width="1"/>
+  <text x="685" y="107" text-anchor="middle" font-size="9.5" fill="#1f4e78">seq-0001 (내 요청)</text>
+  <rect x="620" y="118" width="130" height="22" rx="3" fill="#ffffff" stroke="#9ab8d8" stroke-width="1"/>
+  <text x="685" y="133" text-anchor="middle" font-size="9.5" fill="#5a7ba0">seq-0002 (대기)</text>
+  <text x="685" y="163" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#1f4e78">최소 순번 노드 = 락 보유자</text>
+
+  <rect x="490" y="200" width="240" height="60" rx="6" fill="#eaf3ff" stroke="#1f4e78" stroke-width="1.3"/>
+  <text x="610" y="222" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1f4e78">작업 완료 후 znode 삭제</text>
+  <text x="610" y="240" text-anchor="middle" font-size="11.5" fill="#1f4e78">→ 다음 순번에 watch 이벤트 전달</text>
+
+  <rect x="470" y="285" width="280" height="70" rx="6" fill="#ffffff" stroke="#1f4e78" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="610" y="305" text-anchor="middle" font-size="11" font-weight="bold" fill="#1f4e78">장점: 세션 끊기면 znode가</text>
+  <text x="610" y="322" text-anchor="middle" font-size="11" fill="#333">자동 삭제되어 락이 즉시 해제됨</text>
+  <text x="610" y="339" text-anchor="middle" font-size="11" fill="#333">(TTL 추측 불필요, 순서 보장)</text>
+
+  <defs>
+    <marker id="a1" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#888"/>
+    </marker>
+    <marker id="a2" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#888"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="380" text-anchor="middle" font-size="11.5" fill="#555">Redlock은 가용성·성능 우선(TTL 기반 추정), ZooKeeper는 일관성·순서 보장 우선(합의 기반 확정)</text>
+  <text x="400" y="400" text-anchor="middle" font-size="11" fill="#888">※ 두 방식 모두 락 보유 중 처리 지연(clock drift, GC pause 등) 대응을 위해 펜싱 토큰 병행 권장</text>
+</svg>
