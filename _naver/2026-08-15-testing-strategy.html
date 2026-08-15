@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>다음 학습 주제 — 테스트 피라미드와 실전 테스팅 전략</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">[추천 지식] 다음으로 파봐야 할 것 — 테스트 피라미드와 실전 테스팅 전략</div>
+<p style="font-size:14px; color:#999;">2026. 8. 15. · 추천 지식</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — Flutter, PostGIS, AI 에이전트, 분산 시스템, Docker/CI-CD까지 다뤄온 이 블로그의 다음 학습 주제로 <b>테스트 피라미드</b>와 <b>실전 테스팅 전략</b>을 추천하는 이유를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 주제인가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 블로그는 Flutter 앱 개발과 네이버 클라우드 지도 API 연동에서 시작해, PostGIS 기반 공간 데이터, DB 인덱스 내부 구조, 분산 SQL과 캐시 스탬피드 같은 백엔드 심화 주제, 그리고 최근에는 MCP·A2A 같은 AI 에이전트 프로토콜과 Docker/CI-CD 파이프라인까지 폭넓게 다뤄왔습니다. 그런데 이 모든 글의 밑바탕에 있어야 할 질문 하나가 아직 정면으로 다뤄지지 않았습니다. "이 코드가 실제로 의도한 대로 동작하는지 어떻게 확신할 것인가" 입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">지난 글에서 CI/CD 파이프라인을 다루며 "테스트 실패 시 배포를 반드시 막는다"는 원칙을 언급했지만, 정작 그 파이프라인 안에서 무엇을 어떤 비율로 테스트해야 하는지는 다루지 않았습니다. 그래서 다음 학습 주제로 <b>테스트 피라미드</b>와 <b>실전 테스팅 전략</b>을 추천합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">학습 로드맵</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold; width:12%;">단계</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">주제</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">왜 필요한가</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">1</td>
+<td style="border:1px solid #ddd; padding:10px;">단위 테스트와 테스트 더블(Mock/Stub/Fake)</td>
+<td style="border:1px solid #ddd; padding:10px;">외부 의존성 없이 로직 정확성을 빠르게 검증</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">2</td>
+<td style="border:1px solid #ddd; padding:10px;">통합 테스트(DB, API, 메시지 큐 연동)</td>
+<td style="border:1px solid #ddd; padding:10px;">컴포넌트 경계에서 발생하는 실제 버그 발견</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">3</td>
+<td style="border:1px solid #ddd; padding:10px;">E2E 테스트와 계약 테스트(Contract Test)</td>
+<td style="border:1px solid #ddd; padding:10px;">사용자 시나리오와 서비스 간 API 계약 준수</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">4</td>
+<td style="border:1px solid #ddd; padding:10px;">테스트 커버리지·플레이키 테스트 관리</td>
+<td style="border:1px solid #ddd; padding:10px;">숫자에 매몰되지 않고 신뢰할 수 있는 테스트만 유지</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">5</td>
+<td style="border:1px solid #ddd; padding:10px;">CI 파이프라인에 테스트 단계 통합</td>
+<td style="border:1px solid #ddd; padding:10px;">앞서 다룬 CI/CD 파이프라인과 자연스럽게 연결</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념: 테스트 피라미드가 말하는 것</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>테스트 피라미드</b>는 단위 테스트를 가장 넓은 기반에, 통합 테스트를 중간에, E2E 테스트를 가장 좁은 꼭대기에 배치하는 모델입니다. 단위 테스트는 실행이 빠르고 실패 원인을 즉시 특정할 수 있지만, 네트워크 지연이나 DB 락 경합 같은 실제 환경의 문제는 잡지 못합니다. 반대로 E2E 테스트는 실제 사용자 흐름을 검증하지만 느리고, 환경 변화에 취약해 자주 실패하는 <b>플레이키 테스트</b>가 되기 쉽습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 블로그에서 다룬 캐시 스탬피드나 분산 SQL의 장애 시나리오처럼, 동시성·타이밍 이슈는 단위 테스트만으로는 재현되지 않습니다. 이런 경우엔 통합 테스트 계층에서 실제 캐시·DB를 띄우고 부하를 재현하는 것이 훨씬 효과적입니다. 즉 계층마다 검증할 책임을 명확히 나누는 것이 테스트 전략의 핵심입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: 단위 테스트와 통합 테스트의 역할 분리</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">// 단위 테스트: 순수 로직만 빠르게 검증 (외부 의존성 없음)
+test('할인율 계산은 최대 30%를 넘지 않는다', () =&gt; {
+  expect(calculateDiscount(1000, 0.5)).toBe(300); // 30% 상한 적용
+});
+
+// 통합 테스트: 실제 DB 연결로 쿼리 정합성까지 검증
+test('주문 생성 시 재고가 정확히 차감된다', async () =&gt; {
+  await db.seed({ stock: 10 });
+  await createOrder({ productId: 1, qty: 3 });
+  const stock = await db.query('SELECT stock FROM products WHERE id = 1');
+  expect(stock).toBe(7);
+});</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 테스트 더블은 최소한으로 사용</b> — 모든 것을 Mock으로 대체하면 실제 통합 지점의 버그를 놓칠 수 있습니다<br>
+<b>2. 플레이키 테스트는 즉시 격리</b> — 간헐적으로 실패하는 테스트를 방치하면 CI 실패를 무시하는 습관이 생깁니다<br>
+<b>3. 커버리지 숫자보다 경계 조건</b> — 널 값, 동시성, 예외 경로처럼 실제 버그가 숨는 지점을 우선 검증합니다<br>
+<b>4. E2E는 핵심 시나리오에만 집중</b> — 회원가입, 결제처럼 실패하면 치명적인 흐름만 남기고 나머지는 하위 계층에 맡깁니다
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 지금까지 다룬 Flutter·PostGIS·분산 시스템·AI 에이전트·Docker/CI-CD 지식이 실제로 신뢰할 수 있으려면 테스트 전략이 뒷받침되어야 합니다.<br>
+② 테스트 피라미드는 단위 테스트를 기반으로, 통합 테스트와 E2E 테스트를 필요한 만큼만 얹는 구조입니다.<br>
+③ 플레이키 테스트 관리와 경계 조건 검증부터 CI 파이프라인에 자연스럽게 통합하는 것을 추천합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 실제 테스트 스위트 구성 경험을 다뤄보겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#테스트피라미드 #단위테스트 #통합테스트 #E2E테스트 #학습로드맵</p>
+
+</body>
+</html>
