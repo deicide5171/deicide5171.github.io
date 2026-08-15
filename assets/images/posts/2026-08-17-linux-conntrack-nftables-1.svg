@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#555555"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="24" text-anchor="middle" font-family="sans-serif" font-size="18" font-weight="bold" fill="#1a1a1a">패킷 처리 흐름과 conntrack 테이블</text>
+
+  <!-- Box A: packet in -->
+  <rect x="280" y="40" width="240" height="44" rx="6" fill="#eef4ff" stroke="#4a7fd6" stroke-width="1.5"/>
+  <text x="400" y="67" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#22315a">패킷 유입 (eth0)</text>
+
+  <line x1="400" y1="84" x2="400" y2="106" stroke="#555555" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- Box B: conntrack lookup -->
+  <rect x="240" y="108" width="320" height="44" rx="6" fill="#f2ecfb" stroke="#8a5fd6" stroke-width="1.5"/>
+  <text x="400" y="135" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#3a2a5a">conntrack 조회 (5-tuple 해시 매치)</text>
+
+  <line x1="400" y1="152" x2="400" y2="172" stroke="#555555" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- state chips -->
+  <g font-family="sans-serif" font-size="13">
+    <rect x="70" y="174" width="150" height="34" rx="5" fill="#ede7fb" stroke="#8a5fd6" stroke-width="1.2"/>
+    <text x="145" y="196" text-anchor="middle" fill="#3a2a5a">NEW</text>
+
+    <rect x="240" y="174" width="150" height="34" rx="5" fill="#ede7fb" stroke="#8a5fd6" stroke-width="1.2"/>
+    <text x="315" y="196" text-anchor="middle" fill="#3a2a5a">ESTABLISHED</text>
+
+    <rect x="410" y="174" width="150" height="34" rx="5" fill="#ede7fb" stroke="#8a5fd6" stroke-width="1.2"/>
+    <text x="485" y="196" text-anchor="middle" fill="#3a2a5a">RELATED</text>
+
+    <rect x="580" y="174" width="150" height="34" rx="5" fill="#fbe9e9" stroke="#d9534f" stroke-width="1.2"/>
+    <text x="655" y="196" text-anchor="middle" fill="#7a2a2a">INVALID</text>
+  </g>
+
+  <!-- connectors from chips to center -->
+  <line x1="145" y1="208" x2="145" y2="216" stroke="#999999" stroke-width="1.2"/>
+  <line x1="315" y1="208" x2="315" y2="216" stroke="#999999" stroke-width="1.2"/>
+  <line x1="485" y1="208" x2="485" y2="216" stroke="#999999" stroke-width="1.2"/>
+  <line x1="655" y1="208" x2="655" y2="216" stroke="#999999" stroke-width="1.2"/>
+  <line x1="145" y1="216" x2="655" y2="216" stroke="#999999" stroke-width="1.2"/>
+  <line x1="400" y1="216" x2="400" y2="234" stroke="#555555" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- Box C: nftables chain -->
+  <rect x="200" y="236" width="400" height="50" rx="6" fill="#eafaf0" stroke="#2fa86a" stroke-width="1.5"/>
+  <text x="400" y="255" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1a5c3a">nftables chain 평가</text>
+  <text x="400" y="273" text-anchor="middle" font-family="sans-serif" font-size="11.5" fill="#1a5c3a">(prerouting → input / forward → postrouting)</text>
+
+  <line x1="400" y1="286" x2="400" y2="306" stroke="#555555" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+
+  <!-- Box D: decision -->
+  <rect x="280" y="308" width="240" height="44" rx="6" fill="#fff3e6" stroke="#e08a3d" stroke-width="1.5"/>
+  <text x="400" y="335" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#7a4a1a">ACCEPT / DROP (+ NAT 처리)</text>
+
+  <line x1="400" y1="352" x2="400" y2="366" stroke="#555555" stroke-width="1.5" marker-end="url(#arrowhead)"/>
+  <text x="440" y="363" font-family="sans-serif" font-size="11" fill="#888888">상태 저장/갱신</text>
+
+  <!-- conntrack table -->
+  <g font-family="sans-serif" font-size="12">
+    <rect x="60" y="372" width="170" height="24" fill="#f2ecfb" stroke="#8a5fd6" stroke-width="1"/>
+    <rect x="230" y="372" width="190" height="24" fill="#f2ecfb" stroke="#8a5fd6" stroke-width="1"/>
+    <rect x="420" y="372" width="190" height="24" fill="#f2ecfb" stroke="#8a5fd6" stroke-width="1"/>
+    <rect x="610" y="372" width="130" height="24" fill="#f2ecfb" stroke="#8a5fd6" stroke-width="1"/>
+    <text x="145" y="388" text-anchor="middle" font-weight="bold" fill="#3a2a5a">PROTO</text>
+    <text x="325" y="388" text-anchor="middle" font-weight="bold" fill="#3a2a5a">SRC:PORT</text>
+    <text x="515" y="388" text-anchor="middle" font-weight="bold" fill="#3a2a5a">DST:PORT</text>
+    <text x="675" y="388" text-anchor="middle" font-weight="bold" fill="#3a2a5a">STATE</text>
+
+    <rect x="60" y="396" width="170" height="24" fill="#ffffff" stroke="#cccccc" stroke-width="1"/>
+    <rect x="230" y="396" width="190" height="24" fill="#ffffff" stroke="#cccccc" stroke-width="1"/>
+    <rect x="420" y="396" width="190" height="24" fill="#ffffff" stroke="#cccccc" stroke-width="1"/>
+    <rect x="610" y="396" width="130" height="24" fill="#ffffff" stroke="#cccccc" stroke-width="1"/>
+    <text x="145" y="412" text-anchor="middle" fill="#333333">tcp</text>
+    <text x="325" y="412" text-anchor="middle" fill="#333333">10.0.0.5:51000</text>
+    <text x="515" y="412" text-anchor="middle" fill="#333333">10.0.0.20:443</text>
+    <text x="675" y="412" text-anchor="middle" fill="#333333">ESTABLISHED</text>
+
+    <rect x="60" y="420" width="170" height="24" fill="#ffffff" stroke="#cccccc" stroke-width="1"/>
+    <rect x="230" y="420" width="190" height="24" fill="#ffffff" stroke="#cccccc" stroke-width="1"/>
+    <rect x="420" y="420" width="190" height="24" fill="#ffffff" stroke="#cccccc" stroke-width="1"/>
+    <rect x="610" y="420" width="130" height="24" fill="#ffffff" stroke="#cccccc" stroke-width="1"/>
+    <text x="145" y="436" text-anchor="middle" fill="#333333">udp</text>
+    <text x="325" y="436" text-anchor="middle" fill="#333333">10.0.0.8:33121</text>
+    <text x="515" y="436" text-anchor="middle" fill="#333333">8.8.8.8:53</text>
+    <text x="675" y="436" text-anchor="middle" fill="#333333">NEW</text>
+  </g>
+</svg>
