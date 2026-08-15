@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>OpenTelemetry로 통합 관측성 구축하기 — 메트릭·로그·트레이스 한 곳에서</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">OpenTelemetry로 통합 관측성 구축하기 — 메트릭·로그·트레이스 한 곳에서</div>
+<p style="font-size:14px; color:#999;">2026. 8. 21. · 인프라/DevOps</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 서비스마다 벤더 SDK가 뒤섞이면 벤더 종속과 트레이스·메트릭·로그 간 단절이 생깁니다. <b>OpenTelemetry(OTel)</b>는 표준 API·SDK와 <b>Collector</b> 파이프라인으로 세 가지 시그널을 한 곳에서 다루게 해줍니다. 아키텍처와 도입 시 유의점을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 관측성 표준화가 필요할까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">마이크로서비스 개수가 늘어날수록 관측성(observability) 스택은 조용히 복잡해집니다. 어떤 팀은 APM 벤더의 자체 에이전트를 붙이고, 다른 팀은 Prometheus 클라이언트 라이브러리를 직접 초기화하고, 또 다른 팀은 로그 포워더에 벤더 전용 필드를 심어 넣습니다. 서비스가 수십 개로 늘어나면 <b>계측 코드 자체가 벤더에 종속</b>되어 버려서, 벤더를 교체하려면 애플리케이션 코드를 다시 손봐야 하는 상황이 벌어집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">더 근본적인 문제는 트레이스, 메트릭, 로그가 서로 다른 도구와 데이터 모델로 수집되다 보니, 하나의 요청이 겪은 문제를 추적할 때 세 가지 화면을 오가며 수동으로 상관관계를 맞춰야 한다는 점입니다. 이 단절은 장애 대응 시간을 늘리는 직접적인 원인이 됩니다. <b>OpenTelemetry(OTel)</b>는 이 문제를 계측 표준화로 풀어보려는 CNCF 프로젝트로, 벤더 중립적인 API·SDK와 Collector를 통해 트레이스·메트릭·로그를 하나의 파이프라인에서 다루도록 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 트레이스, 메트릭, 로그라는 3대 시그널</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">OpenTelemetry는 관측성을 구성하는 세 가지 데이터 유형을 <b>시그널(signal)</b>이라고 부르고, 이들을 공통 스펙 아래 통합합니다. <b>트레이스(traces)</b>는 하나의 요청이 여러 서비스를 거치는 과정을 스팬(span)의 트리 구조로 기록합니다. <b>메트릭(metrics)</b>은 요청 수, 지연시간 분포, 에러율처럼 집계된 시계열 수치 데이터입니다. <b>로그(logs)</b>는 특정 시점에 발생한 이벤트를 텍스트나 구조화된 필드로 남깁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">세 시그널이 같은 리소스(resource) 개념과 컨텍스트 전파(context propagation) 메커니즘을 공유한다는 점이 핵심입니다. 트레이스 ID가 로그에 자동으로 삽입되면, 특정 로그 라인에서 곧바로 해당 요청의 전체 트레이스로 이동할 수 있습니다. 이 상관관계는 벤더별 도구를 따로 쓸 때는 얻기 어려운 부분입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — Collector 아키텍처: 수집·처리·내보내기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">OpenTelemetry Collector는 애플리케이션과 백엔드 사이에 위치하는 독립 프로세스로, 파이프라인을 세 단계로 구성합니다. <b>Receivers(수신기)</b>는 OTLP(OpenTelemetry Protocol)뿐 아니라 Jaeger, Zipkin, Prometheus 등 기존 포맷도 받아들일 수 있습니다. <b>Processors(처리기)</b>는 배치 묶음(batch), 속성 필터링, 리샘플링, 민감 정보 마스킹 등을 수행합니다. <b>Exporters(내보내기)</b>는 처리된 데이터를 각 백엔드가 이해하는 형식으로 변환해 전송합니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-21-opentelemetry-unified-observability-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 구조 덕분에 애플리케이션은 OTLP라는 단일 프로토콜로만 데이터를 보내면 되고, 백엔드를 교체하거나 추가할 때는 Collector 설정만 바꾸면 됩니다. 대규모 환경에서는 각 노드에 배치하는 에이전트 계층과 중앙에서 집계하는 게이트웨이 계층을 나누어 두는 구성이 흔히 쓰입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 자동 계측과 수동 계측, 무엇이 다를까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">애플리케이션에 OTel을 도입하는 방식은 크게 둘로 나뉩니다. <b>자동 계측(auto-instrumentation)</b>은 언어별 에이전트나 래퍼가 알려진 프레임워크(HTTP 서버, DB 드라이버 등)의 호출을 가로채 스팬과 메트릭을 자동 생성합니다. 코드 변경 없이 빠르게 기본 관측성을 확보할 수 있지만, 비즈니스 로직 관점의 세부 정보는 담기지 않습니다. <b>수동 계측(manual instrumentation)</b>은 개발자가 SDK를 직접 호출해 원하는 지점에 스팬을 열고 속성을 추가하는 방식으로, 도메인 특화 정보(주문 ID, 결제 상태 등)를 담을 수 있는 대신 계측 코드를 애플리케이션 전반에 퍼뜨려야 하는 부담이 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실무에서는 자동 계측으로 기본 골격을 확보한 뒤, 핵심 비즈니스 흐름에만 수동 계측을 추가하는 하이브리드 방식이 흔히 쓰입니다. 두 방식 모두 같은 SDK와 컨텍스트 전파 규칙을 따르기 때문에 함께 섞어 써도 트레이스가 끊기지 않습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — Collector 설정 파일(otel-collector-config.yaml)</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 트레이스·메트릭·로그를 각각 다른 백엔드로 내보내는 Collector 설정의 단순화된 예시입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 5s
+    send_batch_size: 512
+  tail_sampling:
+    policies:
+      - name: errors-policy
+        type: status_code
+        status_code: { status_codes: [ERROR] }
+      - name: probabilistic-policy
+        type: probabilistic
+        probabilistic: { sampling_percentage: 10 }
+
+exporters:
+  otlp/tempo:
+    endpoint: tempo:4317
+  prometheusremotewrite:
+    endpoint: http://prometheus:9090/api/v1/write
+  loki:
+    endpoint: http://loki:3100/loki/api/v1/push
+
+service:
+  pipelines:
+    traces:
+      receivers: [otlp]
+      processors: [batch, tail_sampling]
+      exporters: [otlp/tempo]
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheusremotewrite]
+    logs:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [loki]</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">각 시그널(traces, metrics, logs)이 독립된 파이프라인으로 정의되고, 동일한 receiver를 공유하면서도 서로 다른 processor·exporter 조합을 가질 수 있다는 점이 특징입니다. 여기서 <b>tail_sampling</b> processor는 에러가 발생한 트레이스는 전량 보존하고, 정상 트레이스는 일정 비율만 샘플링하는 정책을 보여줍니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 샘플링 전략을 먼저 정하기</b> — 트래픽이 많은 서비스에서 모든 트레이스를 저장하면 스토리지 비용이 급격히 늘어납니다. 헤드 샘플링은 구현이 단순하지만 에러 트레이스를 놓칠 수 있고, 테일 샘플링은 에러·지연 요청을 우선 보존할 수 있는 대신 Collector에 더 많은 메모리와 버퍼링이 필요합니다<br>
+<b>2. 카디널리티 폭발 경계하기</b> — 메트릭이나 스팬 속성에 사용자 ID처럼 값의 종류가 무한히 늘어나는 필드를 라벨로 붙이면, 백엔드의 시계열 개수(카디널리티)가 통제 불가능하게 늘어나 조회 성능과 비용에 악영향을 줍니다<br>
+<b>3. Collector 자체의 가용성 챙기기</b> — Collector가 단일 장애점이 되지 않도록 게이트웨이 계층은 다중 인스턴스로 구성하고, 큐 적재나 재시도 설정을 통해 백엔드 장애 시 데이터 유실을 최소화하는 것이 좋습니다<br>
+<b>4. 점진적으로 마이그레이션하기</b> — 기존 벤더 SDK를 한 번에 걷어내기보다, 기존 포맷(Jaeger, Zipkin 등)을 우선 수용하는 Collector receiver를 두고 서비스 단위로 순차 전환하는 편이 위험을 줄입니다
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 벤더별 계측 SDK가 뒤섞이면 벤더 종속과 트레이스·메트릭·로그 간 상관관계 부재라는 두 가지 문제가 생기며, OpenTelemetry는 이를 표준 API·SDK와 공통 컨텍스트 전파로 해결합니다.<br>
+② Collector는 Receivers → Processors → Exporters 파이프라인으로 동작하며, 애플리케이션은 OTLP 하나만 알면 되고 백엔드 교체는 설정 변경만으로 가능합니다.<br>
+③ 자동 계측으로 기본 골격을 빠르게 확보하고 핵심 흐름에 수동 계측을 더하되, 샘플링 전략과 카디널리티 관리를 도입 초기부터 함께 설계해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 인프라 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#OpenTelemetry #관측성 #Observability #트레이싱 #메트릭 #모니터링</p>
+
+</body>
+</html>
