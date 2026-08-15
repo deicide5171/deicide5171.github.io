@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>API 버저닝 전략 비교 — URI, 헤더, 콘텐츠 협상</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">API 버저닝 전략 비교 — URI, 헤더, 콘텐츠 협상, 언제 무엇을 써야 하나</div>
+<p style="font-size:14px; color:#999;">2026. 8. 18. · 아키텍처·시스템설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — API 버저닝에서 가장 많이 쓰이는 <b>URI 경로, 커스텀 헤더, Accept 헤더 콘텐츠 협상</b> 세 가지 전략을 비교하고, 서비스 성격에 따라 어떤 전략을 선택하면 좋은지 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 API 버저닝인가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">API는 한 번 공개되면 그 순간부터 <b>계약</b>이 됩니다. 프론트엔드, 모바일 앱, 외부 파트너가 이미 그 응답 구조를 가정하고 코드를 짜놓았기 때문에, 필드 이름 하나만 바꿔도 어딘가는 깨집니다. 그런데 서비스는 계속 진화해야 하고, 응답 구조 자체가 바뀌어야 하는 순간이 반드시 옵니다. 이 둘 사이의 긴장을 관리하는 것이 바로 API 버저닝입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">문제는 <b>버전을 어디에 표시할 것인가</b>부터 의견이 갈린다는 점입니다. URL에 박아 넣을지, 헤더로 뺄지, HTTP의 콘텐츠 협상 메커니즘을 그대로 활용할지에 따라 클라이언트 개발 경험, 캐싱 동작, 라우팅 구현 난이도가 전부 달라집니다. 정답은 하나가 아니고, 서비스의 소비자 구성과 운영 방식에 따라 유리한 전략이 다릅니다. 이번 글에서는 실무에서 가장 많이 쓰이는 세 가지 전략을 비교하고, 각각 언제 선택하면 좋은지 정리했습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념: 버전을 바꿔야 하는 변경과 아닌 변경</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">버저닝 전략을 논의하기 전에 먼저 구분해야 할 것은 <b>이 변경이 정말 새 버전을 필요로 하는가</b>입니다. 불필요하게 버전을 올리면 유지보수 부담만 늘어납니다. 기준은 명확합니다. <b>하위 호환이 깨지는가(breaking change)</b> 여부입니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">변경 유형</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">예시</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">새 버전 필요 여부</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">필드 추가(선택적)</td>
+<td style="border:1px solid #ddd; padding:10px;">응답에 createdAt 필드 추가</td>
+<td style="border:1px solid #ddd; padding:10px;">불필요</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">필드 이름 변경</td>
+<td style="border:1px solid #ddd; padding:10px;">user_name → userName</td>
+<td style="border:1px solid #ddd; padding:10px;">필요</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">응답 구조 변경</td>
+<td style="border:1px solid #ddd; padding:10px;">배열 응답 → 페이지네이션 객체로 감싸기</td>
+<td style="border:1px solid #ddd; padding:10px;">필요</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">필수 파라미터 추가</td>
+<td style="border:1px solid #ddd; padding:10px;">요청에 필수 헤더·바디 필드 신설</td>
+<td style="border:1px solid #ddd; padding:10px;">필요</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념: 세 가지 버저닝 전략 비교</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">세 전략 모두 결국 서버 쪽에서는 <b>요청 어딘가에 담긴 버전 신호를 읽어서 적절한 핸들러로 분기</b>하는 동작이 동일합니다. 차이는 그 신호를 어디에 담느냐, 그리고 그로 인해 캐싱·문서화·클라이언트 구현이 얼마나 쉬워지거나 어려워지느냐에 있습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">전략</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">표기 방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">장점</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">단점</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">URI 경로 버저닝</td>
+<td style="border:1px solid #ddd; padding:10px;">/v2/users/42</td>
+<td style="border:1px solid #ddd; padding:10px;">눈으로 바로 보임, 캐싱·라우팅 단순</td>
+<td style="border:1px solid #ddd; padding:10px;">리소스 식별자 순수성이 흐려짐</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">커스텀 헤더 버저닝</td>
+<td style="border:1px solid #ddd; padding:10px;">X-API-Version: 2</td>
+<td style="border:1px solid #ddd; padding:10px;">URI는 고정, 리소스와 버전 분리</td>
+<td style="border:1px solid #ddd; padding:10px;">문서를 봐야 알 수 있음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">콘텐츠 협상(Accept)</td>
+<td style="border:1px solid #ddd; padding:10px;">Accept: vnd.api.v2+json</td>
+<td style="border:1px solid #ddd; padding:10px;">HTTP 표준 메커니즘 활용</td>
+<td style="border:1px solid #ddd; padding:10px;">구현 복잡, 브라우저 테스트 불가</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: 헤더 기반 버저닝 라우팅(Spring Boot)</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 스프링 MVC의 <b>headers</b> 속성으로 라우팅 단계에서부터 버전을 분기시키는 패턴입니다. 컨트롤러 메서드 안에서 <b>if (version == 2)</b> 식으로 분기하지 않아도 되므로, 버전별 응답 DTO와 서비스 로직을 명확히 분리할 수 있습니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">@RestController
+@RequestMapping("/users")
+public class UserController {
+
+    // 헤더 값이 1이면 v1 핸들러
+    @GetMapping(value = "/{id}", headers = "X-API-Version=1")
+    public UserV1Response getUserV1(@PathVariable Long id) {
+        return userService.getUserAsV1(id);
+    }
+
+    // 헤더 값이 2이면 v2 핸들러 - 응답 구조가 변경된 버전
+    @GetMapping(value = "/{id}", headers = "X-API-Version=2")
+    public UserV2Response getUserV2(@PathVariable Long id) {
+        return userService.getUserAsV2(id);
+    }
+
+    // 헤더가 없으면 기본 버전(v1)으로 폴백
+    @GetMapping("/{id}")
+    public UserV1Response getUserDefault(@PathVariable Long id) {
+        return userService.getUserAsV1(id);
+    }
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">헤더가 없는 클라이언트를 위한 기본 버전 폴백도 반드시 함께 정의해야 합니다. 그래야 기존 클라이언트가 신규 배포 이후에도 그대로 동작합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 외부 공개 API는 URI 버저닝이 유리</b> — 서드파티 개발자가 문서를 안 읽어도 URL에 버전이 보여 실수를 줄임<br>
+<b>2. 내부 서비스 간 API는 헤더 방식도 고려</b> — 리소스 식별자를 버전과 분리하고 싶고 클라이언트가 통제된 소수라면 부담이 크지 않음<br>
+<b>3. 버전은 최소한으로 유지</b> — 동시 운영 버전이 늘어날수록 테스트·문서·인프라 비용이 배로 증가<br>
+<b>4. 버전은 메이저(breaking) 변경에만 사용</b> — 하위 호환 변경까지 버전을 올리면 클라이언트 마이그레이션 피로만 누적<br>
+<b>5. 캐싱 계층의 Vary 헤더 설정 필수</b> — 헤더·콘텐츠 협상 방식을 쓴다면 CDN·프록시가 버전 헤더를 캐시 키에 포함해야 함
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① API 버저닝은 하위 호환이 깨지는 변경(breaking change)에만 필요하며, 비파괴적 변경은 같은 버전 안에서 처리합니다.<br>
+② URI 경로 버저닝은 외부 공개 API에, 헤더·콘텐츠 협상 방식은 내부 서비스 간 API에 적합합니다.<br>
+③ 어떤 전략을 쓰든 버전 수는 최소로 유지하고, 캐싱 계층의 Vary 설정과 구버전 종료 일정 공지를 함께 챙겨야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 실제 API 인증·인가 설계 경험을 더 다뤄보겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#API버저닝 #REST설계 #시스템설계 #스프링부트 #백엔드개발</p>
+
+</body>
+</html>
