@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#1a1a1a">데이터 모델 구조 비교 — 도큐먼트 vs 와이드컬럼</text>
+
+  <!-- Left: Document model -->
+  <text x="200" y="58" text-anchor="middle" font-size="14.5" font-weight="bold" fill="#0b5fa5">도큐먼트 모델 (MongoDB)</text>
+  <rect x="40" y="72" width="320" height="250" rx="8" fill="#eaf3ff" stroke="#1877c9" stroke-width="1.5"/>
+  <text x="60" y="98" font-family="Consolas,Monaco,monospace" font-size="12.5" fill="#0b3d66">{</text>
+  <text x="75" y="120" font-family="Consolas,Monaco,monospace" font-size="12.5" fill="#0b3d66">_id: "user_123",</text>
+  <text x="75" y="142" font-family="Consolas,Monaco,monospace" font-size="12.5" fill="#0b3d66">name: "김민준",</text>
+  <text x="75" y="164" font-family="Consolas,Monaco,monospace" font-size="12.5" fill="#0b3d66">orders: [</text>
+
+  <rect x="95" y="174" width="245" height="76" rx="6" fill="#d9ebff" stroke="#1877c9" stroke-width="1"/>
+  <text x="110" y="194" font-family="Consolas,Monaco,monospace" font-size="12" fill="#0b3d66">{ id:"o1", amt:32000 },</text>
+  <text x="110" y="214" font-family="Consolas,Monaco,monospace" font-size="12" fill="#0b3d66">{ id:"o2", amt:15000 }</text>
+  <text x="110" y="234" font-family="Consolas,Monaco,monospace" font-size="11" fill="#4a7dad">← 임베딩된 배열(하위 문서)</text>
+
+  <text x="75" y="266" font-family="Consolas,Monaco,monospace" font-size="12.5" fill="#0b3d66">]</text>
+  <text x="60" y="288" font-family="Consolas,Monaco,monospace" font-size="12.5" fill="#0b3d66">}</text>
+  <text x="200" y="310" text-anchor="middle" font-size="11.5" fill="#0b5fa5">문서 1개 = 엔티티 1개, 스키마 자유 · 중첩 구조 표현</text>
+
+  <text x="200" y="340" text-anchor="middle" font-size="11.5" fill="#333">읽기: _id로 문서 1건 조회 → 관련 데이터 전부 한번에</text>
+  <text x="200" y="358" text-anchor="middle" font-size="11.5" fill="#333">쓰기: 문서 단위 원자적 갱신 (부분 갱신도 문서 내부에서)</text>
+
+  <!-- Right: Wide-column model -->
+  <text x="600" y="58" text-anchor="middle" font-size="14.5" font-weight="bold" fill="#1f7a38">와이드컬럼 모델 (Cassandra)</text>
+  <rect x="440" y="72" width="320" height="250" rx="8" fill="#eafff0" stroke="#2fa84f" stroke-width="1.5"/>
+  <text x="600" y="94" text-anchor="middle" font-size="12" font-weight="bold" fill="#1f7a38">Partition Key: user_123</text>
+
+  <!-- table header -->
+  <rect x="460" y="106" width="280" height="26" fill="#d3f5df" stroke="#2fa84f"/>
+  <text x="480" y="123" font-family="Consolas,Monaco,monospace" font-size="11.5" fill="#1f7a38">order_id</text>
+  <text x="580" y="123" font-family="Consolas,Monaco,monospace" font-size="11.5" fill="#1f7a38">date</text>
+  <text x="680" y="123" font-family="Consolas,Monaco,monospace" font-size="11.5" fill="#1f7a38">amount</text>
+
+  <!-- row 1 -->
+  <rect x="460" y="132" width="280" height="26" fill="#ffffff" stroke="#2fa84f"/>
+  <text x="480" y="149" font-family="Consolas,Monaco,monospace" font-size="11.5" fill="#1a1a1a">o1</text>
+  <text x="580" y="149" font-family="Consolas,Monaco,monospace" font-size="11.5" fill="#1a1a1a">08-10</text>
+  <text x="680" y="149" font-family="Consolas,Monaco,monospace" font-size="11.5" fill="#1a1a1a">32000</text>
+
+  <!-- row 2 -->
+  <rect x="460" y="158" width="280" height="26" fill="#ffffff" stroke="#2fa84f"/>
+  <text x="480" y="175" font-family="Consolas,Monaco,monospace" font-size="11.5" fill="#1a1a1a">o2</text>
+  <text x="580" y="175" font-family="Consolas,Monaco,monospace" font-size="11.5" fill="#1a1a1a">08-14</text>
+  <text x="680" y="175" font-family="Consolas,Monaco,monospace" font-size="11.5" fill="#1a1a1a">15000</text>
+
+  <text x="600" y="200" text-anchor="middle" font-size="11" fill="#1f7a38">↑ order_id = 클러스터링 키 (파티션 내 정렬 순서)</text>
+
+  <rect x="460" y="216" width="280" height="34" rx="5" fill="#d3f5df" stroke="#2fa84f" stroke-dasharray="3,2"/>
+  <text x="600" y="237" text-anchor="middle" font-size="11" fill="#1f7a38">같은 파티션 키 → 같은 노드에 저장됨</text>
+
+  <text x="600" y="270" text-anchor="middle" font-size="11.5" fill="#1f7a38">파티션 키로 저장 노드 결정, 클러스터링 키로 정렬</text>
+  <text x="600" y="300" text-anchor="middle" font-size="11.5" fill="#333">쓰기 확장에 강함 · 조회 패턴을 먼저 정하고</text>
+  <text x="600" y="318" text-anchor="middle" font-size="11.5" fill="#333">테이블을 설계(query-first modeling)</text>
+
+  <line x1="400" y1="72" x2="400" y2="322" stroke="#ccc" stroke-width="1" stroke-dasharray="4,3"/>
+
+  <text x="400" y="410" text-anchor="middle" font-size="12" fill="#555">공통점: 조인(JOIN) 없이 조회 패턴에 맞춰 미리 비정규화한다는 점</text>
+  <text x="400" y="430" text-anchor="middle" font-size="11" fill="#888">차이점: 도큐먼트는 "엔티티 중심 임베딩", 와이드컬럼은 "쿼리 중심 파티셔닝"</text>
+</svg>

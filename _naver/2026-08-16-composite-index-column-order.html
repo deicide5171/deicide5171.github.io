@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>복합 인덱스 컬럼 순서의 함정 — 카디널리티와 쿼리 패턴으로 설계하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">복합 인덱스 컬럼 순서의 함정 — 카디널리티와 쿼리 패턴으로 설계하기</div>
+<p style="font-size:14px; color:#999;">2026. 8. 16. · DB·데이터모델링</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 복합 인덱스는 컬럼 순서에 따라 실제로 스캔하는 범위가 크게 달라집니다. <b>리프트모스트 프리픽스 규칙</b>과 <b>동등·범위 조건 배치 원칙</b>을 기준으로 컬럼 순서를 설계하는 방법을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">인덱스는 있는데 왜 이 쿼리만 느릴까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">운영 DB에 복합 인덱스를 걸어뒀는데도 특정 쿼리만 유독 느리게 나오는 경우가 있습니다. 인덱스가 없어서가 아니라, <b>컬럼 순서가 그 쿼리의 조건 패턴과 맞지 않아</b> 옵티마이저가 인덱스를 절반만 활용하거나 넓은 범위를 스캔하기 때문입니다. 단일 컬럼 인덱스는 순서를 고민할 필요가 없지만, 컬럼 두세 개를 묶는 순간부터 "어떤 컬럼을 앞에 둘 것인가"가 설계의 실질적인 난이도를 좌우합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 판단에는 하나로 고정된 정답이 없습니다. 같은 테이블이라도 어떤 쿼리 패턴이 자주 실행되는지, 각 컬럼의 <b>카디널리티(값의 다양성)</b>가 어떤지에 따라 최적 순서가 달라집니다. <b>(customer_id, created_at)</b>과 <b>(created_at, customer_id)</b>는 컬럼 구성이 완전히 같지만, 실제로는 서로 다른 쿼리를 위한 인덱스인 셈입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이번 글에서는 컬럼 순서를 결정하는 두 가지 핵심 기준 — 리프트모스트 프리픽스 규칙과 동등·범위 조건 배치 원칙 — 을 정리하고, 순서를 바꿨을 때 실행계획이 어떻게 달라지는지 살펴보겠습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1: 리프트모스트 프리픽스 규칙</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">B-Tree 복합 인덱스 <b>(a, b, c)</b>는 먼저 a 값으로 정렬되고, 같은 a 값 안에서 b로, 같은 b 값 안에서 c로 정렬된 구조입니다. 그래서 쿼리 조건이 인덱스의 <b>왼쪽부터 연속된 접두사(prefix)</b>를 포함할 때만 해당 인덱스를 효율적으로 탈 수 있습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">WHERE 절 조건</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">인덱스 (a, b, c) 활용 여부</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">a = ?</td>
+<td style="border:1px solid #ddd; padding:10px;">사용 가능 — 접두사 1개</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">a = ? AND b = ?</td>
+<td style="border:1px solid #ddd; padding:10px;">사용 가능 — 접두사 2개</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">a = ? AND b = ? AND c = ?</td>
+<td style="border:1px solid #ddd; padding:10px;">사용 가능 — 전체 활용</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">b = ? (a 없이 단독)</td>
+<td style="border:1px solid #ddd; padding:10px;">사용 불가 — 접두사가 아님</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">a = ? AND c = ? (b 건너뜀)</td>
+<td style="border:1px solid #ddd; padding:10px;">a까지만 인덱스 탐색, c는 스캔 후 필터</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 규칙 덕분에 (a, b, c) 인덱스 하나만 있어도 (a), (a, b) 조건 쿼리까지 함께 커버됩니다. 반대로 b나 c만으로 조회하는 쿼리가 잦다면, 그 컬럼이 맨 앞에 오는 별도 인덱스가 필요합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2: 동등 조건을 앞에, 범위 조건을 뒤에</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">컬럼 순서를 정할 때 자주 쓰이는 관례는 <b>동등 조건(=) 컬럼을 먼저, 범위 조건(&gt;, &lt;, BETWEEN) 컬럼을 나중에</b> 두는 것입니다. B-Tree는 앞쪽 컬럼 값이 같은 항목끼리 먼저 묶이고, 그 묶음 안에서 다음 컬럼 순으로 정렬되어 있기 때문에, 동등 조건이 앞에 있으면 해당 값 하나에 해당하는 좁은 구간만 정확히 짚어 들어갈 수 있습니다. 반대로 범위 조건이 앞에 오면 그 범위에 해당하는 여러 값을 넓게 훑어야 하고, 그 안에서는 뒤 컬럼이 정렬돼 있지 않으므로 별도 필터링이 추가로 필요합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">ORDER BY가 걸린 쿼리라면 한 단계 더 고려할 게 있습니다. 인덱스 순서가 정렬 순서와 일치하면 별도의 정렬(Sort) 단계 없이 인덱스를 읽는 순서 그대로 결과를 반환할 수 있습니다. 그래서 실무에서는 <b>동등 조건 → 정렬 기준 컬럼 → 범위 조건 컬럼</b> 순으로 배치하는 방식이 자주 권장됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">카디널리티도 함께 봐야 합니다. 값의 종류가 몇 개 안 되는 컬럼(예: 상태값 3~4종)에 단독 인덱스를 걸면 옵티마이저가 "차라리 전체 스캔이 낫다"고 판단해 인덱스를 무시하는 경우가 흔합니다. 이런 저카디널리티 컬럼은 단독보다는, 카디널리티가 높은 컬럼과 묶은 복합 인덱스의 앞자리에 두어 "그룹을 나누는 용도"로 쓰는 편이 효과적입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: 컬럼 순서를 바꾸면 실행계획이 이렇게 달라집니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래 두 인덱스는 같은 컬럼으로 구성되지만 순서만 다릅니다. 특정 고객의 최근 7일 주문을 조회하는 쿼리를 기준으로 비교해보겠습니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">-- 인덱스 A: 동등 조건(customer_id)을 앞에
+CREATE INDEX idx_orders_a ON orders (customer_id, created_at);
+
+-- 인덱스 B: 범위 조건(created_at)을 앞에
+CREATE INDEX idx_orders_b ON orders (created_at, customer_id);
+
+-- 조회 쿼리: 특정 고객의 최근 7일 주문
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT * FROM orders
+WHERE customer_id = 42
+  AND created_at &gt; now() - interval '7 days'
+ORDER BY created_at DESC;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">인덱스 A를 쓰면 옵티마이저는 customer_id = 42에 해당하는 좁은 구간을 먼저 짚고, 그 안에서 created_at 조건과 정렬을 동시에 만족하는 순서로 읽습니다. 개념적으로는 다음과 같은 계획이 나옵니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">Index Scan using idx_orders_a on orders
+  Index Cond: (customer_id = 42 AND created_at &gt; ...)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">인덱스 B를 쓰면 created_at &gt; ... 조건에 해당하는 훨씬 넓은 구간(전체 고객의 최근 7일 데이터)을 먼저 훑은 뒤, 그 안에서 customer_id = 42인 행만 걸러내야 합니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">Index Scan using idx_orders_b on orders
+  Index Cond: (created_at &gt; ...)
+  Filter: (customer_id = 42)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">전체 고객 수가 많고 한 고객의 주문 비중이 작을수록, 인덱스 A와 B의 스캔 범위 차이는 크게 벌어집니다. 결과 행 수 자체는 같아도, 그 결과에 도달하기까지 훑어야 하는 인덱스 구간의 크기가 달라지는 것입니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-16-composite-index-column-order-1.svg" alt="복합 인덱스 컬럼 순서에 따른 탐색 범위 비교" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무에서 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 쿼리 패턴을 먼저 수집</b> — 가장 자주 실행되는 WHERE·ORDER BY 조합을 확인한 뒤 컬럼 순서를 정합니다<br>
+<b>2. 리프트모스트 프리픽스로 인덱스 개수 줄이기</b> — (a, b, c) 인덱스가 있으면 (a), (a, b) 조건 쿼리까지 함께 커버되는 경우가 많습니다<br>
+<b>3. 인덱스가 늘수록 쓰기 비용도 증가</b> — INSERT·UPDATE·DELETE마다 관련 인덱스가 함께 갱신되므로 컬럼 순서만 다른 인덱스를 여러 개 만드는 것은 신중히 판단합니다<br>
+<b>4. EXPLAIN(ANALYZE, BUFFERS)로 반드시 검증</b> — 이론상 맞는 순서라도 통계 정보나 데이터 분포에 따라 옵티마이저 판단이 달라질 수 있습니다<br>
+<b>5. 커버링 인덱스도 함께 검토</b> — 자주 조회하는 컬럼을 인덱스에 포함시켜(PostgreSQL의 INCLUDE 절 등) 테이블 접근 자체를 줄이는 방법도 고려합니다
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 복합 인덱스는 리프트모스트 프리픽스 규칙 때문에, 인덱스 왼쪽부터 연속된 조건을 가진 쿼리만 온전히 활용할 수 있습니다.<br>
+② 동등 조건 컬럼을 앞에, 범위 조건 컬럼을 뒤에 두는 배치와 각 컬럼의 카디널리티, 실제 쿼리 패턴을 함께 고려해야 최적의 순서가 나옵니다.<br>
+③ 설계 후에는 반드시 EXPLAIN으로 실제 실행계획을 확인해 이론과 실제 데이터 분포가 맞는지 검증해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 쿼리 튜닝의 다른 주제로 찾아오겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#DB인덱스 #복합인덱스 #쿼리튜닝 #PostgreSQL #카디널리티 #백엔드개발</p>
+
+</body>
+</html>

@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#1a1a1a">복합 인덱스 컬럼 순서에 따른 탐색 범위 비교</text>
+  <text x="400" y="48" text-anchor="middle" font-size="12" fill="#666">조건: WHERE status = 'PAID' AND created_at &gt; 최근 7일</text>
+
+  <!-- Panel A -->
+  <text x="200" y="80" text-anchor="middle" font-size="14" font-weight="bold" fill="#1f7a38">인덱스 A: (status, created_at)</text>
+  <rect x="40" y="95" width="320" height="30" rx="4" fill="none" stroke="#ccc"/>
+  <!-- group PAID (5 boxes) -->
+  <rect x="42" y="97" width="24" height="26" fill="#2fa84f"/>
+  <rect x="68" y="97" width="24" height="26" fill="#2fa84f"/>
+  <rect x="94" y="97" width="24" height="26" fill="#2fa84f"/>
+  <rect x="120" y="97" width="24" height="26" fill="#2fa84f"/>
+  <rect x="146" y="97" width="24" height="26" fill="#2fa84f"/>
+  <!-- group PENDING (5 boxes) -->
+  <rect x="174" y="97" width="24" height="26" fill="#c9701d"/>
+  <rect x="200" y="97" width="24" height="26" fill="#c9701d"/>
+  <rect x="226" y="97" width="24" height="26" fill="#c9701d"/>
+  <rect x="252" y="97" width="24" height="26" fill="#c9701d"/>
+  <rect x="278" y="97" width="24" height="26" fill="#c9701d"/>
+  <!-- group CANCELLED (3 boxes) -->
+  <rect x="306" y="97" width="24" height="26" fill="#999999"/>
+  <rect x="332" y="97" width="24" height="26" fill="#999999"/>
+  <rect x="358" y="97" width="24" height="26" fill="#999999"/>
+
+  <text x="104" y="140" text-anchor="middle" font-size="10" fill="#1f7a38">PAID 그룹</text>
+  <text x="226" y="140" text-anchor="middle" font-size="10" fill="#a3550f">PENDING 그룹</text>
+  <text x="332" y="140" text-anchor="middle" font-size="10" fill="#555">CANCELLED 그룹</text>
+
+  <!-- highlight narrow range inside PAID group -->
+  <rect x="118" y="93" width="54" height="34" fill="none" stroke="#0b5fa5" stroke-width="2" stroke-dasharray="4,3"/>
+  <line x1="145" y1="127" x2="145" y2="165" stroke="#0b5fa5" stroke-width="1.2" stroke-dasharray="3,2"/>
+  <text x="145" y="180" text-anchor="middle" font-size="11" fill="#0b5fa5">탐색 범위: PAID 그룹</text>
+  <text x="145" y="194" text-anchor="middle" font-size="11" fill="#0b5fa5">안에서 최근 날짜만 좁게 스캔</text>
+
+  <!-- Panel B -->
+  <text x="620" y="80" text-anchor="middle" font-size="14" font-weight="bold" fill="#a3550f">인덱스 B: (created_at, status)</text>
+  <rect x="440" y="95" width="320" height="30" rx="4" fill="none" stroke="#ccc"/>
+  <!-- interleaved by date, mixed status colors -->
+  <rect x="442" y="97" width="24" height="26" fill="#999999"/>
+  <rect x="468" y="97" width="24" height="26" fill="#c9701d"/>
+  <rect x="494" y="97" width="24" height="26" fill="#2fa84f"/>
+  <rect x="520" y="97" width="24" height="26" fill="#999999"/>
+  <rect x="546" y="97" width="24" height="26" fill="#2fa84f"/>
+  <rect x="572" y="97" width="24" height="26" fill="#c9701d"/>
+  <rect x="598" y="97" width="24" height="26" fill="#2fa84f"/>
+  <rect x="624" y="97" width="24" height="26" fill="#999999"/>
+  <rect x="650" y="97" width="24" height="26" fill="#c9701d"/>
+  <rect x="676" y="97" width="24" height="26" fill="#2fa84f"/>
+  <rect x="702" y="97" width="24" height="26" fill="#999999"/>
+  <rect x="728" y="97" width="24" height="26" fill="#2fa84f"/>
+
+  <text x="600" y="140" text-anchor="middle" font-size="10" fill="#555">날짜 순서대로 정렬 (상태는 뒤섞임)</text>
+
+  <!-- highlight wide range covering last 7 boxes (date condition) -->
+  <rect x="570" y="93" width="184" height="34" fill="none" stroke="#c94040" stroke-width="2" stroke-dasharray="4,3"/>
+  <line x1="662" y1="127" x2="662" y2="165" stroke="#c94040" stroke-width="1.2" stroke-dasharray="3,2"/>
+  <text x="662" y="180" text-anchor="middle" font-size="11" fill="#c94040">탐색 범위: 최근 7일 전체</text>
+  <text x="662" y="194" text-anchor="middle" font-size="11" fill="#c94040">(모든 상태 포함, 이후 별도 필터링)</text>
+
+  <!-- legend -->
+  <rect x="40" y="220" width="16" height="16" fill="#2fa84f"/>
+  <text x="62" y="233" font-size="12" fill="#333">PAID</text>
+  <rect x="130" y="220" width="16" height="16" fill="#c9701d"/>
+  <text x="152" y="233" font-size="12" fill="#333">PENDING</text>
+  <rect x="240" y="220" width="16" height="16" fill="#999999"/>
+  <text x="262" y="233" font-size="12" fill="#333">CANCELLED</text>
+
+  <!-- summary box -->
+  <rect x="40" y="260" width="720" height="150" rx="8" fill="#f5f8fb" stroke="#c8d8ec"/>
+  <text x="60" y="290" font-size="13.5" fill="#1a1a1a" font-weight="bold">왜 인덱스 A가 더 좁게 스캔하는가</text>
+  <text x="60" y="315" font-size="12.5" fill="#333">B-tree는 앞쪽 컬럼 값이 같은 항목끼리 먼저 묶이고, 그 안에서 다음 컬럼 순으로 정렬된다.</text>
+  <text x="60" y="337" font-size="12.5" fill="#333">동등 조건(status = 'PAID')이 앞에 있으면 해당 그룹만 정확히 짚어 들어가 그룹 내부에서</text>
+  <text x="60" y="359" font-size="12.5" fill="#333">created_at 범위만 좁게 훑으면 된다. 반대로 범위 조건(created_at)이 앞에 있으면</text>
+  <text x="60" y="381" font-size="12.5" fill="#333">해당 날짜 범위 전체를 넓게 훑은 뒤, status 조건은 스캔 이후 별도 필터링으로 처리된다.</text>
+
+  <text x="400" y="435" text-anchor="middle" font-size="11" fill="#777">동등 조건 컬럼을 앞에, 범위 조건 컬럼을 뒤에 — 카디널리티와 쿼리 패턴에 맞춘 컬럼 순서가 스캔 범위를 좌우한다</text>
+</svg>

@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">멀티스테이지 빌드 — 레이어 구조 비교</text>
+
+  <!-- Build stage -->
+  <g>
+    <rect x="30" y="60" width="330" height="330" rx="10" fill="#eef6ff" stroke="#3b82f6" stroke-width="2"/>
+    <text x="195" y="90" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="bold" fill="#1d4ed8">빌드 스테이지 (builder)</text>
+    <text x="195" y="108" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#334155">FROM node:20 AS builder</text>
+
+    <rect x="55" y="125" width="280" height="40" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="195" y="149" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#222">베이스 이미지 (빌드 툴체인 포함)</text>
+
+    <rect x="55" y="173" width="280" height="40" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="195" y="197" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#222">의존성 설치 (npm ci / go mod)</text>
+
+    <rect x="55" y="221" width="280" height="40" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="195" y="245" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#222">소스 복사 + 컴파일 (build)</text>
+
+    <rect x="55" y="269" width="280" height="40" rx="6" fill="#dbeafe" stroke="#3b82f6"/>
+    <text x="195" y="293" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="#1e3a8a">산출물 (실행 파일 / dist)</text>
+
+    <text x="195" y="335" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#475569">빌드 도구·소스·캐시가</text>
+    <text x="195" y="352" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#475569">전부 남아있는 무거운 이미지</text>
+    <text x="195" y="374" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#64748b">(최종 배포에는 사용 안 함)</text>
+  </g>
+
+  <!-- Arrow -->
+  <g>
+    <line x1="370" y1="270" x2="425" y2="270" stroke="#16a34a" stroke-width="3" marker-end="url(#arrow)"/>
+    <text x="397" y="250" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#15803d">COPY</text>
+    <text x="397" y="296" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#15803d">--from=builder</text>
+  </g>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#16a34a"/>
+    </marker>
+  </defs>
+
+  <!-- Runtime stage -->
+  <g>
+    <rect x="430" y="60" width="340" height="330" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+    <text x="600" y="90" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="bold" fill="#15803d">런타임 스테이지 (최종 이미지)</text>
+    <text x="600" y="108" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#334155">FROM gcr.io/distroless/nodejs20</text>
+
+    <rect x="460" y="130" width="280" height="40" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="600" y="154" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#222">최소 베이스 (쉘·패키지 매니저 없음)</text>
+
+    <rect x="460" y="178" width="280" height="40" rx="6" fill="#bbf7d0" stroke="#16a34a"/>
+    <text x="600" y="202" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="#14532d">빌드 산출물만 COPY</text>
+
+    <rect x="460" y="226" width="280" height="40" rx="6" fill="#ffffff" stroke="#94a3b8"/>
+    <text x="600" y="250" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#222">비루트 사용자로 실행 (USER)</text>
+
+    <text x="600" y="300" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#475569">빌드 도구·소스코드·캐시가</text>
+    <text x="600" y="317" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#475569">전부 빠진 가볍고 좁은 이미지</text>
+    <text x="600" y="339" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#64748b">→ 배포 전송·시작 속도 개선,</text>
+    <text x="600" y="356" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#64748b">공격 표면(취약점 스캔 대상) 축소</text>
+  </g>
+
+  <text x="400" y="425" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#64748b">하나의 Dockerfile 안에서 스테이지를 분리해, 최종 이미지에는 실행에 필요한 것만 남긴다</text>
+</svg>

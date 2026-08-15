@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>이벤트 하나가 시스템 전체를 깨뜨리기 전에 — 스키마 레지스트리</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">이벤트 하나가 시스템 전체를 깨뜨리기 전에 — 스키마 레지스트리로 스키마 진화 관리하기</div>
+<p style="font-size:14px; color:#999;">2026. 8. 16. · 아키텍처·시스템설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 이벤트 기반 아키텍처에서 프로듀서가 필드 하나만 바꿔도 여러 컨슈머가 동시에 죽는 이유와, 스키마 레지스트리·호환성 모드로 이를 안전하게 관리하는 방법을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 스키마 진화 문제일까요</div>
+<p style="font-size:16px; color:#333; line-height:1.8;">이벤트 기반 아키텍처는 서비스 간 결합을 낮추기 위해 도입합니다. 프로듀서는 이벤트를 브로커에 던지고, 컨슈머는 각자의 속도로 읽어 처리합니다. 문제는 이 구조가 &quot;런타임 결합&quot;은 없애지만 &quot;스키마 결합&quot;은 그대로 남긴다는 점입니다. 프로듀서가 이벤트 필드 하나를 바꾸면, 그 이벤트를 구독하는 모든 컨슈머가 같은 순간에 영향을 받습니다.</p>
+<p style="font-size:16px; color:#333; line-height:1.8;">주문 이벤트 하나를 결제, 배송, 정산, 알림 서비스가 각각 구독하고 있다면, 주문 서비스 팀이 필드 이름을 바꾸거나 타입을 변경하는 순간 여러 팀이 동시에 장애 대응에 들어가야 할 수 있습니다. REST API였다면 버전 경로로 분리하면 그만이지만, 이벤트 스트림은 과거 이벤트와 미래 이벤트가 같은 토픽에 계속 섞여 쌓인다는 점에서 더 까다롭습니다.</p>
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>스키마 레지스트리(Schema Registry)</b>는 이 문제를 &quot;합의 없는 변경&quot;에서 &quot;검증된 진화&quot;로 바꾸는 인프라입니다. 이벤트 스키마를 중앙에 저장하고 버전을 관리하며, 새 버전을 등록할 때마다 이전 버전과의 호환성을 기계적으로 검사합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">스키마 레지스트리가 하는 일</div>
+<p style="font-size:16px; color:#333; line-height:1.8;">스키마 레지스트리는 Kafka 같은 메시지 브로커와 함께 쓰이는 별도 서버(또는 관리형 서비스)로, 크게 세 가지 역할을 합니다. 첫째, 토픽(subject)별로 스키마 버전 이력을 저장합니다. 둘째, 새 스키마를 등록할 때 설정된 호환성 모드에 맞는지 자동으로 검증하고 위반 시 등록 자체를 거부합니다. 셋째, 프로듀서는 메시지 앞에 스키마 id(4바이트)만 붙여 보내고 컨슈머는 그 id로 정확한 스키마를 조회해 역직렬화하는 직렬화 프로토콜을 제공합니다. 메시지마다 전체 스키마를 실어 보낼 필요가 없어지는 셈입니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-16-event-schema-registry-1.svg" alt="스키마 레지스트리를 통한 스키마 진화 흐름" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">호환성 모드 — 무엇을, 누구 기준으로 검사할까요</div>
+<p style="font-size:16px; color:#333; line-height:1.8;">호환성 모드는 &quot;새 스키마가 기존 스키마와 비교해 무엇을 깨뜨리면 안 되는가&quot;를 정의합니다. 이 선택이 배포 순서 제약을 결정하기 때문에 팀 전체가 이해하고 있어야 합니다.</p>
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">모드</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">검사 기준</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">배포 순서 제약</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">BACKWARD</td>
+<td style="border:1px solid #ddd; padding:10px;">새 스키마로 이전 데이터를 읽을 수 있는가</td>
+<td style="border:1px solid #ddd; padding:10px;">컨슈머를 먼저 업데이트</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">FORWARD</td>
+<td style="border:1px solid #ddd; padding:10px;">이전 스키마로 새 데이터를 읽을 수 있는가</td>
+<td style="border:1px solid #ddd; padding:10px;">프로듀서를 먼저 업데이트</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">FULL</td>
+<td style="border:1px solid #ddd; padding:10px;">BACKWARD와 FORWARD 모두 충족</td>
+<td style="border:1px solid #ddd; padding:10px;">순서 무관, 변경 폭은 가장 좁음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">NONE</td>
+<td style="border:1px solid #ddd; padding:10px;">검사하지 않음</td>
+<td style="border:1px solid #ddd; padding:10px;">팀 간 수동 조율 필요(위험)</td>
+</tr>
+</table>
+<p style="font-size:16px; color:#333; line-height:1.8;">실무에서 가장 널리 쓰이는 기본값은 <b>BACKWARD</b>입니다. 컨슈머가 새 스키마를 먼저 받아도 과거에 쌓인 이벤트를 계속 읽을 수 있어야 하는 상황(재처리, 리플레이)이 흔하기 때문입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: Avro 스키마 진화와 Compatibility 설정</div>
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 주문 이벤트 스키마에 배송 요청사항 필드를 추가하는 예시입니다. 기존 컨슈머가 계속 동작하도록 기본값을 반드시 지정합니다.</p>
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">// order-event-v2.avsc — BACKWARD 호환 유지
+{
+  &quot;type&quot;: &quot;record&quot;,
+  &quot;name&quot;: &quot;OrderEvent&quot;,
+  &quot;fields&quot;: [
+    { &quot;name&quot;: &quot;orderId&quot;, &quot;type&quot;: &quot;string&quot; },
+    { &quot;name&quot;: &quot;amount&quot;, &quot;type&quot;: &quot;double&quot; },
+    { &quot;name&quot;: &quot;status&quot;, &quot;type&quot;: &quot;string&quot; },
+    { &quot;name&quot;: &quot;deliveryNote&quot;, &quot;type&quot;: [&quot;null&quot;, &quot;string&quot;], &quot;default&quot;: null }
+  ]
+}</pre>
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># v2 스키마 등록 전, 호환성 사전 검증(등록하지 않고 검사만)
+curl -X POST -H &quot;Content-Type: application/vnd.schemaregistry.v1+json&quot; \
+  --data @order-event-v2-request.json \
+  http://schema-registry:8081/compatibility/subjects/order-events/versions/latest</pre>
+<p style="font-size:16px; color:#333; line-height:1.8;">이 compatibility 검사 API를 CI 파이프라인에 넣어두면, 스키마 변경 PR을 머지하기 전에 호환성 위반을 자동으로 잡아낼 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. CI에 호환성 검사를 반드시 넣으세요</b> — 스키마 파일이 바뀌는 PR마다 compatibility API를 호출해 위반 시 머지를 막습니다.<br>
+<b>2. 필드 삭제보다 deprecated 표시를 우선하세요</b> — 삭제 전에 소비 중인 컨슈머가 남아 있는지 사용률을 먼저 확인합니다.<br>
+<b>3. subject 네이밍 전략을 팀 차원에서 통일하세요</b> — 토픽당 한 스키마인지, 토픽 하나에 여러 이벤트 타입이 섞이는지에 따라 버전 관리 단위가 달라집니다.<br>
+<b>4. 레지스트리 자체의 가용성도 설계에 포함하세요</b> — 컨슈머가 스키마 조회에 실패하면 역직렬화 자체가 막히므로, 클라이언트 캐싱과 레지스트리 이중화를 함께 고려합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+<p style="font-size:16px; color:#333; line-height:1.8;">① 이벤트 기반 아키텍처는 런타임 결합은 낮추지만 스키마 결합은 그대로 남기므로, 필드 변경 하나가 여러 컨슈머를 동시에 깨뜨릴 수 있습니다.<br>
+② 스키마 레지스트리는 스키마 버전을 중앙에서 관리하고, BACKWARD·FORWARD·FULL 같은 호환성 모드로 새 스키마 등록 시점에 위반을 기계적으로 차단합니다.<br>
+③ 실무에서는 기본값 있는 필드 추가를 원칙으로 삼고, CI 단계의 자동 호환성 검사와 레지스트리 자체의 가용성 설계까지 함께 챙겨야 안전하게 정착합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음에는 실제 컨슈머 배포 순서 조율 경험도 다뤄보겠습니다.</p>
+
+<p style="font-size:14px; color:#03c75a;">#스키마레지스트리 #이벤트기반아키텍처 #Kafka #Avro #스키마진화 #시스템설계</p>
+
+</body>
+</html>

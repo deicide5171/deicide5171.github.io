@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>쿠버네티스 오토스케일링 완전정복 — HPA·VPA·KEDA, 언제 무엇을 조합할까</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">쿠버네티스 오토스케일링 완전정복 — HPA·VPA·KEDA, 언제 무엇을 조합할까</div>
+<p style="font-size:14px; color:#999;">2026. 8. 16. · 인프라</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — HPA는 Pod 개수(수평), VPA는 Pod당 자원량(수직), KEDA는 외부 이벤트 기반 확장을 담당합니다. 세 도구는 경쟁이 아니라 보완 관계이며, 워크로드 특성에 맞게 조합하는 것이 핵심입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 오토스케일링을 다시 봐야 할까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">많은 팀이 <b>kubectl autoscale</b>로 HPA 하나만 걸어두고 "오토스케일링은 끝났다"고 생각합니다. 하지만 트래픽이 몰릴 때 Pod 개수는 늘어나는데 개별 Pod의 자원 배분(requests/limits)은 그대로라 여전히 스로틀링이 걸리거나, 메시지 큐에 작업이 쌓여도 CPU 사용률이 낮아 HPA가 전혀 반응하지 않는 경우를 겪어보셨을 겁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이는 오토스케일링이 사실 서로 다른 축의 문제라는 것을 보여줍니다. <b>얼마나 많은 Pod를 띄울 것인가</b>는 HPA(Horizontal Pod Autoscaler)가, <b>Pod 하나가 얼마만큼의 자원을 쓸 것인가</b>는 VPA(Vertical Pod Autoscaler)가, <b>CPU·메모리가 아닌 다른 신호로 스케일할 것인가</b>는 KEDA(Kubernetes Event-Driven Autoscaling)가 담당합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">세 도구의 차이를 모르면 "오토스케일링을 붙였는데 왜 장애가 그대로냐"는 질문에 답하기 어렵습니다. 오늘은 세 도구의 동작 원리 차이와 실전 조합 전략을 정리해보겠습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1·2: HPA와 VPA</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>HPA</b>는 지정한 메트릭(기본은 CPU 사용률)이 목표치를 넘으면 Deployment의 replica 수를 늘리고, 낮아지면 줄입니다. Kubernetes 표준 컨트롤러로 metrics-server만 있으면 바로 쓸 수 있고, Custom Metrics API를 붙이면 요청 수·큐 대기시간 같은 지표로도 확장할 수 있습니다. 핵심 제약은 <b>상태를 갖지 않는(stateless) 워크로드</b>에 적합하다는 점입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>VPA</b>는 Pod의 실제 CPU·메모리 사용 이력을 관찰해 requests/limits 값을 자동으로 조정(또는 추천)합니다. 다만 값을 바꾸려면 대부분 <b>Pod 재시작</b>이 필요합니다(In-place resize 지원 범위는 클러스터 버전에 따라 다르므로 반드시 확인이 필요합니다). 그래서 실시간 반응보다는 배치 잡이나 정기적인 리소스 사이징 최적화에 더 잘 맞습니다. HPA와 VPA를 <b>같은 메트릭(CPU) 기준으로 동시에</b> 적용하면 서로 충돌할 수 있어 주의가 필요합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3: KEDA와 Scale-to-Zero</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>KEDA</b>는 CPU·메모리가 아닌 <b>외부 이벤트 소스</b>(메시지 큐 길이, Kafka consumer lag, 예약 큐 대기 작업 수 등)를 기준으로 스케일링을 트리거합니다. 내부적으로는 HPA를 생성해 위임하는 구조이며, 다양한 시스템을 위한 Scaler를 제공합니다. 가장 큰 차별점은 <b>Scale-to-Zero</b>입니다 — 유휴 상태일 때 Pod를 0개까지 줄였다가 이벤트가 들어오면 다시 띄우는 것으로, CPU 기반 HPA는 할 수 없는 동작입니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">도구</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">확장 축</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">트리거</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Scale-to-Zero</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">대표 적합 대상</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">HPA</td>
+<td style="border:1px solid #ddd; padding:10px;">수평(Pod 개수)</td>
+<td style="border:1px solid #ddd; padding:10px;">CPU/메모리, 커스텀 메트릭</td>
+<td style="border:1px solid #ddd; padding:10px;">불가</td>
+<td style="border:1px solid #ddd; padding:10px;">상태 없는 웹/API 서버</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">VPA</td>
+<td style="border:1px solid #ddd; padding:10px;">수직(자원 요청량)</td>
+<td style="border:1px solid #ddd; padding:10px;">사용량 이력 분석</td>
+<td style="border:1px solid #ddd; padding:10px;">해당 없음</td>
+<td style="border:1px solid #ddd; padding:10px;">배치, 단일 인스턴스</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">KEDA</td>
+<td style="border:1px solid #ddd; padding:10px;">수평(Pod 개수)</td>
+<td style="border:1px solid #ddd; padding:10px;">외부 이벤트(큐, lag 등)</td>
+<td style="border:1px solid #ddd; padding:10px;">가능</td>
+<td style="border:1px solid #ddd; padding:10px;">비동기 워커, 큐 컨슈머</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-16-k8s-autoscaling-hpa-vpa-keda-1.svg" alt="HPA·VPA·KEDA 동작 비교 개념도" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: HPA와 KEDA 설정 (YAML)</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">먼저 CPU 사용률 70%를 기준으로 하는 기본 HPA 설정입니다. <b>stabilizationWindowSeconds</b>는 트래픽이 일시적으로 빠졌다가 다시 늘어나는 패턴에서 Pod를 줄였다 늘렸다 반복하는 플래핑을 막는 데 유용합니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: api-server-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: api-server
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">다음은 RabbitMQ 큐 길이를 기준으로 워커를 확장하는 KEDA ScaledObject입니다. <b>minReplicaCount: 0</b>이 핵심 기능으로, 큐가 비어 있으면 워커 Pod를 0개까지 줄여 유휴 비용을 없애고 메시지가 쌓이면 다시 Pod를 띄웁니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">apiVersion: keda.sh/v1alpha1
+kind: ScaledObject
+metadata:
+  name: order-worker-scaler
+spec:
+  scaleTargetRef:
+    name: order-worker
+  minReplicaCount: 0
+  maxReplicaCount: 20
+  cooldownPeriod: 60
+  triggers:
+    - type: rabbitmq
+      metadata:
+        queueName: order-queue
+        mode: QueueLength
+        value: &quot;5&quot;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. HPA와 VPA를 같은 메트릭으로 동시에 걸지 않기</b> — CPU 기준 HPA + CPU 기준 VPA는 서로 충돌 가능, VPA는 메모리 위주 또는 추천 모드로 운용<br>
+<b>2. KEDA는 결국 HPA 위에서 동작</b> — ScaledObject 생성 시 내부적으로 HPA 리소스를 만들므로 기존 HPA 운영 노하우를 그대로 활용 가능<br>
+<b>3. Scale-to-Zero는 콜드 스타트 비용과 함께 검토</b> — Pod가 0개에서 다시 뜨는 시간이 서비스 지연 요구사항과 맞는지 확인<br>
+<b>4. 버전별 기능 차이는 반드시 클러스터에서 재확인</b> — VPA의 In-place resize 등은 배포판·버전에 따라 지원 범위가 다름
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① HPA는 Pod 개수(수평), VPA는 Pod당 자원량(수직), KEDA는 외부 이벤트 기반 확장(+ Scale-to-Zero)을 담당하는 서로 다른 도구입니다.<br>
+② KEDA는 내부적으로 HPA를 생성해 위임하는 구조이므로 기존 HPA 지식을 그대로 활용할 수 있습니다.<br>
+③ HPA와 VPA를 같은 메트릭으로 동시에 적용하지 말고, 워크로드 특성(상태 없음/배치/이벤트 기반)에 맞게 조합하는 것이 핵심입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#쿠버네티스 #HPA #VPA #KEDA #오토스케일링 #데브옵스</p>
+
+</body>
+</html>

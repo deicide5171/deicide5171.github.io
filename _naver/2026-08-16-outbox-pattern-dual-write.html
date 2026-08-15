@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>아웃박스 패턴으로 이중 쓰기(Dual Write) 문제 해결하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">트랜잭션은 지켰는데 메시지는 안 갔다 — 아웃박스 패턴으로 이중 쓰기 문제 해결하기</div>
+<p style="font-size:14px; color:#999;">2026. 8. 16. · 아키텍처·시스템설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — DB 커밋과 메시지 발행을 따로 호출하면 둘 중 하나만 성공하는 <b>이중 쓰기(Dual Write) 문제</b>가 생깁니다. 이벤트를 브로커로 직접 보내지 않고 같은 트랜잭션 안의 <b>아웃박스(outbox) 테이블</b>에 함께 기록해 DB 트랜잭션의 원자성을 그대로 물려받는 방법을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 문제인가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&quot;주문을 저장한 뒤 재고 서비스에 이벤트를 발행한다&quot; — 마이크로서비스에서 셀 수 없이 반복되는 패턴입니다. 코드는 대개 먼저 DB에 주문을 커밋하고, 그다음 Kafka 같은 메시지 브로커로 이벤트를 보내는 식으로 짜여 있습니다. 문제는 이 두 호출이 서로 다른 시스템(RDBMS와 메시지 브로커)을 대상으로 하는 별개의 연산이라는 점입니다. <b>DB 커밋은 성공했는데 그 직후 네트워크 장애나 브로커 다운으로 메시지 발행이 실패하면</b>, 주문은 저장됐지만 재고 서비스는 이 사실을 영원히 모르게 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이것이 <b>이중 쓰기(Dual Write) 문제</b>입니다. 서로 다른 두 저장소에 대한 쓰기를 애플리케이션 코드에서 순서대로 호출하는 것만으로는 원자성을 얻을 수 없습니다. 분산 트랜잭션(2PC)으로 풀어보려는 시도도 있지만, 메시지 브로커 대부분이 이를 지원하지 않거나 가용성 비용이 커서 실무에서 거의 쓰이지 않습니다. 이 글에서는 이 문제를 DB 트랜잭션 하나로 환원해 풀어내는 <b>트랜잭셔널 아웃박스(Transactional Outbox) 패턴</b>을 다뤄보겠습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">이중 쓰기 실패 시나리오</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이중 쓰기가 왜 위험한지는 실패 순서를 나눠보면 분명해집니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">실행 순서</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">결과</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">문제</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">DB 커밋 성공 → 메시지 발행 실패</td>
+<td style="border:1px solid #ddd; padding:10px;">주문은 존재, 이벤트는 없음</td>
+<td style="border:1px solid #ddd; padding:10px;">재고 차감 누락, 데이터 불일치</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">메시지 발행(먼저) 성공 → DB 커밋 실패</td>
+<td style="border:1px solid #ddd; padding:10px;">주문은 없음, 이벤트는 존재</td>
+<td style="border:1px solid #ddd; padding:10px;">존재하지 않는 주문에 대한 이벤트 처리</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">발행 후 커밋 대기 중 프로세스 종료</td>
+<td style="border:1px solid #ddd; padding:10px;">상태 불확실</td>
+<td style="border:1px solid #ddd; padding:10px;">재시도 시 중복 발행 또는 완전 유실</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">애플리케이션 재시도로 일부는 완화할 수 있지만, 재시도 자체가 또 실패하면 문제는 그대로 남습니다. 근본 원인은 <b>커밋 지점이 두 개</b>라는 것입니다. 아웃박스 패턴은 이 커밋 지점을 하나로 줄입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">트랜잭셔널 아웃박스 패턴</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아이디어는 단순합니다. 메시지를 브로커로 직접 보내는 대신, <b>같은 데이터베이스 안에 outbox라는 테이블을 두고 비즈니스 데이터와 이벤트 행을 같은 트랜잭션 안에서 함께 INSERT</b>합니다. RDBMS의 트랜잭션은 이미 원자성을 보장하므로, 주문 테이블과 outbox 테이블에 대한 쓰기는 둘 다 성공하거나 둘 다 롤백됩니다. 이중 쓰기 문제 자체가 발생할 수 없는 구조가 되는 것입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이벤트를 실제 브로커로 전달하는 일은 별도의 <b>릴레이(relay)</b> 프로세스가 맡습니다. 이 릴레이가 outbox 테이블을 읽어 Kafka 등으로 발행하고, 발행이 끝난 행을 표시하거나 삭제합니다. 애플리케이션 트랜잭션과 메시지 발행이 시간적으로 분리되므로, 발행이 지연되거나 재시도되더라도 원본 데이터의 정합성은 항상 보장됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">릴레이 방식 비교 — 폴링 발행자 vs CDC</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">outbox 테이블을 브로커로 실어 나르는 방식은 크게 두 갈래로 나뉩니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">폴링 발행자</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">CDC 기반 발행(Debezium 등)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">동작 원리</td>
+<td style="border:1px solid #ddd; padding:10px;">스케줄러가 주기적으로 미발행 행 조회</td>
+<td style="border:1px solid #ddd; padding:10px;">DB 트랜잭션 로그를 실시간 스트리밍</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">지연 시간</td>
+<td style="border:1px solid #ddd; padding:10px;">폴링 주기에 종속</td>
+<td style="border:1px solid #ddd; padding:10px;">로그 커밋 직후 거의 즉시</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">구현 난이도</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음(애플리케이션 코드만으로 가능)</td>
+<td style="border:1px solid #ddd; padding:10px;">Debezium 등 커넥터 인프라 필요</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">소규모 서비스나 빠르게 도입하고 싶은 경우 폴링 발행자로 시작하고, 지연 시간과 DB 부하가 문제가 되기 시작하면 CDC 기반 릴레이로 전환하는 흐름이 흔합니다. 이 릴레이 계층이 CDC를 채택할 뿐, 패턴 자체가 CDC와 동일한 것은 아니라는 점은 구분해서 이해할 필요가 있습니다. 핵심은 어디까지나 &quot;쓰기를 하나의 트랜잭션으로 묶는 것&quot;입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: outbox 테이블과 저장 트랜잭션</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">outbox 테이블은 아래와 같은 최소 컬럼으로 구성합니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">CREATE TABLE outbox (
+    id              UUID PRIMARY KEY,
+    aggregate_type  VARCHAR(50)  NOT NULL,   -- 'Order'
+    aggregate_id    VARCHAR(50)  NOT NULL,   -- 주문 ID
+    event_type      VARCHAR(50)  NOT NULL,   -- 'OrderPlaced'
+    payload         JSONB        NOT NULL,
+    created_at      TIMESTAMP    NOT NULL DEFAULT now(),
+    published       BOOLEAN      NOT NULL DEFAULT false
+);</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Spring에서 주문 저장과 outbox 기록을 같은 트랜잭션으로 묶는 예입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">@Transactional
+public void placeOrder(OrderRequest request) {
+    Order order = orderRepository.save(Order.from(request));
+
+    OutboxEvent event = new OutboxEvent(
+        "Order", order.getId().toString(),
+        "OrderPlaced", toJson(order)
+    );
+    outboxRepository.save(event); // 같은 트랜잭션 - 커밋/롤백 함께
+
+} // 메서드 종료 시 하나의 트랜잭션으로 COMMIT</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">두 save 호출이 같은 <b>@Transactional</b> 경계 안에 있으므로, DB 커밋이 실패하면 주문 저장과 이벤트 기록 모두 롤백됩니다. 릴레이는 이 트랜잭션과 무관하게 이후 시점에 outbox 테이블을 읽어 Kafka로 발행하면 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. outbox 테이블은 계속 커집니다</b> — 발행 완료 행을 삭제·아카이브하는 정리 배치를 함께 설계<br>
+<b>2. 최소 한 번(at-least-once) 전달이 기본값</b> — 컨슈머는 이벤트 ID 기준 멱등 처리 필수<br>
+<b>3. 순서 보장이 필요하면 파티션 키를 aggregate ID로 고정</b> — 같은 엔티티 이벤트의 순서를 유지<br>
+<b>4. CDC 전환 시 outbox 스키마를 임의로 확장하지 않기</b> — Debezium outbox event router는 표준 컬럼 구조를 기대함<br>
+<b>5. 릴레이 지연(lag) 모니터링</b> — 미발행 행 적체를 감지할 수 있는 지표를 마련
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① DB 커밋과 메시지 발행을 별개로 호출하면 한쪽만 성공하는 이중 쓰기 문제가 생기며, 재시도만으로는 근본 해결이 안 됩니다.<br>
+② 아웃박스 패턴은 이벤트를 브로커로 직접 보내지 않고 같은 트랜잭션 안에서 outbox 테이블에 기록해, DB 트랜잭션의 원자성을 그대로 물려받습니다.<br>
+③ 실제 발행은 폴링 발행자나 CDC(Debezium) 릴레이가 맡으며, 컨슈머 측 멱등 처리와 outbox 정리 배치를 함께 설계해야 운영에서 안정적입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#아웃박스패턴 #이중쓰기 #DualWrite #CDC #Kafka #시스템설계</p>
+
+</body>
+</html>

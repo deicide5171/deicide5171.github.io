@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>AI 파이프라인 비용 최적화 아키텍처 — 프롬프트 캐싱과 모델 라우팅 계층화 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">AI 파이프라인 비용 최적화 아키텍처 — 프롬프트 캐싱과 모델 라우팅 계층화 설계</div>
+<p style="font-size:14px; color:#999;">2026. 8. 16. · AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 프롬프트 캐싱과 모델 라우팅을 각각 따로 켜는 팁이 아니라, 캐시 미스일 때만 라우팅이 동작하는 <b>하나의 순환 계층</b>으로 설계해야 AI 파이프라인 비용이 구조적으로 낮아지는 이유와 실제 구현 코드를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 &quot;아키텍처&quot;로 봐야 하나요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">프롬프트 캐싱을 켜고, 값싼 모델로 일부 요청을 라우팅하는 것은 이미 많은 팀이 알고 있는 팁입니다. 문제는 이 둘을 따로 붙이면 효과가 제한적이라는 점입니다. 캐싱만 켜두면 프롬프트 구조가 매번 조금씩 달라 캐시가 거의 히트하지 않는 파이프라인이 그대로 방치되고, 라우팅만 도입하면 &quot;값싼 모델로 처리 가능한가&quot;의 기준이 모호해져 결국 안전하게 상위 모델로만 보내는 관성이 생깁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">비용을 구조적으로 줄이려면 캐싱과 라우팅을 파이프라인의 <b>하나의 계층</b>으로 설계해야 합니다. 요청이 들어오면 먼저 캐시 계층을 거치고, 캐시 미스일 때만 복잡도를 판단해 적절한 모델 계층(tier)으로 라우팅하며, 응답은 다시 캐시에 기록되어 다음 요청의 히트율을 높입니다. 이 순환 구조가 갖춰져야 캐싱과 라우팅이 서로를 강화하며 비용이 누적적으로 낮아집니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-16-ai-cost-optimization-pipeline-1.svg" alt="AI 파이프라인 비용 최적화 아키텍처 흐름도" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">캐싱 계층 — 어떤 캐시를, 어떤 키로</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">캐싱은 크게 세 층위로 나눠 설계하는 것이 실무에서 흔히 쓰입니다. <b>프리픽스 캐싱</b>은 시스템 프롬프트나 반복되는 컨텍스트처럼 요청마다 동일한 앞부분을 대상으로 하고, <b>정확 응답 캐싱</b>은 요청 전체의 해시가 완전히 일치할 때 히트합니다. <b>의미 기반 캐싱</b>은 임베딩 유사도로 판단해 재작성된 질의까지 커버하지만 오탐 위험이 있어 FAQ처럼 정답이 고정된 영역에 한정하는 편이 안전합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">캐시 유형</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">히트 조건</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">절감 효과</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">프리픽스 캐싱</td>
+<td style="border:1px solid #ddd; padding:10px;">반복되는 앞부분이 바이트 단위로 동일</td>
+<td style="border:1px solid #ddd; padding:10px;">입력 토큰 비용 대폭 절감</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">정확 응답 캐싱</td>
+<td style="border:1px solid #ddd; padding:10px;">동일 요청 재발생(해시 일치)</td>
+<td style="border:1px solid #ddd; padding:10px;">해당 요청 비용 100% 절감</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">의미 기반 캐싱</td>
+<td style="border:1px solid #ddd; padding:10px;">임베딩 유사도 임계값 이상</td>
+<td style="border:1px solid #ddd; padding:10px;">재작성 질의까지 커버, 오탐 위험 존재</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">설계 원칙은 <b>가변 부분(사용자 질의)을 항상 프롬프트 뒤쪽에 배치</b>하는 것입니다. 사용자 질의처럼 매번 달라지는 텍스트를 앞쪽에 두면 프리픽스 캐시가 거의 히트하지 않기 때문입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">모델 계층화(Tiering)와 라우팅 기준</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">모든 요청을 최상위 모델로 처리하는 대신, 작업 난이도에 따라 모델을 <b>Economy·Standard·Premium</b> 3단계 정도로 나눠두는 것이 일반적인 출발점입니다. 분류·태깅처럼 단순한 작업은 경량 모델로, 복합 추론이나 고위험 판단이 필요한 작업만 상위 모델로 보냅니다. 라우팅 기준을 세울 때 흔한 실수는 &quot;모델 이름&quot;으로 규칙을 짜는 것인데, 대신 <b>작업 유형과 요구 정확도</b>를 기준으로 규칙을 세우고 실제 모델 배정은 설정으로 분리해두면 벤더의 모델이 교체되거나 가격이 바뀌어도 라우팅 로직은 건드릴 필요가 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: 복잡도 기반 라우팅과 캐시 키 생성 (Python)</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 작업 유형과 위험도에 따라 모델 계층을 결정하는 라우팅 함수와, 정확 응답 캐싱을 위한 캐시 키 생성 예시입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">TIER_CONFIG = {
+  &quot;economy&quot;: {&quot;model&quot;: &quot;small-model&quot;},
+  &quot;standard&quot;: {&quot;model&quot;: &quot;mid-model&quot;},
+  &quot;premium&quot;: {&quot;model&quot;: &quot;flagship-model&quot;},
+}
+
+def classify_tier(task_type, input_tokens, risk_level):
+    if risk_level == &quot;high&quot;:
+        return &quot;premium&quot;
+    if task_type in (&quot;classification&quot;, &quot;tagging&quot;):
+        return &quot;economy&quot;
+    if task_type in (&quot;summarization&quot;, &quot;qa&quot;) and input_tokens &lt; 4000:
+        return &quot;standard&quot;
+    return &quot;premium&quot;
+
+def make_cache_key(system_prompt, user_query, params):
+    # 가변 부분(user_query)은 뒤쪽에 배치
+    raw = f&quot;{system_prompt}|{sorted(params.items())}|{user_query}&quot;
+    return hashlib.sha256(raw.encode()).hexdigest()</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 캐시 히트율을 별도로 관측하세요</b> — 히트율을 측정하지 않으면 실제 절감 효과를 알 수 없습니다.<br>
+<b>2. 라우팅 실패 시 상위 계층으로 폴백하세요</b> — 경량 모델이 낮은 확신도로 답하면 자동으로 재요청하는 안전망이 필요합니다.<br>
+<b>3. TTL은 응답 성격에 맞춰 다르게 잡으세요</b> — 정적 응답과 실시간성이 필요한 응답의 캐시 유효기간은 달라야 합니다.<br>
+<b>4. 절감률은 반드시 벤치마크로 확인하세요</b> — 도입 전후 비용을 실측 비교하기 전까지는 절감 폭을 단정하지 않는 것이 안전합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 캐싱과 라우팅을 각각 따로 켜는 대신, 캐시 미스 시에만 라우팅이 동작하는 하나의 순환 계층으로 설계해야 효과가 누적됩니다.<br>
+② 캐싱은 프리픽스·정확 매칭·의미 기반으로, 라우팅은 모델 이름이 아닌 작업 유형·위험도 기준으로 규칙을 세우는 것이 핵심입니다.<br>
+③ 캐시 히트율과 계층별 라우팅 비율을 관측하고, 상위 계층으로의 폴백 안전망을 두어야 비용 절감과 품질을 함께 지킬 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 실제 캐시 인프라(Redis 등) 연동 경험을 다뤄보겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#AI파이프라인 #프롬프트캐싱 #모델라우팅 #비용최적화 #LLM #아키텍처설계</p>
+
+</body>
+</html>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>React 19 Actions로 폼 상태관리 다시 설계하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">React 19 Actions로 폼 상태관리 다시 설계하기</div>
+<p style="font-size:14px; color:#999;">2026. 8. 16. · 프론트엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — React 19에서 정식 안정화된 <b>Actions</b>와 <b>useActionState</b>를 활용하면, onSubmit과 useState를 손으로 조합하던 폼 상태관리 코드를 한결 단순하게 다시 설계할 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 Actions인가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">React 19가 정식 릴리스되면서 <b>useActionState</b>, <b>useFormStatus</b>, <b>useOptimistic</b> 같은 훅이 실험 단계를 벗어나 안정 API로 자리 잡았습니다. 이 훅들이 공유하는 배경이 <b>Actions</b>입니다. &lt;form action={'{fn}'}&gt;처럼 폼 제출을 비동기 함수로 다루면, React가 제출 중 상태와 결과 상태를 자동으로 추적해줍니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">지금까지는 폼 하나를 제대로 다루려면 isLoading, error, data 같은 state 서너 개를 useState로 따로 선언하고, onSubmit 안에서 로딩 시작-요청-에러 또는 성공 처리-로딩 종료를 손으로 맞춰야 했습니다. 요청이 겹치거나 컴포넌트가 언마운트되는 경계 케이스까지 챙기면 코드가 금세 지저분해지곤 했습니다. Actions는 이 반복 패턴을 훅으로 표준화해 폼 상태관리 코드의 기본 형태를 바꿔놓았습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념: 이전 방식과 무엇이 달라졌나</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Action은 <b>폼 데이터를 받아 새로운 상태를 반환하는 비동기 함수</b>입니다. useActionState(action, initialState)에 이 함수를 넘기면 현재 상태, form에 바로 꽂을 수 있는 formAction, 진행 중 여부(isPending)를 반환받습니다. 아래 표로 이전 방식과 비교해 보겠습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">이전 방식 (useState 수동 관리)</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">React 19 Actions</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">상태 관리</td>
+<td style="border:1px solid #ddd; padding:10px;">isLoading·error·data 각각 useState 선언</td>
+<td style="border:1px solid #ddd; padding:10px;">useActionState 하나로 통합 관리</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">제출 처리</td>
+<td style="border:1px solid #ddd; padding:10px;">preventDefault + 수동 try/catch</td>
+<td style="border:1px solid #ddd; padding:10px;">Action 함수 반환값이 자동 반영</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">하위 컴포넌트 연동</td>
+<td style="border:1px solid #ddd; padding:10px;">pending 상태를 props로 계속 전달</td>
+<td style="border:1px solid #ddd; padding:10px;">useFormStatus로 직접 구독</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">낙관적 업데이트</td>
+<td style="border:1px solid #ddd; padding:10px;">별도 로직으로 직접 구현</td>
+<td style="border:1px solid #ddd; padding:10px;">useOptimistic으로 선언적 표현</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">함께 쓰는 훅의 역할 분담</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>useActionState</b>는 폼 전체의 제출 결과(성공/실패, 에러 메시지)와 pending 여부를 관리하는 최상위 훅입니다. <b>useFormStatus</b>는 form 내부의 자식 컴포넌트, 예를 들어 제출 버튼이 부모의 pending 상태를 props 전달 없이 직접 읽을 수 있게 해주는 훅입니다. <b>useOptimistic</b>은 서버 응답이 오기 전에 성공했다고 가정한 화면을 먼저 보여주고, 실제 응답이 오면 정정하는 훅입니다. 세 훅은 역할이 겹치지 않도록 설계되어 있어 조합해서 쓰기에 적합합니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-16-react19-actions-form-state-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: useActionState로 회원가입 폼 다시 짜기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 이메일·비밀번호를 받는 회원가입 폼을 useActionState로 다시 작성한 예시입니다. isLoading, error, success를 각각 useState로 선언하던 코드가 훅 하나로 정리되고, 버튼의 disabled 처리도 별도 state 없이 isPending 값을 그대로 씁니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">import { useActionState } from &quot;react&quot;;
+
+async function signupAction(prevState, formData) {
+  const email = formData.get(&quot;email&quot;);
+  const password = formData.get(&quot;password&quot;);
+
+  if (!email.includes(&quot;@&quot;)) {
+    return { error: &quot;올바른 이메일을 입력하세요.&quot;, success: false };
+  }
+
+  const res = await fetch(&quot;/api/signup&quot;, {
+    method: &quot;POST&quot;,
+    body: JSON.stringify({ email, password }),
+  });
+
+  if (!res.ok) {
+    return { error: &quot;가입에 실패했습니다.&quot;, success: false };
+  }
+  return { error: null, success: true };
+}
+
+export function SignupForm() {
+  const [state, formAction, isPending] = useActionState(signupAction, {
+    error: null,
+    success: false,
+  });
+
+  return (
+    &lt;form action={formAction}&gt;
+      &lt;input name=&quot;email&quot; type=&quot;email&quot; /&gt;
+      &lt;input name=&quot;password&quot; type=&quot;password&quot; /&gt;
+      {state.error &amp;&amp; &lt;p&gt;{state.error}&lt;/p&gt;}
+      &lt;button type=&quot;submit&quot; disabled={isPending}&gt;
+        {isPending ? &quot;처리 중...&quot; : &quot;가입하기&quot;}
+      &lt;/button&gt;
+    &lt;/form&gt;
+  );
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 전면 마이그레이션은 불필요</b> — 검증이 단순한 폼은 그대로 두고, 서버 왕복이 있는 폼부터 전환<br>
+<b>2. useFormStatus는 form 하위 컴포넌트에서만 동작</b> — form과 같은 레벨이나 부모에서 호출하면 값이 비어 있음<br>
+<b>3. useOptimistic은 실패 롤백을 자동 처리하지 않음</b> — 요청 실패 시 최종 state를 되돌리는 로직을 Action 함수에 직접 작성<br>
+<b>4. 메타프레임워크와 함께 쓸 때는 버전 확인 필수</b> — Server Actions 통합 방식은 프레임워크별로 세부 동작이 다를 수 있음
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① React 19에서 정식 안정화된 Actions는 useState로 손수 관리하던 폼의 pending·에러 상태를 useActionState 하나로 표준화합니다.<br>
+② useFormStatus는 하위 컴포넌트의 pending 구독을, useOptimistic은 응답 전 낙관적 UI 표현을 각각 담당하며 세 훅은 조합해서 씁니다.<br>
+③ 전면 마이그레이션보다는 서버 왕복이 잦은 폼부터 우선 적용하고, 낙관적 업데이트의 실패 롤백은 직접 챙겨야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 프론트엔드 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#React19 #ReactActions #useActionState #폼상태관리 #프론트엔드</p>
+
+</body>
+</html>

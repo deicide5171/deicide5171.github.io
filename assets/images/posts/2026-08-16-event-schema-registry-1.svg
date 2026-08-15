@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="30" text-anchor="middle" font-size="19" font-weight="bold" fill="#1a1a1a">스키마 레지스트리를 통한 스키마 진화 흐름</text>
+
+  <!-- lanes -->
+  <text x="120" y="60" text-anchor="middle" font-size="13" font-weight="bold" fill="#0b5fa5">Producer (주문 서비스)</text>
+  <line x1="120" y1="70" x2="120" y2="400" stroke="#c8d8ec" stroke-width="2"/>
+
+  <text x="400" y="60" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f7a38">Schema Registry</text>
+  <line x1="400" y1="70" x2="400" y2="400" stroke="#c8e6cf" stroke-width="2"/>
+
+  <text x="680" y="60" text-anchor="middle" font-size="13" font-weight="bold" fill="#a3550f">Consumer (v1 / v2)</text>
+  <line x1="680" y1="70" x2="680" y2="400" stroke="#f0d9c0" stroke-width="2"/>
+
+  <!-- step 1 -->
+  <line x1="120" y1="100" x2="400" y2="100" stroke="#999" stroke-width="1.5" marker-end="url(#a1)"/>
+  <text x="260" y="92" text-anchor="middle" font-size="11" fill="#333">① 새 필드 추가한 스키마 v2 등록 요청</text>
+
+  <!-- step 2 -->
+  <rect x="340" y="120" width="120" height="42" rx="6" fill="#eafff0" stroke="#2fa84f"/>
+  <text x="400" y="140" text-anchor="middle" font-size="10.5" fill="#1f7a38">v1과 호환성 검사</text>
+  <text x="400" y="154" text-anchor="middle" font-size="10.5" fill="#1f7a38">(BACKWARD)</text>
+
+  <!-- step 3 -->
+  <line x1="400" y1="185" x2="120" y2="185" stroke="#999" stroke-width="1.5" marker-end="url(#a1)"/>
+  <text x="260" y="177" text-anchor="middle" font-size="11" fill="#333">② 통과 → v2 등록, schema id 발급</text>
+
+  <!-- step 4 -->
+  <line x1="120" y1="220" x2="400" y2="220" stroke="#999" stroke-width="1.5" marker-end="url(#a1)"/>
+  <text x="260" y="212" text-anchor="middle" font-size="11" fill="#333">③ 이벤트 발행 (payload 앞에 schema id 포함)</text>
+
+  <!-- step 5 -->
+  <line x1="400" y1="255" x2="680" y2="255" stroke="#999" stroke-width="1.5" marker-end="url(#a1)"/>
+  <text x="540" y="247" text-anchor="middle" font-size="11" fill="#333">④ 브로커 경유, consumer가 id로 스키마 조회</text>
+
+  <!-- consumer boxes -->
+  <rect x="600" y="275" width="170" height="46" rx="6" fill="#fff0e0" stroke="#c9701d"/>
+  <text x="685" y="294" text-anchor="middle" font-size="10.5" fill="#a3550f">Consumer A (v1 코드)</text>
+  <text x="685" y="309" text-anchor="middle" font-size="10.5" fill="#a3550f">새 필드 무시하고 정상 처리</text>
+
+  <rect x="600" y="330" width="170" height="46" rx="6" fill="#fff0e0" stroke="#c9701d"/>
+  <text x="685" y="349" text-anchor="middle" font-size="10.5" fill="#a3550f">Consumer B (v2 코드)</text>
+  <text x="685" y="364" text-anchor="middle" font-size="10.5" fill="#a3550f">새 필드까지 활용</text>
+
+  <defs>
+    <marker id="a1" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#999"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="410" text-anchor="middle" font-size="11.5" fill="#555">새 필드에 기본값을 주고 하위 호환을 지키면, producer와 consumer를 서로 다른 시점에 독립 배포할 수 있다</text>
+</svg>
