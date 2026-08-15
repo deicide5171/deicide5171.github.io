@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>벡터 DB 4파전 — Pinecone, Weaviate, Qdrant, pgvector 실무 비교</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">벡터 DB 4파전 — Pinecone, Weaviate, Qdrant, pgvector 실무 비교</div>
+<p style="font-size:14px; color:#999;">2026. 8. 17. · AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — RAG나 시맨틱 검색을 붙일 때 가장 먼저 부딪히는 선택지인 <b>Pinecone, Weaviate, Qdrant, pgvector</b>를 배포 형태·인덱스·필터링·운영 부담 기준으로 비교했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 벡터 DB 선택이 고민거리인가요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">RAG나 시맨틱 검색을 붙이기로 결정하면 곧바로 다음 질문이 따라옵니다. &quot;임베딩을 어디에 저장하고 어떻게 검색할 것인가.&quot; 예전에는 선택지가 많지 않았지만, 지금은 완전관리형 서비스부터 오픈소스 전용 엔진, 기존 RDB에 얹는 확장까지 성격이 전혀 다른 옵션들이 공존합니다. 이 선택은 이후 인프라 구조와 운영 비용을 상당 기간 좌우한다는 점에서 가볍게 넘길 문제가 아닙니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이번 글에서는 실무에서 자주 비교 대상에 오르는 네 가지 — <b>Pinecone, Weaviate, Qdrant, pgvector</b> — 를 배포 형태, 인덱스 구조, 필터링·하이브리드 검색 지원, 운영 부담이라는 네 축으로 나눠 정리했습니다. &quot;어떤 게 제일 빠른가&quot;보다 &quot;우리 상황에서 어떤 게 덜 골치 아픈가&quot;에 초점을 맞췄습니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-17-vector-db-comparison-1.svg" alt="벡터 DB 선택 흐름도" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">네 가지 옵션의 성격 차이</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">네 가지는 같은 카테고리로 묶기 애매할 만큼 성격이 다릅니다. <b>Pinecone</b>은 처음부터 벡터 검색 전용으로 설계된 완전관리형 서비스라 인프라를 직접 운영할 필요가 없습니다. <b>Weaviate</b>와 <b>Qdrant</b>는 오픈소스 벡터 DB로, 자체 호스팅과 관리형 클라우드를 모두 선택할 수 있습니다. <b>pgvector</b>는 벡터 DB라기보다 PostgreSQL에 벡터 타입과 인덱스를 추가하는 확장에 가까워서, 이미 Postgres를 쓰는 팀이라면 별도 인프라 없이 시작할 수 있습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Pinecone</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Weaviate</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Qdrant</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">pgvector</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">배포 형태</td>
+<td style="border:1px solid #ddd; padding:10px;">완전관리형 전용</td>
+<td style="border:1px solid #ddd; padding:10px;">오픈소스+관리형</td>
+<td style="border:1px solid #ddd; padding:10px;">오픈소스+관리형</td>
+<td style="border:1px solid #ddd; padding:10px;">Postgres 확장</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">자체 호스팅</td>
+<td style="border:1px solid #ddd; padding:10px;">불가</td>
+<td style="border:1px solid #ddd; padding:10px;">가능</td>
+<td style="border:1px solid #ddd; padding:10px;">가능</td>
+<td style="border:1px solid #ddd; padding:10px;">가능(기존 Postgres)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">API 형태</td>
+<td style="border:1px solid #ddd; padding:10px;">REST/SDK</td>
+<td style="border:1px solid #ddd; padding:10px;">GraphQL/REST/gRPC</td>
+<td style="border:1px solid #ddd; padding:10px;">REST/gRPC</td>
+<td style="border:1px solid #ddd; padding:10px;">SQL</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">인덱스와 필터링·하이브리드 검색</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">벡터 검색은 대부분 HNSW 계열 근사 최근접 이웃(ANN) 인덱스를 쓴다는 점에서 네 옵션이 크게 다르지 않습니다. 차이가 갈리는 지점은 <b>메타데이터 필터링과 벡터 검색을 얼마나 자연스럽게 결합하느냐</b>, 그리고 <b>키워드 검색(BM25)과의 하이브리드 지원 여부</b>입니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Pinecone</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Weaviate</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Qdrant</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">pgvector</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">기본 인덱스</td>
+<td style="border:1px solid #ddd; padding:10px;">관리형(내부 최적화)</td>
+<td style="border:1px solid #ddd; padding:10px;">HNSW</td>
+<td style="border:1px solid #ddd; padding:10px;">HNSW</td>
+<td style="border:1px solid #ddd; padding:10px;">IVFFlat/HNSW</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">메타데이터 필터링</td>
+<td style="border:1px solid #ddd; padding:10px;">지원(사전 필터)</td>
+<td style="border:1px solid #ddd; padding:10px;">지원</td>
+<td style="border:1px solid #ddd; padding:10px;">지원(강점)</td>
+<td style="border:1px solid #ddd; padding:10px;">SQL WHERE 그대로</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">하이브리드 검색</td>
+<td style="border:1px solid #ddd; padding:10px;">제한적</td>
+<td style="border:1px solid #ddd; padding:10px;">네이티브 지원</td>
+<td style="border:1px solid #ddd; padding:10px;">지원</td>
+<td style="border:1px solid #ddd; padding:10px;">별도 조합 필요</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">트랜잭션·조인</td>
+<td style="border:1px solid #ddd; padding:10px;">없음</td>
+<td style="border:1px solid #ddd; padding:10px;">없음</td>
+<td style="border:1px solid #ddd; padding:10px;">없음</td>
+<td style="border:1px solid #ddd; padding:10px;">Postgres 그대로</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">pgvector의 가장 큰 차별점은 벡터 검색이 <b>관계형 데이터와 같은 트랜잭션 경계 안에</b> 들어온다는 것입니다. 주문·권한 같은 데이터와 임베딩을 조인해 한 번에 쿼리할 수 있습니다. 반대로 Weaviate와 Qdrant는 검색 기능(하이브리드, 필터 성능) 자체에 더 특화되어 있고, Pinecone은 운영 부담 최소화를 우선한 형태입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: pgvector로 기존 Postgres에 벡터 검색 추가하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">기존 스키마에 컬럼과 인덱스 하나만 추가하면 되므로, 별도 벡터 DB 없이도 검색 프로토타입을 빠르게 붙여볼 수 있습니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">-- 확장 활성화
+CREATE EXTENSION IF NOT EXISTS vector;
+
+CREATE TABLE documents (
+    id SERIAL PRIMARY KEY,
+    content TEXT,
+    department TEXT,
+    embedding VECTOR(1536)
+);
+
+-- HNSW 인덱스 생성
+CREATE INDEX ON documents USING hnsw (embedding vector_cosine_ops);
+
+-- 필터 + 벡터 검색을 한 쿼리로
+SELECT id, content
+FROM documents
+WHERE department = 'legal'
+ORDER BY embedding &lt;=&gt; '[0.012, -0.034, ...]'
+LIMIT 5;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제: Qdrant로 필터 조건 포함 벡터 검색</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">from qdrant_client import QdrantClient
+from qdrant_client.models import Filter, FieldCondition, MatchValue
+
+client = QdrantClient(url=&quot;http://localhost:6333&quot;)
+
+results = client.search(
+    collection_name=&quot;documents&quot;,
+    query_vector=embedding_vector,
+    query_filter=Filter(
+        must=[FieldCondition(key=&quot;department&quot;, match=MatchValue(value=&quot;legal&quot;))]
+    ),
+    limit=5,
+)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Qdrant와 Weaviate는 이런 payload 필터를 벡터 검색과 결합하는 API가 처음부터 1급 기능으로 설계되어 있어, 필터 조건이 복잡해질수록 전용 벡터 DB 쪽이 다루기 편해지는 경향이 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. Postgres를 이미 쓰고 데이터 규모가 크지 않다면 pgvector부터</b> — 별도 인프라 없이 시작할 수 있고, 관계형 데이터와의 조인이 필요한 서비스에 유리합니다.<br>
+<b>2. 하이브리드 검색이 핵심 요구사항이면 Weaviate·Qdrant</b> — BM25와 벡터 결합을 애플리케이션 레벨에서 직접 구현하지 않아도 되는 경우가 많습니다.<br>
+<b>3. 운영 인력을 최소화하려면 완전관리형 우선 고려</b> — 다만 벤더 종속과 데이터 리전 제약은 계약 전에 반드시 확인하세요.<br>
+<b>4. 비용·성능 수치는 이 글에서 단정하지 않습니다</b> — 과금 체계와 인스턴스 비용은 시점·사용량에 따라 달라지므로, 각 서비스의 최신 공식 문서로 직접 확인하는 것이 안전합니다.<br>
+<b>5. 임베딩 모델 교체 시 재인덱싱 비용을 초기 설계에 포함하세요.</b>
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① Pinecone·Weaviate·Qdrant·pgvector는 &quot;더 빠른 벡터 DB&quot;가 아니라 배포 형태와 운영 철학이 서로 다른 선택지입니다.<br>
+② 관계형 데이터와의 조인이 중요하면 pgvector, 하이브리드 검색과 필터 성능이 중요하면 Weaviate·Qdrant, 운영 부담 최소화가 우선이면 완전관리형이 출발점으로 적합합니다.<br>
+③ 비용·성능 수치는 서비스별 최신 문서로 직접 확인하고, 임베딩 모델 교체 시 재인덱싱 비용까지 초기 설계에 포함해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 실제 임베딩 모델 선택 기준을 다뤄보겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#벡터DB #Pinecone #Weaviate #Qdrant #pgvector #RAG</p>
+
+</body>
+</html>
