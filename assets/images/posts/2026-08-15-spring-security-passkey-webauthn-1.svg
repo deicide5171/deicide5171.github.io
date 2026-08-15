@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Malgun Gothic','Apple SD Gothic Neo',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="30" text-anchor="middle" font-size="19" font-weight="bold" fill="#1a1a1a">WebAuthn 로그인 흐름 (Spring Security)</text>
+
+  <!-- lanes -->
+  <text x="120" y="60" text-anchor="middle" font-size="13" font-weight="bold" fill="#0b5fa5">브라우저</text>
+  <line x1="120" y1="70" x2="120" y2="400" stroke="#c8d8ec" stroke-width="2"/>
+
+  <text x="400" y="60" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f7a38">인증기(Authenticator)</text>
+  <line x1="400" y1="70" x2="400" y2="400" stroke="#c8e6cf" stroke-width="2"/>
+
+  <text x="680" y="60" text-anchor="middle" font-size="13" font-weight="bold" fill="#a3550f">Spring Security 서버</text>
+  <line x1="680" y1="70" x2="680" y2="400" stroke="#f0d9c0" stroke-width="2"/>
+
+  <!-- step 1 -->
+  <line x1="120" y1="100" x2="680" y2="100" stroke="#999" stroke-width="1.5" marker-end="url(#a1)"/>
+  <text x="400" y="92" text-anchor="middle" font-size="11" fill="#333">① 로그인 요청 (사용자 식별자만 전송)</text>
+
+  <!-- step 2 -->
+  <line x1="680" y1="140" x2="120" y2="140" stroke="#999" stroke-width="1.5" marker-end="url(#a1)"/>
+  <text x="400" y="132" text-anchor="middle" font-size="11" fill="#333">② 서버가 challenge(난수) 발급</text>
+
+  <!-- step 3 -->
+  <line x1="120" y1="180" x2="400" y2="180" stroke="#999" stroke-width="1.5" marker-end="url(#a1)"/>
+  <text x="260" y="172" text-anchor="middle" font-size="11" fill="#333">③ challenge 전달 + 서명 요청</text>
+
+  <!-- step 4 -->
+  <rect x="340" y="200" width="120" height="40" rx="6" fill="#eafff0" stroke="#2fa84f"/>
+  <text x="400" y="222" text-anchor="middle" font-size="10.5" fill="#1f7a38">지문/얼굴 인식으로</text>
+  <text x="400" y="236" text-anchor="middle" font-size="10.5" fill="#1f7a38">개인키 잠금 해제</text>
+
+  <!-- step 5 -->
+  <line x1="400" y1="260" x2="120" y2="260" stroke="#999" stroke-width="1.5" marker-end="url(#a1)"/>
+  <text x="260" y="252" text-anchor="middle" font-size="11" fill="#333">④ 개인키로 challenge 서명 반환</text>
+
+  <!-- step 6 -->
+  <line x1="120" y1="300" x2="680" y2="300" stroke="#999" stroke-width="1.5" marker-end="url(#a1)"/>
+  <text x="400" y="292" text-anchor="middle" font-size="11" fill="#333">⑤ 서명값 서버로 전송</text>
+
+  <!-- step 7 -->
+  <rect x="600" y="320" width="160" height="46" rx="6" fill="#fff0e0" stroke="#c9701d"/>
+  <text x="680" y="342" text-anchor="middle" font-size="10.5" fill="#a3550f">저장된 공개키로</text>
+  <text x="680" y="358" text-anchor="middle" font-size="10.5" fill="#a3550f">서명 검증 &#8594; 로그인 성공</text>
+
+  <defs>
+    <marker id="a1" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#999"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="410" text-anchor="middle" font-size="11.5" fill="#555">개인키는 인증기(단말) 밖으로 절대 나가지 않고, 서버는 공개키로 서명만 검증한다 — 비밀번호 자체가 없다</text>
+</svg>
