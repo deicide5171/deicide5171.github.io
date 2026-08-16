@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222222" text-anchor="middle">LLM 게이트웨이 아키텍처</text>
+
+  <!-- Apps -->
+  <rect x="30" y="90" width="150" height="60" rx="8" fill="#eef4ff" stroke="#4a7dd4" stroke-width="2"/>
+  <text x="105" y="115" font-family="sans-serif" font-size="15" fill="#22406e" text-anchor="middle">챗봇 서비스</text>
+  <text x="105" y="136" font-family="sans-serif" font-size="13" fill="#5b7cad" text-anchor="middle">(팀 A · 가상 키)</text>
+
+  <rect x="30" y="180" width="150" height="60" rx="8" fill="#eef4ff" stroke="#4a7dd4" stroke-width="2"/>
+  <text x="105" y="205" font-family="sans-serif" font-size="15" fill="#22406e" text-anchor="middle">요약 배치 작업</text>
+  <text x="105" y="226" font-family="sans-serif" font-size="13" fill="#5b7cad" text-anchor="middle">(팀 B · 가상 키)</text>
+
+  <rect x="30" y="270" width="150" height="60" rx="8" fill="#eef4ff" stroke="#4a7dd4" stroke-width="2"/>
+  <text x="105" y="295" font-family="sans-serif" font-size="15" fill="#22406e" text-anchor="middle">에이전트 파이프라인</text>
+  <text x="105" y="316" font-family="sans-serif" font-size="13" fill="#5b7cad" text-anchor="middle">(팀 C · 가상 키)</text>
+
+  <!-- Arrows apps -> gateway -->
+  <line x1="180" y1="120" x2="260" y2="185" stroke="#8aa5c8" stroke-width="2"/>
+  <line x1="180" y1="210" x2="260" y2="210" stroke="#8aa5c8" stroke-width="2"/>
+  <line x1="180" y1="300" x2="260" y2="235" stroke="#8aa5c8" stroke-width="2"/>
+  <polygon points="260,185 248,182 252,192" fill="#8aa5c8"/>
+  <polygon points="260,210 248,204 248,216" fill="#8aa5c8"/>
+  <polygon points="260,235 252,228 248,238" fill="#8aa5c8"/>
+
+  <!-- Gateway -->
+  <rect x="265" y="110" width="230" height="220" rx="10" fill="#f0faf4" stroke="#2e9e5b" stroke-width="2.5"/>
+  <text x="380" y="140" font-family="sans-serif" font-size="17" font-weight="bold" fill="#1d6b3d" text-anchor="middle">LLM 게이트웨이</text>
+  <rect x="285" y="155" width="190" height="34" rx="6" fill="#ffffff" stroke="#7cc79b" stroke-width="1.5"/>
+  <text x="380" y="177" font-family="sans-serif" font-size="14" fill="#1d6b3d" text-anchor="middle">라우팅 (모델 별칭 → 배포)</text>
+  <rect x="285" y="197" width="190" height="34" rx="6" fill="#ffffff" stroke="#7cc79b" stroke-width="1.5"/>
+  <text x="380" y="219" font-family="sans-serif" font-size="14" fill="#1d6b3d" text-anchor="middle">폴백 · 재시도 · 쿨다운</text>
+  <rect x="285" y="239" width="190" height="34" rx="6" fill="#ffffff" stroke="#7cc79b" stroke-width="1.5"/>
+  <text x="380" y="261" font-family="sans-serif" font-size="14" fill="#1d6b3d" text-anchor="middle">키 관리 · 예산 · 레이트 리밋</text>
+  <rect x="285" y="281" width="190" height="34" rx="6" fill="#ffffff" stroke="#7cc79b" stroke-width="1.5"/>
+  <text x="380" y="303" font-family="sans-serif" font-size="14" fill="#1d6b3d" text-anchor="middle">사용량 로깅 · 비용 집계</text>
+
+  <!-- Arrows gateway -> providers -->
+  <line x1="495" y1="160" x2="590" y2="130" stroke="#8aa5c8" stroke-width="2"/>
+  <line x1="495" y1="220" x2="590" y2="220" stroke="#8aa5c8" stroke-width="2"/>
+  <line x1="495" y1="280" x2="590" y2="310" stroke="#8aa5c8" stroke-width="2"/>
+  <polygon points="590,130 578,129 581,139" fill="#8aa5c8"/>
+  <polygon points="590,220 578,214 578,226" fill="#8aa5c8"/>
+  <polygon points="590,310 581,301 578,311" fill="#8aa5c8"/>
+
+  <!-- Providers -->
+  <rect x="595" y="100" width="175" height="58" rx="8" fill="#fff7ee" stroke="#d99043" stroke-width="2"/>
+  <text x="682" y="124" font-family="sans-serif" font-size="15" fill="#8a5320" text-anchor="middle">프로바이더 A</text>
+  <text x="682" y="145" font-family="sans-serif" font-size="13" fill="#b07c4a" text-anchor="middle">1순위 (기본 라우트)</text>
+
+  <rect x="595" y="191" width="175" height="58" rx="8" fill="#fff7ee" stroke="#d99043" stroke-width="2"/>
+  <text x="682" y="215" font-family="sans-serif" font-size="15" fill="#8a5320" text-anchor="middle">프로바이더 B</text>
+  <text x="682" y="236" font-family="sans-serif" font-size="13" fill="#b07c4a" text-anchor="middle">폴백 (429·5xx 시)</text>
+
+  <rect x="595" y="282" width="175" height="58" rx="8" fill="#fff7ee" stroke="#d99043" stroke-width="2"/>
+  <text x="682" y="306" font-family="sans-serif" font-size="15" fill="#8a5320" text-anchor="middle">자체 호스팅 모델</text>
+  <text x="682" y="327" font-family="sans-serif" font-size="13" fill="#b07c4a" text-anchor="middle">최후 폴백 · 민감 데이터</text>
+
+  <!-- Bottom note -->
+  <rect x="140" y="380" width="520" height="46" rx="8" fill="#f6f6f6" stroke="#cccccc" stroke-width="1.5"/>
+  <text x="400" y="399" font-family="sans-serif" font-size="14" fill="#444444" text-anchor="middle">애플리케이션은 게이트웨이의 모델 별칭 하나만 호출하고,</text>
+  <text x="400" y="418" font-family="sans-serif" font-size="14" fill="#444444" text-anchor="middle">프로바이더 선택·장애 대응·비용 통제는 게이트웨이 계층이 담당한다</text>
+</svg>
