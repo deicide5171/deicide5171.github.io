@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222" text-anchor="middle">BBR와 CUBIC의 동작 지점 — inflight 데이터양에 따른 전송 속도와 RTT</text>
+
+  <!-- top graph: delivery rate -->
+  <line x1="110" y1="185" x2="700" y2="185" stroke="#888" stroke-width="1.5"/>
+  <line x1="110" y1="70" x2="110" y2="185" stroke="#888" stroke-width="1.5"/>
+  <text x="60" y="130" font-family="sans-serif" font-size="15" fill="#444" text-anchor="middle">전송</text>
+  <text x="60" y="150" font-family="sans-serif" font-size="15" fill="#444" text-anchor="middle">속도</text>
+  <polyline points="110,180 400,90 660,90" fill="none" stroke="#2f6fb2" stroke-width="3"/>
+
+  <!-- bottom graph: RTT -->
+  <line x1="110" y1="360" x2="700" y2="360" stroke="#888" stroke-width="1.5"/>
+  <line x1="110" y1="245" x2="110" y2="360" stroke="#888" stroke-width="1.5"/>
+  <text x="60" y="305" font-family="sans-serif" font-size="15" fill="#444" text-anchor="middle">RTT</text>
+  <polyline points="110,340 400,340 660,258" fill="none" stroke="#b2652f" stroke-width="3"/>
+
+  <!-- vertical guide: BDP -->
+  <line x1="400" y1="60" x2="400" y2="365" stroke="#1a9850" stroke-width="2" stroke-dasharray="6,5"/>
+  <circle cx="400" cy="90" r="7" fill="#1a9850"/>
+  <circle cx="400" cy="340" r="7" fill="#1a9850"/>
+  <text x="400" y="392" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1a9850" text-anchor="middle">BDP(최적 지점) = BBR가 노리는 곳</text>
+  <text x="400" y="412" font-family="sans-serif" font-size="14" fill="#1a9850" text-anchor="middle">속도는 최대, 지연은 최소</text>
+
+  <!-- vertical guide: buffer full -->
+  <line x1="660" y1="60" x2="660" y2="365" stroke="#d95f02" stroke-width="2" stroke-dasharray="6,5"/>
+  <circle cx="660" cy="90" r="7" fill="#d95f02"/>
+  <circle cx="660" cy="258" r="7" fill="#d95f02"/>
+  <text x="640" y="392" font-family="sans-serif" font-size="15" font-weight="bold" fill="#d95f02" text-anchor="middle">버퍼 가득(손실 발생)</text>
+  <text x="640" y="412" font-family="sans-serif" font-size="14" fill="#d95f02" text-anchor="middle">CUBIC가 도달하는 곳</text>
+
+  <!-- x axis label -->
+  <text x="405" y="437" font-family="sans-serif" font-size="15" fill="#444" text-anchor="middle">네트워크에 실려 있는 데이터양 (inflight) →</text>
+
+  <!-- annotations -->
+  <text x="240" y="120" font-family="sans-serif" font-size="14" fill="#2f6fb2">BDP까지는 보낼수록 빨라짐</text>
+  <text x="430" y="78" font-family="sans-serif" font-size="14" fill="#2f6fb2">그 이후엔 속도 이득 없음</text>
+  <text x="430" y="320" font-family="sans-serif" font-size="14" fill="#b2652f">버퍼만 쌓여 RTT 증가(버퍼블로트)</text>
+</svg>
