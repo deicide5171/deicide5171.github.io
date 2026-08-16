@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="34" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222" text-anchor="middle">패킷 손실 시 HOL 블로킹 — HTTP/2(TCP) vs HTTP/3(QUIC)</text>
+
+  <!-- ================= Left panel: HTTP/2 over TCP ================= -->
+  <rect x="30" y="60" width="355" height="360" rx="10" fill="#fdf6f4" stroke="#d9948a" stroke-width="1.5"/>
+  <text x="207" y="90" font-family="sans-serif" font-size="17" font-weight="bold" fill="#a4443a" text-anchor="middle">HTTP/2 — 하나의 TCP 커넥션</text>
+
+  <!-- single TCP pipe -->
+  <rect x="60" y="110" width="295" height="150" rx="8" fill="#ffffff" stroke="#b8b8b8" stroke-width="1.5"/>
+  <text x="207" y="132" font-family="sans-serif" font-size="14" fill="#666" text-anchor="middle">TCP 바이트 스트림 (순서 보장)</text>
+
+  <!-- packets in one line -->
+  <rect x="75" y="150" width="48" height="34" rx="4" fill="#cfe3f5" stroke="#5a8fbf"/>
+  <text x="99" y="172" font-family="sans-serif" font-size="14" fill="#2c5678" text-anchor="middle">A1</text>
+  <rect x="131" y="150" width="48" height="34" rx="4" fill="#f5b8b0" stroke="#c0554a" stroke-width="2"/>
+  <text x="155" y="172" font-family="sans-serif" font-size="14" font-weight="bold" fill="#8f2c22" text-anchor="middle">B1 ✕</text>
+  <rect x="187" y="150" width="48" height="34" rx="4" fill="#d7ead9" stroke="#6da878"/>
+  <text x="211" y="172" font-family="sans-serif" font-size="14" fill="#2f6b3a" text-anchor="middle">C1</text>
+  <rect x="243" y="150" width="48" height="34" rx="4" fill="#cfe3f5" stroke="#5a8fbf"/>
+  <text x="267" y="172" font-family="sans-serif" font-size="14" fill="#2c5678" text-anchor="middle">A2</text>
+  <rect x="299" y="150" width="48" height="34" rx="4" fill="#d7ead9" stroke="#6da878"/>
+  <text x="323" y="172" font-family="sans-serif" font-size="14" fill="#2f6b3a" text-anchor="middle">C2</text>
+
+  <text x="155" y="216" font-family="sans-serif" font-size="14" font-weight="bold" fill="#a4443a" text-anchor="middle">패킷 손실!</text>
+  <line x1="155" y1="184" x2="155" y2="202" stroke="#a4443a" stroke-width="1.5"/>
+  <text x="207" y="244" font-family="sans-serif" font-size="14" fill="#555" text-anchor="middle">B1 재전송 도착까지 뒤의 C1·A2·C2도 대기</text>
+
+  <!-- blocked apps -->
+  <rect x="60" y="290" width="295" height="100" rx="8" fill="#ffffff" stroke="#b8b8b8" stroke-width="1.5"/>
+  <text x="207" y="315" font-family="sans-serif" font-size="14" fill="#666" text-anchor="middle">애플리케이션에 전달되는 스트림</text>
+  <rect x="80" y="330" width="78" height="38" rx="6" fill="#eeeeee" stroke="#aaaaaa"/>
+  <text x="119" y="354" font-family="sans-serif" font-size="14" fill="#888" text-anchor="middle">A 대기</text>
+  <rect x="168" y="330" width="78" height="38" rx="6" fill="#eeeeee" stroke="#aaaaaa"/>
+  <text x="207" y="354" font-family="sans-serif" font-size="14" fill="#888" text-anchor="middle">B 대기</text>
+  <rect x="256" y="330" width="78" height="38" rx="6" fill="#eeeeee" stroke="#aaaaaa"/>
+  <text x="295" y="354" font-family="sans-serif" font-size="14" fill="#888" text-anchor="middle">C 대기</text>
+  <text x="207" y="410" font-family="sans-serif" font-size="15" font-weight="bold" fill="#a4443a" text-anchor="middle">손실 1건이 모든 스트림을 막음</text>
+
+  <!-- ================= Right panel: HTTP/3 over QUIC ================= -->
+  <rect x="415" y="60" width="355" height="360" rx="10" fill="#f2f8f4" stroke="#7fb894" stroke-width="1.5"/>
+  <text x="592" y="90" font-family="sans-serif" font-size="17" font-weight="bold" fill="#2f6b4f" text-anchor="middle">HTTP/3 — QUIC 독립 스트림</text>
+
+  <!-- three independent stream lanes -->
+  <rect x="445" y="110" width="295" height="150" rx="8" fill="#ffffff" stroke="#b8b8b8" stroke-width="1.5"/>
+  <text x="592" y="132" font-family="sans-serif" font-size="14" fill="#666" text-anchor="middle">스트림별 독립 손실 복구</text>
+
+  <!-- lane A -->
+  <text x="470" y="163" font-family="sans-serif" font-size="14" fill="#2c5678">A</text>
+  <rect x="490" y="146" width="52" height="26" rx="4" fill="#cfe3f5" stroke="#5a8fbf"/>
+  <text x="516" y="164" font-family="sans-serif" font-size="13" fill="#2c5678" text-anchor="middle">A1</text>
+  <rect x="552" y="146" width="52" height="26" rx="4" fill="#cfe3f5" stroke="#5a8fbf"/>
+  <text x="578" y="164" font-family="sans-serif" font-size="13" fill="#2c5678" text-anchor="middle">A2</text>
+  <text x="672" y="164" font-family="sans-serif" font-size="13" fill="#2f6b4f">→ 즉시 전달</text>
+
+  <!-- lane B (lost) -->
+  <text x="470" y="203" font-family="sans-serif" font-size="14" fill="#8f2c22">B</text>
+  <rect x="490" y="186" width="52" height="26" rx="4" fill="#f5b8b0" stroke="#c0554a" stroke-width="2"/>
+  <text x="516" y="204" font-family="sans-serif" font-size="13" font-weight="bold" fill="#8f2c22" text-anchor="middle">B1 ✕</text>
+  <text x="666" y="204" font-family="sans-serif" font-size="13" fill="#a4443a">→ B만 재전송 대기</text>
+
+  <!-- lane C -->
+  <text x="470" y="243" font-family="sans-serif" font-size="14" fill="#2f6b3a">C</text>
+  <rect x="490" y="226" width="52" height="26" rx="4" fill="#d7ead9" stroke="#6da878"/>
+  <text x="516" y="244" font-family="sans-serif" font-size="13" fill="#2f6b3a" text-anchor="middle">C1</text>
+  <rect x="552" y="226" width="52" height="26" rx="4" fill="#d7ead9" stroke="#6da878"/>
+  <text x="578" y="244" font-family="sans-serif" font-size="13" fill="#2f6b3a" text-anchor="middle">C2</text>
+  <text x="672" y="244" font-family="sans-serif" font-size="13" fill="#2f6b4f">→ 즉시 전달</text>
+
+  <!-- delivered apps -->
+  <rect x="445" y="290" width="295" height="100" rx="8" fill="#ffffff" stroke="#b8b8b8" stroke-width="1.5"/>
+  <text x="592" y="315" font-family="sans-serif" font-size="14" fill="#666" text-anchor="middle">애플리케이션에 전달되는 스트림</text>
+  <rect x="465" y="330" width="78" height="38" rx="6" fill="#cfe3f5" stroke="#5a8fbf"/>
+  <text x="504" y="354" font-family="sans-serif" font-size="14" fill="#2c5678" text-anchor="middle">A 전달</text>
+  <rect x="553" y="330" width="78" height="38" rx="6" fill="#eeeeee" stroke="#aaaaaa"/>
+  <text x="592" y="354" font-family="sans-serif" font-size="14" fill="#888" text-anchor="middle">B 대기</text>
+  <rect x="641" y="330" width="78" height="38" rx="6" fill="#d7ead9" stroke="#6da878"/>
+  <text x="680" y="354" font-family="sans-serif" font-size="14" fill="#2f6b3a" text-anchor="middle">C 전달</text>
+  <text x="592" y="410" font-family="sans-serif" font-size="15" font-weight="bold" fill="#2f6b4f" text-anchor="middle">손실 영향이 스트림 B 하나로 격리</text>
+</svg>
