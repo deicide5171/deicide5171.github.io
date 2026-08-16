@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="42" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222222">컴퓨터 사용 에이전트의 관찰-판단-행동 루프</text>
+
+  <!-- 판단 (모델) -->
+  <rect x="280" y="80" width="240" height="80" rx="12" fill="#eef4ff" stroke="#3b6fd4" stroke-width="2"/>
+  <text x="400" y="113" text-anchor="middle" font-family="sans-serif" font-size="17" font-weight="bold" fill="#1f3f7a">② 판단 (LLM API)</text>
+  <text x="400" y="140" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#333333">스크린샷 해석 → 다음 행동 결정</text>
+
+  <!-- 관찰 (클라이언트) -->
+  <rect x="70" y="300" width="250" height="80" rx="12" fill="#f0f9f1" stroke="#3a9d5d" stroke-width="2"/>
+  <text x="195" y="333" text-anchor="middle" font-family="sans-serif" font-size="17" font-weight="bold" fill="#1e5c36">① 관찰 (클라이언트)</text>
+  <text x="195" y="360" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#333333">화면 스크린샷 캡처·전송</text>
+
+  <!-- 행동 (클라이언트) -->
+  <rect x="480" y="300" width="250" height="80" rx="12" fill="#fff6ec" stroke="#d98a2b" stroke-width="2"/>
+  <text x="605" y="333" text-anchor="middle" font-family="sans-serif" font-size="17" font-weight="bold" fill="#8a5210">③ 행동 (클라이언트)</text>
+  <text x="605" y="360" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#333333">좌표 클릭·키 입력 실행</text>
+
+  <!-- 화살표: 관찰 -> 판단 -->
+  <line x1="215" y1="298" x2="315" y2="168" stroke="#555555" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="200" y="228" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#555555">스크린샷 전송</text>
+
+  <!-- 화살표: 판단 -> 행동 -->
+  <line x1="485" y1="168" x2="585" y2="298" stroke="#555555" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="605" y="228" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#555555">tool_use (행동 지시)</text>
+
+  <!-- 화살표: 행동 -> 관찰 -->
+  <line x1="478" y1="345" x2="324" y2="345" stroke="#555555" stroke-width="2.5" marker-end="url(#arrow)"/>
+  <text x="400" y="335" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#555555">화면 변화 발생 → 반복</text>
+
+  <text x="400" y="425" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#888888">모델은 판단만 하고, 행동의 실제 실행과 승인 게이트는 클라이언트 인프라의 책임이다</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#555555"/>
+    </marker>
+  </defs>
+</svg>
