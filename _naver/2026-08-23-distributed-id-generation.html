@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>시계가 1초만 뒤로 가도 ID가 겹친다 — Snowflake·ULID·UUIDv7 분산 ID 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">시계가 1초만 뒤로 가도 ID가 겹친다 — Snowflake·ULID·UUIDv7 분산 ID 설계</div>
+<p style="font-size:14px; color:#999;">2026. 8. 23. · 시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 여러 노드가 동시에 쓰기를 받는 분산 환경에서 <b>조율 없이 유일하면서 시간순 정렬까지 되는 ID</b>를 만드는 세 가지 방식(Snowflake, ULID, UUIDv7)을 비교하고, 셋 모두의 약점인 <b>시계 역행 문제</b>를 다루는 방어 설계를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 오토인크리먼트도, UUIDv4도 답이 아닐까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">서버 한 대에 DB 한 대라면 ID 발급은 고민거리가 아닙니다. <b>AUTO_INCREMENT</b>나 시퀀스가 알아서 유일하고 정렬된 번호를 내어주기 때문입니다. 문제는 쓰기를 받는 노드가 여러 개가 되는 순간 시작됩니다. 샤딩된 DB, 멀티 리전 쓰기, DB에 다녀오지 않고 애플리케이션에서 먼저 ID를 확정해야 하는 이벤트 파이프라인 같은 환경에서는 중앙 채번기가 단일 장애점이자 병목이 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">그렇다고 완전 랜덤인 <b>UUIDv4</b>를 기본키로 쓰면 다른 비용을 치르게 됩니다. B-tree 인덱스는 정렬된 구조라서, 랜덤한 키가 들어오면 삽입 위치가 트리 전체에 흩어지며 <b>페이지 분할과 버퍼 풀 캐시 미스</b>가 늘어납니다. 기본키가 곧 클러스터드 인덱스인 MySQL InnoDB에서는 쓰기 성능 저하가 특히 뚜렷하게 나타납니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">그래서 분산 ID 생성기의 요구사항은 세 가지로 정리됩니다. 노드 간 <b>조율 없이 각자 독립적으로 발급</b>할 것, <b>전역적으로 유일</b>할 것, 그리고 <b>대략 시간순으로 정렬(k-sorted)</b> 될 것입니다. 이 요구를 푸는 대표 방식이 오늘 살펴볼 Snowflake, ULID, UUIDv7입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — Snowflake, 64비트에 시간·공간·순서를 담습니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">트위터가 공개한 <b>Snowflake</b>는 64비트 정수 하나에 세 가지 정보를 비트 단위로 나눠 담습니다. 상위 41비트는 커스텀 에포크 기준 밀리초 타임스탬프(약 69년 분량), 가운데 10비트는 워커 ID(최대 1,024대), 하위 12비트는 같은 밀리초 안에서 증가하는 시퀀스(워커당 밀리초마다 4,096개)입니다. 타임스탬프가 최상위에 있으므로 정수 비교만으로 시간순 정렬이 되고, BIGINT 컬럼에 그대로 들어가 저장·인덱스 효율이 가장 좋습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">대신 Snowflake는 <b>"워커 ID가 절대 겹치지 않는다"는 전제</b>를 요구합니다. 이 전제가 깨지면 같은 밀리초에 두 노드가 동일한 ID를 만들 수 있습니다. ZooKeeper나 etcd로 워커 ID를 임대받거나, 쿠버네티스 StatefulSet의 순번을 쓰거나, 배포 시 환경변수로 고정 할당하는 운영 장치가 반드시 함께 설계되어야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-23-distributed-id-generation-1.svg" alt="Snowflake, ULID, UUIDv7의 비트 레이아웃 비교" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — ULID과 UUIDv7, 조율 없이 정렬 가능한 ID</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">워커 ID 관리 자체가 부담이라면, 랜덤 비트를 넉넉히 써서 조율을 없애는 계열이 있습니다. <b>ULID</b>는 128비트를 48비트 밀리초 타임스탬프와 80비트 랜덤으로 나누고 Crockford Base32로 26자 문자열로 인코딩합니다. <b>UUIDv7</b>은 같은 아이디어를 UUID 규격 안에 담아 RFC 9562로 표준화한 것으로, 48비트 유닉스 밀리초 타임스탬프 뒤에 버전·배리언트 비트와 74비트 랜덤이 옵니다. 기존 UUID 타입 컬럼·라이브러리와 그대로 호환된다는 점이 실무에서 가장 큰 장점이고, PostgreSQL 18부터는 uuidv7() 함수가 내장되어 DB 기본값으로도 쓸 수 있습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Snowflake</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">ULID</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">UUIDv7</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">크기</td>
+<td style="border:1px solid #ddd; padding:10px;">64비트 정수</td>
+<td style="border:1px solid #ddd; padding:10px;">128비트(26자 문자열)</td>
+<td style="border:1px solid #ddd; padding:10px;">128비트(UUID 타입)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">노드 간 조율</td>
+<td style="border:1px solid #ddd; padding:10px;">워커 ID 할당 필요</td>
+<td style="border:1px solid #ddd; padding:10px;">불필요</td>
+<td style="border:1px solid #ddd; padding:10px;">불필요</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">충돌 위험</td>
+<td style="border:1px solid #ddd; padding:10px;">워커 ID 중복 시 발생</td>
+<td style="border:1px solid #ddd; padding:10px;">80비트 랜덤, 사실상 없음</td>
+<td style="border:1px solid #ddd; padding:10px;">74비트 랜덤, 사실상 없음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">표준화</td>
+<td style="border:1px solid #ddd; padding:10px;">사실상 표준(구현 다양)</td>
+<td style="border:1px solid #ddd; padding:10px;">커뮤니티 스펙</td>
+<td style="border:1px solid #ddd; padding:10px;">IETF RFC 9562</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">선택 기준은 명확합니다. <b>저장·인덱스 효율과 초고속 발급이 중요하고 워커 ID를 관리할 운영 역량이 있다면 Snowflake</b>, <b>표준 호환성과 무조율 운영이 우선이면 UUIDv7</b>, URL에 넣기 좋은 문자열 ID가 필요하면 ULID가 어울립니다. 반대로 단일 DB에 트래픽도 크지 않다면 그냥 시퀀스를 쓰는 편이 낫습니다. 분산 ID는 공짜가 아니기 때문입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 시계 역행, 정렬 가능한 ID의 아킬레스건</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">세 방식 모두 벽시계(wall clock)에 의존한다는 공통 약점이 있습니다. NTP가 어긋난 시계를 한 번에 되돌리는 스텝 보정, VM 마이그레이션이나 서스펜드 후 복원 같은 상황에서 시계는 실제로 뒤로 갑니다. Snowflake에서 시계가 1초 역행하면 이미 발급한 타임스탬프 구간을 다시 지나가면서 <b>같은 (타임스탬프, 워커, 시퀀스) 조합이 재발급될 수 있습니다.</b> 랜덤 비트가 넉넉한 ULID·UUIDv7은 중복 확률은 무시할 수준이지만 대신 정렬성이 깨집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">그래서 Snowflake 구현체는 마지막 발급 타임스탬프를 기억해 두었다가, 현재 시각이 그보다 과거이면 <b>소폭 역행은 따라잡을 때까지 대기하고 큰 역행은 발급을 거부</b>하는 방어 로직을 넣습니다. 아래는 그 핵심 부분의 자바 코드입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">public synchronized long nextId() {
+    long now = System.currentTimeMillis();
+
+    if (now &lt; lastTimestamp) {                    // 시계 역행 감지
+        long backward = lastTimestamp - now;
+        if (backward &lt;= MAX_BACKWARD_MS) {
+            now = waitUntil(lastTimestamp);       // 소폭: 대기로 흡수
+        } else {
+            throw new IllegalStateException(      // 대폭: 발급 거부
+                "시계 역행 " + backward + "ms — ID 발급 중단");
+        }
+    }
+
+    if (now == lastTimestamp) {
+        sequence = (sequence + 1) &amp; SEQUENCE_MASK;
+        if (sequence == 0) {                      // 같은 ms에서 4096개 소진
+            now = waitUntil(lastTimestamp + 1);
+        }
+    } else {
+        sequence = 0L;
+    }
+
+    lastTimestamp = now;
+    return ((now - EPOCH) &lt;&lt; TIMESTAMP_SHIFT)
+            | (workerId &lt;&lt; WORKER_ID_SHIFT)
+            | sequence;
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">한 가지 더 짚어두겠습니다. 노드 간 시계는 애초에 완벽히 맞지 않으므로, 이 계열 ID의 정렬성은 어디까지나 <b>근사 정렬(k-sorted)</b>입니다. ID의 대소 비교로 이벤트의 엄밀한 발생 순서나 인과 관계를 판단하는 로직은 설계 자체가 잘못된 것이고, 그런 요구에는 단일 시퀀서나 논리적 시계가 필요합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 컨테이너에서 워커 ID를 랜덤으로 뽑지 마세요</b> — 재시작할 때마다 워커 ID를 무작위 생성하는 구현이 의외로 많습니다. 1,024개 공간에서 수십 개 파드가 랜덤 선택을 반복하면 생일 역설로 중복 확률이 금방 올라가고, 중복된 두 파드는 조용히 같은 ID를 발급합니다. StatefulSet 순번, 코디네이터 임대, 배포 시 고정 할당 중 하나로 반드시 유일성을 보장해야 합니다.<br>
+<b>2. 자바스크립트로 보낼 때는 문자열로 직렬화하세요</b> — JS의 Number는 53비트 정밀도라서 64비트 Snowflake ID를 JSON 숫자로 내리면 하위 자릿수가 소리 없이 손실됩니다. API 응답에서는 항상 문자열로 내려보내야 합니다.<br>
+<b>3. ID에 담긴 정보 노출을 감안하세요</b> — 타임스탬프 기반 ID는 생성 시각을, Snowflake는 워커 수까지 유추할 단서를 노출합니다. 발급량 추정이 민감한 도메인이라면 외부 공개용 불투명 ID를 따로 두는 설계를 검토하시길 권합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 분산 환경의 ID는 조율 없이 발급되면서 유일하고 대략 시간순(k-sorted)이어야 하며, Snowflake(64비트·워커 ID 필요)와 ULID·UUIDv7(128비트·무조율)이 대표 답안입니다.<br>
+② 저장 효율과 발급 속도가 우선이면 Snowflake, 표준 호환성과 운영 단순함이 우선이면 UUIDv7이 무난한 기본값입니다.<br>
+③ 시계 역행은 중복과 정렬 깨짐의 주범이므로, 소폭 역행은 대기하고 대폭 역행은 발급을 거부하는 방어 로직과 워커 ID 유일성 보장이 반드시 함께 가야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 시스템 설계 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#분산시스템 #Snowflake #ULID #UUIDv7 #분산ID #시스템설계 #데이터베이스 #백엔드</p>
+
+</body>
+</html>
