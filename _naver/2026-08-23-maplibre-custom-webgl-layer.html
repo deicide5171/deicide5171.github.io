@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>MapLibre 커스텀 레이어 — 지도 렌더 루프에 내 WebGL 코드 끼워 넣기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">MapLibre 커스텀 레이어 — 지도 렌더 루프에 내 WebGL 코드 끼워 넣기</div>
+<p style="font-size:14px; color:#999;">2026. 8. 23. · GIS / 웹 지도</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — GeoJSON 스타일 레이어로는 불가능한 <b>파티클 애니메이션·커스텀 히트맵</b>을, 별도 캔버스를 겹치지 않고 지도와 <b>같은 WebGL 컨텍스트, 같은 프레임</b> 안에서 직접 그리게 해 주는 MapLibre <b>커스텀 레이어(CustomLayerInterface)</b>의 구조와 함정을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 커스텀 레이어가 필요할까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">MapLibre GL JS에서 대부분의 시각화는 GeoJSON 소스에 circle, heatmap, fill 같은 스타일 레이어를 얹는 것으로 해결됩니다. 하지만 바람장을 따라 흐르는 <b>파티클 애니메이션</b>이나 프레임마다 값이 바뀌는 수만 개의 센서 포인트, 셰이더로 색을 직접 계산하는 커스텀 히트맵처럼 <b>스타일 스펙의 표현력 밖</b>에 있는 요구가 나오는 순간 벽에 부딪히게 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">흔한 우회책은 지도 위에 별도의 캔버스를 겹쳐 놓고 지도 이동 이벤트마다 다시 그리는 방식인데요, 지도와 오버레이가 서로 다른 렌더 루프를 돌기 때문에 드래그나 회전 중에 오버레이가 한두 프레임씩 미끄러지는 현상을 피하기 어렵습니다. MapLibre의 <b>커스텀 레이어(type: 'custom')</b>는 지도가 쓰는 같은 WebGL 컨텍스트, 같은 프레임 안에서 내 그리기 코드를 호출해 주기 때문에 어긋남 자체가 없고, 일반 레이어처럼 순서를 지정할 수 있어 "라벨 아래, 건물 위"에 그리는 것도 가능합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 생명주기: onAdd, render, onRemove</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">커스텀 레이어는 세 개의 메서드로 움직입니다. <b>onAdd(map, gl)</b>은 레이어가 지도에 추가될 때 1회 호출되며 셰이더 컴파일과 버퍼 생성, 데이터 업로드 같은 리소스 준비를 전부 여기서 합니다. <b>render(gl, matrix)</b>는 매 프레임 호출되며 여기서는 그리기만 합니다. <b>onRemove(map, gl)</b>는 레이어 제거 시 버퍼와 프로그램을 해제하는 자리입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">한 가지 중요한 특성이 있는데요, MapLibre는 화면이 바뀔 때만 렌더링하는 <b>온디맨드 렌더러</b>라서 지도가 가만히 있으면 render()도 호출되지 않습니다. 파티클처럼 계속 움직여야 하는 레이어는 render() 안에서 <b>map.triggerRepaint()</b>를 호출해 다음 프레임을 예약해야 합니다. 또 renderingMode를 '3d'로 지정하면 지도의 깊이 버퍼를 공유해 지형이나 3D 건물에 가려지는 표현도 가능합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-23-maplibre-custom-webgl-layer-1.svg" alt="MapLibre 커스텀 레이어의 프레임 렌더 순서, 생명주기, 좌표 변환 파이프라인 구조도" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 좌표는 경위도가 아니라 0~1 메르카토르 월드</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">커스텀 레이어에서 가장 먼저 헷갈리는 지점은 좌표계입니다. render()가 받는 행렬은 경위도가 아니라 <b>전 세계를 0~1 정사각형에 눌러 담은 웹 메르카토르 월드 좌표</b>를 입력으로 기대합니다. 변환은 maplibregl.MercatorCoordinate.fromLngLat()이 해 주므로, 정점 데이터를 미리 0~1 좌표로 변환해 버퍼에 올려 두고 셰이더에서 행렬만 곱하면 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">여기에 실무 함정이 하나 숨어 있습니다. 0~1 좌표를 Float32Array로 올리면 고배율 줌에서 32비트 부동소수점의 유효 자릿수가 부족해 <b>포인트가 부들부들 떨리는 지터(jitter)</b>가 생깁니다. 도시 단위 이상으로 확대하는 서비스라면 기준점을 하나 정해 상대 좌표로 버퍼를 채우는 방식으로 정밀도를 확보하셔야 합니다. 그리고 글로브 투영이 도입된 최근 메이저 버전에서는 render의 두 번째 인자가 행렬 하나가 아니라 인자 객체로 바뀌었으니, 사용 중인 버전의 공식 문서를 먼저 확인하시기 바랍니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">어떤 방식을 골라야 할까요</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">적합한 경우</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">한계</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">스타일 레이어<br>(circle/heatmap 등)</td>
+<td style="border:1px solid #ddd; padding:10px;">정적·준정적 데이터, 스펙 표현력 안의 요구</td>
+<td style="border:1px solid #ddd; padding:10px;">프레임 단위 애니메이션·커스텀 셰이더 불가</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">deck.gl MapboxOverlay<br>(interleaved)</td>
+<td style="border:1px solid #ddd; padding:10px;">대량 데이터 + 검증된 레이어 카탈로그 활용</td>
+<td style="border:1px solid #ddd; padding:10px;">의존성 추가, 카탈로그 밖 표현은 결국 커스텀</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;"><b>MapLibre 커스텀 레이어</b></td>
+<td style="border:1px solid #ddd; padding:10px;">파티클·유체·커스텀 히트맵 등 셰이더 직접 제어</td>
+<td style="border:1px solid #ddd; padding:10px;">WebGL 코드를 직접 관리해야 하는 진입 장벽</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">별도 캔버스 오버레이</td>
+<td style="border:1px solid #ddd; padding:10px;">지도와 느슨하게 결합된 UI성 그래픽</td>
+<td style="border:1px solid #ddd; padding:10px;">이동·회전 시 프레임 어긋남, 레이어 순서 제어 불가</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>언제 쓰지 말아야 하는지</b>도 분명합니다. 스타일 레이어로 되는 것을 커스텀 레이어로 짜면 그때부터 셰이더·버퍼·상태 관리가 전부 우리 팀의 유지보수 부채가 됩니다. deck.gl의 기존 레이어로 충분하다면 그쪽이 낫고, 커스텀 레이어는 "셰이더를 직접 써야만 하는 표현"이 있을 때 꺼내는 카드입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 맥박처럼 뛰는 포인트 레이어</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">세 도시 위에서 크기가 고동치는 포인트를 그리는 핵심 코드입니다. 리소스 생성은 onAdd에서 1회, render에서는 그리기와 다음 프레임 예약만 한다는 구조에 주목해 주세요.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">const pulsingLayer = {
+  id: 'pulsing-points',
+  type: 'custom',
+  renderingMode: '2d',
+
+  onAdd(map, gl) {
+    this.map = map;
+    // 셰이더 컴파일·프로그램 링크 (1회)
+    // 정점 셰이더: gl_Position = u_matrix * vec4(a_pos, 0.0, 1.0);
+    //             gl_PointSize = 18.0 + 8.0 * sin(u_time * 3.0);
+    this.program = buildProgram(gl); // 컴파일 유틸
+
+    // 경위도 → 0~1 메르카토르 월드 좌표로 변환해 1회 업로드
+    const cities = [[126.978, 37.5665], [129.0756, 35.1796]];
+    const data = new Float32Array(cities.flatMap(([lng, lat]) =&gt; {
+      const m = maplibregl.MercatorCoordinate.fromLngLat({ lng, lat });
+      return [m.x, m.y];
+    }));
+    this.buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, data, gl.STATIC_DRAW);
+    this.count = cities.length;
+  },
+
+  render(gl, matrix) {
+    gl.useProgram(this.program);
+    gl.uniformMatrix4fv(this.uMatrix, false, matrix);
+    gl.uniform1f(this.uTime, performance.now() / 1000);
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+    gl.enableVertexAttribArray(this.aPos);
+    gl.vertexAttribPointer(this.aPos, 2, gl.FLOAT, false, 0, 0);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.drawArrays(gl.POINTS, 0, this.count);
+    this.map.triggerRepaint(); // 애니메이션: 다음 프레임 예약
+  },
+
+  onRemove(map, gl) {
+    gl.deleteProgram(this.program);
+    gl.deleteBuffer(this.buffer);
+  }
+};
+
+map.on('load', () =&gt; map.addLayer(pulsingLayer));</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무에서 이것만은 조심하세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. render() 안에서 버퍼를 만들지 마세요</b> — 매 프레임 createBuffer/bufferData를 호출하면 프레임마다 CPU→GPU 업로드가 발생하고, 매번 새로 만드는 배열이 GC 압박을 일으켜 파티클 수가 늘수록 프레임이 끊깁니다. 생성은 onAdd에서 1회, 갱신은 값이 실제로 바뀐 시점에만 bufferSubData로 하고, 매 프레임 변하는 움직임은 시간 유니폼을 넘겨 셰이더에서 계산하게 하는 것이 올바른 구조입니다.<br>
+<b>2. GL 상태를 되돌려 놓으세요</b> — 커스텀 레이어에서 바꾼 blend·depth 설정이 이후 지도 렌더링에 영향을 줄 수 있습니다. 기본값과 다르게 만진 상태는 그리기가 끝나면 복원하는 습관이 안전합니다.<br>
+<b>3. setStyle과 triggerRepaint를 주의하세요</b> — 스타일을 갈아끼우면 onAdd가 재호출될 수 있으니 리소스 재생성이 가능한 구조로 짜야 하고, triggerRepaint()는 애니메이션이 필요한 동안만 호출해야 모바일 배터리를 아낄 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 커스텀 레이어는 지도와 같은 WebGL 컨텍스트·같은 프레임에서 그리므로, 별도 캔버스 오버레이의 프레임 어긋남 없이 파티클·커스텀 히트맵을 얹을 수 있습니다.<br>
+② 좌표는 경위도가 아니라 MercatorCoordinate의 0~1 월드 좌표이며, 리소스 생성은 onAdd, 그리기는 render, 애니메이션은 triggerRepaint()로 역할을 나눕니다.<br>
+③ 스타일 레이어나 deck.gl로 되는 표현이면 그쪽을 먼저 쓰고, 셰이더를 직접 제어해야 할 때만 커스텀 레이어를 선택하는 것이 유지보수 관점에서 옳습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 GIS 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#MapLibre #WebGL #커스텀레이어 #웹지도 #GIS #셰이더 #파티클 #지도시각화</p>
+
+</body>
+</html>
