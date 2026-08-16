@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="34" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222" text-anchor="middle">스페큘레이티브 디코딩 — 초안 작성과 병렬 검증</text>
+
+  <!-- Step 1: draft model -->
+  <rect x="40" y="70" width="180" height="70" rx="10" fill="#e8f4fd" stroke="#3b82c4" stroke-width="2"/>
+  <text x="130" y="100" font-family="sans-serif" font-size="16" font-weight="bold" fill="#1d4e79" text-anchor="middle">드래프트 모델 (소형)</text>
+  <text x="130" y="124" font-family="sans-serif" font-size="14" fill="#1d4e79" text-anchor="middle">토큰 5개를 빠르게 생성</text>
+
+  <!-- draft tokens -->
+  <g font-family="sans-serif" font-size="15" text-anchor="middle">
+    <rect x="270" y="82" width="86" height="46" rx="6" fill="#f4f4f4" stroke="#999"/>
+    <text x="313" y="110" fill="#333">"서울"</text>
+    <rect x="366" y="82" width="86" height="46" rx="6" fill="#f4f4f4" stroke="#999"/>
+    <text x="409" y="110" fill="#333">"의"</text>
+    <rect x="462" y="82" width="86" height="46" rx="6" fill="#f4f4f4" stroke="#999"/>
+    <text x="505" y="110" fill="#333">"수도"</text>
+    <rect x="558" y="82" width="86" height="46" rx="6" fill="#f4f4f4" stroke="#999"/>
+    <text x="601" y="110" fill="#333">"는"</text>
+    <rect x="654" y="82" width="86" height="46" rx="6" fill="#f4f4f4" stroke="#999"/>
+    <text x="697" y="110" fill="#333">"한강"</text>
+  </g>
+  <line x1="220" y1="105" x2="266" y2="105" stroke="#3b82c4" stroke-width="2"/>
+  <polygon points="266,105 256,100 256,110" fill="#3b82c4"/>
+
+  <!-- arrow down -->
+  <line x1="400" y1="140" x2="400" y2="180" stroke="#666" stroke-width="2"/>
+  <polygon points="400,186 394,174 406,174" fill="#666"/>
+  <text x="418" y="168" font-family="sans-serif" font-size="14" fill="#666">초안 5개를 한 번에 전달</text>
+
+  <!-- Step 2: target model -->
+  <rect x="40" y="196" width="180" height="70" rx="10" fill="#fdf0e6" stroke="#d97b29" stroke-width="2"/>
+  <text x="130" y="226" font-family="sans-serif" font-size="16" font-weight="bold" fill="#8a4a12" text-anchor="middle">타깃 모델 (대형)</text>
+  <text x="130" y="250" font-family="sans-serif" font-size="14" fill="#8a4a12" text-anchor="middle">순전파 1회로 병렬 검증</text>
+
+  <!-- verification results -->
+  <g font-family="sans-serif" font-size="15" text-anchor="middle">
+    <rect x="270" y="208" width="86" height="46" rx="6" fill="#e6f6ec" stroke="#2e9e5b" stroke-width="2"/>
+    <text x="313" y="236" fill="#1d6b3d">✓ 수락</text>
+    <rect x="366" y="208" width="86" height="46" rx="6" fill="#e6f6ec" stroke="#2e9e5b" stroke-width="2"/>
+    <text x="409" y="236" fill="#1d6b3d">✓ 수락</text>
+    <rect x="462" y="208" width="86" height="46" rx="6" fill="#e6f6ec" stroke="#2e9e5b" stroke-width="2"/>
+    <text x="505" y="236" fill="#1d6b3d">✓ 수락</text>
+    <rect x="558" y="208" width="86" height="46" rx="6" fill="#e6f6ec" stroke="#2e9e5b" stroke-width="2"/>
+    <text x="601" y="236" fill="#1d6b3d">✓ 수락</text>
+    <rect x="654" y="208" width="86" height="46" rx="6" fill="#fdeaea" stroke="#c94040" stroke-width="2"/>
+    <text x="697" y="236" fill="#9e2b2b">✗ 거절</text>
+  </g>
+  <line x1="220" y1="231" x2="266" y2="231" stroke="#d97b29" stroke-width="2"/>
+  <polygon points="266,231 256,226 256,236" fill="#d97b29"/>
+
+  <!-- correction note -->
+  <line x1="697" y1="254" x2="697" y2="292" stroke="#c94040" stroke-width="2"/>
+  <polygon points="697,298 691,286 703,286" fill="#c94040"/>
+  <rect x="560" y="300" width="200" height="52" rx="8" fill="#fdeaea" stroke="#c94040" stroke-width="1.5"/>
+  <text x="660" y="322" font-family="sans-serif" font-size="14" fill="#9e2b2b" text-anchor="middle">거절 지점부터는 타깃 모델의</text>
+  <text x="660" y="342" font-family="sans-serif" font-size="14" fill="#9e2b2b" text-anchor="middle">분포로 토큰을 다시 뽑아 교정</text>
+
+  <!-- result summary -->
+  <rect x="40" y="300" width="480" height="52" rx="8" fill="#f0f7f4" stroke="#2e9e5b" stroke-width="1.5"/>
+  <text x="280" y="322" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1d6b3d" text-anchor="middle">타깃 모델 순전파 1회 → 토큰 4 + 1 = 5개 확정</text>
+  <text x="280" y="342" font-family="sans-serif" font-size="14" fill="#1d6b3d" text-anchor="middle">(한 번에 1토큰씩 뽑는 일반 디코딩 대비 최대 5배 진행)</text>
+
+  <!-- bottom note -->
+  <text x="400" y="398" font-family="sans-serif" font-size="15" fill="#555" text-anchor="middle">출력 분포는 타깃 모델 단독 생성과 수학적으로 동일 — 품질 손실 없는 무손실 가속</text>
+  <text x="400" y="424" font-family="sans-serif" font-size="14" fill="#888" text-anchor="middle">수락률이 높을수록 한 사이클에 확정되는 토큰이 많아져 가속 폭이 커진다</text>
+</svg>

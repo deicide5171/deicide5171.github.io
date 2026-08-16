@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>멀쩡해 보이는 폴리곤이 쿼리를 깨뜨린다 — ST_IsValid 진단과 ST_MakeValid 복구</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">멀쩡해 보이는 폴리곤이 쿼리를 깨뜨린다 — ST_IsValid 진단과 ST_MakeValid 복구</div>
+<p style="font-size:14px; color:#999;">2026. 8. 23. · GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 지도에는 정상으로 보이는데 공간 연산만 하면 에러가 나는 <b>유효하지 않은 지오메트리</b> 문제를 다룹니다. OGC 유효성 규칙과 꼬인 폴리곤의 정체, <b>ST_IsValidDetail</b>로 문제 지점을 짚는 법, 면적을 잃지 않고 고치는 <b>ST_MakeValid</b> 복구 전략까지 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지도에는 멀쩡한데 쿼리는 실패할까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">외부에서 받은 행정구역 Shapefile을 PostGIS에 적재하고 <b>ST_Intersection</b>으로 겹침 면적을 구하려는 순간, "TopologyException" 같은 에러를 만나는 경우가 있습니다. 더 곤란한 쪽은 에러조차 나지 않는 경우인데요, <b>ST_Contains</b>가 분명히 안에 있는 점을 밖이라고 답하거나 면적 계산이 이상한 값을 내는데, 정작 지도에 그려보면 폴리곤은 아무 문제 없어 보입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">원인은 대부분 <b>유효하지 않은(invalid) 지오메트리</b>입니다. PostGIS의 공간 연산은 OGC Simple Features 사양이 정한 유효성 규칙을 전제로 동작하는데, 디지타이징 실수나 좌표 변환 과정의 반올림, 사용자가 화면에서 직접 그린 도형 등은 이 규칙을 어긴 채로 들어오는 일이 흔합니다. 화면 렌더링은 규칙 위반을 관대하게 넘어가지만, 교차·포함·버퍼 같은 연산은 전제가 깨진 입력 앞에서 예외를 던지거나 조용히 틀린 답을 내놓게 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 폴리곤이 '꼬였다'고 판정되는 기준</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">OGC 기준으로 폴리곤이 유효하려면 몇 가지 조건을 지켜야 합니다. 경계선(링)이 <b>자기 자신과 교차하면 안 되고</b>, 외곽 링과 구멍(내부 링)은 선으로 겹치지 않아야 하며(한 점에서 닿는 것은 허용됩니다), <b>구멍은 외곽 링 안쪽에</b> 있어야 하고, 폴리곤 내부는 하나로 연결되어 있어야 합니다. 대표적인 위반 사례가 흔히 나비넥타이(bowtie)라고 부르는 <b>자기 교차 폴리곤</b>인데요, 꼭짓점 4개를 잘못된 순서로 이으면 두 변이 가운데에서 서로를 가로지르면서 "폴리곤의 내부"라는 개념 자체가 수학적으로 모호해집니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">위반 유형</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">흔한 원인</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">ST_IsValidReason 메시지 예</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">링 자기 교차(bowtie)</td>
+<td style="border:1px solid #ddd; padding:10px;">꼭짓점 순서 오류, 편집 실수</td>
+<td style="border:1px solid #ddd; padding:10px;">Self-intersection[x y]</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">구멍이 외곽 밖에 위치</td>
+<td style="border:1px solid #ddd; padding:10px;">레이어 병합, 좌표 변환 오차</td>
+<td style="border:1px solid #ddd; padding:10px;">Hole lies outside shell</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">링이 닫히지 않음</td>
+<td style="border:1px solid #ddd; padding:10px;">수작업 WKT, 데이터 절단</td>
+<td style="border:1px solid #ddd; padding:10px;">Ring is not closed</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">외곽 링 중첩</td>
+<td style="border:1px solid #ddd; padding:10px;">중복 적재, 병합 오류</td>
+<td style="border:1px solid #ddd; padding:10px;">Nested shells</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 진단은 ST_IsValidDetail까지 내려가야 합니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">진단 함수는 세 단계로 상세해집니다. <b>ST_IsValid</b>는 참/거짓만 알려주고, <b>ST_IsValidReason</b>은 위반 사유 문자열을, <b>ST_IsValidDetail</b>은 사유와 함께 <b>문제가 생긴 지점의 좌표</b>까지 돌려줍니다. 대량 테이블을 점검할 때는 위반 행만 뽑아 사유별로 집계하고, 문제 지점을 지도에 찍어 눈으로 확인하는 흐름이 실용적입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">-- 유효하지 않은 행을 사유·위치와 함께 추출
+SELECT id,
+       reason(ST_IsValidDetail(geom))              AS why,
+       ST_AsText(location(ST_IsValidDetail(geom))) AS where_at
+FROM   admin_boundary
+WHERE  NOT ST_IsValid(geom);
+
+-- 위반 유형별 규모 파악
+SELECT ST_IsValidReason(geom) AS reason, count(*)
+FROM   admin_boundary
+WHERE  NOT ST_IsValid(geom)
+GROUP  BY 1
+ORDER  BY 2 DESC;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">한 가지 유의할 점은 ST_IsValid 자체도 지오메트리 전체를 훑는 비용이 드는 함수라는 것입니다. 매 쿼리마다 검사하기보다는 <b>적재 시점에 한 번 검증</b>하는 구조가 훨씬 경제적입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — ST_MakeValid, 면적을 잃지 않는 복구</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>ST_MakeValid</b>는 GEOS의 복구 알고리즘을 이용해 <b>입력 좌표를 버리지 않고</b> 유효한 지오메트리를 만들어냅니다. 나비넥타이 폴리곤이라면 교차점에서 도형을 잘라 두 개의 유효한 폴리곤으로 재조립하고, 결과는 MULTIPOLYGON이 됩니다. 아래 그림처럼 입력의 면적이 그대로 보존되는 것이 핵심입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-23-postgis-geometry-validity-1.svg" alt="자기 교차 폴리곤이 ST_MakeValid로 두 개의 유효한 폴리곤으로 분리되는 과정" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">PostGIS 3.2 이상(GEOS 3.10 이상)에서는 두 번째 인자로 복구 방식을 고를 수 있습니다. 기본값인 <b>linework</b> 방식은 입력의 모든 선분을 보존한 뒤 링을 다시 구성하는데, 결과에 선·점이 섞인 GEOMETRYCOLLECTION이 나올 수 있습니다. <b>structure</b> 방식은 면 중심으로 재조립해서 폴리곤을 넣으면 폴리곤류가 나오도록 유지해 줍니다. 실무에서는 structure 방식을 쓰거나, 결과에서 면 성분만 추려내는 <b>ST_CollectionExtract(geom, 3)</b>을 함께 쓰는 편이 안전합니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">-- 유효하지 않은 행만 골라 면 성분 보존 방식으로 복구
+UPDATE admin_boundary
+SET    geom = ST_CollectionExtract(
+                ST_MakeValid(geom, 'method=structure keepcollapsed=false'), 3)
+WHERE  NOT ST_IsValid(geom);
+
+-- 이후 재유입을 막는 CHECK 제약
+ALTER TABLE admin_boundary
+  ADD CONSTRAINT chk_geom_valid CHECK (ST_IsValid(geom));</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">흔한 함정 — ST_Buffer(geom, 0) 트릭</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">오래된 자료에는 <b>ST_Buffer(geom, 0)</b>으로 유효성을 고치는 트릭이 자주 등장합니다. 버퍼 연산이 내부적으로 유효한 결과만 만들기 때문에 에러는 실제로 사라지는데요, 문제는 <b>면적이 조용히 사라질 수 있다</b>는 점입니다. 나비넥타이 폴리곤에 버퍼 0을 적용하면 링의 방향 해석에 따라 한쪽 날개가 통째로 버려지는 경우가 있고, 에러 없이 결과가 나오기 때문에 데이터 절반이 유실된 사실을 한참 뒤에야 알게 됩니다. 유효성 복구는 입력 영역을 보존하도록 설계된 ST_MakeValid로 하는 것이 올바른 선택입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 검증은 적재 파이프라인에 두세요</b> — ogr2ogr·shp2pgsql로 적재한 직후 스테이징 테이블에서 검증·복구를 끝내고 본 테이블로 옮기는 구조가 좋습니다. 본 테이블에는 CHECK 제약을 걸어 재유입을 차단합니다.<br>
+<b>2. 자동 복구가 항상 답은 아닙니다</b> — 지적도처럼 원본의 법적 의미가 중요한 데이터는 ST_MakeValid가 만든 형상이 원저작자의 의도와 다를 수 있습니다. 이런 경우 자동 UPDATE 대신 위반 목록을 리포트로 만들어 원천 데이터 수정 요청으로 돌리는 편이 안전합니다.<br>
+<b>3. 좌표계 변환 뒤에도 다시 확인하세요</b> — 변환 전에는 유효하던 도형이 재투영 후 반올림 때문에 다시 꼬일 수 있습니다. 변환이 끼어 있는 파이프라인이라면 변환 이후 시점에 검증을 두어야 합니다. 참고로 GiST 공간 인덱스는 바운딩 박스만 보기 때문에 invalid 지오메트리도 인덱스는 잘 타며, 위반을 걸러주지 못합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 지도에는 멀쩡해 보여도 자기 교차·구멍 위치 오류 같은 OGC 유효성 위반은 공간 연산을 깨뜨리며, ST_IsValidDetail로 사유와 좌표까지 짚어낼 수 있습니다.<br>
+② 복구는 면적을 보존하는 ST_MakeValid(가능하면 method=structure와 ST_CollectionExtract 조합)로 하고, ST_Buffer(0) 트릭은 면적 유실 위험이 있는 안티패턴입니다.<br>
+③ 검증·복구는 적재 시점에 한 번 수행하고 CHECK 제약으로 재유입을 막는 구조가 쿼리마다 검사하는 것보다 훨씬 경제적입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 GIS 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#PostGIS #지오메트리유효성 #STIsValid #STMakeValid #공간데이터 #GIS #PostgreSQL</p>
+
+</body>
+</html>

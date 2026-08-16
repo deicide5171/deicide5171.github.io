@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>전원이 꺼져도 커밋은 살아남는다 — WAL과 체크포인트로 보는 DB 장애 복구의 원리</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">전원이 꺼져도 커밋은 살아남는다 — WAL과 체크포인트로 보는 DB 장애 복구의 원리</div>
+<p style="font-size:14px; color:#999;">2026. 8. 23. · 데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 커밋 직후 서버 전원이 나가도 데이터가 살아남는 이유는, DB가 데이터 파일 대신 <b>WAL(Write-Ahead Log)</b>을 먼저 디스크에 기록하고 장애 후에는 <b>마지막 체크포인트부터 로그를 재생</b>해 복원하기 때문입니다. 이 원리와 체크포인트 간격의 트레이드오프를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">커밋마다 데이터 파일을 쓰면 안 되는 걸까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">COMMIT이 성공으로 돌아온 직후 서버 전원이 나갔다고 가정해 보겠습니다. 재시작한 DB에 그 데이터는 남아 있을까요? ACID의 D(내구성)가 보장하는 답은 "남아 있다"입니다. 그런데 이 보장을 가장 단순하게 구현하려면 커밋할 때마다 수정된 데이터 페이지를 전부 디스크에 쓰고 fsync까지 해야 하는데, 데이터 파일 곳곳에 흩어진 페이지를 트랜잭션마다 랜덤 쓰기로 반영하는 방식으로는 쓸 만한 처리량이 나오지 않습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">그래서 거의 모든 RDBMS는 반대로 접근합니다. 데이터 페이지는 메모리(버퍼 풀)에서만 고치고 디스크 반영은 미루되, <b>"무엇을 바꿨는지"를 적은 로그 레코드만 커밋 시점에 디스크에 확실히 남기는 것</b>입니다. 이것이 WAL(Write-Ahead Logging)이고, PostgreSQL의 WAL, MySQL InnoDB의 리두 로그(redo log), SQLite의 WAL 모드가 모두 같은 원리 위에 서 있습니다. 장애가 나면 재시작 시 이 로그를 다시 재생(replay)해서 잃어버린 페이지 변경을 복원합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 데이터보다 로그를 먼저 씁니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">WAL의 규칙은 하나입니다. <b>어떤 데이터 페이지도, 그 변경 내용을 담은 로그 레코드가 디스크에 안전하게 기록되기 전에는 디스크에 내려가지 않는다</b>는 것입니다. 커밋 시점에 fsync되는 것은 데이터 파일이 아니라 WAL 파일뿐입니다. 이 순서만 지켜지면 어떤 시점에 전원이 나가도 "커밋됐는데 로그에는 없는 변경"은 존재할 수 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">성능 면에서도 유리합니다. WAL은 파일 끝에 이어 붙이는 <b>순차 쓰기</b>라서 랜덤 쓰기보다 훨씬 빠르고, 같은 시점에 커밋되는 여러 트랜잭션의 로그를 한 번의 fsync로 묶어 내리는 그룹 커밋도 가능합니다. 각 로그 레코드에는 LSN(Log Sequence Number)이라는 단조 증가 위치 값이 붙고, 각 데이터 페이지에는 자신을 마지막으로 수정한 레코드의 LSN이 기록됩니다. 복구할 때 "이 페이지에 이 로그를 다시 적용해야 하는가"를 판정하는 기준이 바로 이 값입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 체크포인트가 복구 시작점을 당깁니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">WAL만으로는 두 가지 문제가 남습니다. 로그를 영원히 지울 수 없다는 것, 그리고 재시작 시 로그 전체를 재생해야 해서 복구 시간이 무한정 길어질 수 있다는 것입니다. 이를 해결하는 장치가 <b>체크포인트(checkpoint)</b>입니다. 체크포인트는 그 시점까지 메모리에 쌓인 더티 페이지(수정됐지만 아직 디스크에 안 내려간 페이지)를 데이터 파일에 반영하고, "이 지점 이전의 변경은 모두 데이터 파일에 있다"는 표시를 남기는 작업입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">체크포인트가 끝나면 그 이전 구간의 WAL은 복구에 필요 없어지므로 재활용하거나 지울 수 있고, 장애 후 복구는 항상 <b>마지막 체크포인트의 REDO 지점부터</b> 시작하면 됩니다. 즉 체크포인트 간격이 곧 최악의 경우 재생해야 할 WAL의 양이고, 이것이 복구 소요 시간의 상한을 결정합니다. PostgreSQL은 checkpoint_timeout(시간 기준)과 max_wal_size(WAL 누적량 기준) 중 먼저 도달하는 쪽에서 체크포인트를 시작합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-23-wal-checkpoint-crash-recovery-1.svg" alt="정상 운영 시 커밋은 WAL만 fsync하고 더티 페이지는 체크포인트 때 데이터 파일에 반영되는 구조, 장애 복구 시 마지막 체크포인트부터 WAL을 재생하는 타임라인" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 복구 흐름과 토른 페이지 방어</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">재시작한 PostgreSQL은 제어 파일에서 마지막 체크포인트 위치를 읽고 거기서부터 WAL을 순서대로 재생합니다(REDO). 페이지의 LSN이 로그 레코드의 LSN보다 이미 크면 그 변경은 반영된 것이므로 건너뜁니다. 커밋 로그가 없는 트랜잭션의 변경은 PostgreSQL에서는 MVCC 특성상 "커밋 안 된 버전"으로 남아 자연히 무시되고, InnoDB처럼 언두(undo) 로그를 쓰는 엔진은 REDO 후 미완료 트랜잭션을 되돌리는 롤백 단계를 거칩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">한 가지 함정이 더 있습니다. DB 페이지(보통 8KB)는 디스크 섹터보다 커서, 쓰는 도중 전원이 나가면 앞부분만 갱신된 <b>토른 페이지(torn page)</b>가 생길 수 있습니다. 이런 페이지에는 로그 재생 자체가 불가능하므로, PostgreSQL은 체크포인트 후 각 페이지가 처음 수정될 때 페이지 전체 이미지를 WAL에 넣는 full_page_writes로 방어하고, InnoDB는 더블라이트 버퍼(doublewrite buffer)로 같은 문제를 풉니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">PostgreSQL</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">MySQL InnoDB</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">로그 이름</td>
+<td style="border:1px solid #ddd; padding:10px;">WAL</td>
+<td style="border:1px solid #ddd; padding:10px;">리두 로그(redo log)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">미완료 트랜잭션 처리</td>
+<td style="border:1px solid #ddd; padding:10px;">MVCC로 자연 무시</td>
+<td style="border:1px solid #ddd; padding:10px;">언두 로그로 롤백</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">토른 페이지 방어</td>
+<td style="border:1px solid #ddd; padding:10px;">full_page_writes</td>
+<td style="border:1px solid #ddd; padding:10px;">더블라이트 버퍼</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">커밋 내구성 설정</td>
+<td style="border:1px solid #ddd; padding:10px;">synchronous_commit</td>
+<td style="border:1px solid #ddd; padding:10px;">innodb_flush_log_at_trx_commit</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — PostgreSQL WAL·체크포인트 설정</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 postgresql.conf에서 WAL과 체크포인트 동작을 제어하는 핵심 파라미터들입니다. 설정 후에는 서버 로그에서 체크포인트가 time(시간 도달) 사유로 도는지 wal(누적량 도달) 사유로 도는지 확인해 보시기 바랍니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># postgresql.conf — WAL·체크포인트 관련 핵심 설정
+
+# 커밋 시 WAL을 디스크까지 동기화할지. on이면 커밋 유실 없음(기본값)
+synchronous_commit = on
+
+# 체크포인트 사이 최대 시간 간격 (기본 5min, 늘리면 복구 시간도 늘어남)
+checkpoint_timeout = 15min
+
+# WAL이 이 크기에 근접하면 시간과 무관하게 체크포인트를 시작 (기본 1GB)
+max_wal_size = 4GB
+
+# 체크포인트 쓰기를 간격의 90%에 걸쳐 분산해 I/O 스파이크 완화
+checkpoint_completion_target = 0.9
+
+# 체크포인트 발생 시각과 원인을 로그에 남김 (최근 버전 기본 on)
+log_checkpoints = on
+
+# 체크포인트 후 첫 수정 페이지의 전체 이미지를 WAL에 기록 (끄지 말 것)
+full_page_writes = on</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">로그에 wal 사유의 체크포인트가 반복해서 찍힌다면, max_wal_size가 실제 쓰기량 대비 너무 작다는 신호이므로 여유 있게 늘려주는 것이 일반적인 튜닝 방향입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. fsync = off와 synchronous_commit = off를 혼동하지 마세요</b> — 흔한 안티패턴이 쓰기 성능을 이유로 fsync = off를 켜는 것입니다. 이 설정은 장애 시 복구 불가능한 데이터 파일 손상을 일으킬 수 있어 운영 환경에서는 금물입니다. 반면 synchronous_commit = off는 최근 커밋 몇 개가 유실될 수 있을 뿐 DB 일관성 자체는 깨지지 않으므로, 유실을 감내할 수 있는 로그성 데이터라면 트랜잭션 단위로 선택적으로 쓸 수 있는 정당한 옵션입니다.<br>
+<b>2. 체크포인트 간격은 복구 시간과 I/O 부하의 트레이드오프입니다</b> — 간격을 늘리면 full_page_writes로 인한 WAL 증폭과 반복 쓰기가 줄어 평상시 성능은 좋아지지만, 장애 시 재생할 WAL이 늘어 재시작이 느려집니다. 복구 시간 목표(RTO)가 빡빡한 서비스라면 간격을 무작정 늘리면 안 됩니다.<br>
+<b>3. 체크포인트가 너무 잦으면 그 자체가 부하입니다</b> — max_wal_size가 작아 체크포인트가 수 분마다 강제로 돌면, 매번 페이지 전체 이미지를 다시 WAL에 쓰는 비용까지 겹쳐 쓰기 부하가 증폭됩니다. 대부분의 체크포인트가 time 사유로 돌도록 여유를 주는 것이 안전합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 커밋 시 디스크에 동기화되는 것은 데이터 파일이 아니라 WAL이며, "로그를 데이터보다 먼저 쓴다"는 규칙 하나로 내구성과 순차 쓰기 성능을 동시에 얻습니다.<br>
+② 체크포인트는 더티 페이지를 데이터 파일에 반영해 복구 시작점을 앞으로 당기는 장치로, 그 간격이 장애 시 재생할 WAL의 양(=복구 시간)의 상한을 결정합니다.<br>
+③ 체크포인트 간격 튜닝은 평상시 I/O 부하와 복구 시간 사이의 트레이드오프이며, 내구성 자체를 깨는 fsync = off와 커밋 지연만 감수하는 synchronous_commit = off는 전혀 다른 선택지입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 데이터베이스 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#WAL #체크포인트 #장애복구 #PostgreSQL #InnoDB #데이터베이스 #트랜잭션 #내구성</p>
+
+</body>
+</html>

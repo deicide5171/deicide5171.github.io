@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="36" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222222">MVCC 튜플 버전과 VACUUM의 공간 회수</text>
+
+  <!-- 패널 제목 -->
+  <text x="140" y="74" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="bold" fill="#333333">① UPDATE 이전</text>
+  <text x="400" y="74" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="bold" fill="#333333">② UPDATE 이후</text>
+  <text x="660" y="74" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="bold" fill="#333333">③ VACUUM 이후</text>
+
+  <!-- 힙 페이지 박스 1 -->
+  <rect x="32" y="86" width="216" height="268" rx="8" fill="#fafafa" stroke="#888888" stroke-width="1.5"/>
+  <rect x="46" y="100" width="188" height="66" rx="4" fill="#e8f5e9" stroke="#4caf50" stroke-width="1.5"/>
+  <text x="140" y="128" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#2e7d32">튜플 A (v1)</text>
+  <text x="140" y="150" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#555555">살아 있는 버전</text>
+  <rect x="46" y="180" width="188" height="66" rx="4" fill="#e8f5e9" stroke="#4caf50" stroke-width="1.5"/>
+  <text x="140" y="208" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#2e7d32">튜플 B</text>
+  <text x="140" y="230" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#555555">살아 있는 버전</text>
+  <rect x="46" y="260" width="188" height="66" rx="4" fill="#ffffff" stroke="#bbbbbb" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="140" y="297" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#999999">빈 공간</text>
+
+  <!-- 화살표 1 -->
+  <text x="270" y="206" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#555555">UPDATE</text>
+  <line x1="250" y1="220" x2="284" y2="220" stroke="#555555" stroke-width="2.5"/>
+  <path d="M 284 220 L 274 214 L 274 226 Z" fill="#555555"/>
+
+  <!-- 힙 페이지 박스 2 -->
+  <rect x="292" y="86" width="216" height="268" rx="8" fill="#fafafa" stroke="#888888" stroke-width="1.5"/>
+  <rect x="306" y="100" width="188" height="66" rx="4" fill="#ffebee" stroke="#e57373" stroke-width="1.5"/>
+  <text x="400" y="128" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#c62828">튜플 A (v1)</text>
+  <text x="400" y="150" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#c62828">죽은 튜플 (xmax 기록)</text>
+  <rect x="306" y="180" width="188" height="66" rx="4" fill="#e8f5e9" stroke="#4caf50" stroke-width="1.5"/>
+  <text x="400" y="208" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#2e7d32">튜플 B</text>
+  <text x="400" y="230" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#555555">살아 있는 버전</text>
+  <rect x="306" y="260" width="188" height="66" rx="4" fill="#e3f2fd" stroke="#42a5f5" stroke-width="1.5"/>
+  <text x="400" y="288" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1565c0">튜플 A (v2)</text>
+  <text x="400" y="310" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#1565c0">새로 쓰인 버전</text>
+
+  <!-- 화살표 2 -->
+  <text x="530" y="206" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#555555">VACUUM</text>
+  <line x1="510" y1="220" x2="544" y2="220" stroke="#555555" stroke-width="2.5"/>
+  <path d="M 544 220 L 534 214 L 534 226 Z" fill="#555555"/>
+
+  <!-- 힙 페이지 박스 3 -->
+  <rect x="552" y="86" width="216" height="268" rx="8" fill="#fafafa" stroke="#888888" stroke-width="1.5"/>
+  <rect x="566" y="100" width="188" height="66" rx="4" fill="#ffffff" stroke="#42a5f5" stroke-width="1.5" stroke-dasharray="6 4"/>
+  <text x="660" y="128" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1565c0">재사용 가능 공간</text>
+  <text x="660" y="150" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#555555">FSM에 등록됨</text>
+  <rect x="566" y="180" width="188" height="66" rx="4" fill="#e8f5e9" stroke="#4caf50" stroke-width="1.5"/>
+  <text x="660" y="208" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#2e7d32">튜플 B</text>
+  <text x="660" y="230" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#555555">살아 있는 버전</text>
+  <rect x="566" y="260" width="188" height="66" rx="4" fill="#e3f2fd" stroke="#42a5f5" stroke-width="1.5"/>
+  <text x="660" y="288" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1565c0">튜플 A (v2)</text>
+  <text x="660" y="310" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#1565c0">현재 버전</text>
+
+  <!-- 하단 설명 -->
+  <text x="400" y="392" text-anchor="middle" font-family="sans-serif" font-size="15" fill="#666666">UPDATE는 옛 버전을 지우지 않고 새 버전을 추가하며, 옛 버전은 죽은 튜플로 남는다.</text>
+  <text x="400" y="418" text-anchor="middle" font-family="sans-serif" font-size="15" fill="#666666">일반 VACUUM은 그 공간을 내부 재사용분으로 회수할 뿐, 파일 크기 자체는 줄이지 않는다.</text>
+</svg>

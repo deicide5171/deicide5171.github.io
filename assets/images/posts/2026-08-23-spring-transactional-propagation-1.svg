@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <marker id="arrowGreen" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#1f7a44"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="10" markerHeight="10" refX="8" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#c0392b"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="38" text-anchor="middle" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222222">@Transactional 프록시 동작 — 외부 호출과 내부 호출의 차이</text>
+
+  <!-- 호출자 -->
+  <rect x="40" y="190" width="150" height="64" rx="8" fill="#f4f4f4" stroke="#666666" stroke-width="1.5"/>
+  <text x="115" y="217" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#222222">호출자</text>
+  <text x="115" y="238" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#555555">(컨트롤러·다른 빈)</text>
+
+  <!-- 프록시 -->
+  <rect x="270" y="80" width="490" height="340" rx="12" fill="#eef4ff" stroke="#4a7dbd" stroke-width="2"/>
+  <text x="515" y="110" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#2c5d94">스프링 프록시 — 트랜잭션 begin / commit / rollback</text>
+
+  <!-- 원본 객체 -->
+  <rect x="330" y="130" width="380" height="270" rx="8" fill="#ffffff" stroke="#999999" stroke-width="1.5"/>
+  <text x="520" y="158" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#666666">OrderService 원본 객체</text>
+
+  <!-- processOrders -->
+  <rect x="370" y="180" width="300" height="56" rx="6" fill="#fff7e6" stroke="#d69a2d" stroke-width="1.5"/>
+  <text x="520" y="204" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#7a5a12">processOrders()</text>
+  <text x="520" y="225" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#8a6a20">트랜잭션 어노테이션 없음</text>
+
+  <!-- saveOrder -->
+  <rect x="370" y="310" width="300" height="56" rx="6" fill="#eafaf0" stroke="#2f9e5f" stroke-width="1.5"/>
+  <text x="520" y="334" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1f7a44">saveOrder()</text>
+  <text x="520" y="355" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#2f9e5f">@Transactional</text>
+
+  <!-- ① 외부 호출 (프록시 경유) -->
+  <polyline points="190,222 240,222 240,338 362,338" fill="none" stroke="#1f7a44" stroke-width="2.5" marker-end="url(#arrowGreen)"/>
+  <text x="42" y="290" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1f7a44">① 외부 호출</text>
+  <text x="42" y="312" font-family="sans-serif" font-size="14" fill="#1f7a44">프록시 경유</text>
+  <text x="42" y="334" font-family="sans-serif" font-size="14" fill="#1f7a44">→ 트랜잭션 적용 O</text>
+
+  <!-- ② 내부 호출 (self-invocation) -->
+  <path d="M 440 236 L 440 302" fill="none" stroke="#c0392b" stroke-width="2.5" stroke-dasharray="6,4" marker-end="url(#arrowRed)"/>
+  <text x="462" y="266" font-family="sans-serif" font-size="14" font-weight="bold" fill="#c0392b">② this.saveOrder()</text>
+  <text x="462" y="288" font-family="sans-serif" font-size="14" fill="#c0392b">프록시 우회 → 트랜잭션 X</text>
+
+  <text x="400" y="442" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#555555">같은 빈 내부에서의 호출은 프록시를 거치지 않으므로 @Transactional이 무시된다</text>
+</svg>

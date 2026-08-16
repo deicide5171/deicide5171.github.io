@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="34" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222222">MapLibre 커스텀 레이어 — 한 컨텍스트, 한 프레임 안에서 그리기</text>
+
+  <!-- 왼쪽: 프레임 렌더 순서 -->
+  <rect x="40" y="58" width="330" height="252" rx="8" fill="#fafafa" stroke="#cccccc" stroke-width="1"/>
+  <text x="205" y="82" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#666666">매 프레임 렌더 순서 (WebGL 컨텍스트 공유)</text>
+
+  <rect x="70" y="96" width="270" height="42" rx="6" fill="#e8f0fe" stroke="#7baaf7" stroke-width="1.5"/>
+  <text x="205" y="122" text-anchor="middle" font-family="sans-serif" font-size="15" fill="#222222">① 배경 · 벡터 타일 레이어</text>
+
+  <line x1="205" y1="138" x2="205" y2="158" stroke="#888888" stroke-width="2"/>
+  <polygon points="205,164 200,154 210,154" fill="#888888"/>
+
+  <rect x="70" y="164" width="270" height="42" rx="6" fill="#d5f2e3" stroke="#03c75a" stroke-width="2"/>
+  <text x="205" y="190" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1a6b3c">② 커스텀 레이어 render(gl, matrix)</text>
+
+  <line x1="205" y1="206" x2="205" y2="226" stroke="#888888" stroke-width="2"/>
+  <polygon points="205,232 200,222 210,222" fill="#888888"/>
+
+  <rect x="70" y="232" width="270" height="42" rx="6" fill="#e8f0fe" stroke="#7baaf7" stroke-width="1.5"/>
+  <text x="205" y="258" text-anchor="middle" font-family="sans-serif" font-size="15" fill="#222222">③ 심볼 · 라벨 레이어</text>
+
+  <text x="205" y="296" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1a6b3c">render() 안에서 triggerRepaint() 호출 → 다음 프레임 예약</text>
+
+  <!-- 오른쪽: 생명주기 -->
+  <rect x="420" y="58" width="340" height="252" rx="8" fill="#fafafa" stroke="#cccccc" stroke-width="1"/>
+  <text x="590" y="82" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#666666">커스텀 레이어 생명주기</text>
+
+  <rect x="445" y="94" width="290" height="52" rx="6" fill="#fff3d6" stroke="#e0a800" stroke-width="1.5"/>
+  <text x="590" y="114" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#222222">onAdd(map, gl) — 1회</text>
+  <text x="590" y="134" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#555555">셰이더 컴파일 · 버퍼 생성</text>
+
+  <line x1="590" y1="146" x2="590" y2="162" stroke="#888888" stroke-width="2"/>
+  <polygon points="590,168 585,158 595,158" fill="#888888"/>
+
+  <rect x="445" y="168" width="290" height="52" rx="6" fill="#d5f2e3" stroke="#03c75a" stroke-width="2"/>
+  <text x="590" y="188" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1a6b3c">render(gl, matrix) — 매 프레임</text>
+  <text x="590" y="208" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#555555">그리기만 수행, 리소스 생성 금지</text>
+
+  <line x1="590" y1="220" x2="590" y2="236" stroke="#888888" stroke-width="2"/>
+  <polygon points="590,242 585,232 595,232" fill="#888888"/>
+
+  <rect x="445" y="242" width="290" height="52" rx="6" fill="#fde8e8" stroke="#d9534f" stroke-width="1.5"/>
+  <text x="590" y="262" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#222222">onRemove(map, gl)</text>
+  <text x="590" y="282" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#555555">버퍼 · 프로그램 해제 (setStyle 시 재호출 대비)</text>
+
+  <!-- 하단: 좌표 변환 파이프라인 -->
+  <text x="40" y="344" font-family="sans-serif" font-size="14" fill="#666666">좌표 변환 파이프라인</text>
+
+  <rect x="40" y="356" width="165" height="54" rx="6" fill="#eef3f8" stroke="#99aabb" stroke-width="1.5"/>
+  <text x="122" y="378" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#222222">경위도</text>
+  <text x="122" y="398" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#555555">(126.98, 37.57)</text>
+
+  <line x1="205" y1="383" x2="225" y2="383" stroke="#888888" stroke-width="2"/>
+  <polygon points="231,383 221,378 221,388" fill="#888888"/>
+
+  <rect x="231" y="356" width="190" height="54" rx="6" fill="#eef3f8" stroke="#99aabb" stroke-width="1.5"/>
+  <text x="326" y="378" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#222222">MercatorCoordinate</text>
+  <text x="326" y="398" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#555555">월드 좌표 0~1</text>
+
+  <line x1="421" y1="383" x2="441" y2="383" stroke="#888888" stroke-width="2"/>
+  <polygon points="447,383 437,378 437,388" fill="#888888"/>
+
+  <rect x="447" y="356" width="175" height="54" rx="6" fill="#eef3f8" stroke="#99aabb" stroke-width="1.5"/>
+  <text x="534" y="378" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#222222">투영 행렬 곱</text>
+  <text x="534" y="398" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#555555">u_matrix × 좌표</text>
+
+  <line x1="622" y1="383" x2="642" y2="383" stroke="#888888" stroke-width="2"/>
+  <polygon points="648,383 638,378 638,388" fill="#888888"/>
+
+  <rect x="648" y="356" width="112" height="54" rx="6" fill="#d5f2e3" stroke="#03c75a" stroke-width="1.5"/>
+  <text x="704" y="389" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1a6b3c">화면 픽셀</text>
+</svg>

@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="38" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222" text-anchor="middle">템플릿 리터럴 + infer가 URL 문자열을 타입으로 파싱하는 과정</text>
+
+  <!-- Input: route string -->
+  <rect x="130" y="65" width="540" height="52" rx="8" fill="#eef4ff" stroke="#4a7dd6" stroke-width="2"/>
+  <text x="400" y="87" font-family="sans-serif" font-size="15" fill="#345" text-anchor="middle">입력 타입 (문자열 리터럴 타입)</text>
+  <text x="400" y="108" font-family="monospace" font-size="16" font-weight="bold" fill="#1a3a7a" text-anchor="middle">"/users/:userId/posts/:postId"</text>
+
+  <!-- Arrow 1 -->
+  <line x1="400" y1="117" x2="400" y2="147" stroke="#888" stroke-width="2"/>
+  <polygon points="400,155 394,143 406,143" fill="#888"/>
+
+  <!-- Step 1: template literal match -->
+  <rect x="60" y="160" width="330" height="96" rx="8" fill="#f0f7f4" stroke="#2e9e63" stroke-width="2"/>
+  <text x="225" y="186" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1d6b43" text-anchor="middle">1단계 — 템플릿 리터럴로 패턴 매칭</text>
+  <text x="225" y="212" font-family="monospace" font-size="13" fill="#333" text-anchor="middle">`${string}:${infer P}/${infer Rest}`</text>
+  <text x="225" y="238" font-family="sans-serif" font-size="13" fill="#555" text-anchor="middle">":" 뒤의 파라미터 이름을 infer로 캡처</text>
+
+  <!-- Step 2: recursion -->
+  <rect x="410" y="160" width="330" height="96" rx="8" fill="#f0f7f4" stroke="#2e9e63" stroke-width="2"/>
+  <text x="575" y="186" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1d6b43" text-anchor="middle">2단계 — 나머지 문자열에 재귀 적용</text>
+  <text x="575" y="212" font-family="monospace" font-size="13" fill="#333" text-anchor="middle">P | ExtractParams&lt;Rest&gt;</text>
+  <text x="575" y="238" font-family="sans-serif" font-size="13" fill="#555" text-anchor="middle">더 이상 ":"가 없을 때까지 반복</text>
+
+  <!-- Arrow between step boxes -->
+  <line x1="390" y1="208" x2="404" y2="208" stroke="#888" stroke-width="2"/>
+  <polygon points="410,208 400,203 400,213" fill="#888"/>
+
+  <!-- Arrow down to union -->
+  <line x1="400" y1="256" x2="400" y2="286" stroke="#888" stroke-width="2"/>
+  <polygon points="400,294 394,282 406,282" fill="#888"/>
+
+  <!-- Union result -->
+  <rect x="200" y="298" width="400" height="50" rx="8" fill="#fff7e6" stroke="#d9962e" stroke-width="2"/>
+  <text x="400" y="319" font-family="sans-serif" font-size="14" fill="#7a5410" text-anchor="middle">추출된 파라미터 이름의 유니온 타입</text>
+  <text x="400" y="339" font-family="monospace" font-size="15" font-weight="bold" fill="#7a5410" text-anchor="middle">"userId" | "postId"</text>
+
+  <!-- Arrow down to mapped type -->
+  <line x1="400" y1="348" x2="400" y2="376" stroke="#888" stroke-width="2"/>
+  <polygon points="400,384 394,372 406,372" fill="#888"/>
+
+  <!-- Final object type -->
+  <rect x="160" y="388" width="480" height="50" rx="8" fill="#eef4ff" stroke="#4a7dd6" stroke-width="2"/>
+  <text x="400" y="409" font-family="sans-serif" font-size="14" fill="#345" text-anchor="middle">매핑 타입(Mapped Type)으로 완성한 파라미터 객체 타입</text>
+  <text x="400" y="429" font-family="monospace" font-size="15" font-weight="bold" fill="#1a3a7a" text-anchor="middle">{ userId: string; postId: string }</text>
+</svg>

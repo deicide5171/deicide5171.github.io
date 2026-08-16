@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">WAL 기록과 체크포인트, 그리고 장애 복구</text>
+
+  <!-- 정상 운영 섹션 -->
+  <text x="40" y="66" font-family="sans-serif" font-size="16" font-weight="bold" fill="#1a6b45">정상 운영 — 로그를 먼저, 데이터는 나중에</text>
+
+  <!-- 메모리 영역 -->
+  <rect x="40" y="80" width="720" height="88" rx="8" fill="#eef4fb" stroke="#b9cfe8"/>
+  <text x="52" y="100" font-family="sans-serif" font-size="13" fill="#5b7a9d">메모리 (버퍼 풀)</text>
+  <rect x="70" y="108" width="170" height="46" rx="6" fill="#ffffff" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="155" y="136" font-family="sans-serif" font-size="15" fill="#222" text-anchor="middle">트랜잭션 커밋</text>
+  <rect x="480" y="108" width="210" height="46" rx="6" fill="#ffffff" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="585" y="130" font-family="sans-serif" font-size="15" fill="#222" text-anchor="middle">수정된 데이터 페이지</text>
+  <text x="585" y="148" font-family="sans-serif" font-size="12" fill="#888" text-anchor="middle">(더티 페이지)</text>
+  <line x1="240" y1="131" x2="472" y2="131" stroke="#8aa5c4" stroke-width="1.5"/>
+  <polygon points="472,131 462,126 462,136" fill="#8aa5c4"/>
+  <text x="356" y="124" font-family="sans-serif" font-size="13" fill="#5b7a9d" text-anchor="middle">메모리에서만 수정</text>
+
+  <!-- 디스크 영역 -->
+  <rect x="40" y="196" width="720" height="88" rx="8" fill="#fdf6ec" stroke="#e8d3ae"/>
+  <text x="52" y="216" font-family="sans-serif" font-size="13" fill="#a3823f">디스크</text>
+  <rect x="70" y="224" width="200" height="46" rx="6" fill="#ffffff" stroke="#2e9e63" stroke-width="2"/>
+  <text x="170" y="246" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1a6b45" text-anchor="middle">WAL 파일</text>
+  <text x="170" y="263" font-family="sans-serif" font-size="12" fill="#888" text-anchor="middle">끝에 이어 붙이는 순차 기록</text>
+  <rect x="480" y="224" width="210" height="46" rx="6" fill="#ffffff" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="585" y="252" font-family="sans-serif" font-size="15" fill="#222" text-anchor="middle">데이터 파일</text>
+
+  <!-- 화살표: 커밋 -> WAL -->
+  <line x1="155" y1="154" x2="167" y2="216" stroke="#2e9e63" stroke-width="2.5"/>
+  <polygon points="169,224 160,215 173,213" fill="#2e9e63"/>
+  <text x="255" y="186" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1a6b45" text-anchor="middle">① 커밋 시 WAL 먼저 fsync</text>
+
+  <!-- 화살표: 더티 페이지 -> 데이터 파일 (체크포인트) -->
+  <line x1="585" y1="154" x2="585" y2="216" stroke="#c98a3d" stroke-width="2.5" stroke-dasharray="7,5"/>
+  <polygon points="585,224 578,213 592,213" fill="#c98a3d"/>
+  <text x="596" y="186" font-family="sans-serif" font-size="14" font-weight="bold" fill="#a3611c" text-anchor="start">② 체크포인트 때 일괄 반영</text>
+
+  <!-- 복구 섹션 -->
+  <text x="40" y="326" font-family="sans-serif" font-size="16" font-weight="bold" fill="#1a6b45">장애 복구 — 마지막 체크포인트부터 WAL 재생</text>
+
+  <!-- 타임라인 -->
+  <line x1="70" y1="386" x2="730" y2="386" stroke="#cccccc" stroke-width="3"/>
+  <line x1="210" y1="386" x2="620" y2="386" stroke="#2e9e63" stroke-width="6"/>
+  <text x="415" y="356" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1a6b45" text-anchor="middle">재시작 시 이 구간의 WAL만 순서대로 재생(REDO)</text>
+  <line x1="415" y1="362" x2="415" y2="378" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="135" y="368" font-family="sans-serif" font-size="12" fill="#999" text-anchor="middle">이미 데이터 파일에 반영됨</text>
+
+  <!-- 체크포인트 마커 -->
+  <circle cx="210" cy="386" r="8" fill="#ffffff" stroke="#c98a3d" stroke-width="3"/>
+  <text x="210" y="412" font-family="sans-serif" font-size="13" fill="#a3611c" text-anchor="middle" font-weight="bold">마지막 체크포인트</text>
+  <text x="210" y="430" font-family="sans-serif" font-size="12" fill="#888" text-anchor="middle">(복구 시작점, REDO point)</text>
+
+  <!-- 장애 마커 -->
+  <line x1="612" y1="378" x2="628" y2="394" stroke="#d0413b" stroke-width="4"/>
+  <line x1="628" y1="378" x2="612" y2="394" stroke="#d0413b" stroke-width="4"/>
+  <text x="620" y="412" font-family="sans-serif" font-size="13" fill="#d0413b" text-anchor="middle" font-weight="bold">장애 발생</text>
+  <text x="620" y="430" font-family="sans-serif" font-size="12" fill="#888" text-anchor="middle">(커밋된 변경은 WAL에 있음)</text>
+</svg>

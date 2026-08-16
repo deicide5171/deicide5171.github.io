@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>팔로워 100만 명에게 글 하나 배달하기 — 피드 팬아웃 설계와 셀럽 문제</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">팔로워 100만 명에게 글 하나 배달하기 — 피드 팬아웃 설계와 셀럽 문제</div>
+<p style="font-size:14px; color:#999;">2026. 8. 23. · 시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — SNS 피드 설계의 본질은 글과 타임라인을 합치는 비용을 <b>쓸 때(push)</b> 낼지 <b>읽을 때(pull)</b> 낼지의 선택입니다. 두 방식의 트레이드오프와, 팔로워 수백만 명의 셀럽 계정이 만드는 쓰기 폭발을 <b>하이브리드 팬아웃</b>으로 푸는 방법을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">피드는 왜 단순 쿼리로 안 될까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">트위터(X)나 인스타그램의 홈 피드를 열면 팔로우한 사람들의 최신 글이 시간순으로 즉시 나타납니다. 겉보기에는 "팔로잉 목록의 글을 시간 역순으로 조회"하는 쿼리 한 줄이면 될 것 같은데요, 팔로잉이 수백 명이고 사용자가 수천만 명인 규모에서 이 쿼리를 요청마다 실행하면 데이터베이스는 버티지 못합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">그래서 피드 시스템의 핵심 질문은 이렇게 바뀝니다. <b>글과 타임라인을 합치는 비용을 언제 낼 것인가.</b> 쓰기 시점에 내는 방식이 <b>팬아웃 온 라이트(fan-out on write)</b>, 읽기 시점에 내는 방식이 <b>팬아웃 온 리드(fan-out on read)</b>입니다. 대부분의 SNS는 읽기가 쓰기보다 압도적으로 많아서 쓰기 시점에 비용을 내는 쪽이 유리한데, 팔로워가 수백만 명인 셀럽 계정이 등장하는 순간 이 전제가 무너집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 팬아웃 온 라이트, 쓸 때 밀어 넣습니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">사용자가 글을 쓰면 그 순간 작성자의 <b>팔로워 전원의 타임라인 캐시</b>(대개 Redis Sorted Set 같은 인메모리 리스트)에 글 ID를 밀어 넣는 방식입니다. 각 사용자의 타임라인이 항상 미리 계산된 상태로 존재하므로, 읽기는 자기 캐시 하나만 조회하면 되어 매우 빠릅니다. 홈 피드 조회가 전체 트래픽의 대부분을 차지하는 서비스에 잘 맞고, 트위터가 초창기 확장 과정에서 채택한 방식으로 널리 알려져 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">대가는 쓰기 비용입니다. 글 하나의 쓰기 작업량이 <b>팔로워 수에 비례</b>하게 됩니다. 팔로워 100명인 사용자의 글은 100건의 캐시 삽입이면 되지만, 100만 팔로워 계정이 글을 하나 쓰면 100만 건의 삽입이 발생합니다. 게다가 수개월간 접속하지 않은 휴면 사용자의 타임라인에도 꼬박꼬박 배달하게 되므로, 아무도 읽지 않을 캐시를 채우는 데 쓰기가 낭비되기도 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 팬아웃 온 리드, 읽을 때 모아 옵니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">반대 방식은 쓰기 시점에는 글을 작성자의 저장소에 한 번만 기록하고, 사용자가 피드를 열 때 팔로잉 목록을 순회하며 각자의 최근 글을 모아 병합·정렬하는 것입니다. 쓰기는 팔로워 수와 무관하게 저렴하고, 휴면 사용자를 위한 낭비도 없으며, 팔로우/언팔로우가 즉시 피드에 반영된다는 장점도 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">문제는 읽기 비용입니다. 팔로잉이 500명이면 요청 한 번에 500개의 소스를 조회해 병합해야 하고, 이 작업이 사용자가 화면을 기다리는 동안 일어납니다. 읽기와 쓰기 비율이 100:1을 넘나드는 일반적인 SNS에서는 가장 빈번한 경로에 비싼 연산을 배치하는 셈이라, 순수 pull 방식만으로 대규모 피드를 운영하는 경우는 드뭅니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">팬아웃 온 라이트 (push)</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">팬아웃 온 리드 (pull)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">쓰기 비용</td>
+<td style="border:1px solid #ddd; padding:10px;">팔로워 수에 비례 (높음)</td>
+<td style="border:1px solid #ddd; padding:10px;">글 1회 저장 (낮음)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">읽기 비용</td>
+<td style="border:1px solid #ddd; padding:10px;">캐시 1회 조회 (낮음)</td>
+<td style="border:1px solid #ddd; padding:10px;">팔로잉 수만큼 조회·병합 (높음)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">최신성</td>
+<td style="border:1px solid #ddd; padding:10px;">팬아웃 지연만큼 늦음</td>
+<td style="border:1px solid #ddd; padding:10px;">항상 최신</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">유리한 상황</td>
+<td style="border:1px solid #ddd; padding:10px;">읽기가 압도적으로 많을 때</td>
+<td style="border:1px solid #ddd; padding:10px;">팔로워가 매우 많은 계정, 휴면 사용자</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 셀럽 문제와 하이브리드 팬아웃</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">push 방식의 최악 사례는 명확합니다. 수백만 팔로워 계정이 글을 쓰는 순간 수백만 건의 캐시 쓰기가 쏟아지고, 이런 계정 몇 개가 동시에 활동하면 팬아웃 큐가 밀리면서 모든 사용자의 피드 반영이 지연됩니다. 이것이 이른바 <b>셀럽 문제(celebrity problem)</b>입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실무의 해법은 두 방식의 결합입니다. <b>팔로워 수가 임계값 이하인 일반 계정의 글은 push로 미리 배달하고, 임계값을 넘는 셀럽 계정의 글은 push를 생략한 채 읽기 시점에 pull로 가져와 캐시된 타임라인과 병합</b>합니다. 사용자 대부분이 팔로우하는 셀럽은 소수이므로 읽기 시점의 pull 대상은 몇 개 계정에 그치고, 쓰기 폭발은 구조적으로 차단됩니다. 트위터가 공개한 대규모 타임라인 아키텍처가 이 접근으로 널리 알려져 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-23-feed-timeline-fanout-1.svg" alt="일반 사용자의 글은 비동기 팬아웃 워커를 거쳐 팔로워 타임라인 캐시에 푸시되고, 셀럽의 글은 저장소에만 기록된 뒤 읽기 시점에 병합기가 캐시와 셀럽 글을 합쳐 최종 타임라인을 만드는 하이브리드 구조도" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — Redis Sorted Set 기반 하이브리드 팬아웃</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 하이브리드 전략의 골격을 보여주는 파이썬 예제입니다. 글 ID를 작성 시각을 점수로 하는 Sorted Set에 쌓고, 셀럽 여부에 따라 push를 생략합니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">import redis
+
+r = redis.Redis(host="localhost", port=6379, decode_responses=True)
+
+CELEB_THRESHOLD = 100_000   # 이 팔로워 수를 넘으면 push 생략
+TIMELINE_MAX = 800          # 타임라인 캐시에 보관할 글 개수 상한
+
+def fanout_on_write(author_id: str, post_id: str, created_at: float) -&gt; None:
+    """글 작성 이벤트를 받아 팔로워 타임라인에 푸시. 비동기 워커에서 실행."""
+    followers = int(r.get(f"user:{author_id}:follower_count") or 0)
+    if followers &gt;= CELEB_THRESHOLD:
+        return  # 셀럽은 푸시하지 않음 — 읽기 시점에 pull로 병합
+    for follower_id in r.sscan_iter(f"user:{author_id}:followers"):
+        key = f"timeline:{follower_id}"
+        pipe = r.pipeline()
+        pipe.zadd(key, {post_id: created_at})              # 멱등: 재실행 안전
+        pipe.zremrangebyrank(key, 0, -(TIMELINE_MAX + 1))  # 캐시 크기 제한
+        pipe.execute()
+
+def read_timeline(user_id: str, count: int = 50) -&gt; list[str]:
+    """푸시된 캐시와 셀럽 글을 읽기 시점에 병합한다."""
+    merged = r.zrevrange(f"timeline:{user_id}", 0, count - 1, withscores=True)
+    for celeb_id in r.smembers(f"user:{user_id}:celeb_followings"):
+        merged += r.zrevrange(f"posts:{celeb_id}", 0, count - 1, withscores=True)
+    merged.sort(key=lambda item: item[1], reverse=True)
+    return [post_id for post_id, _score in merged[:count]]</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">흔한 함정 — 팬아웃을 요청 경로에서 동기로 실행하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">초기 구현에서 자주 보이는 안티패턴은 글 작성 API 핸들러 안에서 팔로워 루프를 그대로 도는 것입니다. 팔로워가 적을 때는 문제가 없다가, 특정 사용자의 팔로워가 늘어나는 순간 글 작성 응답 시간이 팔로워 수에 비례해 길어지고, 클라이언트 타임아웃과 재시도가 겹치며 중복 팬아웃으로 장애가 증폭됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">올바른 구조는 글 작성 API는 <b>원본 저장과 이벤트 발행까지만</b> 책임지고 즉시 응답한 뒤, 팬아웃은 메시지 큐(Kafka, SQS 등) 뒤의 워커가 비동기로 처리하는 것입니다. 워커 재시도에 대비해 팬아웃 연산 자체를 멱등하게(ZADD처럼 같은 멤버를 다시 넣어도 무해하게) 설계해야 중복 배달이 생기지 않습니다. 피드가 몇 초 수준의 최종적 일관성을 갖는 것은 이 구조의 의도된 트레이드오프입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 임계값은 튜닝 대상입니다</b> — 셀럽 판정 기준은 고정 상수가 아니라 팬아웃 큐 지연, 캐시 메모리, 읽기 지연 지표를 보며 조정해야 합니다. 팔로워 수 외에 계정의 게시 빈도를 함께 고려하는 변형도 있습니다.<br>
+<b>2. 휴면 사용자는 push 대상에서 빼세요</b> — 최근 일정 기간 접속하지 않은 사용자의 타임라인은 푸시를 생략하고, 복귀 시점에 pull로 재구성하면 쓰기 낭비를 크게 줄일 수 있습니다.<br>
+<b>3. 캐시는 소스 오브 트루스가 아닙니다</b> — 타임라인 캐시는 언제든 원본(글 저장소 + 팔로우 그래프)에서 재생성 가능해야 합니다. 글 삭제·차단 시 수백만 캐시를 일일이 지우는 대신 읽기 시점 필터링으로 보정하는 편이 현실적입니다.<br>
+<b>4. 처음부터 하이브리드일 필요는 없습니다</b> — 셀럽 규모의 계정이 없는 서비스라면 순수 push(소규모라면 단순 pull 쿼리)로 충분하며, 하이브리드는 쓰기 폭발이 실측될 때 도입해도 늦지 않습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 피드 설계의 핵심은 글과 타임라인의 병합 비용을 쓰기 시점(push)에 낼지 읽기 시점(pull)에 낼지의 선택이며, 읽기가 많은 SNS에서는 push가 기본값이 됩니다.<br>
+② push는 쓰기 비용이 팔로워 수에 비례해 셀럽 계정에서 무너지므로, 일반 계정은 push·셀럽은 pull로 처리해 읽기 시점에 병합하는 하이브리드가 실무 해법입니다.<br>
+③ 팬아웃은 반드시 요청 경로 밖의 비동기 워커에서 멱등하게 수행하고, 타임라인 캐시는 원본에서 언제든 재생성 가능한 파생 데이터로 취급해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 시스템 설계 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#팬아웃 #피드설계 #타임라인 #시스템설계 #Redis #SNS아키텍처 #셀럽문제</p>
+
+</body>
+</html>
