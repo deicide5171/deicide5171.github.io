@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="32" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">Canvas2D 스타일 함수 vs WebGL 스타일 표현식</text>
+
+  <!-- Left: Canvas2D pipeline -->
+  <rect x="30" y="56" width="340" height="180" rx="8" fill="#fdf6ec" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="200" y="80" font-family="sans-serif" font-size="15" font-weight="bold" fill="#a3611c" text-anchor="middle">Canvas2D 스타일 함수 (CPU)</text>
+
+  <rect x="55" y="96" width="290" height="34" rx="5" fill="#ffffff" stroke="#c98a3d"/>
+  <text x="200" y="118" font-family="sans-serif" font-size="13" fill="#333" text-anchor="middle">피처 1 → JS 콜백 호출 → Style 반환</text>
+  <rect x="55" y="138" width="290" height="34" rx="5" fill="#ffffff" stroke="#c98a3d"/>
+  <text x="200" y="160" font-family="sans-serif" font-size="13" fill="#333" text-anchor="middle">피처 2 → JS 콜백 호출 → Style 반환</text>
+  <rect x="55" y="180" width="290" height="26" rx="5" fill="#ffffff" stroke="#c98a3d" stroke-dasharray="3,3"/>
+  <text x="200" y="197" font-family="sans-serif" font-size="12" fill="#888" text-anchor="middle">... 피처 수만큼 반복 (프레임마다)</text>
+
+  <text x="200" y="222" font-family="sans-serif" font-size="12" fill="#a3611c" text-anchor="middle">피처 수 증가 시 프레임드랍 위험</text>
+
+  <!-- Right: WebGL pipeline -->
+  <rect x="430" y="56" width="340" height="180" rx="8" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="600" y="80" font-family="sans-serif" font-size="15" font-weight="bold" fill="#2f5a8a" text-anchor="middle">WebGL 스타일 표현식 (GPU)</text>
+
+  <rect x="455" y="96" width="290" height="34" rx="5" fill="#ffffff" stroke="#4a7ab5"/>
+  <text x="600" y="118" font-family="sans-serif" font-size="13" fill="#333" text-anchor="middle">표현식 JSON → 셰이더로 컴파일</text>
+
+  <rect x="455" y="140" width="290" height="66" rx="5" fill="#ffffff" stroke="#4a7ab5"/>
+  <text x="600" y="160" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">모든 피처를 GPU가 병렬 처리</text>
+  <text x="600" y="178" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">match / interpolate / case</text>
+  <text x="600" y="196" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">단일 드로우콜로 렌더링</text>
+
+  <text x="600" y="222" font-family="sans-serif" font-size="12" fill="#2f5a8a" text-anchor="middle">수십만 피처도 부드럽게 처리</text>
+
+  <!-- Bottom: interpolate zoom example -->
+  <text x="400" y="262" font-family="sans-serif" font-size="15" font-weight="bold" fill="#222" text-anchor="middle">interpolate 표현식 — 줌 레벨별 선 두께 보간</text>
+
+  <line x1="80" y1="380" x2="720" y2="380" stroke="#ccc" stroke-width="2"/>
+  <text x="80" y="404" font-family="sans-serif" font-size="12" fill="#777" text-anchor="middle">zoom 8</text>
+  <text x="400" y="404" font-family="sans-serif" font-size="12" fill="#777" text-anchor="middle">zoom 12</text>
+  <text x="720" y="404" font-family="sans-serif" font-size="12" fill="#777" text-anchor="middle">zoom 16</text>
+
+  <!-- thickness bars increasing -->
+  <rect x="76" y="374" width="8" height="4" fill="#2e9e63"/>
+  <rect x="200" y="368" width="8" height="16" fill="#2e9e63"/>
+  <rect x="396" y="362" width="8" height="28" fill="#2e9e63"/>
+  <rect x="592" y="356" width="8" height="40" fill="#2e9e63"/>
+  <rect x="716" y="350" width="8" height="52" fill="#2e9e63"/>
+
+  <text x="400" y="430" font-family="sans-serif" font-size="12" fill="#1a6b45" text-anchor="middle">1px → 6px로 선형 보간, 중간 줌은 자동 계산 (CPU 재계산 불필요)</text>
+</svg>
