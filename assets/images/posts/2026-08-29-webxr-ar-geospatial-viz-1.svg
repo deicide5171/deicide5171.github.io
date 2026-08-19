@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="32" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">WebXR AR 좌표계 정합 파이프라인</text>
+
+  <!-- 1단계: WGS84 -->
+  <rect x="40" y="60" width="180" height="80" rx="8" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="130" y="86" font-family="sans-serif" font-size="13" font-weight="bold" fill="#3a6ea5" text-anchor="middle">WGS84 위경도</text>
+  <text x="130" y="106" font-family="sans-serif" font-size="11" fill="#555" text-anchor="middle">GIS 데이터</text>
+  <text x="130" y="122" font-family="sans-serif" font-size="11" fill="#555" text-anchor="middle">(lat, lon, alt)</text>
+
+  <line x1="220" y1="100" x2="262" y2="100" stroke="#999" stroke-width="1.5"/>
+  <polygon points="262,100 253,95 253,105" fill="#999"/>
+
+  <!-- 2단계: ENU -->
+  <rect x="266" y="60" width="200" height="80" rx="8" fill="#eef8f1" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="366" y="86" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1a6b45" text-anchor="middle">ENU 접평면 좌표</text>
+  <text x="366" y="106" font-family="sans-serif" font-size="11" fill="#555" text-anchor="middle">GPS 기준점 원점</text>
+  <text x="366" y="122" font-family="sans-serif" font-size="11" fill="#555" text-anchor="middle">동-북-상(미터)</text>
+
+  <line x1="466" y1="100" x2="508" y2="100" stroke="#999" stroke-width="1.5"/>
+  <polygon points="508,100 499,95 499,105" fill="#999"/>
+
+  <!-- 3단계: WebXR local -->
+  <rect x="512" y="60" width="220" height="80" rx="8" fill="#f5eefb" stroke="#9b5fc9" stroke-width="1.5"/>
+  <text x="622" y="86" font-family="sans-serif" font-size="13" font-weight="bold" fill="#7a4a9d" text-anchor="middle">WebXR 로컬 좌표계</text>
+  <text x="622" y="106" font-family="sans-serif" font-size="11" fill="#555" text-anchor="middle">세션 시작 시점 원점</text>
+  <text x="622" y="122" font-family="sans-serif" font-size="11" fill="#555" text-anchor="middle">(local / unbounded)</text>
+
+  <line x1="60" y1="176" x2="740" y2="176" stroke="#ddd" stroke-width="1"/>
+
+  <!-- 실제 공간 렌더링 -->
+  <text x="40" y="204" font-family="sans-serif" font-size="15" font-weight="bold" fill="#333">카메라 영상 위 증강 + 앵커 고정</text>
+
+  <rect x="40" y="216" width="330" height="180" rx="8" fill="#f4f4f4" stroke="#ccc"/>
+  <text x="55" y="238" font-family="sans-serif" font-size="12" fill="#666">실제 거리 (카메라 영상)</text>
+  <!-- 건물 실루엣 -->
+  <rect x="70" y="250" width="60" height="100" fill="#d8d8d8"/>
+  <rect x="150" y="270" width="60" height="80" fill="#d8d8d8"/>
+  <rect x="230" y="240" width="60" height="110" fill="#d8d8d8"/>
+  <!-- 증강 오브젝트 -->
+  <rect x="95" y="300" width="140" height="40" rx="4" fill="#ffffff" stroke="#9b5fc9" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="165" y="325" font-family="sans-serif" font-size="11" fill="#7a4a9d" text-anchor="middle">예정 건물 매스(증강)</text>
+  <circle cx="95" cy="300" r="5" fill="#d9534f"/>
+  <text x="95" y="368" font-family="sans-serif" font-size="10" fill="#a83a34" text-anchor="middle">Anchor</text>
+
+  <!-- 드리프트 경고 -->
+  <rect x="400" y="216" width="360" height="180" rx="8" fill="#fff7f0" stroke="#ff8a3d"/>
+  <text x="420" y="240" font-family="sans-serif" font-size="13" font-weight="bold" fill="#a35a1f">오차 누적 요인</text>
+  <text x="420" y="266" font-family="sans-serif" font-size="12" fill="#555">· GPS 초기 정합 오차 (통상 수 미터)</text>
+  <text x="420" y="290" font-family="sans-serif" font-size="12" fill="#555">· SLAM 센서 드리프트 (시간에 따라 누적)</text>
+  <text x="420" y="314" font-family="sans-serif" font-size="12" fill="#555">· 특징점 부족 환경(공터, 잔디밭)에서</text>
+  <text x="432" y="334" font-family="sans-serif" font-size="12" fill="#555">재보정 품질 저하</text>
+  <text x="420" y="366" font-family="sans-serif" font-size="12" fill="#1a6b45" font-weight="bold">→ Anchor로 지속 재보정해 드리프트 완화</text>
+</svg>
