@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">scroll() vs view() 타임라인</text>
+
+  <!-- scroll() -->
+  <text x="200" y="70" font-family="sans-serif" font-size="16" font-weight="bold" fill="#3a5a8c" text-anchor="middle">scroll() — 컨테이너 전체 진행률</text>
+
+  <rect x="70" y="86" width="260" height="200" rx="8" fill="#f7f9fc" stroke="#b9cfe8"/>
+  <line x1="90" y1="106" x2="90" y2="266" stroke="#cccccc" stroke-width="8"/>
+  <line x1="90" y1="106" x2="90" y2="180" stroke="#4a7ab5" stroke-width="8"/>
+  <circle cx="90" cy="180" r="7" fill="#4a7ab5"/>
+  <text x="120" y="115" font-family="sans-serif" font-size="11" fill="#666">문서 최상단 (0%)</text>
+  <text x="120" y="185" font-family="sans-serif" font-size="11" fill="#3a5a8c" font-weight="bold">현재 스크롤 위치 (46%)</text>
+  <text x="120" y="262" font-family="sans-serif" font-size="11" fill="#666">문서 최하단 (100%)</text>
+
+  <rect x="160" y="300" width="80" height="10" rx="5" fill="#e0e0e0"/>
+  <rect x="160" y="300" width="37" height="10" rx="5" fill="#4a7ab5"/>
+  <text x="200" y="326" font-family="sans-serif" font-size="11" fill="#3a5a8c" text-anchor="middle">progress-bar 46% 채움</text>
+
+  <!-- view() -->
+  <text x="600" y="70" font-family="sans-serif" font-size="16" font-weight="bold" fill="#a3611c" text-anchor="middle">view() — 요소의 가시 구간</text>
+
+  <rect x="470" y="86" width="260" height="200" rx="8" fill="#fdf6ec" stroke="#e8d3ae"/>
+  <rect x="490" y="106" width="220" height="40" fill="none" stroke="#cccccc" stroke-dasharray="4,3"/>
+  <text x="600" y="129" font-family="sans-serif" font-size="10" fill="#999" text-anchor="middle">뷰포트 진입 전 (entry 0%)</text>
+
+  <rect x="490" y="150" width="220" height="70" rx="4" fill="#ffffff" stroke="#c98a3d" stroke-width="2"/>
+  <text x="600" y="180" font-family="sans-serif" font-size="12" font-weight="bold" text-anchor="middle" fill="#a3611c">.reveal-card</text>
+  <text x="600" y="198" font-family="sans-serif" font-size="10" text-anchor="middle" fill="#666">뷰포트 안 (진행 중)</text>
+
+  <rect x="490" y="224" width="220" height="40" fill="none" stroke="#cccccc" stroke-dasharray="4,3"/>
+  <text x="600" y="248" font-family="sans-serif" font-size="10" fill="#999" text-anchor="middle">exit 100% (뷰포트 이탈)</text>
+
+  <text x="600" y="316" font-family="sans-serif" font-size="11" fill="#a3611c" text-anchor="middle">animation-range: entry 0% cover 40%</text>
+
+  <text x="400" y="380" font-family="sans-serif" font-size="13" fill="#666" text-anchor="middle">둘 다 스크롤 이벤트·rAF 없이 컴포지터 스레드에서 진행률이 계산된다</text>
+  <text x="400" y="405" font-family="sans-serif" font-size="13" fill="#999" text-anchor="middle">브라우저 지원이 완전하지 않으므로 @supports 폴백이 필요하다</text>
+</svg>
