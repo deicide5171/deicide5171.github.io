@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="30" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">IVFFlat 클러스터 탐색 vs HNSW 계층 그래프 탐색</text>
+
+  <!-- IVFFlat -->
+  <rect x="30" y="55" width="350" height="190" rx="8" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="205" y="78" font-family="sans-serif" font-size="14" font-weight="bold" fill="#2f5a8c" text-anchor="middle">IVFFlat — 클러스터 기반</text>
+
+  <circle cx="90" cy="110" r="30" fill="#dce8f6" stroke="#4a7ab5"/>
+  <circle cx="90" cy="105" r="2" fill="#2f5a8c"/><circle cx="82" cy="118" r="2" fill="#2f5a8c"/><circle cx="98" cy="120" r="2" fill="#2f5a8c"/>
+  <circle cx="180" cy="150" r="34" fill="#c9e0d1" stroke="#2e9e63" stroke-width="2"/>
+  <circle cx="175" cy="145" r="2" fill="#1a6b45"/><circle cx="190" cy="155" r="2" fill="#1a6b45"/><circle cx="170" cy="160" r="2" fill="#1a6b45"/>
+  <text x="180" y="112" font-family="sans-serif" font-size="10" fill="#1a6b45" font-weight="bold">probes로 선택된 클러스터</text>
+  <circle cx="290" cy="100" r="26" fill="#dce8f6" stroke="#4a7ab5"/>
+  <circle cx="300" cy="180" r="28" fill="#dce8f6" stroke="#4a7ab5"/>
+  <polygon points="196,150 197,145 200,146" fill="#d0413b"/>
+  <circle cx="197" cy="147" r="3" fill="#d0413b"/>
+  <text x="230" y="215" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">쿼리(빨강)와 가까운 클러스터만 정확 비교</text>
+  <text x="230" y="230" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">경계 근처면 진짜 이웃을 놓칠 수 있음</text>
+
+  <!-- HNSW -->
+  <rect x="420" y="55" width="350" height="190" rx="8" fill="#eef7f1" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="595" y="78" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1a6b45" text-anchor="middle">HNSW — 계층 그래프 기반</text>
+
+  <text x="445" y="100" font-family="sans-serif" font-size="10" fill="#888">Layer 2 (성김)</text>
+  <circle cx="520" cy="105" r="4" fill="#1a6b45"/><circle cx="620" cy="110" r="4" fill="#1a6b45"/>
+  <line x1="520" y1="105" x2="620" y2="110" stroke="#2e9e63" stroke-width="1"/>
+
+  <text x="445" y="140" font-family="sans-serif" font-size="10" fill="#888">Layer 1</text>
+  <circle cx="500" cy="150" r="4" fill="#1a6b45"/><circle cx="570" cy="145" r="4" fill="#1a6b45"/><circle cx="650" cy="155" r="4" fill="#1a6b45"/>
+  <line x1="500" y1="150" x2="570" y2="145" stroke="#2e9e63" stroke-width="1"/>
+  <line x1="570" y1="145" x2="650" y2="155" stroke="#2e9e63" stroke-width="1"/>
+
+  <text x="445" y="185" font-family="sans-serif" font-size="10" fill="#888">Layer 0(조밀)</text>
+  <circle cx="480" cy="200" r="3" fill="#1a6b45"/><circle cx="520" cy="195" r="3" fill="#1a6b45"/>
+  <circle cx="560" cy="205" r="3" fill="#1a6b45"/><circle cx="600" cy="192" r="3" fill="#1a6b45"/>
+  <circle cx="640" cy="200" r="3" fill="#1a6b45"/><circle cx="680" cy="195" r="3" fill="#1a6b45"/>
+  <line x1="480" y1="200" x2="520" y2="195" stroke="#2e9e63" stroke-width="1"/>
+  <line x1="520" y1="195" x2="560" y2="205" stroke="#2e9e63" stroke-width="1"/>
+  <line x1="560" y1="205" x2="600" y2="192" stroke="#2e9e63" stroke-width="1"/>
+  <line x1="600" y1="192" x2="640" y2="200" stroke="#2e9e63" stroke-width="1"/>
+  <line x1="640" y1="200" x2="680" y2="195" stroke="#2e9e63" stroke-width="1"/>
+
+  <line x1="620" y1="110" x2="650" y2="155" stroke="#c98a3d" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <line x1="650" y1="155" x2="640" y2="200" stroke="#c98a3d" stroke-width="1.5" stroke-dasharray="3,2"/>
+  <text x="595" y="230" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">위 레이어에서 그리디 이동 → 아래로 내려가며 정밀화</text>
+
+  <!-- 삼각형 트레이드오프 -->
+  <text x="400" y="275" font-family="sans-serif" font-size="14" font-weight="bold" fill="#333" text-anchor="middle">재현율 · 지연 · 구축 비용 삼각형</text>
+
+  <polygon points="400,300 320,400 480,400" fill="none" stroke="#666" stroke-width="1.5"/>
+  <text x="400" y="292" font-family="sans-serif" font-size="12" fill="#1a6b45" text-anchor="middle" font-weight="bold">재현율</text>
+  <text x="300" y="418" font-family="sans-serif" font-size="12" fill="#2f5a8c" text-anchor="middle" font-weight="bold">쿼리 지연</text>
+  <text x="500" y="418" font-family="sans-serif" font-size="12" fill="#a3611c" text-anchor="middle" font-weight="bold">구축 비용</text>
+  <text x="400" y="435" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">한 꼭짓점을 개선하면 다른 하나 이상이 대가를 치른다</text>
+</svg>
