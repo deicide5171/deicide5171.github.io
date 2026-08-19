@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>픽셀끼리 계산한다 — GDAL로 하는 래스터 대수(Map Algebra) 실무</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">픽셀끼리 계산한다 — GDAL로 하는 래스터 대수(Map Algebra) 실무</div>
+<p style="font-size:14px; color:#999;">2026. 8. 27. · GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 벡터가 도형끼리 연산한다면 래스터는 픽셀끼리 연산합니다. GDAL 기반 로컬·포컬·존별·전역 연산의 개념과 실무에서 놓치기 쉬운 함정을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">래스터 대수란 무엇일까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">벡터 GIS에서 버퍼·오버레이가 기본 연산이듯, 래스터 GIS에는 래스터 대수(Map Algebra)가 있습니다. 위성영상, DEM, 기상 격자 데이터처럼 격자 형태로 저장된 데이터를 픽셀 단위로 계산해 새로운 정보를 뽑아내는 것입니다. NDVI 계산, 경사도 계산, 유역별 평균 강수량 집계가 전부 래스터 대수의 사례입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">GDAL은 이 연산의 사실상 표준 도구입니다. gdal_calc.py로 밴드 산술을 즉시 실행할 수 있고, Python에서는 rasterio나 numpy 배열로 읽어와 원하는 연산을 자유롭게 짤 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 래스터 대수의 네 가지 연산 유형</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">래스터 대수는 참조 범위 기준으로 <b>로컬(local)</b>, <b>포컬(focal)</b>, <b>존(zonal)</b>, <b>글로벌(global)</b> 네 유형으로 나뉩니다. 로컬 연산은 같은 위치의 픽셀끼리만 계산하며 NDVI가 대표적입니다. 포컬 연산은 각 픽셀과 주변 이웃을 함께 참조하며 경사도·음영기복이 여기 속합니다. 존 연산은 폴리곤으로 픽셀을 그룹 지어 그룹별 통계를 내고, 글로벌 연산은 래스터 전체를 참조해 결과를 만듭니다(거리 변환, 흐름 누적 등).</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-27-gis-raster-algebra-gdal-1.svg" alt="로컬 연산은 같은 픽셀 위치끼리, 포컬 연산은 3x3 이웃을 포함해, 존 연산은 그룹별 통계로, 글로벌 연산은 래스터 전체를 참조해 계산하는 네 가지 유형을 보여주는 격자 다이어그램" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — GDAL 도구 선택, CLI vs Python</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">상황</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">도구</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">단순 밴드 산술을 빠르게 시도</td>
+<td style="border:1px solid #ddd; padding:10px;">gdal_calc.py (CLI)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">조건문·복잡한 로직이 섞인 연산</td>
+<td style="border:1px solid #ddd; padding:10px;">Python + rasterio + numpy</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">대용량 래스터 처리</td>
+<td style="border:1px solid #ddd; padding:10px;">GDAL VRT + 타일 단위 처리</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">존별 통계</td>
+<td style="border:1px solid #ddd; padding:10px;">rasterstats 또는 QGIS Zonal Statistics</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — NDVI 계산, CLI와 Python 두 가지 방법</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># gdal_calc.py로 즉시 NDVI 계산 (밴드 4=NIR, 밴드 3=Red 가정)
+gdal_calc.py -A input.tif --A_band=4 -B input.tif --B_band=3 \
+  --outfile=ndvi.tif \
+  --calc="(A.astype(float)-B)/(A.astype(float)+B)" \
+  --NoDataValue=-9999</pre>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">import rasterio
+import numpy as np
+
+with rasterio.open("input.tif") as src:
+    nir = src.read(4).astype(float)
+    red = src.read(3).astype(float)
+    profile = src.profile
+
+denom = nir + red
+ndvi = np.where(denom == 0, np.nan, (nir - red) / denom)
+
+profile.update(dtype=rasterio.float32, count=1, nodata=np.nan)
+with rasterio.open("ndvi_rasterio.tif", "w", **profile) as dst:
+    dst.write(ndvi.astype(rasterio.float32), 1)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Python 쪽은 0으로 나누는 경우를 NaN으로 명시적으로 처리했다는 차이가 있습니다. CLI 한 줄로는 이런 예외 처리를 넣기 번거롭습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. NoData와 정수 오버플로를 항상 의심하세요</b> — 정수 타입 밴드를 그대로 곱하거나 더하면 오버플로가 나서 값이 랩어라운드됩니다. 연산 전에 float 캐스팅이 필수입니다.<br>
+<b>2. 해상도와 좌표계를 먼저 맞추세요</b> — 서로 다른 소스에서 온 래스터는 셀 크기와 좌표계가 다른 경우가 흔합니다. gdalwarp로 정렬을 맞춰야 결과가 의미를 갖습니다.<br>
+<b>3. 대용량 래스터는 VRT와 타일 단위로 처리하세요</b> — 전국 단위 고해상도 래스터를 통째로 배열에 올리면 메모리가 터집니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 래스터 대수는 참조 범위에 따라 로컬·포컬·존·글로벌 네 유형으로 나뉘며, NDVI는 로컬, 경사도는 포컬 연산의 예입니다.<br>
+② gdal_calc.py는 빠른 시도에, rasterio+numpy는 조건 분기와 예외 처리가 필요한 복잡한 연산에 적합합니다.<br>
+③ 정수 오버플로, NoData 마스킹, 해상도/좌표계 정렬을 놓치면 계산은 실행되지만 결과가 틀린 값이 나옵니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 GIS 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#GDAL #래스터대수 #MapAlgebra #GIS #NDVI #rasterio #공간분석</p>
+
+</body>
+</html>
