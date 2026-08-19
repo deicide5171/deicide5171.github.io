@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">CSS 애니메이션 vs Web Animations API</text>
+
+  <!-- 왼쪽: CSS -->
+  <rect x="60" y="70" width="300" height="300" rx="10" fill="#f7f9fc" stroke="#b9cfe8" stroke-width="1.5"/>
+  <text x="210" y="100" font-family="sans-serif" font-size="15" font-weight="bold" fill="#3a5a8c" text-anchor="middle">CSS transition / @keyframes</text>
+
+  <rect x="90" y="120" width="240" height="50" rx="6" fill="#ffffff" stroke="#4a7ab5"/>
+  <text x="210" y="150" font-family="sans-serif" font-size="13" text-anchor="middle" fill="#222">선언적 정의 (스타일시트)</text>
+
+  <line x1="210" y1="170" x2="210" y2="196" stroke="#8aa5c4" stroke-width="2"/>
+  <polygon points="210,204 203,191 217,191" fill="#8aa5c4"/>
+
+  <rect x="90" y="208" width="240" height="50" rx="6" fill="#eef8f1" stroke="#2e9e63" stroke-width="2"/>
+  <text x="210" y="230" font-family="sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#1a6b45">컴포지터 스레드 실행</text>
+  <text x="210" y="246" font-family="sans-serif" font-size="11" text-anchor="middle" fill="#1a6b45">(transform·opacity, 메인스레드 프리)</text>
+
+  <text x="210" y="290" font-family="sans-serif" font-size="12" fill="#999" text-anchor="middle">제어: 없음</text>
+  <text x="210" y="308" font-family="sans-serif" font-size="12" fill="#999" text-anchor="middle">(재생/일시정지/역재생 불가)</text>
+  <text x="210" y="340" font-family="sans-serif" font-size="12" fill="#666" text-anchor="middle">적합: 단순 호버, 고정 트랜지션</text>
+
+  <!-- 오른쪽: WAAPI -->
+  <rect x="440" y="70" width="300" height="330" rx="10" fill="#fdf6ec" stroke="#e8d3ae" stroke-width="1.5"/>
+  <text x="590" y="100" font-family="sans-serif" font-size="15" font-weight="bold" fill="#a3611c" text-anchor="middle">Web Animations API</text>
+
+  <rect x="470" y="120" width="240" height="50" rx="6" fill="#ffffff" stroke="#c98a3d"/>
+  <text x="590" y="150" font-family="sans-serif" font-size="13" text-anchor="middle" fill="#222">element.animate(keyframes, opts)</text>
+
+  <line x1="590" y1="170" x2="590" y2="196" stroke="#d8b877" stroke-width="2"/>
+  <polygon points="590,204 583,191 597,191" fill="#d8b877"/>
+
+  <rect x="470" y="208" width="240" height="50" rx="6" fill="#eef8f1" stroke="#2e9e63" stroke-width="2"/>
+  <text x="590" y="230" font-family="sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#1a6b45">컴포지터 스레드 실행</text>
+  <text x="590" y="246" font-family="sans-serif" font-size="11" text-anchor="middle" fill="#1a6b45">(CSS와 동일한 성능 경로)</text>
+
+  <line x1="590" y1="258" x2="590" y2="284" stroke="#d8b877" stroke-width="2"/>
+  <polygon points="590,292 583,279 597,279" fill="#d8b877"/>
+
+  <rect x="470" y="296" width="240" height="66" rx="6" fill="#ffffff" stroke="#c98a3d" stroke-width="2"/>
+  <text x="590" y="318" font-family="sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#a3611c">Animation 객체 제어 계층</text>
+  <text x="590" y="336" font-family="sans-serif" font-size="11" text-anchor="middle" fill="#666">play() · pause() · playbackRate</text>
+  <text x="590" y="350" font-family="sans-serif" font-size="11" text-anchor="middle" fill="#666">currentTime · finished(Promise)</text>
+
+  <text x="400" y="428" font-family="sans-serif" font-size="13" fill="#999" text-anchor="middle">WAAPI는 CSS와 같은 실행 경로 위에 JS 제어 API만 추가한 것에 가깝다</text>
+</svg>

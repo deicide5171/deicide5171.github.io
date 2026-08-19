@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>CSS로는 안 되는 그 애니메이션 — Web Animations API로 명령형 제어하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">CSS로는 안 되는 그 애니메이션 — Web Animations API로 명령형 제어하기</div>
+<p style="font-size:14px; color:#999;">2026. 8. 27. · 프론트엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — CSS 애니메이션은 선언적이라 깔끔하지만 재생 중 일시정지·역재생·동적 제어가 필요해지면 한계가 있습니다. Web Animations API로 성능을 유지하면서 명령형 제어를 더하는 방법을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">CSS만으로 부족해지는 순간</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">CSS transition과 @keyframes는 대부분의 UI 애니메이션에 충분합니다. 그런데 "사용자가 드래그하는 동안 애니메이션 진행률을 손가락 위치에 맞춰 실시간으로 바꾼다", "여러 요소의 애니메이션을 정확히 동기화한다", "재생 중간에 되감아 역재생한다" 같은 요구가 들어오면 CSS만으로는 버겁습니다. requestAnimationFrame으로 매 프레임을 직접 계산하는 것도 가능하지만, 이는 메인 스레드를 점유하고 브라우저의 컴포지터 최적화를 포기하는 방식입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Web Animations API(WAAPI)는 이 사이의 간극을 메웁니다. CSS 애니메이션과 동일하게 컴포지터 스레드에서 실행되는 성능을 유지하면서, Animation 객체를 통해 재생·일시정지·역재생·속도 조절 같은 명령형 제어를 JavaScript로 할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — element.animate()와 Animation 객체</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">WAAPI의 진입점은 Element.prototype.animate(keyframes, options)입니다. 키프레임 배열과 지속시간·이징 같은 옵션을 넘기면 Animation 객체가 반환되고, 이 객체로 애니메이션을 제어합니다. fill: 'forwards'는 CSS의 animation-fill-mode: forwards와 동일하게 마지막 키프레임 상태를 유지시킵니다. animation.finished가 Promise를 반환하므로 애니메이션이 끝난 뒤 다음 로직을 이어 붙일 수 있다는 점이 CSS animationend 이벤트보다 다루기 쉽습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — CSS와 WAAPI, 역할 분담 기준</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">상황</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">적합한 방식</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">단순 호버·트랜지션</td>
+<td style="border:1px solid #ddd; padding:10px;">CSS transition/@keyframes</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">재생 중 일시정지·역재생·속도 변경</td>
+<td style="border:1px solid #ddd; padding:10px;">WAAPI</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">드래그 진행률에 애니메이션 동기화</td>
+<td style="border:1px solid #ddd; padding:10px;">WAAPI (currentTime 직접 조작)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">키프레임이 상태에 따라 동적으로 바뀜</td>
+<td style="border:1px solid #ddd; padding:10px;">WAAPI (JS로 키프레임 생성)</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">핵심은 WAAPI도 transform·opacity 같은 컴포지터 처리 가능한 속성을 쓰는 한 GPU 컴포지터 스레드에서 실행된다는 점입니다. 즉 명령형 제어를 얻는 대가로 성능을 포기하는 것이 아니라, 동일한 성능 특성 위에 제어 API만 얹는 것에 가깝습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-27-web-animations-api-imperative-control-1.svg" alt="CSS 애니메이션과 Web Animations API가 같은 컴포지터 스레드 실행 경로를 공유하되 WAAPI만 Animation 객체를 통한 재생 제어 계층을 추가로 갖는 구조도" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 드래그 진행률에 애니메이션 동기화하기</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">const sheet = document.querySelector('.bottom-sheet');
+const anim = sheet.animate(
+  [{ transform: 'translateY(100%)' }, { transform: 'translateY(0%)' }],
+  { duration: 1000, fill: 'both' }
+);
+anim.pause(); // 드래그로만 제어할 것이므로 자동 재생 정지
+
+let startY = 0;
+sheet.addEventListener('pointerdown', (e) =&gt; { startY = e.clientY; });
+sheet.addEventListener('pointermove', (e) =&gt; {
+  const dragRatio = Math.min(1, Math.max(0, (startY - e.clientY) / 300));
+  anim.currentTime = dragRatio * 1000; // 진행률을 손가락 위치에 직접 매핑
+});
+sheet.addEventListener('pointerup', () =&gt; {
+  anim.playbackRate = anim.currentTime &gt; 500 ? 1 : -1;
+  anim.play();
+});</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">currentTime을 직접 대입해 애니메이션 진행률을 입력 이벤트에 실시간으로 묶는 이 패턴은 CSS만으로는 구현할 방법이 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. fill 옵션을 명시적으로 정하세요</b> — 기본값(none)은 애니메이션이 끝나면 스타일이 원래대로 되돌아갑니다.<br>
+<b>2. getAnimations()로 진행 중인 애니메이션을 관리하세요</b> — 새 애니메이션을 걸기 전 기존 것을 cancel()하지 않으면 충돌이 생길 수 있습니다.<br>
+<b>3. View Transitions API와는 상호 보완 관계입니다</b> — 페이지 전환 전체는 View Transitions가, 개별 요소의 세밀한 제어는 WAAPI가 맡습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① WAAPI는 CSS 애니메이션과 같은 컴포지터 스레드 성능을 유지하면서 재생·일시정지·역재생 같은 명령형 제어를 더합니다.<br>
+② currentTime을 직접 조작하면 드래그·스크롤 같은 입력 이벤트에 애니메이션 진행률을 실시간으로 동기화할 수 있습니다.<br>
+③ 단순 트랜지션은 CSS로, 동적 제어가 필요한 애니메이션은 WAAPI로 역할을 나누는 것이 유지보수에 유리합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 프론트엔드 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#WebAnimationsAPI #프론트엔드 #자바스크립트 #애니메이션 #웹성능</p>
+
+</body>
+</html>
