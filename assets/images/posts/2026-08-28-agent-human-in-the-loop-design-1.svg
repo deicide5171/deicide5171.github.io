@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">되돌릴 수 있는 정도에 따른 HITL 개입 지점</text>
+
+  <rect x="40" y="70" width="720" height="60" rx="8" fill="#eef4fb" stroke="#b9cfe8"/>
+  <text x="60" y="94" font-family="sans-serif" font-size="15" font-weight="bold" fill="#2b5a8a">에이전트 행동 제안</text>
+  <text x="60" y="114" font-family="sans-serif" font-size="12" fill="#5b7a9d">조회, 코드 수정, 배포, 결제, 메일 발송 등 도구 호출 시도</text>
+
+  <line x1="400" y1="130" x2="400" y2="160" stroke="#999" stroke-width="2"/>
+  <polygon points="400,168 393,155 407,155" fill="#999"/>
+
+  <!-- 3 columns -->
+  <rect x="40" y="176" width="220" height="130" rx="8" fill="#eefaf1" stroke="#2e9e63" stroke-width="2"/>
+  <text x="150" y="200" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1a6b45" text-anchor="middle">자율 실행</text>
+  <text x="150" y="222" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">읽기 전용 조회</text>
+  <text x="150" y="240" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">부작용 없음</text>
+  <text x="150" y="266" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">개입 불필요</text>
+
+  <rect x="290" y="176" width="220" height="130" rx="8" fill="#fdf6ec" stroke="#c98a3d" stroke-width="2"/>
+  <text x="400" y="200" font-family="sans-serif" font-size="14" font-weight="bold" fill="#a3611c" text-anchor="middle">사후 검토</text>
+  <text x="400" y="222" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">draft PR, 임시 브랜치</text>
+  <text x="400" y="240" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">되돌리기 쉬움</text>
+  <text x="400" y="266" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">실행 후 revert 가능</text>
+
+  <rect x="540" y="176" width="220" height="130" rx="8" fill="#fdeeee" stroke="#d0413b" stroke-width="2"/>
+  <text x="650" y="200" font-family="sans-serif" font-size="14" font-weight="bold" fill="#a3211c" text-anchor="middle">사전 승인 게이트</text>
+  <text x="650" y="222" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">배포, 결제, 삭제, 메일 발송</text>
+  <text x="650" y="240" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">되돌리기 어렵거나 불가능</text>
+  <text x="650" y="266" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">사람 승인 필수</text>
+
+  <!-- arrows from proposal to each -->
+  <line x1="240" y1="168" x2="150" y2="176" stroke="#2e9e63" stroke-width="2"/>
+  <line x1="400" y1="168" x2="400" y2="176" stroke="#c98a3d" stroke-width="2"/>
+  <line x1="560" y1="168" x2="650" y2="176" stroke="#d0413b" stroke-width="2"/>
+
+  <!-- bottom flow: approval -> execute -> rollback -->
+  <rect x="220" y="340" width="150" height="50" rx="6" fill="#ffffff" stroke="#a3211c" stroke-width="1.5"/>
+  <text x="295" y="370" font-family="sans-serif" font-size="13" fill="#a3211c" text-anchor="middle">사람 승인/거부</text>
+
+  <rect x="420" y="340" width="150" height="50" rx="6" fill="#ffffff" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="495" y="370" font-family="sans-serif" font-size="13" fill="#2b5a8a" text-anchor="middle">실행 + 롤백플랜 저장</text>
+
+  <line x1="650" y1="306" x2="650" y2="322" stroke="#d0413b" stroke-width="2"/>
+  <line x1="650" y1="322" x2="295" y2="322" stroke="#d0413b" stroke-width="2"/>
+  <line x1="295" y1="322" x2="295" y2="336" stroke="#d0413b" stroke-width="2"/>
+  <polygon points="295,340 289,328 301,328" fill="#a3211c"/>
+
+  <line x1="370" y1="365" x2="416" y2="365" stroke="#2e9e63" stroke-width="2"/>
+  <polygon points="420,365 410,359 410,371" fill="#2e9e63"/>
+  <text x="393" y="358" font-family="sans-serif" font-size="11" fill="#1a6b45" text-anchor="middle">승인 시</text>
+</svg>
