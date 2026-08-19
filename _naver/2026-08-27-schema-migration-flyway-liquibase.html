@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>스키마도 버전 관리가 필요하다 — Flyway vs Liquibase 비교</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">스키마도 버전 관리가 필요하다 — Flyway vs Liquibase 비교</div>
+<p style="font-size:14px; color:#999;">2026. 8. 27. · 데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 애플리케이션 코드는 Git으로 관리하면서 DB 스키마 변경은 수동 SQL로 처리하는 팀이 아직 많습니다. Flyway와 Liquibase의 철학 차이와 선택 기준을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 스키마도 버전 관리가 필요할까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">애플리케이션 코드는 Git으로 버전 관리하고 PR 리뷰를 거치면서, DB 스키마 변경은 누군가 운영 DB에 접속해 수동으로 ALTER TABLE을 실행하는 팀이 여전히 많습니다. 이 방식은 "누가 언제 무엇을 바꿨는지"를 코드처럼 추적할 수 없고, 로컬·스테이징·운영 환경의 스키마가 조금씩 어긋나는 드리프트를 만듭니다. 스키마 마이그레이션 도구는 "스키마 변경도 코드처럼 버전 관리하고 순서대로 적용한다"는 원칙으로 이 문제를 해결합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Flyway와 Liquibase는 이 분야의 양대 산맥이지만 철학이 다릅니다. Flyway는 SQL을 직접 쓰고 순서대로 실행하는 단순함을, Liquibase는 변경을 DB에 독립적인 형식으로 기술하고 롤백까지 관리하는 추상화를 지향합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 마이그레이션 파일 형식의 철학 차이</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Flyway의 마이그레이션은 기본적으로 순수 SQL 파일입니다. V1__create_users_table.sql처럼 버전 번호가 붙은 파일을 만들고 그 안에 원하는 DDL을 그대로 씁니다. Flyway는 이 파일들을 버전 순서대로 실행하고, 실행 이력을 flyway_schema_history 테이블에 기록해 다음 실행 때 이미 적용된 마이그레이션을 건너뜁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Liquibase는 변경을 changelog(XML, YAML, JSON, 또는 SQL)로 기술합니다. createTable, addColumn 같은 DB-독립적인 태그로 스키마 변경을 표현하면, Liquibase가 이를 대상 DB 방언에 맞는 SQL로 변환해 실행합니다. 각 changeSet에는 rollback 블록을 함께 정의할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 기능 비교와 선택 기준</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Flyway</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Liquibase</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">기본 형식</td>
+<td style="border:1px solid #ddd; padding:10px;">SQL 파일</td>
+<td style="border:1px solid #ddd; padding:10px;">XML/YAML/JSON changelog</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">DB 독립적 추상화</td>
+<td style="border:1px solid #ddd; padding:10px;">없음(순수 SQL)</td>
+<td style="border:1px solid #ddd; padding:10px;">있음(태그가 DB별 SQL로 변환)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">자동 롤백</td>
+<td style="border:1px solid #ddd; padding:10px;">커뮤니티 버전엔 제한적</td>
+<td style="border:1px solid #ddd; padding:10px;">changeSet 단위 rollback 정의 가능</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">학습 곡선</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음(SQL만 알면 됨)</td>
+<td style="border:1px solid #ddd; padding:10px;">중간(태그 문법 학습 필요)</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">두 도구 모두 "적용된 마이그레이션은 절대 수정하지 않는다"는 원칙을 공유합니다. 이미 배포된 마이그레이션 파일의 내용을 바꾸면 체크섬 불일치로 실행이 거부되며, 수정이 필요하면 새로운 마이그레이션을 추가해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 같은 변경을 각 도구로 표현하기</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">-- Flyway: V2__add_email_to_users.sql
+ALTER TABLE users ADD COLUMN email VARCHAR(255) NOT NULL DEFAULT '';
+CREATE UNIQUE INDEX idx_users_email ON users(email);</pre>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># Liquibase: changelog/002-add-email-to-users.yaml
+databaseChangeLog:
+  - changeSet:
+      id: 002-add-email-to-users
+      author: team-db
+      changes:
+        - addColumn:
+            tableName: users
+            columns:
+              - column:
+                  name: email
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+      rollback:
+        - dropColumn:
+            tableName: users
+            columnName: email</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Liquibase 쪽은 코드가 길지만 rollback 블록이 명시적으로 함께 정의된다는 차이가 눈에 띕니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. CI/CD에 마이그레이션 검증 단계를 반드시 넣으세요</b> — PR에서 마이그레이션 파일이 추가되면 임시 DB 컨테이너에 실제로 적용해 보는 CI 잡을 둬야 합니다.<br>
+<b>2. 대용량 테이블의 DDL은 별도로 다루세요</b> — 수억 건짜리 테이블에 잠금 시간이 긴 DDL을 걸면 서비스에 영향을 줄 수 있습니다. gh-ost·pt-online-schema-change 같은 무중단 DDL 도구와 조합하세요.<br>
+<b>3. 되돌리기 전략을 미리 정하세요</b> — 자동 롤백이 제한적인 경우, "반대 방향 마이그레이션을 새로 추가해 앞으로 감는다"는 원칙을 팀에 미리 합의해 둬야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① Flyway는 SQL을 직접 쓰는 단순함을, Liquibase는 DB-독립적 changelog와 롤백 정의라는 추상화를 지향합니다.<br>
+② 두 도구 모두 이미 적용된 마이그레이션은 수정하지 않고 체크섬으로 변경을 검증한다는 원칙을 공유합니다.<br>
+③ 대용량 테이블 DDL과 롤백 전략은 도구 선택과 별개로 팀이 미리 합의해 둬야 하는 운영 규칙입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 데이터베이스 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#Flyway #Liquibase #스키마마이그레이션 #데이터베이스 #CICD #버전관리</p>
+
+</body>
+</html>

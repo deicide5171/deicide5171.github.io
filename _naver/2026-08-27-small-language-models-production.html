@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>모든 작업에 GPT급이 필요한 건 아니다 — SLM을 프로덕션에 투입하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">모든 작업에 GPT급이 필요한 건 아니다 — SLM을 프로덕션에 투입하기</div>
+<p style="font-size:14px; color:#999;">2026. 8. 27. · AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 분류, 추출, 라우팅처럼 범위가 좁은 작업까지 매번 대형 모델을 호출하는 건 낭비입니다. 소형 언어모델(SLM)을 프로덕션에 투입하는 기준과 아키텍처를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 항상 플래그십 모델이 답은 아닐까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"어떤 모델을 쓸까"라는 질문에 자동으로 최상위 플래그십 모델을 떠올리는 팀이 많습니다. 그런데 실제 프로덕션 워크로드를 뜯어보면, 감정 분류, 카테고리 태깅, 짧은 텍스트 요약, 인텐트 라우팅처럼 입력과 출력 공간이 명확히 좁은 작업이 상당 비중을 차지합니다. 이런 작업에 매번 대형 모델을 호출하는 것은 트럭으로 편의점 심부름을 보내는 것과 비슷합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Phi, Gemma, Llama 3.2의 1B~3B급, Qwen2.5의 소형 라인업 같은 SLM(Small Language Model)들은 바로 이 좁은 작업 구간에서 대형 모델과 거의 차이 없는 정확도를 내면서 지연시간은 수십 밀리초, 비용은 수십 분의 1로 줄입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — SLM이 유리한 조건과 불리한 조건</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">조건</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">SLM 적합</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">대형 모델 필요</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">출력 공간</td>
+<td style="border:1px solid #ddd; padding:10px;">고정된 카테고리</td>
+<td style="border:1px solid #ddd; padding:10px;">자유 형식 긴 텍스트</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">추론 난이도</td>
+<td style="border:1px solid #ddd; padding:10px;">패턴 매칭 수준</td>
+<td style="border:1px solid #ddd; padding:10px;">다단계 추론</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">지연시간 요구</td>
+<td style="border:1px solid #ddd; padding:10px;">실시간(수십 ms)</td>
+<td style="border:1px solid #ddd; padding:10px;">수 초 허용</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">데이터 민감도</td>
+<td style="border:1px solid #ddd; padding:10px;">온프레미스/엣지 필요</td>
+<td style="border:1px solid #ddd; padding:10px;">클라우드 API 허용</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">핵심은 작업이 좁을수록, 그리고 그 작업에 맞춰 파인튜닝할 데이터가 있을수록 SLM이 유리해진다는 점입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 증류(distillation)로 SLM 성능 끌어올리기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">SLM을 그냥 파운데이션 모델 그대로 쓰면 특정 작업에서 대형 모델보다 정확도가 떨어질 수 있습니다. 이를 메우는 표준적인 방법이 지식 증류입니다. 대형 모델(교사)에게 대량의 입력을 넣어 출력을 생성시키고, 이 입출력 쌍을 SLM(학생)의 파인튜닝 데이터로 사용합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-27-small-language-models-production-1.svg" alt="사용자 요청이 먼저 SLM 라우터를 거쳐 신뢰도가 높으면 SLM이 즉시 응답하고 낮으면 대형 모델로 에스컬레이션되는 아키텍처 흐름도" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 신뢰도 기반 라우팅</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">def classify_intent(user_message: str) -&gt; dict:
+    # 1차: SLM으로 빠르게 분류 시도 (로컬 vLLM 서빙, 3B 모델)
+    slm_result = slm_client.classify(
+        prompt=build_classification_prompt(user_message),
+        return_logprobs=True,
+    )
+    confidence = slm_result.top_logprob_as_probability()
+
+    if confidence &gt;= 0.85:
+        return {"intent": slm_result.label, "model": "slm", "confidence": confidence}
+
+    # 2차: 신뢰도가 낮으면 대형 모델로 에스컬레이션
+    llm_result = llm_client.classify(user_message)
+    return {"intent": llm_result.label, "model": "escalated-llm", "confidence": None}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 패턴은 트래픽의 대부분을 SLM이 처리하고, 애매한 소수 케이스만 대형 모델로 넘겨 전체 비용과 지연시간의 가중평균을 크게 낮춥니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 에스컬레이션 비율을 지속 모니터링하세요</b> — 비율이 예상보다 높다면 SLM 파인튜닝 데이터가 실제 트래픽 분포를 충분히 반영하지 못한다는 신호입니다.<br>
+<b>2. 정확도뿐 아니라 실패 모드도 비교하세요</b> — SLM은 전체 정확도는 비슷해도 특정 엣지 케이스에서 실패 패턴이 다르게 나타날 수 있습니다.<br>
+<b>3. 온디바이스/엣지 배포는 양자화와 함께 검토하세요</b> — 다만 양자화가 정확도를 얼마나 깎는지는 반드시 자체 평가셋으로 검증해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 분류·추출·라우팅처럼 출력 공간이 좁은 작업은 SLM으로도 대형 모델과 근접한 정확도를 내면서 비용과 지연시간을 크게 줄일 수 있습니다.<br>
+② 대형 모델의 출력을 교사 데이터로 삼아 SLM을 증류·파인튜닝하면 좁은 작업에서의 정확도 격차를 상당 부분 메울 수 있습니다.<br>
+③ SLM 우선 처리 후 신뢰도가 낮은 케이스만 대형 모델로 에스컬레이션하는 라우팅 구조가 비용 대비 정확도를 가장 잘 절충합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 AI 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#SLM #소형언어모델 #LLM #모델라우팅 #비용최적화 #AI</p>
+
+</body>
+</html>

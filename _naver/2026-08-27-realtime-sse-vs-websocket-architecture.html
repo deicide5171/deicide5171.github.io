@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>실시간 기능, 소켓부터 열 필요는 없다 — SSE vs WebSocket vs 롱폴링 아키텍처 결정</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">실시간 기능, 소켓부터 열 필요는 없다 — SSE vs WebSocket vs 롱폴링 아키텍처 결정</div>
+<p style="font-size:14px; color:#999;">2026. 8. 27. · 시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 실시간 기능이 필요하다고 반사적으로 WebSocket을 고를 필요는 없습니다. 통신 방향과 인프라 호환성 기준으로 SSE·WebSocket·롱폴링을 비교하고 스케일아웃 방법을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 항상 WebSocket이 답은 아닐까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"실시간 기능이 필요하다"는 요구가 들어오면 반사적으로 WebSocket을 꺼내는 팀이 많습니다. 하지만 실제로는 서버가 클라이언트에게 데이터를 흘려주기만 하면 되는 경우(알림, 대시보드 갱신, 진행률 표시)가 대부분이고, 이런 경우 WebSocket은 필요 이상의 복잡도를 끌고 옵니다. 양방향 통신이 필요 없다면 더 단순한 선택지가 있고, 채팅이나 협업 편집처럼 양방향이 필수라면 WebSocket이 맞는 선택입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 세 방식의 근본적인 차이</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>롱폴링</b>은 일반 HTTP 요청을 서버가 응답할 데이터가 생길 때까지 붙잡아두는 방식입니다. 어떤 프록시·로드밸런서와도 마찰이 없지만, 매 응답마다 연결을 다시 맺어야 합니다. <b>SSE</b>는 서버가 하나의 연결을 계속 열어둔 채 이벤트를 계속 흘려보내는 단방향 프로토콜로, EventSource 브라우저 API가 재연결을 자동으로 해줍니다. <b>WebSocket</b>은 HTTP 핸드셰이크로 시작해 별도의 양방향 프로토콜로 업그레이드되며, 클라이언트도 언제든 서버로 메시지를 보낼 수 있습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">롱폴링</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">SSE</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">WebSocket</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">통신 방향</td>
+<td style="border:1px solid #ddd; padding:10px;">서버→클라 (요청마다)</td>
+<td style="border:1px solid #ddd; padding:10px;">서버→클라 (단방향)</td>
+<td style="border:1px solid #ddd; padding:10px;">양방향</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">자동 재연결</td>
+<td style="border:1px solid #ddd; padding:10px;">직접 구현</td>
+<td style="border:1px solid #ddd; padding:10px;">브라우저 내장</td>
+<td style="border:1px solid #ddd; padding:10px;">직접 구현</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">프록시 호환성</td>
+<td style="border:1px solid #ddd; padding:10px;">매우 좋음</td>
+<td style="border:1px solid #ddd; padding:10px;">좋음</td>
+<td style="border:1px solid #ddd; padding:10px;">일부 구형 프록시 문제</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">바이너리 지원</td>
+<td style="border:1px solid #ddd; padding:10px;">가능</td>
+<td style="border:1px solid #ddd; padding:10px;">불가(텍스트만)</td>
+<td style="border:1px solid #ddd; padding:10px;">가능</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 인프라 호환성과 로드밸런서 문제</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">WebSocket은 L7 로드밸런서가 업그레이드 핸드셰이크를 올바르게 처리해야 하고, 일부 사내망 프록시나 오래된 CDN은 여전히 WebSocket 업그레이드를 막거나 유휴 타임아웃을 짧게 잡아 연결을 끊습니다. SSE와 롱폴링은 순수 HTTP이므로 이런 문제에서 훨씬 자유롭습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">로드밸런서의 유휴 타임아웃은 SSE·WebSocket 공통 함정입니다. 로드밸런서 기본 타임아웃(흔히 60초)이 애플리케이션의 하트비트 주기보다 짧으면, 아무 이벤트도 없는 조용한 연결이 중간에서 끊깁니다. SSE는 주기적으로 주석 이벤트를 보내 연결을 살아있게 유지해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-27-realtime-sse-vs-websocket-architecture-1.svg" alt="롱폴링, SSE, WebSocket 세 가지 통신 방식의 연결 유지 구조와 데이터 흐름 방향 비교도" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — SSE 엔드포인트와 재연결 대응(Node.js/Express)</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">app.get('/events', (req, res) => {
+  res.set({
+    'Content-Type': 'text/event-stream',
+    'Cache-Control': 'no-cache',
+    'Connection': 'keep-alive',
+  });
+  res.flushHeaders();
+
+  // Last-Event-ID로 재연결 시 놓친 이벤트부터 재전송
+  const lastId = req.headers['last-event-id'];
+  const backlog = lastId ? getEventsAfter(lastId) : [];
+  backlog.forEach(sendEvent);
+
+  const heartbeat = setInterval(() =&gt; res.write(': heartbeat\n\n'), 25000);
+  const unsubscribe = subscribeToChannel(req.params.channel, (event) =&gt; sendEvent(event));
+
+  function sendEvent(event) {
+    res.write(`id: ${event.id}\n`);
+    res.write(`data: ${JSON.stringify(event.payload)}\n\n`);
+  }
+
+  req.on('close', () =&gt; { clearInterval(heartbeat); unsubscribe(); });
+});</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 스케일아웃은 세 방식 모두 pub/sub 백플레인이 필요합니다</b> — Redis Pub/Sub이나 Kafka를 백플레인으로 두고, 각 인스턴스는 거기서 받은 메시지를 자신에게 연결된 클라이언트에게만 릴레이하는 구조가 표준적입니다.<br>
+<b>2. 연결 수는 서버의 실제 병목입니다</b> — 동시 접속 10만을 노린다면 이벤트 루프 기반(Node.js, Netty, Vert.x) 서버가 유리하고, WebSocket 게이트웨이를 별도 서비스로 분리하는 것도 흔한 패턴입니다.<br>
+<b>3. 양방향이 필요 없다면 WebSocket을 선택하지 마세요</b> — 서버→클라이언트 단방향 알림이 전부라면 SSE로 재연결·백프레셔 관리 복잡도를 대부분 피할 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 서버→클라이언트 단방향이면 SSE, 양방향이 필수면 WebSocket, 인프라 호환성이 최우선이면 롱폴링을 우선 고려합니다.<br>
+② 로드밸런서 유휴 타임아웃은 SSE·WebSocket 공통 함정이며 하트비트로 방어해야 합니다.<br>
+③ 어떤 방식이든 여러 서버 인스턴스로 확장하려면 Redis/Kafka 같은 pub/sub 백플레인으로 인스턴스 간 이벤트를 릴레이해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 시스템 설계 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#SSE #WebSocket #롱폴링 #실시간아키텍처 #시스템설계 #확장성 #pubsub</p>
+
+</body>
+</html>

@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="32" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">래스터 대수 네 가지 유형 — 참조 범위의 차이</text>
+
+  <!-- 로컬 -->
+  <text x="140" y="66" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1a6b45" text-anchor="middle">로컬(local)</text>
+  <g transform="translate(70,76)">
+    <rect x="0" y="0" width="140" height="140" fill="none" stroke="#ccc"/>
+    <line x1="35" y1="0" x2="35" y2="140" stroke="#ccc"/><line x1="70" y1="0" x2="70" y2="140" stroke="#ccc"/><line x1="105" y1="0" x2="105" y2="140" stroke="#ccc"/>
+    <line x1="0" y1="35" x2="140" y2="35" stroke="#ccc"/><line x1="0" y1="70" x2="140" y2="70" stroke="#ccc"/><line x1="0" y1="105" x2="140" y2="105" stroke="#ccc"/>
+    <rect x="70" y="70" width="35" height="35" fill="#2e9e63"/>
+  </g>
+  <text x="140" y="234" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">밴드 A·B의 같은</text>
+  <text x="140" y="248" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">(x,y) 픽셀끼리 계산</text>
+  <text x="140" y="264" font-family="sans-serif" font-size="10" fill="#999" text-anchor="middle">예: NDVI</text>
+
+  <!-- 포컬 -->
+  <text x="330" y="66" font-family="sans-serif" font-size="15" font-weight="bold" fill="#a3611c" text-anchor="middle">포컬(focal)</text>
+  <g transform="translate(260,76)">
+    <rect x="0" y="0" width="140" height="140" fill="none" stroke="#ccc"/>
+    <line x1="35" y1="0" x2="35" y2="140" stroke="#ccc"/><line x1="70" y1="0" x2="70" y2="140" stroke="#ccc"/><line x1="105" y1="0" x2="105" y2="140" stroke="#ccc"/>
+    <line x1="0" y1="35" x2="140" y2="35" stroke="#ccc"/><line x1="0" y1="70" x2="140" y2="70" stroke="#ccc"/><line x1="0" y1="105" x2="140" y2="105" stroke="#ccc"/>
+    <rect x="35" y="35" width="105" height="105" fill="none" stroke="#c98a3d" stroke-width="2.5"/>
+    <rect x="70" y="70" width="35" height="35" fill="#c98a3d"/>
+  </g>
+  <text x="330" y="234" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">중심 픽셀 + 3x3</text>
+  <text x="330" y="248" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">이웃 커널 참조</text>
+  <text x="330" y="264" font-family="sans-serif" font-size="10" fill="#999" text-anchor="middle">예: 경사도, 음영기복</text>
+
+  <!-- 존 -->
+  <text x="520" y="66" font-family="sans-serif" font-size="15" font-weight="bold" fill="#3a5a8c" text-anchor="middle">존(zonal)</text>
+  <g transform="translate(450,76)">
+    <rect x="0" y="0" width="140" height="140" fill="none" stroke="#ccc"/>
+    <line x1="35" y1="0" x2="35" y2="140" stroke="#ccc"/><line x1="70" y1="0" x2="70" y2="140" stroke="#ccc"/><line x1="105" y1="0" x2="105" y2="140" stroke="#ccc"/>
+    <line x1="0" y1="35" x2="140" y2="35" stroke="#ccc"/><line x1="0" y1="70" x2="140" y2="70" stroke="#ccc"/><line x1="0" y1="105" x2="140" y2="105" stroke="#ccc"/>
+    <path d="M 0 0 L 90 0 L 90 55 L 55 55 L 55 140 L 0 140 Z" fill="#4a7ab5" fill-opacity="0.35" stroke="#4a7ab5" stroke-width="2"/>
+  </g>
+  <text x="520" y="234" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">폴리곤/존 단위로</text>
+  <text x="520" y="248" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">그룹 통계 산출</text>
+  <text x="520" y="264" font-family="sans-serif" font-size="10" fill="#999" text-anchor="middle">예: 유역별 평균 강수량</text>
+
+  <!-- 글로벌 -->
+  <text x="700" y="66" font-family="sans-serif" font-size="15" font-weight="bold" fill="#a13a34" text-anchor="middle">글로벌(global)</text>
+  <g transform="translate(630,76)">
+    <rect x="0" y="0" width="140" height="140" fill="none" stroke="#ccc"/>
+    <line x1="35" y1="0" x2="35" y2="140" stroke="#ccc"/><line x1="70" y1="0" x2="70" y2="140" stroke="#ccc"/><line x1="105" y1="0" x2="105" y2="140" stroke="#ccc"/>
+    <line x1="0" y1="35" x2="140" y2="35" stroke="#ccc"/><line x1="0" y1="70" x2="140" y2="70" stroke="#ccc"/><line x1="0" y1="105" x2="140" y2="105" stroke="#ccc"/>
+    <rect x="0" y="0" width="140" height="140" fill="#d0413b" fill-opacity="0.18"/>
+    <circle cx="17" cy="17" r="6" fill="#d0413b"/>
+  </g>
+  <text x="700" y="234" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">래스터 전체를</text>
+  <text x="700" y="248" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">참조해 계산</text>
+  <text x="700" y="264" font-family="sans-serif" font-size="10" fill="#999" text-anchor="middle">예: 거리변환, 흐름누적</text>
+
+  <text x="400" y="330" font-family="sans-serif" font-size="13" fill="#666" text-anchor="middle">참조 범위가 넓어질수록 연산 비용과 대용량 처리 시 메모리 관리의 중요성이 커진다</text>
+  <text x="400" y="360" font-family="sans-serif" font-size="13" fill="#999" text-anchor="middle">실무 팁: 정수 오버플로 방지를 위해 연산 전 float 캐스팅, NoData 마스킹, 좌표계·해상도 정렬 필수</text>
+</svg>

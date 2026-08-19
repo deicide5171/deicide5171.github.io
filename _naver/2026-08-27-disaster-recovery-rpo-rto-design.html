@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>몇 분을 잃어도 되는가, 몇 분 안에 복구해야 하는가 — RPO/RTO 기반 재해복구 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">몇 분을 잃어도 되는가, 몇 분 안에 복구해야 하는가 — RPO/RTO 기반 재해복구 설계</div>
+<p style="font-size:14px; color:#999;">2026. 8. 27. · 시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 재해복구 설계는 기술팀이 임의로 정하는 게 아니라 비즈니스가 감내할 수 있는 데이터 손실과 다운타임을 먼저 숫자로 정하는 데서 시작합니다. RPO/RTO 기준 DR 전략을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">백업과 재해복구 계획은 다릅니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"재해복구 계획이 있나요?"라는 질문에 "백업은 매일 하고 있습니다"로 답하는 팀을 종종 봅니다. 그런데 이건 재해복구 계획이 아니라 백업 정책일 뿐입니다. 진짜 재해복구(DR) 설계는 두 개의 숫자에서 시작합니다. <b>RPO(목표 복구 시점)</b>는 장애 시 얼마만큼의 데이터 손실까지 감내할 수 있는가이고, <b>RTO(목표 복구 시간)</b>는 장애 후 서비스가 다시 정상화되기까지 얼마나 걸려도 되는가입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 두 숫자는 기술팀이 임의로 정하는 것이 아니라 비즈니스 영향 분석을 거쳐 사업 부서와 함께 정해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — RPO/RTO에 따른 DR 전략 스펙트럼</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">전략</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">RPO</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">RTO</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">설명</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">백업-복원</td>
+<td style="border:1px solid #ddd; padding:10px;">시간~하루</td>
+<td style="border:1px solid #ddd; padding:10px;">시간~일</td>
+<td style="border:1px solid #ddd; padding:10px;">정기 백업만 원격지에 보관</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">파일럿 라이트</td>
+<td style="border:1px solid #ddd; padding:10px;">분~시간</td>
+<td style="border:1px solid #ddd; padding:10px;">시간</td>
+<td style="border:1px solid #ddd; padding:10px;">핵심 DB만 상시 복제</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">웜 스탠바이</td>
+<td style="border:1px solid #ddd; padding:10px;">초~분</td>
+<td style="border:1px solid #ddd; padding:10px;">분</td>
+<td style="border:1px solid #ddd; padding:10px;">축소된 규모로 상시 가동</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">액티브-액티브</td>
+<td style="border:1px solid #ddd; padding:10px;">0에 근접</td>
+<td style="border:1px solid #ddd; padding:10px;">초 단위</td>
+<td style="border:1px solid #ddd; padding:10px;">여러 리전이 동시 트래픽 처리</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 숨어있는 RPO 킬러, 복제 지연</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">RPO를 설계상 "5분"으로 잡아도 실제로는 그보다 나쁠 수 있습니다. 비동기 복제를 쓰는 대부분의 DR 구성에서, 복제 지연이 커지면 실제 RPO는 설계값이 아니라 그 순간의 지연시간이 됩니다. 이 때문에 RPO는 "설계값"과 "실측값"을 구분해서 모니터링해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-27-disaster-recovery-rpo-rto-design-1.svg" alt="장애 발생 시점을 기준으로 RPO는 그 이전 마지막 복제 시점까지의 데이터 손실 구간을, RTO는 장애 발생부터 서비스 정상화까지의 시간을 나타내는 타임라인" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — DR 티어별 목표를 코드/설정으로 명시하기</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># dr-policy.yaml — 서비스 티어별 RPO/RTO 목표와 검증 방식
+tiers:
+  tier-1-payment:
+    rpo_target: "60s"
+    rto_target: "5m"
+    strategy: "active-active"
+    dr_test_frequency: "monthly"
+
+  tier-2-order:
+    rpo_target: "5m"
+    rto_target: "30m"
+    strategy: "warm-standby"
+    dr_test_frequency: "quarterly"
+
+  tier-3-analytics:
+    rpo_target: "24h"
+    rto_target: "8h"
+    strategy: "backup-restore"
+    dr_test_frequency: "yearly"</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이렇게 서비스 티어별로 목표를 명문화해 두면, 왜 이렇게 복잡한 복제 구조를 쓰는가에 대한 근거가 문서로 남습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. DR 테스트(게임 데이)를 실제로 실행하세요</b> — 검증 안 된 DR 계획은 계획이 아니라 희망사항입니다.<br>
+<b>2. RTO는 사람의 개입 시간도 포함해야 합니다</b> — 새벽 3시 장애라면 이 시간이 수십 분을 쉽게 넘길 수 있습니다.<br>
+<b>3. 티어를 나누고 전부 액티브-액티브로 만들려 하지 마세요</b> — 핵심 결제·인증 시스템에만 강한 DR을 적용하는 것이 현실적입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① RPO는 감내 가능한 데이터 손실을, RTO는 감내 가능한 다운타임을 뜻하며 둘 다 비즈니스 영향 분석에서 나와야 합니다.<br>
+② 백업-복원부터 액티브-액티브까지 DR 전략은 RPO/RTO 목표가 빡빡해질수록 비용이 기하급수적으로 커지는 스펙트럼입니다.<br>
+③ 복제 지연은 설계된 RPO를 실측 RPO로 갉아먹는 숨은 요인이므로 지속적으로 계측해야 하고, DR 계획은 실제 페일오버 테스트로 검증해야 신뢰할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 시스템 설계 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#재해복구 #RPO #RTO #시스템설계 #DR #장애대응</p>
+
+</body>
+</html>

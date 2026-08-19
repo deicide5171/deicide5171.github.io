@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">롱폴링 vs SSE vs WebSocket — 연결과 데이터 흐름</text>
+
+  <!-- 롱폴링 -->
+  <text x="60" y="72" font-family="sans-serif" font-size="15" font-weight="bold" fill="#5b7a9d">롱폴링</text>
+  <rect x="60" y="82" width="120" height="40" rx="6" fill="#eef4fb" stroke="#4a7ab5"/>
+  <text x="120" y="106" font-family="sans-serif" font-size="13" text-anchor="middle" fill="#222">클라이언트</text>
+  <rect x="620" y="82" width="120" height="40" rx="6" fill="#eef4fb" stroke="#4a7ab5"/>
+  <text x="680" y="106" font-family="sans-serif" font-size="13" text-anchor="middle" fill="#222">서버</text>
+  <line x1="180" y1="94" x2="620" y2="94" stroke="#4a7ab5" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <polygon points="620,94 610,89 610,99" fill="#4a7ab5"/>
+  <line x1="620" y1="110" x2="180" y2="110" stroke="#4a7ab5" stroke-width="1.5"/>
+  <polygon points="180,110 190,105 190,115" fill="#4a7ab5"/>
+  <text x="400" y="88" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">요청 (대기)</text>
+  <text x="400" y="128" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">응답 후 연결 종료 → 재요청 반복</text>
+
+  <!-- SSE -->
+  <text x="60" y="180" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1a6b45">SSE</text>
+  <rect x="60" y="190" width="120" height="40" rx="6" fill="#eef8f1" stroke="#2e9e63"/>
+  <text x="120" y="214" font-family="sans-serif" font-size="13" text-anchor="middle" fill="#222">클라이언트</text>
+  <rect x="620" y="190" width="120" height="40" rx="6" fill="#eef8f1" stroke="#2e9e63"/>
+  <text x="680" y="214" font-family="sans-serif" font-size="13" text-anchor="middle" fill="#222">서버</text>
+  <line x1="180" y1="202" x2="620" y2="202" stroke="#2e9e63" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <text x="400" y="196" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">최초 1회 연결 (유지)</text>
+  <line x1="620" y1="216" x2="180" y2="216" stroke="#2e9e63" stroke-width="2.5"/>
+  <polygon points="180,216 190,211 190,221" fill="#2e9e63"/>
+  <line x1="620" y1="230" x2="180" y2="230" stroke="#2e9e63" stroke-width="2.5"/>
+  <polygon points="180,230 190,225 190,235" fill="#2e9e63"/>
+  <text x="400" y="248" font-family="sans-serif" font-size="11" fill="#1a6b45" text-anchor="middle">서버 → 클라이언트 단방향 이벤트 스트림 (연속)</text>
+
+  <!-- WebSocket -->
+  <text x="60" y="300" font-family="sans-serif" font-size="15" font-weight="bold" fill="#a3611c">WebSocket</text>
+  <rect x="60" y="310" width="120" height="40" rx="6" fill="#fdf6ec" stroke="#c98a3d"/>
+  <text x="120" y="334" font-family="sans-serif" font-size="13" text-anchor="middle" fill="#222">클라이언트</text>
+  <rect x="620" y="310" width="120" height="40" rx="6" fill="#fdf6ec" stroke="#c98a3d"/>
+  <text x="680" y="334" font-family="sans-serif" font-size="13" text-anchor="middle" fill="#222">서버</text>
+  <line x1="180" y1="322" x2="620" y2="322" stroke="#c98a3d" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <text x="400" y="316" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">핸드셰이크 후 프로토콜 업그레이드 (유지)</text>
+  <line x1="620" y1="336" x2="180" y2="336" stroke="#c98a3d" stroke-width="2.5"/>
+  <polygon points="180,336 190,331 190,341" fill="#c98a3d"/>
+  <line x1="180" y1="350" x2="620" y2="350" stroke="#c98a3d" stroke-width="2.5"/>
+  <polygon points="620,350 610,345 610,355" fill="#c98a3d"/>
+  <text x="400" y="368" font-family="sans-serif" font-size="11" fill="#a3611c" text-anchor="middle">양방향 프레임 송수신 (연속)</text>
+
+  <text x="400" y="410" font-family="sans-serif" font-size="13" fill="#999" text-anchor="middle">양방향이 필요 없다면 SSE/롱폴링으로 복잡도를 줄일 수 있다</text>
+</svg>
