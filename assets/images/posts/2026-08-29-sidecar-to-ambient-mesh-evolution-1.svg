@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="32" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">사이드카 모델 vs 앰비언트 메시</text>
+
+  <!-- 사이드카 섹션 -->
+  <text x="40" y="64" font-family="sans-serif" font-size="16" font-weight="bold" fill="#8a4a2e">사이드카 모델 — 파드마다 프록시</text>
+  <rect x="40" y="76" width="220" height="90" rx="8" fill="#fdf6ec" stroke="#e8d3ae"/>
+  <text x="150" y="96" font-family="sans-serif" font-size="12" fill="#a3823f" text-anchor="middle">파드 A</text>
+  <rect x="55" y="104" width="90" height="46" rx="6" fill="#ffffff" stroke="#999"/>
+  <text x="100" y="131" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">App</text>
+  <rect x="150" y="104" width="95" height="46" rx="6" fill="#ffffff" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="197" y="131" font-family="sans-serif" font-size="12" fill="#8a4a2e" text-anchor="middle">Envoy</text>
+
+  <rect x="280" y="76" width="220" height="90" rx="8" fill="#fdf6ec" stroke="#e8d3ae"/>
+  <text x="390" y="96" font-family="sans-serif" font-size="12" fill="#a3823f" text-anchor="middle">파드 B</text>
+  <rect x="295" y="104" width="90" height="46" rx="6" fill="#ffffff" stroke="#999"/>
+  <text x="340" y="131" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">App</text>
+  <rect x="390" y="104" width="95" height="46" rx="6" fill="#ffffff" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="437" y="131" font-family="sans-serif" font-size="12" fill="#8a4a2e" text-anchor="middle">Envoy</text>
+
+  <text x="540" y="120" font-family="sans-serif" font-size="12" fill="#888">프록시가 파드 수만큼</text>
+  <text x="540" y="136" font-family="sans-serif" font-size="12" fill="#888">= 리소스가 서비스 수에 비례</text>
+
+  <line x1="60" y1="182" x2="740" y2="182" stroke="#ddd" stroke-width="1"/>
+
+  <!-- 앰비언트 섹션 -->
+  <text x="40" y="210" font-family="sans-serif" font-size="16" font-weight="bold" fill="#1a6b45">앰비언트 메시 — 레이어 분리</text>
+
+  <rect x="40" y="222" width="720" height="70" rx="8" fill="#eef4fb" stroke="#b9cfe8"/>
+  <text x="52" y="242" font-family="sans-serif" font-size="12" fill="#5b7a9d">노드 (여러 파드가 공유)</text>
+  <rect x="70" y="248" width="80" height="36" rx="6" fill="#ffffff" stroke="#999"/>
+  <text x="110" y="270" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">App A</text>
+  <rect x="160" y="248" width="80" height="36" rx="6" fill="#ffffff" stroke="#999"/>
+  <text x="200" y="270" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">App B</text>
+  <rect x="250" y="248" width="80" height="36" rx="6" fill="#ffffff" stroke="#999"/>
+  <text x="290" y="270" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">App C</text>
+  <rect x="390" y="244" width="140" height="44" rx="6" fill="#ffffff" stroke="#2e9e63" stroke-width="2"/>
+  <text x="460" y="262" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1a6b45" text-anchor="middle">ztunnel</text>
+  <text x="460" y="278" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">노드당 1개 · L4 mTLS</text>
+
+  <line x1="110" y1="248" x2="440" y2="256" stroke="#8aa5c4" stroke-width="1.2"/>
+  <line x1="200" y1="248" x2="450" y2="256" stroke="#8aa5c4" stroke-width="1.2"/>
+  <line x1="290" y1="248" x2="460" y2="256" stroke="#8aa5c4" stroke-width="1.2"/>
+
+  <rect x="580" y="222" width="160" height="70" rx="8" fill="#f5eefb" stroke="#c9a8e8"/>
+  <text x="660" y="242" font-family="sans-serif" font-size="12" fill="#7a4a9d" text-anchor="middle">필요한 서비스만</text>
+  <rect x="600" y="250" width="120" height="34" rx="6" fill="#ffffff" stroke="#9b5fc9" stroke-width="1.5"/>
+  <text x="660" y="271" font-family="sans-serif" font-size="12" font-weight="bold" fill="#7a4a9d" text-anchor="middle">waypoint (L7)</text>
+
+  <line x1="530" y1="260" x2="596" y2="260" stroke="#9b5fc9" stroke-width="1.5"/>
+  <polygon points="596,260 586,255 586,265" fill="#9b5fc9"/>
+
+  <!-- 하단 요약 -->
+  <rect x="40" y="316" width="720" height="104" rx="8" fill="#f9f9f9" stroke="#ddd"/>
+  <text x="60" y="340" font-family="sans-serif" font-size="13" fill="#333" font-weight="bold">차이 요약</text>
+  <text x="60" y="364" font-family="sans-serif" font-size="12" fill="#555">· 배치 단위: 파드마다 1개(사이드카) → 노드당 ztunnel + 선택적 waypoint</text>
+  <text x="60" y="384" font-family="sans-serif" font-size="12" fill="#555">· 생명주기: 애플리케이션 파드와 결합 → 완전 분리</text>
+  <text x="60" y="404" font-family="sans-serif" font-size="12" fill="#555">· L7 기능: 메시 전체 일괄 적용 → 필요한 서비스에만 waypoint로 선택 적용</text>
+</svg>

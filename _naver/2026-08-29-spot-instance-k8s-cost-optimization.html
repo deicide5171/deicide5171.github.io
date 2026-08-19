@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>쿠버네티스 스팟 인스턴스 비용 최적화 실전</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">언제 뺏길지 모르는 서버로 클러스터 비용 줄이기 — 쿠버네티스 스팟 인스턴스 실전</div>
+<p style="font-size:14px; color:#999;">2026. 8. 29. · 인프라</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 온디맨드 대비 최대 90% 저렴한 <b>스팟 인스턴스</b>를 쿠버네티스 워커 노드로 안전하게 쓰려면, 노드 그룹 분리·회수 신호 자동 처리·다중 인스턴스 타입 구성이 함께 필요합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">스팟은 왜 무턱대고 붙이면 위험할까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">클라우드 비용 청구서에서 컴퓨트 비중이 커지면 누구나 스팟 인스턴스를 검토합니다. 온디맨드 대비 60~90% 저렴하다는 숫자는 매력적이지만, 클라우드 제공자가 용량이 필요해지면 몇 분의 경고만 주고 회수해간다는 조건이 붙습니다. 이 조건을 무시하고 스테이트풀 워크로드에 그대로 붙이면 비용은 줄지만 장애 빈도가 늘어나기 쉽습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">쿠버네티스는 파드가 재스케줄링 가능한 단위로 설계돼 있어 이 문제에 비교적 잘 맞지만, 노드 그룹 분리와 회수 신호 처리, 워크로드 배치 정책을 함께 설계해야 비용과 안정성을 둘 다 잡을 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 스팟 회수는 예고 있는 이벤트입니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">스팟 인스턴스가 회수될 때 클라우드는 통상 2분 안팎의 사전 종료 알림을 제공합니다. 이 신호를 감지해 파드를 정상 종료하고 워크로드를 옮길 시간을 버는 컴포넌트가 필요한데, AWS Node Termination Handler나 Karpenter의 내장 인터럽션 처리가 이 역할을 합니다. 이들은 종료 알림을 받으면 <b>cordon</b>(신규 스케줄 차단)과 <b>drain</b>(파드 축출)을 수행해 애플리케이션이 SIGTERM을 받고 정상 종료할 시간을 확보합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">여기서 핵심은 애플리케이션 자체가 SIGTERM을 받았을 때 진행 중인 요청을 마무리하는 그레이스풀 셧다운 로직을 갖추고 있어야 한다는 점입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 노드 그룹을 분리합니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실무에서는 클러스터 전체를 스팟으로 채우지 않습니다. DB나 메시지 큐 같은 상태 저장 워크로드는 온디맨드 전용 그룹에, 상태 없는 API·배치 작업은 스팟 전용 그룹에 배치합니다. 토폴로지 분산 제약을 함께 써서 같은 디플로이먼트의 레플리카가 스팟 노드 하나에 몰리지 않도록 여러 노드·가용영역에 분산시키는 것이 중요합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-29-spot-instance-k8s-cost-optimization-1.svg" alt="스팟 노드 회수와 재스케줄링 흐름" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 다중 인스턴스 타입 전략</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">스팟 용량은 인스턴스 타입·가용영역별로 회수 확률이 다릅니다. 특정 타입 하나에만 의존하면 그 타입의 용량이 줄어드는 순간 클러스터 전체가 흔들릴 수 있으므로, 유사한 스펙의 인스턴스 타입을 여러 개 후보로 묶어 오토스케일러가 여유 있는 타입을 선택하게 하는 것이 표준 패턴입니다. Karpenter는 이런 다중 인스턴스 타입 구성을 선언적으로 지원합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">온디맨드</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">스팟</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">가격</td>
+<td style="border:1px solid #ddd; padding:10px;">기준가</td>
+<td style="border:1px solid #ddd; padding:10px;">최대 60~90% 할인</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">회수 가능성</td>
+<td style="border:1px solid #ddd; padding:10px;">없음</td>
+<td style="border:1px solid #ddd; padding:10px;">용량 부족 시 언제든</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">적합 워크로드</td>
+<td style="border:1px solid #ddd; padding:10px;">상태 저장, 지연 민감</td>
+<td style="border:1px solid #ddd; padding:10px;">상태 없음, 배치, 다중 레플리카</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. PodDisruptionBudget을 반드시 설정하세요</b> — 스팟 회수로 인한 drain과 롤링 업데이트가 겹치면 가용 레플리카가 급감할 수 있습니다.<br>
+<b>2. 회수율은 인스턴스 타입·리전마다 다릅니다</b> — 대용량 메모리, GPU 같은 특이 스펙은 회수율이 높은 경향이 있으니 후보군을 정기적으로 재검토하세요.<br>
+<b>3. 비용 절감 폭과 SLA를 함께 추적하세요</b> — 비용만 보고 판단하면 안정성 저하를 늦게 발견합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 스팟 인스턴스는 대폭 저렴하지만 예고 있는 회수가 언제든 발생하므로 회수 핸들러가 전제 조건입니다.<br>
+② 상태 없는 워크로드는 스팟 그룹, 상태 저장 워크로드는 온디맨드 그룹으로 분리하고 레플리카를 여러 노드에 분산해야 합니다.<br>
+③ Karpenter 같은 오토스케일러로 다중 인스턴스 타입을 후보군으로 묶어 특정 타입 의존도를 낮추는 것이 표준 패턴입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 인프라 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#쿠버네티스 #스팟인스턴스 #비용최적화 #Karpenter #오토스케일링 #DevOps #클라우드비용</p>
+
+</body>
+</html>

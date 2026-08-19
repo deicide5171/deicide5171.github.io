@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="30" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">멀티테넌트 스키마 모델 스펙트럼</text>
+
+  <!-- 공유 스키마 -->
+  <rect x="40" y="60" width="220" height="160" rx="8" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="150" y="86" font-family="sans-serif" font-size="14" font-weight="bold" fill="#3a6ea5" text-anchor="middle">공유 스키마</text>
+  <rect x="56" y="98" width="188" height="88" rx="5" fill="#ffffff" stroke="#8aa5c4"/>
+  <text x="150" y="114" font-family="sans-serif" font-size="10" fill="#666" text-anchor="middle">orders 테이블</text>
+  <text x="66" y="132" font-family="sans-serif" font-size="9" fill="#333">tenant_id=A | row1</text>
+  <text x="66" y="146" font-family="sans-serif" font-size="9" fill="#333">tenant_id=B | row2</text>
+  <text x="66" y="160" font-family="sans-serif" font-size="9" fill="#333">tenant_id=A | row3</text>
+  <text x="66" y="174" font-family="sans-serif" font-size="9" fill="#888">RLS로 행 필터링</text>
+  <text x="150" y="204" font-family="sans-serif" font-size="10" fill="#3a6ea5" text-anchor="middle">격리: 약함 · 마이그레이션: 1회</text>
+
+  <!-- 스키마 분리 -->
+  <rect x="290" y="60" width="220" height="160" rx="8" fill="#eef8f1" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="400" y="86" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1a6b45" text-anchor="middle">스키마 분리</text>
+  <rect x="306" y="98" width="90" height="80" rx="5" fill="#ffffff" stroke="#8ac4a5"/>
+  <text x="351" y="114" font-family="sans-serif" font-size="9" fill="#666" text-anchor="middle">tenant_a.orders</text>
+  <rect x="404" y="98" width="90" height="80" rx="5" fill="#ffffff" stroke="#8ac4a5"/>
+  <text x="449" y="114" font-family="sans-serif" font-size="9" fill="#666" text-anchor="middle">tenant_b.orders</text>
+  <text x="400" y="204" font-family="sans-serif" font-size="10" fill="#1a6b45" text-anchor="middle">격리: 중간 · 마이그레이션: 스키마 수만큼</text>
+
+  <!-- DB 분리 -->
+  <rect x="540" y="60" width="220" height="160" rx="8" fill="#fdf6ec" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="650" y="86" font-family="sans-serif" font-size="14" font-weight="bold" fill="#8a4a2e" text-anchor="middle">DB 분리</text>
+  <rect x="556" y="98" width="90" height="80" rx="5" fill="#ffffff" stroke="#e0b878"/>
+  <text x="601" y="114" font-family="sans-serif" font-size="9" fill="#666" text-anchor="middle">DB (tenant A)</text>
+  <rect x="654" y="98" width="90" height="80" rx="5" fill="#ffffff" stroke="#e0b878"/>
+  <text x="699" y="114" font-family="sans-serif" font-size="9" fill="#666" text-anchor="middle">DB (tenant B)</text>
+  <text x="650" y="204" font-family="sans-serif" font-size="10" fill="#8a4a2e" text-anchor="middle">격리: 강함 · 마이그레이션: DB 수만큼</text>
+
+  <!-- 화살표 스펙트럼 -->
+  <line x1="60" y1="240" x2="740" y2="240" stroke="#999" stroke-width="2"/>
+  <polygon points="740,240 730,234 730,246" fill="#999"/>
+  <text x="400" y="260" font-family="sans-serif" font-size="12" fill="#555" text-anchor="middle">격리 강도 ↑ / 운영 복잡도 ↑ / 인프라 비용 ↑</text>
+
+  <!-- 하단 실무 포인트 -->
+  <rect x="40" y="286" width="720" height="134" rx="8" fill="#f9f9f9" stroke="#ddd"/>
+  <text x="60" y="310" font-family="sans-serif" font-size="13" fill="#333" font-weight="bold">실무 설계 포인트</text>
+  <text x="60" y="334" font-family="sans-serif" font-size="12" fill="#555">· 공유 스키마: 복합 인덱스 첫 컬럼에 tenant_id, RLS로 애플리케이션 필터링 누락 방어</text>
+  <text x="60" y="354" font-family="sans-serif" font-size="12" fill="#555">· 스키마/DB 분리: 마이그레이션 실패 테넌트 자동 추적·재시도 파이프라인 필수</text>
+  <text x="60" y="374" font-family="sans-serif" font-size="12" fill="#555">· 대부분 테넌트는 공유 스키마 + 소수 대형 고객만 별도 격리하는 하이브리드가 현실적</text>
+  <text x="60" y="394" font-family="sans-serif" font-size="12" fill="#555">· DB 분리는 테넌트-DB 라우팅 계층과 커넥션 풀 관리 부담이 추가로 발생</text>
+</svg>
