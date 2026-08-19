@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">더티 페이지 비율과 writeback 임계값</text>
+
+  <!-- gauge bar -->
+  <rect x="60" y="80" width="680" height="46" rx="6" fill="#eefaf1" stroke="#2e9e63"/>
+  <rect x="60" y="80" width="272" height="46" fill="#eefaf1"/>
+  <rect x="332" y="80" width="204" height="46" fill="#fdf6ec"/>
+  <rect x="536" y="80" width="204" height="46" fill="#fdeeee"/>
+  <line x1="332" y1="70" x2="332" y2="136" stroke="#c98a3d" stroke-width="2" stroke-dasharray="4,3"/>
+  <line x1="536" y1="70" x2="536" y2="136" stroke="#d0413b" stroke-width="2" stroke-dasharray="4,3"/>
+
+  <text x="196" y="108" font-family="sans-serif" font-size="14" fill="#1a6b45" text-anchor="middle" font-weight="bold">정상 (캐시에만 존재)</text>
+  <text x="434" y="108" font-family="sans-serif" font-size="13" fill="#a3611c" text-anchor="middle" font-weight="bold">background flush 구간</text>
+  <text x="638" y="108" font-family="sans-serif" font-size="13" fill="#a3211c" text-anchor="middle" font-weight="bold">동기 블로킹 구간</text>
+
+  <text x="332" y="152" font-family="sans-serif" font-size="12" fill="#a3611c" text-anchor="middle">dirty_background_ratio</text>
+  <text x="536" y="152" font-family="sans-serif" font-size="12" fill="#a3211c" text-anchor="middle">dirty_ratio</text>
+
+  <!-- flow boxes -->
+  <rect x="60" y="190" width="200" height="70" rx="8" fill="#ffffff" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="160" y="220" font-family="sans-serif" font-size="14" fill="#222" text-anchor="middle" font-weight="bold">write() 호출</text>
+  <text x="160" y="240" font-family="sans-serif" font-size="12" fill="#5b7a9d" text-anchor="middle">즉시 반환, 더티로 표시</text>
+
+  <line x1="260" y1="225" x2="310" y2="225" stroke="#999" stroke-width="2"/>
+  <polygon points="314,225 304,219 304,231" fill="#999"/>
+
+  <rect x="318" y="190" width="200" height="70" rx="8" fill="#fdf6ec" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="418" y="215" font-family="sans-serif" font-size="13" fill="#a3611c" text-anchor="middle" font-weight="bold">flusher 스레드</text>
+  <text x="418" y="235" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">백그라운드에서 조용히</text>
+  <text x="418" y="251" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">디스크로 flush</text>
+
+  <line x1="518" y1="225" x2="568" y2="225" stroke="#999" stroke-width="2"/>
+  <polygon points="572,225 562,219 562,231" fill="#999"/>
+
+  <rect x="576" y="190" width="164" height="70" rx="8" fill="#fdeeee" stroke="#d0413b" stroke-width="1.5"/>
+  <text x="658" y="215" font-family="sans-serif" font-size="13" fill="#a3211c" text-anchor="middle" font-weight="bold">프로세스 블로킹</text>
+  <text x="658" y="235" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">write() 호출자가</text>
+  <text x="658" y="251" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">직접 동기 flush</text>
+
+  <text x="400" y="310" font-family="sans-serif" font-size="14" font-weight="bold" fill="#222" text-anchor="middle">메모리가 클수록 같은 비율(%)이라도 절대 더티량이 커진다</text>
+
+  <rect x="80" y="335" width="280" height="60" rx="6" fill="#eef4fb" stroke="#4a7ab5"/>
+  <text x="220" y="360" font-family="sans-serif" font-size="13" fill="#2b5a8a" text-anchor="middle">16GB 서버, dirty_ratio=20%</text>
+  <text x="220" y="380" font-family="sans-serif" font-size="14" fill="#222" text-anchor="middle" font-weight="bold">최대 3.2GB 더티</text>
+
+  <rect x="440" y="335" width="280" height="60" rx="6" fill="#fdeeee" stroke="#d0413b"/>
+  <text x="580" y="360" font-family="sans-serif" font-size="13" fill="#a3211c" text-anchor="middle">256GB 서버, dirty_ratio=20%</text>
+  <text x="580" y="380" font-family="sans-serif" font-size="14" fill="#222" text-anchor="middle" font-weight="bold">최대 51.2GB 더티</text>
+
+  <text x="400" y="425" font-family="sans-serif" font-size="12" fill="#888" text-anchor="middle">→ 메모리가 큰 서버는 dirty_bytes / dirty_background_bytes로 절대 상한을 직접 지정</text>
+</svg>

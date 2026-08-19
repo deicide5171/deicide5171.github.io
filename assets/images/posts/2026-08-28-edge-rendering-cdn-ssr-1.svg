@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">엣지 렌더링: 코드는 가까이, 데이터는 여전히 멀리</text>
+
+  <!-- world dots -->
+  <circle cx="120" cy="120" r="6" fill="#2e9e63"/>
+  <text x="120" y="145" font-family="sans-serif" font-size="11" fill="#1a6b45" text-anchor="middle">서울 PoP</text>
+
+  <circle cx="260" cy="90" r="6" fill="#2e9e63"/>
+  <text x="260" y="115" font-family="sans-serif" font-size="11" fill="#1a6b45" text-anchor="middle">도쿄 PoP</text>
+
+  <circle cx="420" cy="150" r="6" fill="#2e9e63"/>
+  <text x="420" y="175" font-family="sans-serif" font-size="11" fill="#1a6b45" text-anchor="middle">싱가포르 PoP</text>
+
+  <circle cx="600" cy="100" r="6" fill="#2e9e63"/>
+  <text x="600" y="125" font-family="sans-serif" font-size="11" fill="#1a6b45" text-anchor="middle">시드니 PoP</text>
+
+  <circle cx="700" cy="170" r="6" fill="#2e9e63"/>
+  <text x="700" y="195" font-family="sans-serif" font-size="11" fill="#1a6b45" text-anchor="middle">상파울루 PoP</text>
+
+  <text x="400" y="60" font-family="sans-serif" font-size="14" fill="#333" text-anchor="middle">동일한 렌더링 코드가 전 세계 PoP에 미리 배포됨</text>
+
+  <!-- user request example -->
+  <rect x="60" y="220" width="140" height="50" rx="8" fill="#eef4fb" stroke="#4a7ab5"/>
+  <text x="130" y="250" font-family="sans-serif" font-size="13" fill="#2b5a8a" text-anchor="middle">사용자 (시드니)</text>
+
+  <line x1="200" y1="245" x2="290" y2="245" stroke="#2e9e63" stroke-width="2.5"/>
+  <polygon points="294,245 284,239 284,251" fill="#2e9e63"/>
+  <text x="245" y="235" font-family="sans-serif" font-size="11" fill="#1a6b45" text-anchor="middle">가장 가까운 PoP로</text>
+
+  <rect x="300" y="220" width="150" height="50" rx="8" fill="#eefaf1" stroke="#2e9e63" stroke-width="2"/>
+  <text x="375" y="242" font-family="sans-serif" font-size="13" fill="#1a6b45" text-anchor="middle" font-weight="bold">엣지에서 즉시 렌더링</text>
+  <text x="375" y="260" font-family="sans-serif" font-size="11" fill="#1a6b45" text-anchor="middle">V8 isolate, 수ms</text>
+
+  <line x1="450" y1="245" x2="560" y2="245" stroke="#d0413b" stroke-width="2.5" stroke-dasharray="6,4"/>
+  <polygon points="564,245 554,239 554,251" fill="#d0413b"/>
+  <text x="505" y="235" font-family="sans-serif" font-size="11" fill="#a3211c" text-anchor="middle">데이터 요청은 여전히 원거리</text>
+
+  <rect x="570" y="220" width="170" height="50" rx="8" fill="#fdeeee" stroke="#d0413b" stroke-width="2"/>
+  <text x="655" y="242" font-family="sans-serif" font-size="13" fill="#a3211c" text-anchor="middle" font-weight="bold">원본 DB (단일 리전)</text>
+  <text x="655" y="260" font-family="sans-serif" font-size="11" fill="#a3211c" text-anchor="middle">왕복 지연 그대로 남음</text>
+
+  <text x="400" y="330" font-family="sans-serif" font-size="14" font-weight="bold" fill="#222" text-anchor="middle">해결: 읽기 전용 데이터는 엣지 KV·복제본으로 함께 분산</text>
+
+  <rect x="200" y="350" width="180" height="50" rx="8" fill="#fdf6ec" stroke="#c98a3d" stroke-width="2"/>
+  <text x="290" y="372" font-family="sans-serif" font-size="13" fill="#a3611c" text-anchor="middle" font-weight="bold">엣지 KV / 캐시</text>
+  <text x="290" y="390" font-family="sans-serif" font-size="11" fill="#a3611c" text-anchor="middle">읽기 전용 데이터는 여기서</text>
+
+  <rect x="420" y="350" width="180" height="50" rx="8" fill="#fdeeee" stroke="#d0413b" stroke-width="1.5"/>
+  <text x="510" y="372" font-family="sans-serif" font-size="13" fill="#a3211c" text-anchor="middle">쓰기만 원본 리전으로</text>
+  <text x="510" y="390" font-family="sans-serif" font-size="11" fill="#a3211c" text-anchor="middle">폴백 경로로 최소화</text>
+</svg>

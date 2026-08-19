@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>디스크를 훔쳐가도 데이터는 못 읽게 — 저장 데이터 암호화(TDE)와 컬럼 단위 암호화</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">디스크를 훔쳐가도 데이터는 못 읽게 — 저장 데이터 암호화(TDE)와 컬럼 단위 암호화</div>
+<p style="font-size:14px; color:#999;">2026. 8. 28. · 데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — DB 파일 자체가 유출돼도 내용을 못 읽게 막는 <b>TDE(Transparent Data Encryption)</b>의 동작 원리와, 특정 컬럼만 암호화하는 방식과의 차이·트레이드오프를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">디스크 유출이라는 또 다른 층위의 위협</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">DB 서버가 침해당하거나 백업 파일이 유출되는 사고는 SQL 인젝션 같은 애플리케이션 레벨 공격과는 다른 층위의 위협입니다. 접근 제어와 쿼리 검증을 아무리 잘 해놔도, 디스크에 있는 데이터 파일이나 백업 아카이브 자체를 통째로 복사해가면 그 안의 평문 데이터는 고스란히 노출됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이를 구현하는 방법은 크게 두 갈래입니다. DB 엔진 전체가 파일 시스템 레벨에서 암호화를 처리하는 <b>TDE</b>와, 특정 민감 컬럼만 암호화하는 <b>컬럼 단위 암호화</b>입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — TDE는 파일 레벨에서 투명하게 암호화합니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">TDE는 데이터 파일, WAL/redo 로그, 백업 파일이 디스크에 쓰이는 시점에 자동으로 암호화하고 읽을 때 자동으로 복호화합니다. 애플리케이션이나 쿼리 코드는 암호화 여부를 전혀 알 필요가 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">키 관리는 보통 2단계 구조입니다. 실제 데이터를 암호화하는 DEK가 있고, DEK 자체는 별도의 마스터 키(KEK)로 다시 암호화되어 저장됩니다. 마스터 키는 AWS KMS 같은 별도 키 관리 서비스에 보관하는 것이 일반적입니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-28-database-encryption-tde-1.svg" alt="DEK로 데이터 파일을 암호화하고, DEK 자체는 KMS에 보관된 마스터 키(KEK)로 다시 암호화하는 TDE의 2단계 키 관리 구조" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — TDE가 막는 것과 못 막는 것</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">TDE는 디스크나 백업 파일을 통째로 훔쳤을 때 시나리오에 정확히 대응합니다. 하지만 DB가 정상적으로 실행 중이고 인증된 세션으로 쿼리를 던질 수 있는 공격자에게는 아무 방어력이 없습니다. SQL 인젝션이나 계정 자격 증명 유출로 정상 쿼리로 접근하는 경우 DB 엔진이 이미 복호화해서 응답하기 때문입니다.</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 컬럼 단위 암호화는 DB 관리자로부터도 숨깁니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">주민등록번호, 카드번호처럼 극히 민감한 컬럼만 애플리케이션 레벨이나 pgcrypto 같은 확장으로 별도 키로 암호화합니다. DB 관리자 권한으로 직접 쿼리를 날려도 암호화된 바이트만 보입니다. 대신 등호 검색이나 인덱스 활용이 어려워지는 대가가 있습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">기준</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">TDE</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">컬럼 단위 암호화</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">막아주는 위협</td>
+<td style="border:1px solid #ddd; padding:10px;">디스크·백업 물리적 유출</td>
+<td style="border:1px solid #ddd; padding:10px;">DB 내부 권한 오남용까지</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">검색·인덱스</td>
+<td style="border:1px solid #ddd; padding:10px;">영향 없음</td>
+<td style="border:1px solid #ddd; padding:10px;">크게 제약됨</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — pgcrypto 컬럼 암호화와 클라우드 관리형 TDE</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">CREATE EXTENSION IF NOT EXISTS pgcrypto;
+
+INSERT INTO customers (id, name, ssn_encrypted)
+VALUES (
+  1, '홍길동',
+  pgp_sym_encrypt('900101-1234567', current_setting('app.encryption_key'))
+);
+
+SELECT id, name, pgp_sym_decrypt(ssn_encrypted, current_setting('app.encryption_key'))
+FROM customers WHERE id = 1;</pre>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># 관리형 클라우드 DB에서는 TDE가 옵션 하나로 활성화되는 경우가 많음
+aws rds create-db-instance \
+  --db-instance-identifier prod-db \
+  --storage-encrypted \
+  --kms-key-id arn:aws:kms:ap-northeast-2:123456789012:key/abcd-...</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">PostgreSQL 자체는 오픈소스 코어에 TDE를 기본 내장하지 않으므로, 파일 시스템 레벨 암호화나 클라우드 관리형 서비스의 스토리지 암호화 옵션으로 사실상 동등한 효과를 얻는 경우가 많습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 키 순환 정책을 미리 세워두세요</b> — 마스터 키 유출 시 즉시 교체할 수 있는 절차가 없으면 TDE 방어력이 무의미해집니다.<br>
+<b>2. 백업도 암호화 범위에 포함되는지 확인하세요</b> — 별도 경로로 평문 덤프를 뜨는 구성이라면 백업 파일이 노출 지점이 됩니다.<br>
+<b>3. 컬럼 단위 암호화는 성능 영향을 테스트하세요</b> — 정말 필요한 최소 컬럼에만 적용하고, 검색 필요 필드는 해시 컬럼을 병행하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① TDE는 데이터 파일·백업이 통째로 유출됐을 때를 대비하며, DB가 정상 작동 중인 상태의 공격에는 무력합니다.<br>
+② 컬럼 단위 암호화는 DB 관리자 권한 오남용까지 막지만 검색·인덱스 활용이 크게 제약됩니다.<br>
+③ 두 방식은 배타적이지 않으며 전체 DB에 TDE를 걸고 민감 컬럼에 추가로 컬럼 단위 암호화를 적용하는 계층 구성이 흔합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 데이터베이스 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#TDE #암호화 #데이터베이스보안 #pgcrypto #KMS #데이터베이스 #보안</p>
+
+</body>
+</html>

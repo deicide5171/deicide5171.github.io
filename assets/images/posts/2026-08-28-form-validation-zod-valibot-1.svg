@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="32" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">스키마 하나에서 타입 추론과 런타임 검증이 함께 나온다</text>
+
+  <rect x="300" y="60" width="200" height="60" rx="8" fill="#eefaf1" stroke="#2e9e63" stroke-width="2"/>
+  <text x="400" y="95" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1a6b45" text-anchor="middle">스키마 정의</text>
+
+  <line x1="360" y1="120" x2="280" y2="160" stroke="#4a7ab5" stroke-width="2"/>
+  <polygon points="272,165 278,153 288,160" fill="#4a7ab5"/>
+
+  <line x1="440" y1="120" x2="520" y2="160" stroke="#c98a3d" stroke-width="2"/>
+  <polygon points="528,165 512,160 522,153" fill="#c98a3d"/>
+
+  <rect x="140" y="170" width="220" height="80" rx="8" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="250" y="200" font-family="sans-serif" font-size="13" font-weight="bold" fill="#2b5a8a" text-anchor="middle">TypeScript 타입 추론</text>
+  <text x="250" y="222" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">z.infer&lt;typeof schema&gt;</text>
+  <text x="250" y="238" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">컴파일 타임에만 존재</text>
+
+  <rect x="440" y="170" width="220" height="80" rx="8" fill="#fdf6ec" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="550" y="200" font-family="sans-serif" font-size="13" font-weight="bold" fill="#a3611c" text-anchor="middle">런타임 검증(parse)</text>
+  <text x="550" y="222" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">schema.safeParse(input)</text>
+  <text x="550" y="238" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">실행 중 실제 값 검사</text>
+
+  <text x="400" y="290" font-family="sans-serif" font-size="13" fill="#1a6b45" text-anchor="middle" font-weight="bold">→ 스키마가 바뀌면 타입도 검증 로직도 함께 바뀜 (어긋남 불가능)</text>
+
+  <line x1="60" y1="320" x2="740" y2="320" stroke="#ddd" stroke-width="1.5"/>
+
+  <text x="220" y="350" font-family="sans-serif" font-size="14" font-weight="bold" fill="#2b5a8a" text-anchor="middle">Zod — 메서드 체이닝</text>
+  <rect x="80" y="365" width="280" height="46" rx="6" fill="#eef4fb" stroke="#4a7ab5"/>
+  <text x="220" y="393" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle" font-family="monospace">z.string().email().min(3)</text>
+
+  <text x="580" y="350" font-family="sans-serif" font-size="14" font-weight="bold" fill="#a3611c" text-anchor="middle">Valibot — 함수 조합</text>
+  <rect x="440" y="365" width="280" height="46" rx="6" fill="#fdf6ec" stroke="#c98a3d"/>
+  <text x="580" y="393" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle" font-family="monospace">v.pipe(v.string(), v.email(), v.minLength(3))</text>
+
+  <text x="400" y="432" font-family="sans-serif" font-size="12" fill="#888" text-anchor="middle">Valibot은 사용하지 않는 검증 함수가 번들에서 트리 셰이킹되어 제외됩니다</text>
+</svg>

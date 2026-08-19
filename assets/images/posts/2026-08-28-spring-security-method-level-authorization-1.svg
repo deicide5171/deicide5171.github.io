@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="32" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">메서드 레벨 인가: AOP 프록시와 PermissionEvaluator</text>
+
+  <rect x="40" y="60" width="150" height="60" rx="6" fill="#eef4fb" stroke="#4a7ab5"/>
+  <text x="115" y="95" font-family="sans-serif" font-size="13" fill="#2b5a8a" text-anchor="middle">Controller</text>
+
+  <line x1="190" y1="90" x2="240" y2="90" stroke="#999" stroke-width="2"/>
+  <polygon points="244,90 234,84 234,96" fill="#999"/>
+
+  <rect x="250" y="55" width="220" height="70" rx="6" fill="#fdf6ec" stroke="#c98a3d" stroke-width="2"/>
+  <text x="360" y="80" font-family="sans-serif" font-size="12" font-weight="bold" fill="#a3611c" text-anchor="middle">AOP 프록시</text>
+  <text x="360" y="98" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">@PreAuthorize SpEL 평가</text>
+  <text x="360" y="114" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">hasPermission(#postId, 'Post', 'write')</text>
+
+  <line x1="470" y1="90" x2="520" y2="90" stroke="#2e9e63" stroke-width="2"/>
+  <polygon points="524,90 514,84 514,96" fill="#2e9e63"/>
+  <text x="497" y="78" font-family="sans-serif" font-size="10" fill="#1a6b45" text-anchor="middle">통과 시</text>
+
+  <rect x="530" y="55" width="200" height="70" rx="6" fill="#eefaf1" stroke="#2e9e63" stroke-width="2"/>
+  <text x="630" y="85" font-family="sans-serif" font-size="12" font-weight="bold" fill="#1a6b45" text-anchor="middle">Service 메서드</text>
+  <text x="630" y="104" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">실제 비즈니스 로직 실행</text>
+
+  <!-- fail branch -->
+  <line x1="360" y1="125" x2="360" y2="160" stroke="#d0413b" stroke-width="2"/>
+  <polygon points="360,166 353,154 367,154" fill="#d0413b"/>
+  <rect x="260" y="170" width="200" height="46" rx="6" fill="#fdeeee" stroke="#d0413b"/>
+  <text x="360" y="198" font-family="sans-serif" font-size="12" fill="#a3211c" text-anchor="middle">AccessDeniedException</text>
+
+  <!-- PermissionEvaluator delegation -->
+  <line x1="360" y1="125" x2="360" y2="255" stroke="#c98a3d" stroke-width="2" stroke-dasharray="5,4"/>
+  <line x1="360" y1="255" x2="260" y2="255" stroke="#c98a3d" stroke-width="2" stroke-dasharray="5,4"/>
+  <polygon points="255,255 265,249 265,261" fill="#c98a3d"/>
+
+  <rect x="60" y="245" width="200" height="90" rx="8" fill="#fdf6ec" stroke="#c98a3d" stroke-width="2"/>
+  <text x="160" y="272" font-family="sans-serif" font-size="13" font-weight="bold" fill="#a3611c" text-anchor="middle">PostPermissionEvaluator</text>
+  <text x="160" y="295" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">소유자 확인, ADMIN 확인</text>
+  <text x="160" y="313" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">실제 판단 로직이 여기 모임</text>
+
+  <rect x="80" y="360" width="640" height="70" rx="8" fill="#eef4fb" stroke="#4a7ab5"/>
+  <text x="400" y="385" font-family="sans-serif" font-size="13" fill="#2b5a8a" text-anchor="middle" font-weight="bold">URL 레벨(SecurityFilterChain)은 1차 방어선, 메서드 레벨은 리소스 단위 2차 정밀 검증</text>
+  <text x="400" y="405" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">둘은 대체 관계가 아니라 보완 관계입니다</text>
+</svg>
