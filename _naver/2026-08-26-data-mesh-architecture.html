@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>중앙 데이터팀이 병목이 됐다면 — 데이터 메시 아키텍처로 소유권 분산하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">중앙 데이터팀이 병목이 됐다면 — 데이터 메시 아키텍처로 소유권 분산하기</div>
+<p style="font-size:14px; color:#999;">2026. 8. 26. · 시스템설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 모든 팀의 데이터 요청이 중앙 데이터 엔지니어링팀 하나로 몰리는 구조가 한계에 부딪힐 때, <b>도메인 오너십 기반의 데이터 메시</b>가 이 병목을 어떻게 재구성하는지 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">중앙 파이프라인이 결국 병목이 되는 이유</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">조직이 커지면 데이터 파이프라인도 자연스럽게 중앙 집중화됩니다. 각 도메인 팀은 자신의 데이터를 중앙 데이터 엔지니어링팀에 넘기고, 그 팀이 ETL을 짜고 데이터 웨어하우스에 적재하고 품질을 관리합니다. 문제는 도메인 팀 수가 늘어날수록 이 중앙팀 하나에 모든 파이프라인 변경 요청이 쌓인다는 것입니다. 도메인 팀은 자기 데이터의 스키마조차 마음대로 못 바꾸고, 중앙팀은 자신이 깊이 이해하지 못하는 수십 개 도메인의 파이프라인을 떠안습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">데이터 메시(Data Mesh)는 이 문제를 조직 구조부터 다시 설계해서 풉니다. 핵심 주장은 "데이터도 마이크로서비스처럼 도메인 팀이 직접 소유해야 한다"는 것입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 데이터 메시의 네 가지 원칙</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">원칙</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">의미</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">도메인 오너십</td>
+<td style="border:1px solid #ddd; padding:10px;">각 도메인 팀이 자신의 데이터를 생산·소유·품질 책임을 짐</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">제품으로서의 데이터</td>
+<td style="border:1px solid #ddd; padding:10px;">문서화·SLA·버전 관리를 갖춘 제품으로 취급</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">셀프서비스 플랫폼</td>
+<td style="border:1px solid #ddd; padding:10px;">중앙팀은 도메인 팀이 쓸 인프라·툴링을 제공</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">연합 거버넌스</td>
+<td style="border:1px solid #ddd; padding:10px;">표준은 중앙에서 정하되 자동화된 정책으로 강제</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 네 원칙 중 어느 하나만 적용하면 데이터 메시가 아닙니다. "도메인 오너십"만 적용하고 거버넌스를 생략하면, 팀마다 제각각인 스키마와 명명 규칙 때문에 데이터를 조합하는 소비자 팀이 오히려 더 큰 혼란을 겪습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — "데이터 제품"이라는 계약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">데이터 메시에서 각 도메인이 발행하는 데이터는 단순한 테이블이 아니라 <b>데이터 제품(data product)</b>으로 취급됩니다. 스키마, 갱신 주기, 품질 보증(SLA), 접근 방법, 소유 팀 연락처를 명시한 메타데이터를 갖춘 배포 단위입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># data-product.yaml — 주문 도메인 데이터 제품 메타데이터
+name: orders-data-product
+domain: order-management
+owner_team: order-platform-team
+version: 2.1.0
+schema:
+  format: parquet
+  location: s3://data-mesh/order-management/orders/
+  fields:
+    - name: order_id
+      type: string
+      nullable: false
+    - name: status
+      type: string
+      description: "pending|paid|shipped|cancelled"
+sla:
+  freshness: "매 15분마다 갱신"
+  availability: "99.9%"
+access:
+  query_interface: "Trino를 통한 SQL 쿼리"
+  contact: order-platform-team@company.com</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이런 메타데이터를 중앙 데이터 카탈로그에 등록해두면, 다른 도메인 팀이 필요한 데이터를 찾을 때 어느 팀에게 무엇을 요청해야 하는지 스스로 탐색할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 조직 규모가 작다면 과잉설계일 수 있습니다</b> — 도메인이 서너 개뿐이라면 조직 개편과 플랫폼 투자 비용이 얻는 이득보다 클 수 있습니다.<br>
+<b>2. 셀프서비스 플랫폼 없이 오너십만 넘기지 마세요</b> — 툴링 없이 오너십만 넘기면 각 팀이 제각각 조악한 파이프라인을 만들어 품질이 떨어집니다.<br>
+<b>3. 연합 거버넌스는 문서가 아니라 자동화로 강제하세요</b> — CI 파이프라인에서 스키마 검증, PII 필드 자동 태깅을 코드로 강제해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 데이터 메시는 모든 파이프라인이 중앙팀에 몰리는 병목을, 도메인 팀이 데이터를 직접 소유하는 조직 구조 변화로 재구성합니다.<br>
+② 도메인 오너십·데이터 제품화·셀프서비스 플랫폼·연합 거버넌스 네 원칙이 함께 갖춰져야 하며, 하나만 적용하면 오히려 혼란이 커집니다.<br>
+③ 중앙집중이 실제로 병목인 대규모 조직에 맞는 해법이며, 플랫폼·거버넌스 투자 없이 조직 개편만 하면 실패로 이어지기 쉽습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 시스템 설계 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#데이터메시 #DataMesh #데이터아키텍처 #도메인오너십 #데이터플랫폼 #시스템설계</p>
+
+</body>
+</html>
