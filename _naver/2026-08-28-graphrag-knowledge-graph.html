@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>벡터 검색이 놓치는 관계를 잡는다 — GraphRAG, 지식그래프 결합 검색 증강 생성</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">벡터 검색이 놓치는 관계를 잡는다 — GraphRAG, 지식그래프 결합 검색 증강 생성</div>
+<p style="font-size:14px; color:#999;">2026. 8. 28. · AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 임베딩 유사도만으로는 답할 수 없는 다중 홉 관계 질문을, 문서에서 추출한 <b>지식그래프</b>와 커뮤니티 요약을 결합해 답하는 <b>GraphRAG</b>의 구조와 일반 RAG 대비 트레이드오프를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">벡터 유사도만으로는 답 못하는 질문들</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">일반적인 RAG는 질문을 임베딩하고, 벡터 DB에서 의미적으로 가장 가까운 문서 조각을 찾아 컨텍스트로 넣습니다. 이 방식은 단일 홉 검색에는 잘 맞지만, "A 회사를 인수한 B 회사의 CEO가 이전에 몸담았던 회사는 어디인가"처럼 여러 문서에 흩어진 사실을 연결해야 답할 수 있는 <b>다중 홉(multi-hop)</b> 질문에는 취약합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">GraphRAG는 이 한계를 문서에서 개체(entity)와 관계(relation)를 미리 추출해 지식그래프로 구성해두고, 검색 시 그래프 순회로 관련 정보를 모으는 방식으로 보완합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 인덱싱 단계에서 그래프를 미리 만듭니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">문서를 청크로 나눈 뒤 LLM으로 각 청크에서 개체와 관계를 추출해 그래프로 저장합니다. 이어서 커뮤니티 탐지 알고리즘(Leiden 등)으로 밀접하게 연결된 개체 군집을 찾고, 각 군집에 대한 요약을 LLM으로 미리 생성해둡니다. 이 사전 처리 비용이 GraphRAG의 가장 큰 트레이드오프입니다.</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 로컬 검색과 글로벌 검색</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">검색 모드</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">적합한 질문</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">사용 자료</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">벡터 검색(일반 RAG)</td>
+<td style="border:1px solid #ddd; padding:10px;">단일 사실 확인</td>
+<td style="border:1px solid #ddd; padding:10px;">청크 임베딩</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">로컬 검색</td>
+<td style="border:1px solid #ddd; padding:10px;">개체 중심 다중 홉 관계</td>
+<td style="border:1px solid #ddd; padding:10px;">개체 이웃 그래프</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">글로벌 검색</td>
+<td style="border:1px solid #ddd; padding:10px;">문서 전체 주제 질문</td>
+<td style="border:1px solid #ddd; padding:10px;">커뮤니티 요약</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-28-graphrag-knowledge-graph-1.svg" alt="문서에서 개체와 관계를 추출해 지식그래프를 만들고, 커뮤니티 탐지로 군집을 묶어 요약을 생성한 뒤, 로컬 검색과 글로벌 검색으로 나눠 질의에 답하는 GraphRAG 파이프라인" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 유리한 경우와 불필요한 경우</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">문서 사이에 명시적 관계가 적고 단일 문서 조회로 충분하다면 일반 RAG가 합리적입니다. 반대로 조직도, 인수합병 이력, 규정 간 참조처럼 개체 간 관계 자체가 질문의 핵심인 도메인에서는 GraphRAG가 벡터 검색만으로 놓치던 답을 찾아냅니다.</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 그래프 인덱싱과 로컬 검색 흐름</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># 1. 인덱싱: 청크에서 개체·관계 추출
+for chunk in document_chunks:
+    entities, relations = llm_extract_entities_relations(chunk)
+    graph.add_entities(entities, source_chunk=chunk.id)
+    graph.add_relations(relations, source_chunk=chunk.id)
+
+# 2. 커뮤니티 탐지 + 요약 생성
+communities = leiden_community_detection(graph)
+community_summaries = {
+    c.id: llm_summarize(c.entities, c.relations) for c in communities
+}
+
+# 3. 로컬 검색
+def local_search(question):
+    seed_entities = extract_entities_from_question(question)
+    subgraph = graph.expand_neighbors(seed_entities, hops=2)
+    context = subgraph.entities_text() + subgraph.relations_text()
+    return llm_generate_answer(question, context)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">로컬 검색의 hops=2처럼 그래프 순회 깊이를 얼마나 둘지가 품질과 컨텍스트 크기의 트레이드오프를 결정합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 개체 추출 품질이 전체 파이프라인 품질의 상한입니다</b> — 도메인 특화 개체 스키마를 미리 정의해 추출 프롬프트에 반영하세요.<br>
+<b>2. 인덱싱 비용을 사전에 가늠하세요</b> — 파일럿으로 소규모 문서 세트에 먼저 적용해 청크당 비용을 측정하세요.<br>
+<b>3. 일반 RAG와 병행 운영을 고려하세요</b> — 질문 유형을 먼저 분류해 단순 질문은 벡터 검색, 관계형 질문만 GraphRAG로 라우팅하는 하이브리드가 효율적입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① GraphRAG는 문서에서 개체와 관계를 미리 추출해 지식그래프로 구성하고, 다중 홉 관계 질문에 답합니다.<br>
+② 로컬 검색은 개체 중심 관계 질문에, 글로벌 검색은 문서 전체 주제 질문에 각각 적합합니다.<br>
+③ 인덱싱 비용이 크므로 관계형 질문이 중요한 도메인에 선별 적용하거나 일반 RAG와 하이브리드로 운영하는 것이 현실적입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 AI 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#GraphRAG #지식그래프 #RAG #LLM #AI #검색증강생성 #KnowledgeGraph</p>
+
+</body>
+</html>
