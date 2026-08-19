@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>API 하나로 웹도 앱도 만족시키려다 생기는 문제 — BFF 패턴 실무</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">API 하나로 웹도 앱도 만족시키려다 생기는 문제 — BFF 패턴 실무</div>
+<p style="font-size:14px; color:#999;">2026. 8. 26. · 시스템설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 웹·모바일·서드파티가 같은 백엔드 API를 공유하면 결국 모든 클라이언트의 특수 케이스로 뒤덮인 스파게티가 됩니다. <b>BFF(Backend for Frontend)</b>로 클라이언트별 전용 계층을 분리하는 실전 설계를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">화면 하나에 서비스 다섯 개를 호출해야 하는 문제</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">MSA로 백엔드를 여러 서비스로 쪼갠 팀이 다음으로 흔히 마주치는 문제는 "화면 하나를 그리려고 서비스 다섯 개를 호출해야 한다"는 것입니다. 모바일 앱은 배터리와 네트워크를 아끼려고 최소한의 필드만 원하고, 웹 대시보드는 한 화면에 여러 도메인 데이터를 합쳐 보여줘야 하며, 서드파티 파트너는 또 다른 응답 스키마를 요구합니다. 이 요구를 하나의 범용 API가 만족시키려 하면 결국 모든 클라이언트의 특수 케이스로 뒤덮인 스파게티가 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">BFF(Backend for Frontend)는 이 문제를 "클라이언트 종류별로 전용 백엔드를 하나씩 둔다"는 단순한 원칙으로 풉니다. 각 BFF는 도메인 서비스들을 호출해 그 클라이언트에 맞는 모양으로 데이터를 조합·가공하고, 클라이언트는 오직 자신의 BFF하고만 대화합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — BFF는 API 게이트웨이와 다른 층위입니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">API 게이트웨이와 BFF는 자주 혼동되지만 목적이 다릅니다. 게이트웨이는 <b>모든 클라이언트에 공통으로 필요한 인프라 관심사</b>(라우팅, 인증, 레이트리밋)를 처리하고, BFF는 <b>이 클라이언트에만 필요한 데이터 조합·변환 로직</b>을 처리합니다. 실무에서는 요청이 게이트웨이 → 해당 클라이언트의 BFF → 여러 도메인 서비스 순으로 흐르는 구조를 함께 씁니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">API 게이트웨이</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">BFF</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">목적</td>
+<td style="border:1px solid #ddd; padding:10px;">라우팅, 인증, 레이트리밋</td>
+<td style="border:1px solid #ddd; padding:10px;">클라이언트별 데이터 조합·가공</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">소유 팀</td>
+<td style="border:1px solid #ddd; padding:10px;">플랫폼/인프라 팀</td>
+<td style="border:1px solid #ddd; padding:10px;">각 프런트엔드 팀</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">배포 단위</td>
+<td style="border:1px solid #ddd; padding:10px;">보통 단일</td>
+<td style="border:1px solid #ddd; padding:10px;">클라이언트 수만큼</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 여러 BFF는 곧 여러 배포 단위입니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 흔한 실수는 BFF를 하나만 만들고 그 안에서 클라이언트별 분기를 처리하는 것입니다. 이렇게 하면 결국 예전의 범용 API와 같은 문제로 되돌아갑니다. BFF 패턴의 핵심은 <b>클라이언트마다 별도의 코드베이스와 배포 파이프라인을 갖는 것</b>입니다. 웹 BFF는 웹 프런트엔드 팀이, 모바일 BFF는 모바일 팀이 소유하고 독립적으로 배포합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 구조는 조직적 이점도 큽니다. 프런트엔드 팀이 백엔드 도메인 팀의 릴리스를 기다리지 않고 응답 형태를 바꿀 수 있습니다. 다만 도메인 서비스가 늘어날수록 호출 경로가 늘어나므로, 인증 토큰 전파와 타임아웃·서킷브레이커, 캐싱 정책을 BFF 공통 라이브러리로 표준화하는 작업이 필요합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — Node.js BFF의 병렬 조합</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아래는 모바일 BFF 핸들러 예시입니다. 도메인 서비스를 병렬 호출해 모바일 화면에 필요한 최소 필드만 조합합니다. 같은 데이터를 다루는 웹 BFF는 대시보드용 상세 필드를 추가로 조합하는 완전히 별도의 구현을 갖습니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">// mobile-bff/handlers/orderSummary.js
+async function getOrderSummary(req, res) {
+  const userId = req.auth.userId;
+
+  const [user, order, shipment] = await Promise.all([
+    userService.getProfile(userId, { fields: ['name', 'tier'] }),
+    orderService.getLatestOrder(userId),
+    shipmentService.getTrackingStatus(userId),
+  ]);
+
+  res.json({
+    greeting: `${user.name}님, 안녕하세요`,
+    orderId: order.id,
+    status: shipment.status,
+    etaDays: shipment.etaDays,
+  });
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. BFF에 비즈니스 로직을 넣지 마세요</b> — 할인 계산이나 재고 검증 같은 로직이 BFF에 스며들면 웹·모바일 BFF 사이에 규칙이 중복 구현되며 불일치가 생깁니다.<br>
+<b>2. BFF도 장애 전파 경로입니다</b> — 여러 서비스를 팬아웃 호출하므로 한 서비스가 느려지면 BFF 전체가 느려집니다. 부분 실패 시 그레이스풀 디그레이드 정책을 명시적으로 설계하세요.<br>
+<b>3. GraphQL과의 관계를 정하세요</b> — GraphQL은 BFF 존재 이유 일부를 대체하지만, 복잡한 클라이언트별 워크플로까지 대체하진 못합니다. 클라이언트별 요구가 뚜렷이 갈리면 그때 BFF를 분리하는 점진적 접근이 안전합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 화면 하나를 위해 여러 서비스를 호출하는 문제를 도메인 서비스가 아니라 클라이언트별 BFF 계층에서 흡수합니다.<br>
+② BFF는 API 게이트웨이와 층위가 다르며, 클라이언트마다 독립된 코드베이스·배포 파이프라인을 갖는 것이 핵심입니다.<br>
+③ BFF에 비즈니스 로직을 넣지 않고, 팬아웃 호출의 장애 전파와 부분 실패 정책을 명시적으로 설계해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 시스템 설계 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#BFF #BackendForFrontend #마이크로서비스 #API게이트웨이 #시스템설계 #아키텍처 #프런트엔드백엔드</p>
+
+</body>
+</html>

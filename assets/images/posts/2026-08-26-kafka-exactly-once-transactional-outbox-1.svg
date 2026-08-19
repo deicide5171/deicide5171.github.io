@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="32" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">트랜잭션 아웃박스 패턴 흐름</text>
+
+  <!-- DB transaction box -->
+  <rect x="40" y="60" width="330" height="160" rx="8" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="205" y="84" font-family="sans-serif" font-size="15" font-weight="bold" fill="#2f5a8a" text-anchor="middle">단일 DB 트랜잭션</text>
+
+  <rect x="65" y="100" width="280" height="42" rx="6" fill="#ffffff" stroke="#4a7ab5"/>
+  <text x="205" y="126" font-family="sans-serif" font-size="14" fill="#222" text-anchor="middle">orders 테이블에 주문 저장</text>
+
+  <text x="205" y="158" font-family="sans-serif" font-size="20" fill="#4a7ab5" text-anchor="middle">+</text>
+
+  <rect x="65" y="168" width="280" height="42" rx="6" fill="#ffffff" stroke="#4a7ab5"/>
+  <text x="205" y="194" font-family="sans-serif" font-size="14" fill="#222" text-anchor="middle">outbox 테이블에 이벤트 저장</text>
+
+  <text x="205" y="235" font-family="sans-serif" font-size="12" fill="#2f5a8a" text-anchor="middle">원자적 — 둘 다 성공 또는 둘 다 실패</text>
+
+  <!-- Relay process -->
+  <rect x="420" y="80" width="340" height="120" rx="8" fill="#fdf6ec" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="590" y="104" font-family="sans-serif" font-size="15" font-weight="bold" fill="#a3611c" text-anchor="middle">릴레이 프로세스 (폴링 또는 CDC)</text>
+  <rect x="445" y="120" width="290" height="42" rx="6" fill="#ffffff" stroke="#c98a3d"/>
+  <text x="590" y="146" font-family="sans-serif" font-size="13" fill="#333" text-anchor="middle">PENDING 상태 아웃박스 레코드 조회</text>
+  <text x="590" y="180" font-family="sans-serif" font-size="12" fill="#a3611c" text-anchor="middle">발행 성공 시 PUBLISHED로 표시</text>
+
+  <line x1="370" y1="185" x2="420" y2="140" stroke="#c98a3d" stroke-width="2.5"/>
+  <polygon points="420,140 408,138 412,150" fill="#c98a3d"/>
+
+  <!-- Kafka -->
+  <rect x="480" y="260" width="220" height="90" rx="8" fill="#fdeceb" stroke="#d0413b" stroke-width="1.5"/>
+  <text x="590" y="288" font-family="sans-serif" font-size="15" font-weight="bold" fill="#a3221c" text-anchor="middle">Kafka</text>
+  <text x="590" y="312" font-family="sans-serif" font-size="13" fill="#7a3530" text-anchor="middle">order-events 토픽</text>
+  <text x="590" y="332" font-family="sans-serif" font-size="12" fill="#7a3530" text-anchor="middle">프로듀서 트랜잭션으로 발행</text>
+
+  <line x1="590" y1="200" x2="590" y2="260" stroke="#d0413b" stroke-width="2.5"/>
+  <polygon points="590,260 583,248 597,248" fill="#d0413b"/>
+
+  <!-- Consumer -->
+  <rect x="60" y="290" width="260" height="80" rx="8" fill="#eef7ee" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="190" y="316" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1a6b45" text-anchor="middle">컨슈머</text>
+  <text x="190" y="338" font-family="sans-serif" font-size="12" fill="#1a6b45" text-anchor="middle">isolation.level=read_committed</text>
+  <text x="190" y="356" font-family="sans-serif" font-size="12" fill="#1a6b45" text-anchor="middle">이벤트 ID 기준 멱등 처리</text>
+
+  <line x1="480" y1="305" x2="320" y2="330" stroke="#2e9e63" stroke-width="2.5"/>
+  <polygon points="320,330 332,325 330,338" fill="#2e9e63"/>
+
+  <text x="400" y="410" font-family="sans-serif" font-size="13" fill="#555" text-anchor="middle">DB 쓰기와 이벤트 발행 사이의 이중 쓰기 문제를 트랜잭션 경계로 해소</text>
+</svg>
