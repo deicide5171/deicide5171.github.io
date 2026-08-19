@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">Globe 모드 — 줌 레벨에 따른 투영 전환</text>
+
+  <!-- 낮은 줌: 구체 -->
+  <text x="185" y="66" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1a6b45" text-anchor="middle">낮은 줌 (줌 0~4) — 구체 투영</text>
+  <circle cx="185" cy="175" r="95" fill="#eaf3ff" stroke="#4a7ab5" stroke-width="2"/>
+  <!-- 위도선 (타원으로 곡률 표현) -->
+  <ellipse cx="185" cy="175" rx="95" ry="30" fill="none" stroke="#9dbfe0" stroke-width="1"/>
+  <ellipse cx="185" cy="145" rx="82" ry="20" fill="none" stroke="#9dbfe0" stroke-width="1"/>
+  <ellipse cx="185" cy="205" rx="82" ry="20" fill="none" stroke="#9dbfe0" stroke-width="1"/>
+  <ellipse cx="185" cy="115" rx="55" ry="12" fill="none" stroke="#c3d7ee" stroke-width="1"/>
+  <ellipse cx="185" cy="235" rx="55" ry="12" fill="none" stroke="#c3d7ee" stroke-width="1"/>
+  <!-- 경도선 -->
+  <line x1="185" y1="80" x2="185" y2="270" stroke="#9dbfe0" stroke-width="1"/>
+  <path d="M 130 100 Q 185 175 130 250" fill="none" stroke="#9dbfe0" stroke-width="1"/>
+  <path d="M 240 100 Q 185 175 240 250" fill="none" stroke="#9dbfe0" stroke-width="1"/>
+  <!-- 대륙 흉내(단순 도형) -->
+  <ellipse cx="160" cy="150" rx="22" ry="14" fill="#7fb88a" opacity="0.85"/>
+  <ellipse cx="210" cy="190" rx="16" ry="20" fill="#7fb88a" opacity="0.85"/>
+  <text x="185" y="292" font-family="sans-serif" font-size="12" fill="#5b7a9d" text-anchor="middle">고위도 면적 왜곡 없음</text>
+  <text x="185" y="308" font-family="sans-serif" font-size="12" fill="#5b7a9d" text-anchor="middle">(실제 지구본처럼 압축되어 보임)</text>
+
+  <!-- 화살표: 전환 -->
+  <line x1="300" y1="175" x2="420" y2="175" stroke="#c98a3d" stroke-width="2.5"/>
+  <polygon points="428,175 416,168 416,182" fill="#c98a3d"/>
+  <text x="364" y="160" font-family="sans-serif" font-size="12" font-weight="bold" fill="#a3611c" text-anchor="middle">줌인</text>
+  <text x="364" y="196" font-family="sans-serif" font-size="11" fill="#a3611c" text-anchor="middle">(줌 5 부근에서</text>
+  <text x="364" y="210" font-family="sans-serif" font-size="11" fill="#a3611c" text-anchor="middle">부드럽게 블렌딩)</text>
+
+  <!-- 높은 줌: 평면 -->
+  <text x="615" y="66" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1a6b45" text-anchor="middle">높은 줌 (줌 5+) — 평면 메르카토르</text>
+  <rect x="520" y="90" width="190" height="170" fill="#eaf3ff" stroke="#4a7ab5" stroke-width="2"/>
+  <line x1="520" y1="132" x2="710" y2="132" stroke="#c3d7ee" stroke-width="1"/>
+  <line x1="520" y1="175" x2="710" y2="175" stroke="#9dbfe0" stroke-width="1"/>
+  <line x1="520" y1="218" x2="710" y2="218" stroke="#c3d7ee" stroke-width="1"/>
+  <line x1="580" y1="90" x2="580" y2="260" stroke="#c3d7ee" stroke-width="1"/>
+  <line x1="650" y1="90" x2="650" y2="260" stroke="#c3d7ee" stroke-width="1"/>
+  <rect x="595" y="150" width="45" height="35" fill="#7fb88a" opacity="0.85"/>
+  <rect x="545" y="190" width="30" height="45" fill="#7fb88a" opacity="0.85"/>
+  <text x="615" y="292" font-family="sans-serif" font-size="12" fill="#5b7a9d" text-anchor="middle">지표면 곡률이 평면과</text>
+  <text x="615" y="308" font-family="sans-serif" font-size="12" fill="#5b7a9d" text-anchor="middle">거의 구분되지 않음</text>
+
+  <!-- 하단: 셰이더 파이프라인 -->
+  <text x="400" y="352" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1a6b45" text-anchor="middle">GPU 셰이더 재투영 파이프라인 (타일 데이터는 그대로)</text>
+  <rect x="60" y="368" width="180" height="50" rx="6" fill="#ffffff" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="150" y="398" font-family="sans-serif" font-size="13" fill="#222" text-anchor="middle">메르카토르 벡터 타일</text>
+  <line x1="240" y1="393" x2="300" y2="393" stroke="#8aa5c4" stroke-width="2"/>
+  <polygon points="300,393 290,388 290,398" fill="#8aa5c4"/>
+  <rect x="305" y="368" width="190" height="50" rx="6" fill="#ffffff" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="400" y="392" font-family="sans-serif" font-size="13" fill="#222" text-anchor="middle">정점 셰이더: 위경도 역산</text>
+  <text x="400" y="408" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">→ 3D 구면 좌표(x,y,z) 변환</text>
+  <line x1="495" y1="393" x2="555" y2="393" stroke="#8aa5c4" stroke-width="2"/>
+  <polygon points="555,393 545,388 545,398" fill="#8aa5c4"/>
+  <rect x="560" y="368" width="180" height="50" rx="6" fill="#ffffff" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="650" y="398" font-family="sans-serif" font-size="13" fill="#1a6b45" text-anchor="middle">카메라 투영 → 화면 픽셀</text>
+</svg>

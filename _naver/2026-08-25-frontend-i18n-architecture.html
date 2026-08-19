@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>번역 파일만 바꾸면 끝? 프론트엔드 i18n 아키텍처 제대로 설계하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">번역 파일만 바꾸면 끝? 프론트엔드 i18n 아키텍처 제대로 설계하기</div>
+<p style="font-size:14px; color:#999;">2026. 8. 25. · 프론트엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 다국어 지원은 문자열 치환이 아니라 언어마다 다른 문법을 시스템으로 흡수하는 문제입니다. <b>ICU MessageFormat</b>과 번역 파이프라인 설계를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">단순 키-값 치환이 무너지는 순간</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">다국어 지원을 처음 붙일 때 가장 흔한 접근은 키-값 JSON 파일을 언어별로 두고 코드에서 키로 조회해 치환하는 방식입니다. 짧은 문장 몇 개를 번역할 때는 충분해 보이지만, 서비스가 커지면 "1개 남았습니다"와 "3개 남았습니다"를 하나의 템플릿으로 처리하려던 복수형 처리, 언어마다 다른 날짜·통화 서식, 그리고 번역 파일을 누가 언제 갱신하는가라는 운영 문제에 반드시 부딪힙니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">i18n을 진지하게 설계한다는 것은 문자열을 언어별로 바꿔치기하는 문제가 아니라, <b>문법 규칙이 언어마다 다르다는 것을 시스템으로 흡수하는 문제</b>에 가깝습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 단순 치환이 무너지는 지점</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">문자열 치환만으로 다국어를 처리하면 복수형에서 가장 먼저 무너집니다. 영어는 단수/복수 두 가지지만 한국어는 복수형이 없고, 폴란드어나 아랍어는 형태가 3~6가지로 갈립니다. 코드에 언어별 분기를 짜면 새 언어를 추가할 때마다 프로그래머가 그 언어의 복수 규칙을 알아야 하는 이상한 구조가 됩니다. 성별에 따라 문장이 갈리는 언어, 로캘별 숫자·통화 서식까지 고려하면 "번역 파일만 바꾸면 된다"는 가정은 금방 깨집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — ICU MessageFormat이 표준화하는 것</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">ICU MessageFormat은 언어별 문법 변주를 번역 문자열 안에 선언적으로 표현하는 표준 문법입니다. 프로그램 코드에는 언어별 분기가 전혀 없고, <b>번역 파일 안에</b> 복수형·선택 분기 규칙이 담깁니다. 코드는 count 값만 넘기면 되고, 어떤 분기를 고를지는 각 로캘의 CLDR 복수 규칙에 따라 포맷터가 알아서 처리합니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">{count, plural,
+  =0 {항목이 없습니다}
+  one {항목이 {count}개 있습니다}
+  other {항목이 {count}개 있습니다}
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 번역 리소스를 서비스에 흘려보내는 파이프라인</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">단계</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">역할</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">추출</td>
+<td style="border:1px solid #ddd; padding:10px;">코드에서 번역 대상 문자열과 키를 스캔</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">번역 관리</td>
+<td style="border:1px solid #ddd; padding:10px;">번역가가 키별로 번역 입력·리뷰·승인</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">검증</td>
+<td style="border:1px solid #ddd; padding:10px;">플레이스홀더 누락, ICU 문법 오류 검출</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">배포</td>
+<td style="border:1px solid #ddd; padding:10px;">정적 번들 vs 런타임 동적 로드</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">대부분의 실무는 <b>로캘 단위 코드 스플리팅</b>으로 절충합니다. 현재 언어의 번역 파일만 별도 청크로 분리해 지연 로딩하는 방식입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — React + FormatJS로 ICU 메시지 처리</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">function ItemBadge({ count }) {
+  return &lt;FormattedMessage id="itemCount" values={{ count }} /&gt;;
+}
+
+// 로캘 단위 지연 로딩: 현재 로캘의 메시지 청크만 fetch
+async function loadMessages(locale) {
+  const module = await import(`./locales/${locale}.json`);
+  return module.default;
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 키를 문자열 내용이 아니라 의미 단위로 설계하세요</b> — 원문 텍스트 자체를 키로 쓰면 오타 하나 고칠 때마다 새 키로 인식됩니다.<br>
+<b>2. CI에 ICU 문법 검증과 플레이스홀더 일치 검사를 넣으세요</b> — 번역가의 실수는 대부분 배포 후에야 발견됩니다.<br>
+<b>3. 날짜·숫자·통화 서식은 직접 조립하지 마세요</b> — Intl.NumberFormat, Intl.DateTimeFormat 같은 표준 API를 쓰세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 다국어 지원은 문자열 치환이 아니라 언어마다 다른 문법을 시스템으로 흡수하는 문제이며, ICU MessageFormat이 이를 표준화합니다.<br>
+② 번역 리소스는 추출-번역 관리-검증-배포 파이프라인이며, CI 검증이 런타임 장애를 막는 핵심 방어선입니다.<br>
+③ 번들 크기와 로딩 지연 사이에서는 로캘 단위 코드 스플리팅으로 절충하는 것이 실무에서 흔합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 프론트엔드 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#i18n #ICUMessageFormat #프론트엔드 #다국어지원 #React #FormatJS #로컬라이제이션</p>
+
+</body>
+</html>

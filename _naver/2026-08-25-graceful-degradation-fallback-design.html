@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>다 죽지 말고 조금만 아프자 — 점진적 성능 저하와 폴백 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">다 죽지 말고 조금만 아프자 — 점진적 성능 저하(Graceful Degradation)와 폴백 설계</div>
+<p style="font-size:14px; color:#999;">2026. 8. 25. · 시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 의존 서비스가 흔들릴 때 전체 응답을 실패시키는 대신, <b>기능 등급을 낮춰 서비스를 이어가는</b> 점진적 성능 저하 설계를 서킷 브레이커와 구분해 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">부가 기능 하나 때문에 전체가 무너지지 않으려면</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">추천 서비스가 죽었다고 상품 상세 페이지 전체가 502를 뱉는 게 맞을까요? 개인화 배너 API가 타임아웃 났다고 장바구니 결제까지 막혀야 할까요? 많은 장애 사후 분석에서 반복되는 패턴은, 핵심 기능이 아니라 부가 기능 하나가 흔들리면서 전체가 함께 무너졌다는 것입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>점진적 성능 저하(graceful degradation)</b>는 이 문제에 정면으로 답하는 설계 원칙입니다. 장애나 과부하 상황에서 시스템을 "전부 정상" 또는 "전부 실패"의 이분법이 아니라, 기능 등급을 여러 단으로 나눠 상황에 맞게 낮춰가며 서비스를 유지하는 접근입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 서킷 브레이커와 무엇이 다를까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">서킷 브레이커, 타임아웃, 재시도는 모두 <b>하나의 원격 호출</b>이 실패했을 때 그 호출 자체를 어떻게 다룰지에 대한 패턴입니다. 반면 graceful degradation은 그보다 한 단계 위, 사용자에게 보여줄 기능·응답 전체를 어떻게 조립할지에 대한 설계입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실무에서는 둘이 짝을 이룹니다. 서킷 브레이커가 개인화 추천 API 호출을 차단하기로 결정하면, degradation 로직이 그 자리를 인기 상품 목록이나 정적 배너로 채웁니다. 하나가 실패 감지 장치라면 다른 하나는 그 실패를 사용자 경험으로 흡수하는 장치인 셈입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 기능 등급을 나누는 기준</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">등급</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">정의</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">예시</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">필수(core)</td>
+<td style="border:1px solid #ddd; padding:10px;">없으면 서비스 자체가 성립하지 않음</td>
+<td style="border:1px solid #ddd; padding:10px;">로그인, 결제, 재고 확인</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">향상(enhanced)</td>
+<td style="border:1px solid #ddd; padding:10px;">있으면 좋지만 없어도 핵심 흐름 유지</td>
+<td style="border:1px solid #ddd; padding:10px;">개인화 추천, 리뷰 요약</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">장식(cosmetic)</td>
+<td style="border:1px solid #ddd; padding:10px;">완전히 빠져도 사용자 흐름에 영향 없음</td>
+<td style="border:1px solid #ddd; padding:10px;">실시간 방문자 수, 애니메이션 배너</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">장애 상황에서 시스템 자원이 제한적이라면, 이 등급에 따라 우선순위를 정해 필수 기능부터 자원을 배정하고 장식 기능은 가장 먼저 꺼야 합니다. 이 판단을 장애가 터진 후 즉흥적으로 하면 늦습니다 — 평상시에 기능 목록을 미리 분류해 두는 것 자체가 설계 산출물입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 폴백의 층위, 무엇으로 대체할까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">같은 기능이라도 폴백 방식은 여러 층위로 설계할 수 있습니다. 캐시된 이전 응답을 재사용하거나, 개인화 대신 일반화된 기본값을 쓰거나, UI에서 해당 섹션을 아예 숨기거나, 스켈레톤 UI로 나중에 채워지는 자리로 표시하는 방법까지 순서대로 시도할 수 있습니다. 재고 수량처럼 신선도가 중요한 데이터는 캐시 폴백이 위험해 차라리 숨기는 편이 낫고, 배너처럼 신선도가 중요하지 않은 데이터는 캐시 폴백이 최선입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 등급별 타임아웃과 폴백을 적용한 애그리게이션</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">ProductPageResponse buildPage(String productId) {
+    // 필수: 실패 시 전체 요청 실패
+    ProductCore core = coreService.get(productId);
+
+    // 향상: 짧은 타임아웃 + 실패 시 폴백, 페이지 자체는 살린다
+    List&lt;Recommendation&gt; recs;
+    try {
+        recs = recommendationClient.withTimeout(150, TimeUnit.MILLISECONDS)
+                                    .get(productId);
+    } catch (TimeoutException | CircuitOpenException e) {
+        recs = fallbackCache.getPopularItems(core.getCategory());
+        metrics.increment("recs.degraded");
+    }
+
+    // 장식: 실패하면 그냥 빈 값
+    String liveViewerBadge = safeGetOrEmpty(() -&gt; viewerCountClient.get(productId));
+
+    return new ProductPageResponse(core, recs, liveViewerBadge);
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. degradation은 관측 가능해야 합니다</b> — 폴백이 조용히 발동하면 장애가 언제부터 시작됐는지 아무도 모릅니다. 폴백 경로를 탈 때마다 메트릭을 남기고 알림을 설정하세요.<br>
+<b>2. 폴백 자체가 또 다른 장애 지점이 되지 않게 하세요</b> — 캐시 폴백을 위한 저장소가 죽으면 폴백도 실패합니다. 폴백 경로는 원본과 다른, 더 단순한 인프라를 쓰세요.<br>
+<b>3. degradation 모드를 정기적으로 훈련하세요</b> — 카오스 엔지니어링으로 의존 서비스를 의도적으로 끊어보고, 실제로 등급이 낮아지며 핵심 기능이 살아남는지 주기적으로 검증해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① Graceful degradation은 개별 호출을 보호하는 서킷 브레이커와 달리, 실패한 자리에 무엇을 채울지를 결정하는 사용자 경험 설계입니다.<br>
+② 기능을 필수·향상·장식 등급으로 미리 분류해 두면 장애 상황에서 무엇을 낮출지 즉흥적으로 판단하지 않아도 됩니다.<br>
+③ 폴백은 캐시 재사용부터 완전 숨김까지 여러 층위로 설계하고, 폴백 발동 자체를 관측 가능하게 만들어야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 시스템 설계 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#점진적성능저하 #GracefulDegradation #폴백설계 #장애복원력 #시스템설계 #서킷브레이커</p>
+
+</body>
+</html>

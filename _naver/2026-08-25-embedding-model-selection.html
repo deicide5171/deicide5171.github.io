@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>차원이 크다고 항상 좋은 건 아니다 — 임베딩 모델 선택 기준</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">차원이 크다고 항상 좋은 건 아니다 — 임베딩 모델 선택 기준 정리</div>
+<p style="font-size:14px; color:#999;">2026. 8. 25. · AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 임베딩 모델 선택은 벤치마크 리더보드 점수가 아니라 <b>도메인 적응, 다국어 성능, 차원 수</b>를 자체 데이터로 검증해서 결정해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">리더보드 1위가 우리 데이터에도 1위일까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">RAG 파이프라인을 구축할 때 임베딩 모델 선택은 종종 "MTEB 리더보드에서 점수가 제일 높은 걸로 하자"로 끝납니다. 문제는 공개 벤치마크가 일반 도메인, 주로 영어 위주 데이터셋으로 구성돼 있어서, 실제 서비스가 다루는 한국어 고객 상담 로그나 사내 용어가 잔뜩 섞인 기술 문서에서는 리더보드 순위와 실제 검색 품질이 따로 노는 경우가 드물지 않다는 점입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">임베딩 모델 선택은 "가장 성능 좋은 모델"이 아니라 <b>"우리 데이터와 쿼리 분포에 가장 잘 맞는 모델"</b>을 찾는 문제에 가깝습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 도메인 적응, 벤치마크와 실제 데이터의 간극</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">임베딩 모델은 사전학습 데이터 분포에 강하게 영향을 받습니다. 범용 모델은 법률·의료·금융처럼 전문 용어 밀도가 높은 도메인에서 표면적으로 비슷한 단어를 가진 문장들을 실제 의미와 무관하게 가깝다고 판단하는 실수를 저지르기 쉽습니다. 이를 완화하는 방법은 도메인 데이터로 파인튜닝하거나, 임베딩은 범용 모델을 쓰고 검색 결과를 도메인 특화 <b>리랭커(reranker)</b>로 재정렬하는 것입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 다국어 처리, 언어별 성능 편차</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"multilingual" 표기가 붙은 모델이라고 모든 언어를 균등하게 잘 처리하는 것은 아닙니다. 대부분 학습 데이터에서 영어·중국어 비중이 압도적으로 높아, 한국어 검색 품질 편차가 큽니다. 교차 언어 검색(한국어 쿼리로 영어 문서 검색)을 지원해야 한다면 단일 언어 성능뿐 아니라 언어 간 임베딩 공간이 실제로 잘 정렬돼 있는지도 별도로 검증해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 차원 수, 크다고 항상 좋은 건 아닙니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">차원이 커지면 벡터 DB 저장 공간과 검색 연산량이 그대로 늘어나고, 학습 데이터 규모 대비 차원이 지나치게 크면 오히려 노이즈에 과적합되는 경우도 있습니다. 최근에는 <b>Matryoshka Representation Learning(MRL)</b> 기법으로 하나의 모델이 여러 차원으로 잘라 써도 성능이 크게 떨어지지 않도록 학습된 모델들도 있어, 저장 비용과 품질의 트레이드오프를 배포 후에도 유연하게 조정할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 자체 골든셋으로 후보 모델 비교하기</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">def evaluate_embedding_model(embed_fn, golden_queries):
+    ndcg_scores = []
+    for item in golden_queries:
+        query_vec = embed_fn(item["query"])
+        doc_vecs = {doc_id: embed_fn(text) for doc_id, text in corpus.items()}
+        scores = {doc_id: cosine_similarity(query_vec, vec)
+                  for doc_id, vec in doc_vecs.items()}
+        ranked = sorted(scores.items(), key=lambda x: -x[1])
+        # NDCG 계산...
+    return np.mean(ndcg_scores)
+
+# 후보 모델별로 같은 골든셋에 대해 비교
+for name, embed_fn in candidate_models.items():
+    print(name, evaluate_embedding_model(embed_fn, golden_queries))</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">MTEB 점수를 참고하되, 최종 결정은 반드시 자체 도메인 문서와 실제 쿼리 패턴으로 만든 골든셋 평가로 확정해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 리더보드 순위보다 자체 골든셋을 먼저 만드세요</b> — 수십~수백 개 규모라도 실제 쿼리-정답 문서 쌍을 만들어 두는 것이 장기적으로 훨씬 저렴합니다.<br>
+<b>2. 임베딩 모델 교체는 재인덱싱 비용을 동반합니다</b> — 잦은 모델 교체는 성능 개선보다 리스크가 더 커질 수 있습니다.<br>
+<b>3. 쿼리와 문서의 길이 분포 차이를 확인하세요</b> — 일부 모델은 query:, passage: 같은 프리픽스를 요구합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 임베딩 모델은 리더보드 점수가 아니라 자체 도메인 골든셋 평가로 최종 선택해야 합니다.<br>
+② 다국어 모델은 언어별 성능 편차가 크므로 한국어 성능과 교차 언어 정렬을 별도로 검증해야 합니다.<br>
+③ 차원 수는 무조건 클수록 좋은 것이 아니며, Matryoshka 학습 모델처럼 유연하게 조정 가능한 선택지도 고려할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 AI 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#임베딩모델 #RAG #벡터검색 #다국어NLP #MTEB #AI엔지니어링</p>
+
+</body>
+</html>

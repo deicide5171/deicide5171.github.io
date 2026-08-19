@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>곡선을 따라 움직이는 UI — SVG 애니메이션과 CSS Motion Path</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">곡선을 따라 움직이는 UI — SVG 애니메이션과 CSS Motion Path 실무</div>
+<p style="font-size:14px; color:#999;">2026. 8. 25. · 프론트엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — SMIL이 사실상 유지보수 단계에 머문 지금, 경로를 따라 움직이는 애니메이션의 최신 표준인 CSS <b>offset-path</b>와 Web Animations API 활용법을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">경로를 따라 움직이는 애니메이션, 이제는 CSS로</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">버튼 클릭 시 아이콘이 곡선을 그리며 장바구니로 날아가는 연출, 지도 위 경로를 따라 움직이는 마커 같은 "경로를 따라 움직이는" 애니메이션은 흔히 SVG의 animateMotion(SMIL)으로 구현됐습니다. 그런데 SMIL은 브라우저 벤더들 사이에서 오랫동안 신규 개발이 중단된 상태이고, 최신 명세는 이 역할을 CSS의 <b>motion path(offset-path)</b> 기능으로 넘기는 방향으로 정리되고 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — offset-path, 임의의 경로를 움직임의 궤적으로</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">CSS Motion Path 스펙의 핵심은 offset-path 속성입니다. SVG path() 함수로 곡선을 지정하면 요소가 그 경로를 따라 이동할 수 있는 궤적을 갖습니다. 실제 이동은 offset-distance를 애니메이션시켜 구현하고, offset-rotate로 접선 방향을 따라 자연스럽게 회전시킬 수 있습니다. SMIL과 달리 <b>일반 HTML 요소에도 그대로 쓸 수 있다</b>는 점이 실무에서 특히 유용합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — SVG path와 CSS 좌표계의 차이</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">SVG path의 d 속성 좌표는 SVG 문서의 viewBox 기준 좌표계를 따르지만, CSS offset-path에 넣는 경로 좌표는 해당 요소가 속한 CSS 박스 좌표계를 기준으로 해석됩니다. 두 좌표계가 다르다는 것을 모르고 그대로 복붙하면 요소가 엉뚱한 위치로 튀는 경우가 흔합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">SMIL animateMotion</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">CSS offset-path</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">적용 대상</td>
+<td style="border:1px solid #ddd; padding:10px;">SVG 요소만</td>
+<td style="border:1px solid #ddd; padding:10px;">HTML/SVG 모두</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">표준 상태</td>
+<td style="border:1px solid #ddd; padding:10px;">신규 개발 중단</td>
+<td style="border:1px solid #ddd; padding:10px;">활발히 개발 중</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — Web Animations API로 프로그래밍적 제어</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">CSS 애니메이션만으로는 스크롤 진행률에 맞춰 경로 진행률을 맞추는 등의 동적 제어가 번거롭습니다. 이런 경우 Web Animations API(WAAPI)로 offset-distance를 직접 키프레임 애니메이션으로 제어하면, JavaScript에서 animation.currentTime을 조작해 임의의 진행률로 동기화할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — CSS Motion Path + WAAPI로 곡선 이동</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">.icon {
+  offset-path: path("M 20 200 C 120 20, 280 20, 380 200");
+  offset-rotate: auto;
+  offset-distance: 0%;
+}
+
+const icon = document.getElementById('cart-icon');
+const animation = icon.animate(
+  [{ offsetDistance: '0%' }, { offsetDistance: '100%' }],
+  { duration: 800, easing: 'ease-in-out', fill: 'forwards' }
+);
+
+// 스크롤 진행률에 맞춰 경로 진행률을 수동으로 매핑
+window.addEventListener('scroll', () =&gt; {
+  const progress = getScrollProgress();
+  animation.currentTime = progress * animation.effect.getTiming().duration;
+});</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 브라우저 지원 범위를 확인하세요</b> — @supports로 기능 감지 후 폴백을 분기하는 패턴이 안전합니다.<br>
+<b>2. 경로가 복잡할수록 GPU 가속 여부를 확인하세요</b> — offset-path 자체를 매 프레임 바꾸면 성능이 급격히 나빠집니다.<br>
+<b>3. 접근성 고려를 빠뜨리지 마세요</b> — prefers-reduced-motion으로 모션 민감 사용자를 위한 대체 스타일을 제공하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① SMIL animateMotion은 유지보수 단계에 머물러 있고, 경로 애니메이션의 최신 표준은 CSS offset-path입니다.<br>
+② SVG 좌표계와 CSS 박스 좌표계가 달라 경로 좌표를 그대로 복사하면 위치가 어긋나기 쉽습니다.<br>
+③ 동적 제어가 필요하면 Web Animations API로 진행률을 직접 조작하고, 성능을 위해 경로 자체보다 진행률만 애니메이션하세요.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 프론트엔드 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#SVG애니메이션 #MotionPath #CSS #WebAnimationsAPI #프론트엔드 #인터랙션디자인</p>
+
+</body>
+</html>

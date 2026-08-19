@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>비슷한 질문엔 다시 묻지 않는다 — LLM 시맨틱 캐싱으로 비용과 지연 줄이기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">비슷한 질문엔 다시 묻지 않는다 — LLM 시맨틱 캐싱으로 비용과 지연 줄이기</div>
+<p style="font-size:14px; color:#999;">2026. 8. 25. · AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 문자열이 완전히 같아야 히트하는 exact-match 캐시와 달리, <b>시맨틱 캐싱</b>은 임베딩 유사도로 표현만 다른 반복 질문까지 캐시 히트로 묶어 LLM 호출 비용과 지연을 줄입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">완전히 새로운 질문은 생각보다 적습니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">프로덕션에 붙인 LLM 기능의 API 비용 로그를 뜯어보면 의외로 "완전히 새로운 질문"은 그렇게 많지 않습니다. 고객 지원 챗봇이라면 "환불 어떻게 하나요", "환불 절차 알려주세요", "환불받고 싶은데 어떻게 해요" 같은 문장이 하루에도 수백 번 들어옵니다. 문자열은 다 다르지만 의미는 같습니다. 그런데 흔히 쓰는 캐시는 요청 문자열이나 해시가 완전히 일치해야만 히트하는 exact-match 방식이라, 표현이 조금만 달라도 매번 모델을 다시 호출하고 비용과 지연을 그대로 지불하게 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>시맨틱 캐싱(semantic caching)</b>은 이 틈을 임베딩으로 메웁니다. 요청 문자열이 아니라 그 의미 벡터를 키로 써서, 이미 캐시에 있는 질문과 벡터 거리가 충분히 가까우면 새 응답 생성 없이 저장된 답을 재사용합니다. 같은 의도의 질문이 반복되는 서비스에서는 캐시 히트율과 함께 지연 시간, 토큰 비용이 동시에 줄어드는 효과가 큽니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 시맨틱 캐싱의 동작 구조</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">시맨틱 캐싱은 대략 다음 순서로 동작합니다. 먼저 들어온 요청 텍스트를 임베딩 모델로 벡터화하고, 벡터 DB에서 기존 캐시 항목 중 코사인 유사도가 가장 높은 것을 찾습니다. 유사도가 임계값 이상이면 <b>캐시 히트</b>로 저장된 응답을 즉시 반환하고, 미만이면 <b>캐시 미스</b>로 LLM을 호출한 뒤 그 결과를 새 캐시 항목으로 저장합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">exact-match 캐시가 문자열 자체를 키로 쓰는 것과 달리, 시맨틱 캐시는 의미가 같은 질문의 군집을 하나의 캐시 항목으로 묶습니다. 그만큼 히트율은 크게 오르지만, 대신 "실제로는 다른 질문인데 비슷하다고 오판"하는 위험이 새로 생긴다는 점이 핵심 트레이드오프입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 캐시 종류별 비교</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Exact-match 캐시</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">시맨틱 캐시</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">캐시 키</td>
+<td style="border:1px solid #ddd; padding:10px;">요청 문자열/해시</td>
+<td style="border:1px solid #ddd; padding:10px;">임베딩 벡터</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">표현이 다른 동의 질문</td>
+<td style="border:1px solid #ddd; padding:10px;">미스 처리</td>
+<td style="border:1px solid #ddd; padding:10px;">히트 가능</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">오탐(false hit) 위험</td>
+<td style="border:1px solid #ddd; padding:10px;">없음</td>
+<td style="border:1px solid #ddd; padding:10px;">임계값에 따라 존재</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">추가 인프라</td>
+<td style="border:1px solid #ddd; padding:10px;">키-값 저장소</td>
+<td style="border:1px solid #ddd; padding:10px;">벡터 인덱스 + 임베딩 호출</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">두 캐시는 대체 관계가 아니라 계층 관계로 쓰는 경우가 많습니다. 문자열이 완전히 같으면 임베딩 계산 없이 exact-match로 즉시 히트시키고, 그렇지 않을 때만 시맨틱 캐시를 조회하는 2단 구조가 임베딩 호출 비용도 아끼고 히트율도 챙깁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 임계값과 안전장치</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">시맨틱 캐싱에서 가장 어려운 결정은 유사도 임계값입니다. 임계값을 낮게 잡으면 히트율은 오르지만 "환불 절차 알려주세요"와 "환불 취소하고 싶어요"처럼 표면적으로 비슷해도 의도가 정반대인 질문을 같은 답으로 잘못 응답할 위험이 커집니다. 반대로 임계값을 너무 높게 잡으면 캐시가 사실상 exact-match와 다를 바 없어져 효과가 사라집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실무에서는 도메인별로 임계값을 분리하고, 캐시 히트 시에도 질문에 담긴 주문번호·날짜 같은 개체가 캐시된 응답과 맞는지 재확인하며, 정책이 바뀌는 주제는 TTL을 짧게 두는 안전장치를 함께 둡니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 2단 캐시 조회 흐름</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">def get_response(query, cache, embed_model, llm, threshold=0.92):
+    # 1단계: exact-match (해시 키)
+    exact_hit = cache.get_exact(query)
+    if exact_hit:
+        return exact_hit
+
+    # 2단계: 시맨틱 캐시 (임베딩 유사도)
+    query_vec = embed_model.embed(query)
+    match, score = cache.search_semantic(query_vec, top_k=1)
+
+    if match and score &gt;= threshold:
+        return match.response  # 캐시 히트
+
+    # 캐시 미스: 실제 LLM 호출
+    response = llm.generate(query)
+    cache.put_exact(query, response)
+    cache.put_semantic(query_vec, response, ttl_seconds=3600)
+    return response</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 임계값은 상수가 아니라 실험 대상입니다</b> — 서비스 초기에는 보수적으로 높게 잡고, 실제 캐시 히트 로그를 사람이 샘플링해 오탐률을 확인하며 점진적으로 낮추는 것이 안전합니다.<br>
+<b>2. PII가 섞인 요청은 캐시하지 않거나 별도 격리하세요</b> — 개인정보가 포함된 질문과 응답을 벡터로 저장하면 다른 사용자 요청과 유사도 매칭이 일어날 때 정보가 노출될 수 있습니다. 테넌트 단위로 캐시 네임스페이스를 분리해야 합니다.<br>
+<b>3. 임베딩 호출 자체도 비용입니다</b> — 캐시 조회마다 임베딩을 새로 계산하므로, 가볍고 빠른 임베딩 모델을 쓰고 가능하면 임베딩 결과도 짧게 캐시하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 시맨틱 캐싱은 임베딩 유사도를 키로 써서 표현이 다른 동의 질문까지 캐시 히트로 묶어 LLM 호출 비용과 지연을 줄입니다.<br>
+② exact-match 캐시와 경쟁 관계가 아니라 앞단에 두고 함께 쓰는 2단 구조가 실무에서 가장 효율적입니다.<br>
+③ 유사도 임계값은 히트율과 오탐률의 트레이드오프이므로, 도메인별 분리와 TTL·재검증 같은 안전장치를 함께 설계해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 AI 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#LLM #시맨틱캐싱 #임베딩 #비용최적화 #벡터검색 #AI엔지니어링 #RAG</p>
+
+</body>
+</html>
