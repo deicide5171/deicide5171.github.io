@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">시공간 데이터큐브: (time, band, y, x) 4차원 배열</text>
+
+  <!-- stack of layers representing time -->
+  <g>
+    <rect x="120" y="90" width="160" height="120" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5" transform="skewY(-8)"/>
+    <rect x="140" y="105" width="160" height="120" fill="#e3edf9" stroke="#4a7ab5" stroke-width="1.5" transform="skewY(-8)"/>
+    <rect x="160" y="120" width="160" height="120" fill="#d6e5f6" stroke="#4a7ab5" stroke-width="1.5" transform="skewY(-8)"/>
+    <rect x="180" y="135" width="160" height="120" fill="#c8ddf3" stroke="#2b5a8a" stroke-width="2" transform="skewY(-8)"/>
+  </g>
+  <text x="255" y="290" font-family="sans-serif" font-size="13" fill="#2b5a8a" text-anchor="middle" font-weight="bold">time 축 (여러 시점의 이미지가 쌓임)</text>
+
+  <!-- band arrow -->
+  <line x1="360" y1="200" x2="410" y2="200" stroke="#c98a3d" stroke-width="2"/>
+  <polygon points="416,200 406,194 406,206" fill="#c98a3d"/>
+  <text x="388" y="188" font-family="sans-serif" font-size="11" fill="#a3611c" text-anchor="middle">band 축</text>
+
+  <rect x="424" y="140" width="130" height="120" rx="6" fill="#fdf6ec" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="489" y="165" font-family="sans-serif" font-size="12" fill="#a3611c" text-anchor="middle" font-weight="bold">밴드별 값</text>
+  <text x="489" y="188" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">nir</text>
+  <text x="489" y="206" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">red</text>
+  <text x="489" y="224" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">green</text>
+  <text x="489" y="242" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">blue</text>
+
+  <!-- y,x axes labels on the top layer -->
+  <text x="260" y="128" font-family="sans-serif" font-size="11" fill="#5b7a9d" text-anchor="middle">y (위도)</text>
+  <text x="330" y="200" font-family="sans-serif" font-size="11" fill="#5b7a9d" text-anchor="middle">x (경도)</text>
+
+  <!-- three operations panels -->
+  <rect x="40" y="320" width="220" height="100" rx="8" fill="#eefaf1" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="150" y="345" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1a6b45" text-anchor="middle">시간 슬라이싱</text>
+  <text x="150" y="368" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">cube.sel(time="2026-07-01")</text>
+  <text x="150" y="386" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">특정 시점의 2차원 이미지</text>
+  <text x="150" y="404" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">(band, y, x) 단면</text>
+
+  <rect x="290" y="320" width="220" height="100" rx="8" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="400" y="345" font-family="sans-serif" font-size="13" font-weight="bold" fill="#2b5a8a" text-anchor="middle">픽셀 시계열</text>
+  <text x="400" y="368" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">cube.sel(y=lat, x=lon)</text>
+  <text x="400" y="386" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">한 좌표의 시간 변화</text>
+  <text x="400" y="404" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">(time, band) 단면</text>
+
+  <rect x="540" y="320" width="220" height="100" rx="8" fill="#fdf6ec" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="650" y="345" font-family="sans-serif" font-size="13" font-weight="bold" fill="#a3611c" text-anchor="middle">밴드 연산 (NDVI)</text>
+  <text x="650" y="368" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">(nir - red) / (nir + red)</text>
+  <text x="650" y="386" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">밴드 축 간 산술 연산</text>
+  <text x="650" y="404" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">(time, y, x) 결과</text>
+</svg>
