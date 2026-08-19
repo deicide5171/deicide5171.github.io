@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="30" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">오프라인 쓰기 큐 &#8594; Background Sync &#8594; 서버 반영</text>
+
+  <!-- 오프라인 상태 -->
+  <rect x="30" y="60" width="220" height="150" rx="8" fill="#fdecec" stroke="#d0413b" stroke-width="1.5"/>
+  <text x="140" y="84" font-family="sans-serif" font-size="13" font-weight="bold" fill="#d0413b" text-anchor="middle">오프라인 상태</text>
+  <rect x="55" y="100" width="190" height="36" rx="5" fill="#ffffff" stroke="#999"/>
+  <text x="150" y="122" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">사용자가 "저장" 클릭</text>
+  <line x1="150" y1="136" x2="150" y2="152" stroke="#d0413b" stroke-width="2"/>
+  <polygon points="150,152 145,142 155,142" fill="#d0413b"/>
+  <rect x="55" y="154" width="190" height="42" rx="5" fill="#fff3e6" stroke="#c98a3d"/>
+  <text x="150" y="172" font-family="sans-serif" font-size="11" fill="#a3611c" text-anchor="middle">IndexedDB 큐에 저장</text>
+  <text x="150" y="188" font-family="sans-serif" font-size="10" fill="#a3611c" text-anchor="middle">(멱등성 키 부여)</text>
+
+  <line x1="250" y1="130" x2="285" y2="130" stroke="#333" stroke-width="2"/>
+  <polygon points="285,130 275,125 275,135" fill="#333"/>
+  <text x="267" y="115" font-family="sans-serif" font-size="10" fill="#333" text-anchor="middle">즉시</text>
+  <rect x="290" y="100" width="120" height="60" rx="6" fill="#eef7f1" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="350" y="125" font-family="sans-serif" font-size="12" fill="#1a6b45" text-anchor="middle">낙관적 UI</text>
+  <text x="350" y="145" font-family="sans-serif" font-size="11" fill="#1a6b45" text-anchor="middle">"저장됨" 즉시 표시</text>
+
+  <!-- 연결 복구 -->
+  <text x="465" y="130" font-family="sans-serif" font-size="16" font-weight="bold" fill="#333" text-anchor="middle">⚡</text>
+  <text x="465" y="150" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">연결 복구</text>
+
+  <rect x="500" y="60" width="270" height="150" rx="8" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="635" y="84" font-family="sans-serif" font-size="13" font-weight="bold" fill="#2f5a8c" text-anchor="middle">Background Sync API</text>
+  <rect x="520" y="100" width="230" height="36" rx="5" fill="#ffffff" stroke="#4a7ab5"/>
+  <text x="635" y="122" font-family="sans-serif" font-size="12" fill="#2f5a8c" text-anchor="middle">브라우저가 서비스 워커를 깨움</text>
+  <line x1="635" y1="136" x2="635" y2="152" stroke="#4a7ab5" stroke-width="2"/>
+  <polygon points="635,152 630,142 640,142" fill="#4a7ab5"/>
+  <rect x="520" y="154" width="230" height="42" rx="5" fill="#ffffff" stroke="#4a7ab5"/>
+  <text x="635" y="172" font-family="sans-serif" font-size="12" fill="#2f5a8c" text-anchor="middle">sync 이벤트에서 큐 순회</text>
+  <text x="635" y="188" font-family="sans-serif" font-size="11" fill="#2f5a8c" text-anchor="middle">성공한 항목만 큐에서 제거</text>
+
+  <!-- 서버 -->
+  <line x1="400" y1="280" x2="400" y2="250" stroke="#999" stroke-width="1" stroke-dasharray="4,3"/>
+  <rect x="290" y="280" width="220" height="60" rx="8" fill="#f7f9fc" stroke="#c9d6e8"/>
+  <text x="400" y="305" font-family="sans-serif" font-size="13" font-weight="bold" fill="#3a5a8c" text-anchor="middle">서버</text>
+  <text x="400" y="325" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">Idempotency-Key로 중복 반영 방지</text>
+
+  <line x1="350" y1="196" x2="350" y2="280" stroke="#999" stroke-width="1.5" stroke-dasharray="3,3"/>
+  <line x1="635" y1="196" x2="450" y2="280" stroke="#4a7ab5" stroke-width="2"/>
+  <polygon points="450,280 458,270 463,282" fill="#4a7ab5"/>
+
+  <rect x="40" y="370" width="720" height="60" rx="8" fill="#fff7f0" stroke="#e8d3ae"/>
+  <text x="400" y="392" font-family="sans-serif" font-size="12" fill="#5a4632" text-anchor="middle" font-weight="bold">Background Sync 미지원 브라우저(Safari 등)</text>
+  <text x="400" y="412" font-family="sans-serif" font-size="12" fill="#5a4632" text-anchor="middle">→ 'online' 이벤트나 페이지 visibility 변경 시 동일 재생 함수를 수동 호출하는 폴백 필요</text>
+</svg>
