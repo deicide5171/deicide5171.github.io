@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="30" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">캐시 쓰기 전략 세 가지 흐름</text>
+
+  <!-- write-through -->
+  <text x="40" y="60" font-family="sans-serif" font-size="15" font-weight="bold" fill="#3a6ea5">write-through</text>
+  <rect x="40" y="70" width="90" height="40" rx="6" fill="#ffffff" stroke="#999" stroke-width="1.5"/>
+  <text x="85" y="94" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">클라이언트</text>
+  <line x1="130" y1="90" x2="170" y2="90" stroke="#4a7ab5" stroke-width="1.5"/>
+  <polygon points="170,90 161,85 161,95" fill="#4a7ab5"/>
+  <rect x="174" y="70" width="90" height="40" rx="6" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="219" y="94" font-family="sans-serif" font-size="12" fill="#3a6ea5" text-anchor="middle">캐시 쓰기</text>
+  <rect x="174" y="120" width="90" height="40" rx="6" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="219" y="144" font-family="sans-serif" font-size="12" fill="#3a6ea5" text-anchor="middle">DB 쓰기</text>
+  <line x1="264" y1="90" x2="264" y2="120" stroke="#4a7ab5" stroke-width="1.2"/>
+  <text x="290" y="98" font-family="sans-serif" font-size="11" fill="#888">둘 다</text>
+  <text x="290" y="112" font-family="sans-serif" font-size="11" fill="#888">완료 후</text>
+  <rect x="360" y="90" width="90" height="40" rx="6" fill="#f0f7f4" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="405" y="114" font-family="sans-serif" font-size="12" fill="#1a6b45" text-anchor="middle">응답</text>
+  <line x1="264" y1="105" x2="356" y2="108" stroke="#4a7ab5" stroke-width="1.5"/>
+  <polygon points="356,108 347,103 347,113" fill="#4a7ab5"/>
+
+  <line x1="20" y1="180" x2="780" y2="180" stroke="#eee" stroke-width="1"/>
+
+  <!-- write-behind -->
+  <text x="40" y="204" font-family="sans-serif" font-size="15" font-weight="bold" fill="#a3823f">write-behind (write-back)</text>
+  <rect x="40" y="214" width="90" height="40" rx="6" fill="#ffffff" stroke="#999" stroke-width="1.5"/>
+  <text x="85" y="238" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">클라이언트</text>
+  <line x1="130" y1="234" x2="170" y2="234" stroke="#c98a3d" stroke-width="1.5"/>
+  <polygon points="170,234 161,229 161,239" fill="#c98a3d"/>
+  <rect x="174" y="214" width="90" height="40" rx="6" fill="#fdf6ec" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="219" y="238" font-family="sans-serif" font-size="12" fill="#8a4a2e" text-anchor="middle">캐시 쓰기</text>
+  <rect x="360" y="214" width="90" height="40" rx="6" fill="#f0f7f4" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="405" y="238" font-family="sans-serif" font-size="12" fill="#1a6b45" text-anchor="middle">즉시 응답</text>
+  <line x1="264" y1="234" x2="356" y2="234" stroke="#2e9e63" stroke-width="1.5"/>
+  <polygon points="356,234 347,229 347,239" fill="#2e9e63"/>
+  <rect x="174" y="270" width="280" height="34" rx="6" fill="#fdf6ec" stroke="#c98a3d" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="314" y="292" font-family="sans-serif" font-size="11" fill="#a3823f" text-anchor="middle">백그라운드 큐가 배치로 DB에 비동기 반영</text>
+  <line x1="219" y1="254" x2="219" y2="270" stroke="#c98a3d" stroke-width="1.2" stroke-dasharray="3,2"/>
+
+  <line x1="20" y1="330" x2="780" y2="330" stroke="#eee" stroke-width="1"/>
+
+  <!-- write-around -->
+  <text x="40" y="354" font-family="sans-serif" font-size="15" font-weight="bold" fill="#7a4a9d">write-around</text>
+  <rect x="40" y="364" width="90" height="40" rx="6" fill="#ffffff" stroke="#999" stroke-width="1.5"/>
+  <text x="85" y="388" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">클라이언트</text>
+  <line x1="130" y1="384" x2="170" y2="384" stroke="#9b5fc9" stroke-width="1.5"/>
+  <polygon points="170,384 161,379 161,389" fill="#9b5fc9"/>
+  <rect x="174" y="364" width="90" height="40" rx="6" fill="#f5eefb" stroke="#9b5fc9" stroke-width="1.5"/>
+  <text x="219" y="388" font-family="sans-serif" font-size="12" fill="#7a4a9d" text-anchor="middle">DB 쓰기</text>
+  <rect x="360" y="364" width="90" height="40" rx="6" fill="#f0f7f4" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="405" y="388" font-family="sans-serif" font-size="12" fill="#1a6b45" text-anchor="middle">응답</text>
+  <line x1="264" y1="384" x2="356" y2="384" stroke="#2e9e63" stroke-width="1.5"/>
+  <polygon points="356,384 347,379 347,389" fill="#2e9e63"/>
+  <rect x="480" y="364" width="230" height="40" rx="6" fill="#fff0f0" stroke="#d9534f" stroke-width="1" stroke-dasharray="4,3"/>
+  <text x="595" y="388" font-family="sans-serif" font-size="11" fill="#a83a34" text-anchor="middle">캐시는 무효화만 — 다음 조회 시 캐시 미스</text>
+</svg>
