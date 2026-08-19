@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">헥사고날 아키텍처 — 포트와 어댑터</text>
+
+  <!-- 육각형 도메인 코어 -->
+  <polygon points="400,110 470,150 470,230 400,270 330,230 330,150"
+           fill="#eaf7ef" stroke="#2e9e63" stroke-width="3"/>
+  <text x="400" y="185" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1a6b45" text-anchor="middle">도메인 코어</text>
+  <text x="400" y="205" font-family="sans-serif" font-size="12" fill="#1a6b45" text-anchor="middle">(엔티티, 유스케이스)</text>
+  <text x="400" y="223" font-family="sans-serif" font-size="11" fill="#3d8a63" text-anchor="middle">프레임워크 의존성 없음</text>
+
+  <!-- 인바운드 포트 (왼쪽) -->
+  <rect x="150" y="160" width="130" height="46" rx="6" fill="#ffffff" stroke="#2e9e63" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="215" y="188" font-family="sans-serif" font-size="13" fill="#1a6b45" text-anchor="middle">인바운드 포트</text>
+  <line x1="280" y1="183" x2="325" y2="183" stroke="#2e9e63" stroke-width="2"/>
+  <polygon points="325,183 316,178 316,188" fill="#2e9e63"/>
+
+  <!-- 인바운드 어댑터 -->
+  <rect x="40" y="160" width="90" height="46" rx="6" fill="#eef4fb" stroke="#4a7ab5" stroke-width="2"/>
+  <text x="85" y="180" font-family="sans-serif" font-size="12" font-weight="bold" fill="#2c5583" text-anchor="middle">REST 컨트롤러</text>
+  <text x="85" y="196" font-family="sans-serif" font-size="10" fill="#5b7a9d" text-anchor="middle">(인바운드 어댑터)</text>
+  <line x1="130" y1="183" x2="145" y2="183" stroke="#4a7ab5" stroke-width="2"/>
+  <polygon points="145,183 136,178 136,188" fill="#4a7ab5"/>
+
+  <!-- 인바운드 어댑터 2 -->
+  <rect x="40" y="215" width="90" height="40" rx="6" fill="#eef4fb" stroke="#4a7ab5" stroke-width="2"/>
+  <text x="85" y="233" font-family="sans-serif" font-size="12" font-weight="bold" fill="#2c5583" text-anchor="middle">CLI/배치</text>
+  <text x="85" y="248" font-family="sans-serif" font-size="10" fill="#5b7a9d" text-anchor="middle">(인바운드 어댑터)</text>
+
+  <!-- 아웃바운드 포트 (오른쪽) -->
+  <rect x="520" y="160" width="130" height="46" rx="6" fill="#ffffff" stroke="#c98a3d" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="585" y="188" font-family="sans-serif" font-size="13" fill="#a3611c" text-anchor="middle">아웃바운드 포트</text>
+  <line x1="475" y1="183" x2="515" y2="183" stroke="#c98a3d" stroke-width="2"/>
+  <polygon points="515,183 506,178 506,188" fill="#c98a3d"/>
+
+  <!-- 아웃바운드 어댑터 -->
+  <rect x="670" y="160" width="100" height="46" rx="6" fill="#fdf6ec" stroke="#c98a3d" stroke-width="2"/>
+  <text x="720" y="180" font-family="sans-serif" font-size="12" font-weight="bold" fill="#a3611c" text-anchor="middle">JPA Repository</text>
+  <text x="720" y="196" font-family="sans-serif" font-size="10" fill="#a3823f" text-anchor="middle">(아웃바운드 어댑터)</text>
+  <line x1="650" y1="183" x2="665" y2="183" stroke="#c98a3d" stroke-width="2"/>
+  <polygon points="665,183 656,178 656,188" fill="#c98a3d"/>
+
+  <rect x="670" y="215" width="100" height="40" rx="6" fill="#fdf6ec" stroke="#c98a3d" stroke-width="2"/>
+  <text x="720" y="233" font-family="sans-serif" font-size="12" font-weight="bold" fill="#a3611c" text-anchor="middle">외부 API 클라이언트</text>
+  <text x="720" y="248" font-family="sans-serif" font-size="10" fill="#a3823f" text-anchor="middle">(아웃바운드 어댑터)</text>
+
+  <!-- 설명 박스 -->
+  <rect x="60" y="320" width="680" height="90" rx="8" fill="#f5f5f5" stroke="#ddd"/>
+  <text x="80" y="344" font-family="sans-serif" font-size="13" font-weight="bold" fill="#444">핵심 규칙: 의존성은 항상 어댑터 → 포트 → 도메인 코어 방향으로만 흐른다</text>
+  <text x="80" y="366" font-family="sans-serif" font-size="12.5" fill="#555">도메인 코어는 포트(인터페이스)만 알고, 실제 구현(REST, DB, 메시징)은 모두 어댑터가 담당한다.</text>
+  <text x="80" y="386" font-family="sans-serif" font-size="12.5" fill="#555">테스트 시 어댑터를 모킹하면 코어 로직만 독립적으로 검증할 수 있다.</text>
+
+  <text x="400" y="440" font-family="sans-serif" font-size="12" fill="#999" text-anchor="middle">인바운드(왼쪽): 외부 → 코어 호출 · 아웃바운드(오른쪽): 코어 → 외부 자원 호출</text>
+</svg>

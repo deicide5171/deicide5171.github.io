@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>도메인을 프레임워크에서 지켜라 — 헥사고날 아키텍처 실전 적용</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">도메인을 프레임워크에서 지켜라 — 헥사고날 아키텍처 실전 적용</div>
+<p style="font-size:14px; color:#999;">2026. 8. 24. · 아키텍처/시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 비즈니스 로직이 프레임워크 코드와 뒤섞이는 문제를, 포트-어댑터로 도메인을 격리하는 <b>헥사고날 아키텍처</b>로 어떻게 푸는지 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 헥사고날 아키텍처가 필요할까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">서비스 로직 안에 트랜잭션 애너테이션, HTTP 요청 객체, JPA 연관관계 매핑이 뒤섞여 있는 코드는 흔합니다. 문제는 이런 코드가 비즈니스 규칙을 테스트하려 해도 프레임워크 컨텍스트나 실제 DB 없이는 단위 테스트가 불가능해진다는 것입니다. 프레임워크나 저장소가 바뀌면 도메인 로직까지 함께 뒤엎어야 하는 상황도 이 결합에서 비롯됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>헥사고날 아키텍처(Ports and Adapters)</b>는 이 결합을 구조적으로 끊습니다. 도메인 코어는 외부 세계와 오직 인터페이스(포트)로만 소통하고, 실제 기술은 전부 그 인터페이스의 구현체(어댑터)로 코어 바깥에 둡니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 포트와 어댑터의 역할 분리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>인바운드 포트</b>는 외부에서 도메인 코어로 들어오는 진입점을 정의하는 인터페이스, <b>인바운드 어댑터</b>는 그 포트를 호출하는 실제 진입 기술(REST 컨트롤러, 메시지 컨슈머)입니다. <b>아웃바운드 포트</b>는 코어가 외부 자원에 접근할 때 요구하는 인터페이스, <b>아웃바운드 어댑터</b>는 그 실제 구현(JPA Repository, 외부 API 클라이언트)입니다. 핵심은 어댑터가 포트에 의존하고, 도메인 코어는 어댑터의 존재 자체를 모른다는 점입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-24-hexagonal-architecture-ports-adapters-1.svg" alt="헥사고날 아키텍처 구조도" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 레이어드 아키텍처와 무엇이 다른가</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">레이어드 아키텍처</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">헥사고날</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">의존 방향</td>
+<td style="border:1px solid #ddd; padding:10px;">Controller→Service→Repository</td>
+<td style="border:1px solid #ddd; padding:10px;">모든 외부 요소 → 포트 → 코어</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">테스트 방식</td>
+<td style="border:1px solid #ddd; padding:10px;">통합 테스트 위주가 되기 쉬움</td>
+<td style="border:1px solid #ddd; padding:10px;">코어는 순수 단위 테스트 가능</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">진입점 다양성</td>
+<td style="border:1px solid #ddd; padding:10px;">Controller 계층에 종속적</td>
+<td style="border:1px solid #ddd; padding:10px;">어댑터만 추가하면 확장</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — Java/Spring 포트 인터페이스</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">// application/port.out/OrderRepository.java — 아웃바운드 포트
+public interface OrderRepository {
+    Order save(Order order);
+    Optional&lt;Order&gt; findById(OrderId id);
+}
+
+// adapter/out.persistence/OrderRepositoryAdapter.java — 아웃바운드 어댑터
+@Component
+public class OrderRepositoryAdapter implements OrderRepository {
+    private final OrderJpaRepository jpaRepository;
+
+    @Override
+    public Order save(Order order) {
+        return jpaRepository.save(OrderEntity.from(order)).toDomain();
+    }
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">유스케이스 구현체는 OrderRepository 인터페이스만 참조하므로, 테스트에서는 인메모리 가짜 구현으로 대체해 프레임워크 컨텍스트 없이 순수 단위 테스트를 실행할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 작은 CRUD 서비스에 무리하게 적용하지 마세요</b> — 도메인 로직이 거의 없는 서비스에 억지로 나누면 파일 수만 늘고 실질적인 이점은 거의 없습니다.<br>
+<b>2. 도메인 엔티티와 영속성 엔티티를 분리하세요</b> — JPA 엔티티를 도메인 객체로 그대로 쓰면 프레임워크 의존성이 도메인에 스며듭니다.<br>
+<b>3. 포트 인터페이스를 지나치게 잘게 쪼개지 마세요</b> — 유스케이스 단위로 응집력 있게 설계하는 것이 유지보수에 유리합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 헥사고날 아키텍처는 도메인 코어가 포트만 알고 실제 기술은 모두 어댑터로 밀어내, 의존성이 항상 코어를 향하도록 구조를 뒤집습니다.<br>
+② 레이어드 아키텍처와 달리 DB나 진입 방식 교체가 어댑터 교체만으로 가능해지고, 코어 로직은 프레임워크 없이 순수 단위 테스트가 가능해집니다.<br>
+③ 도메인 로직이 단순한 서비스에는 과잉 설계가 될 수 있으므로 복잡한 비즈니스 규칙이나 다중 진입점이 필요한 곳에 선택적으로 적용하는 것이 실무적입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 시스템 설계 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#헥사고날아키텍처 #포트어댑터 #클린아키텍처 #Spring #DDD #아키텍처</p>
+
+</body>
+</html>

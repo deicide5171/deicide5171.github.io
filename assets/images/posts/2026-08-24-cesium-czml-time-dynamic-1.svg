@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">CZML 패킷이 타임라인 위치에 따라 엔티티를 움직이는 구조</text>
+
+  <!-- 타임라인 -->
+  <line x1="70" y1="120" x2="730" y2="120" stroke="#cccccc" stroke-width="3"/>
+  <text x="70" y="100" font-family="sans-serif" font-size="12" fill="#888">09:00</text>
+  <text x="730" y="100" font-family="sans-serif" font-size="12" fill="#888" text-anchor="end">12:00</text>
+
+  <!-- 샘플 포인트 -->
+  <circle cx="120" cy="120" r="6" fill="#2e9e63"/>
+  <circle cx="300" cy="120" r="6" fill="#2e9e63"/>
+  <circle cx="480" cy="120" r="6" fill="#2e9e63"/>
+  <circle cx="660" cy="120" r="6" fill="#2e9e63"/>
+  <text x="120" y="145" font-family="sans-serif" font-size="11" fill="#1a6b45" text-anchor="middle">t0, (lon0,lat0)</text>
+  <text x="300" y="145" font-family="sans-serif" font-size="11" fill="#1a6b45" text-anchor="middle">t1, (lon1,lat1)</text>
+  <text x="480" y="145" font-family="sans-serif" font-size="11" fill="#1a6b45" text-anchor="middle">t2, (lon2,lat2)</text>
+  <text x="660" y="145" font-family="sans-serif" font-size="11" fill="#1a6b45" text-anchor="middle">t3, (lon3,lat3)</text>
+
+  <!-- 현재 시각 마커 -->
+  <line x1="390" y1="90" x2="390" y2="150" stroke="#d0413b" stroke-width="2"/>
+  <polygon points="390,90 383,78 397,78" fill="#d0413b"/>
+  <text x="390" y="70" font-family="sans-serif" font-size="12" font-weight="bold" fill="#d0413b" text-anchor="middle">현재 Clock 위치</text>
+
+  <!-- CZML 패킷 박스 -->
+  <rect x="60" y="190" width="330" height="150" rx="8" fill="#eef4fb" stroke="#4a7ab5" stroke-width="2"/>
+  <text x="225" y="214" font-family="sans-serif" font-size="14" font-weight="bold" fill="#2c5583" text-anchor="middle">CZML 패킷 (JSON)</text>
+  <text x="80" y="238" font-family="sans-serif" font-size="12" font-family="monospace" fill="#2c5583">"position": {</text>
+  <text x="95" y="256" font-family="sans-serif" font-size="12" font-family="monospace" fill="#2c5583">"epoch": "...T09:00:00Z",</text>
+  <text x="95" y="274" font-family="sans-serif" font-size="12" font-family="monospace" fill="#2c5583">"cartographicDegrees": [</text>
+  <text x="105" y="292" font-family="sans-serif" font-size="12" font-family="monospace" fill="#2c5583">0, lon0, lat0, h0,</text>
+  <text x="105" y="308" font-family="sans-serif" font-size="12" font-family="monospace" fill="#2c5583">3600, lon1, lat1, h1, ...]</text>
+  <text x="80" y="326" font-family="sans-serif" font-size="12" font-family="monospace" fill="#2c5583">}</text>
+
+  <!-- 화살표 -->
+  <line x1="390" y1="265" x2="430" y2="265" stroke="#4a7ab5" stroke-width="2"/>
+  <polygon points="430,265 421,260 421,270" fill="#4a7ab5"/>
+  <text x="410" y="255" font-family="sans-serif" font-size="11" fill="#4a7ab5" text-anchor="middle">보간</text>
+
+  <!-- Cesium 뷰어 -->
+  <rect x="440" y="190" width="300" height="150" rx="8" fill="#0b1f33"/>
+  <text x="590" y="212" font-family="sans-serif" font-size="13" font-weight="bold" fill="#9fd6ff" text-anchor="middle">Cesium Viewer (지구본)</text>
+  <ellipse cx="590" cy="280" rx="90" ry="55" fill="#123a5e" stroke="#2e6b9e" stroke-width="1.5"/>
+  <path d="M 520 260 Q 590 230 660 260 Q 640 300 590 310 Q 540 300 520 260" fill="#1a5c3a" opacity="0.8"/>
+  <circle cx="605" cy="255" r="6" fill="#ffcf4d" stroke="#ffffff" stroke-width="1.5"/>
+  <text x="605" y="240" font-family="sans-serif" font-size="10.5" fill="#ffe9a8" text-anchor="middle">보간된 위치의 엔티티</text>
+  <path d="M 540 275 Q 575 260 605 255" stroke="#ffcf4d" stroke-width="1.5" fill="none" stroke-dasharray="3,3"/>
+
+  <text x="400" y="405" font-family="sans-serif" font-size="13" fill="#888" text-anchor="middle">Clock이 흐르며 샘플 사이 구간은 LAGRANGE 등 보간 알고리즘으로 부드럽게 연결된다</text>
+</svg>

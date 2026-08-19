@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>생각하고 움직일까, 계획부터 세울까 — ReAct vs Plan-and-Execute vs 리플렉션</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">생각하고 움직일까, 계획부터 세울까 — ReAct vs Plan-and-Execute vs 리플렉션</div>
+<p style="font-size:14px; color:#999;">2026. 8. 24. · AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — AI 에이전트가 다단계 문제를 풀 때 쓰는 세 가지 대표 플래닝 패턴 <b>ReAct</b>, <b>Plan-and-Execute</b>, <b>리플렉션</b>의 동작 방식과 비용·정확도 트레이드오프를 비교했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">에이전트는 어떤 순서로 생각할까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">에이전트에게 "이 버그를 고쳐줘"라고 시키면, 내부적으로 어떤 순서로 생각하고 행동해야 할까요? 매 단계마다 관찰 결과를 보고 다음 행동을 즉흥적으로 정할 수도 있고, 처음부터 전체 단계를 계획한 뒤 순서대로 실행할 수도 있습니다. 이 설계 선택이 에이전트의 비용, 지연 시간, 실패 복구 능력을 크게 좌우합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 널리 쓰이는 세 패턴이 ReAct, Plan-and-Execute, 그리고 리플렉션(Reflexion) 기반 접근입니다. 셋은 경쟁 관계가 아니라 실제로는 서로 다른 상황에 맞는 도구이며, 프로덕션 에이전트는 이들을 조합해서 쓰는 경우가 많습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — ReAct, 생각과 행동을 매 스텝 인터리빙</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">ReAct(Reasoning + Acting)는 "Thought → Action → Observation"을 한 스텝씩 반복하는 구조입니다. LLM은 매번 지금까지의 관찰 결과를 보고 다음에 무엇을 할지 즉석에서 판단합니다. 사전에 정해진 계획이 없으므로 환경 변화에 유연하게 반응할 수 있지만, 근시안적이라 여러 단계를 내다봐야 하는 문제에서는 비효율적인 경로를 택하거나 같은 실수를 반복하기 쉽습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — Plan-and-Execute, 먼저 전체 그림을 그립니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Plan-and-Execute는 이름 그대로 두 단계로 나뉩니다. 플래너가 목표를 하위 작업 목록으로 먼저 분해하고, 이그제큐터가 그 목록을 순서대로 실행합니다. 중간에 예상과 다른 결과가 나오면 플래너가 남은 계획을 다시 세우는(re-plan) 루프가 추가되는 것이 일반적입니다. 매 스텝 전체 맥락을 다시 추론하는 ReAct와 달리 계획 수립이 한 번만 일어나 토큰 비용이 절약됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 리플렉션, 실패에서 배우는 루프</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">리플렉션 계열 접근은 작업이 실패하거나 목표에 못 미치면 에이전트가 스스로 무엇이 잘못됐는지 언어로 비평(self-critique)을 생성하고, 이를 다음 시도의 맥락에 포함시켜 같은 실수를 반복하지 않도록 합니다. 파라미터 업데이트 없이 텍스트 형태의 반성 기록을 컨텍스트에 누적하는 방식입니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">ReAct</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Plan-and-Execute</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">리플렉션</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">계획 시점</td>
+<td style="border:1px solid #ddd; padding:10px;">매 스텝 즉흥</td>
+<td style="border:1px solid #ddd; padding:10px;">사전 일괄 계획</td>
+<td style="border:1px solid #ddd; padding:10px;">실패 후 재시도 시</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">적합한 작업</td>
+<td style="border:1px solid #ddd; padding:10px;">탐색적, 예측 불가</td>
+<td style="border:1px solid #ddd; padding:10px;">구조화된 다단계</td>
+<td style="border:1px solid #ddd; padding:10px;">반복 가능한 유사 작업</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — Plan-and-Execute 루프의 최소 구현</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">def plan_and_execute(goal, llm, tools):
+    plan = llm.generate_plan(goal)
+    results = []
+
+    for i, step in enumerate(plan):
+        try:
+            result = execute_step(step, tools, context=results)
+            results.append(result)
+        except StepFailure as e:
+            remaining = plan[i:]
+            plan = plan[:i] + llm.replan(goal, remaining, error=e, context=results)
+            continue
+
+    return llm.synthesize_final_answer(goal, results)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">재계획이 전체 재시작이 아니라 실패 지점 이후 구간만 다시 세운다는 점이 비용 효율의 핵심입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 작업의 예측 가능성으로 패턴을 고르세요</b> — 환경이 예측 불가능한 작업은 ReAct, 단계 구조가 미리 그려지는 작업은 Plan-and-Execute의 비용 이점이 큽니다.<br>
+<b>2. 리플렉션은 반복 실행되는 작업에서 가치가 커집니다</b> — 일회성 작업에는 반성 기록을 쌓을 기회 자체가 없어 이점이 제한적입니다.<br>
+<b>3. 셋을 계층적으로 조합하는 것이 실전에 가깝습니다</b> — 상위는 Plan-and-Execute, 하위는 ReAct, 전체 실패 시 리플렉션이라는 3단 조합이 흔히 관찰됩니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① ReAct는 매 스텝 즉흥적으로 반응해 유연하지만 근시안적이고, Plan-and-Execute는 전체 계획을 먼저 세워 비용 효율적이지만 초기 계획 오류에 취약합니다.<br>
+② 리플렉션은 실패를 언어화한 반성으로 다음 시도에 반영하는 방식으로, 반복 가능한 작업에서 효과가 큽니다.<br>
+③ 실전에서는 세 패턴을 계층적으로 조합해 상위 계획-하위 유연 실행-실패 시 반성 구조로 함께 쓰는 경우가 많습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 AI 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#ReAct #PlanAndExecute #리플렉션 #AI에이전트 #에이전트플래닝 #LLM</p>
+
+</body>
+</html>
