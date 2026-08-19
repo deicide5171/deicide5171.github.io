@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="32" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">사이드카 모델 vs eBPF 사이드카리스 모델</text>
+
+  <!-- Sidecar model -->
+  <text x="200" y="64" font-family="sans-serif" font-size="15" font-weight="bold" fill="#2b5a8a" text-anchor="middle">사이드카 모델</text>
+
+  <rect x="60" y="80" width="120" height="150" rx="6" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="120" y="100" font-family="sans-serif" font-size="11" fill="#2b5a8a" text-anchor="middle">파드 1</text>
+  <rect x="72" y="110" width="96" height="40" rx="4" fill="#ffffff" stroke="#4a7ab5"/>
+  <text x="120" y="134" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">앱 컨테이너</text>
+  <rect x="72" y="160" width="96" height="40" rx="4" fill="#fdeeee" stroke="#d0413b" stroke-width="1.5"/>
+  <text x="120" y="184" font-family="sans-serif" font-size="11" fill="#a3211c" text-anchor="middle">Envoy 사이드카</text>
+
+  <rect x="220" y="80" width="120" height="150" rx="6" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="280" y="100" font-family="sans-serif" font-size="11" fill="#2b5a8a" text-anchor="middle">파드 2</text>
+  <rect x="232" y="110" width="96" height="40" rx="4" fill="#ffffff" stroke="#4a7ab5"/>
+  <text x="280" y="134" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">앱 컨테이너</text>
+  <rect x="232" y="160" width="96" height="40" rx="4" fill="#fdeeee" stroke="#d0413b" stroke-width="1.5"/>
+  <text x="280" y="184" font-family="sans-serif" font-size="11" fill="#a3211c" text-anchor="middle">Envoy 사이드카</text>
+
+  <text x="200" y="255" font-family="sans-serif" font-size="12" fill="#a3211c" text-anchor="middle">파드 수만큼 프록시 증가</text>
+  <text x="200" y="273" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">userspace 경유, N개 파드 = N개 사이드카</text>
+
+  <!-- divider -->
+  <line x1="390" y1="60" x2="390" y2="410" stroke="#ddd" stroke-width="1.5"/>
+
+  <!-- eBPF model -->
+  <text x="600" y="64" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1a6b45" text-anchor="middle">eBPF 사이드카리스 모델</text>
+
+  <rect x="440" y="80" width="120" height="90" rx="6" fill="#eefaf1" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="500" y="100" font-family="sans-serif" font-size="11" fill="#1a6b45" text-anchor="middle">파드 1</text>
+  <rect x="452" y="110" width="96" height="40" rx="4" fill="#ffffff" stroke="#2e9e63"/>
+  <text x="500" y="134" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">앱 컨테이너</text>
+
+  <rect x="600" y="80" width="120" height="90" rx="6" fill="#eefaf1" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="660" y="100" font-family="sans-serif" font-size="11" fill="#1a6b45" text-anchor="middle">파드 2</text>
+  <rect x="612" y="110" width="96" height="40" rx="4" fill="#ffffff" stroke="#2e9e63"/>
+  <text x="660" y="134" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">앱 컨테이너</text>
+
+  <line x1="500" y1="170" x2="500" y2="200" stroke="#2e9e63" stroke-width="2"/>
+  <line x1="660" y1="170" x2="660" y2="200" stroke="#2e9e63" stroke-width="2"/>
+  <line x1="500" y1="200" x2="660" y2="200" stroke="#2e9e63" stroke-width="2"/>
+  <polygon points="580,204 574,196 586,196" fill="#2e9e63"/>
+
+  <rect x="450" y="210" width="260" height="50" rx="6" fill="#eefaf1" stroke="#2e9e63" stroke-width="2.5"/>
+  <text x="580" y="232" font-family="sans-serif" font-size="13" fill="#1a6b45" text-anchor="middle" font-weight="bold">노드 커널의 eBPF 프로그램</text>
+  <text x="580" y="250" font-family="sans-serif" font-size="10" fill="#1a6b45" text-anchor="middle">(L3/L4 직접 처리, L7은 공유 프록시로 위임)</text>
+
+  <text x="580" y="290" font-family="sans-serif" font-size="12" fill="#1a6b45" text-anchor="middle">노드당 하나, 파드 수와 무관하게 상대적 일정</text>
+  <text x="580" y="308" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">커널 공간에서 처리, userspace 홉 제거</text>
+
+  <rect x="80" y="350" width="640" height="70" rx="8" fill="#fdf6ec" stroke="#c98a3d"/>
+  <text x="400" y="375" font-family="sans-serif" font-size="12" fill="#a3611c" text-anchor="middle" font-weight="bold">트레이드오프: 장애 격리 단위가 파드 → 노드로 넓어짐</text>
+  <text x="400" y="395" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">HTTP 라우팅 등 L7 기능은 여전히 노드당 공유 프록시가 필요한 경우가 많음</text>
+</svg>
