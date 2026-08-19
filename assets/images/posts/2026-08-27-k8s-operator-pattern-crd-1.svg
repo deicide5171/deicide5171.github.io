@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">오퍼레이터 조정(Reconcile) 루프</text>
+
+  <rect x="40" y="70" width="160" height="50" rx="8" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="120" y="100" font-family="sans-serif" font-size="13" text-anchor="middle" fill="#222">사용자 kubectl apply</text>
+
+  <line x1="200" y1="95" x2="250" y2="95" stroke="#8aa5c4" stroke-width="2"/>
+  <polygon points="250,95 240,90 240,100" fill="#8aa5c4"/>
+
+  <rect x="250" y="70" width="180" height="50" rx="8" fill="#ffffff" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="340" y="92" font-family="sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#222">API 서버</text>
+  <text x="340" y="108" font-family="sans-serif" font-size="11" text-anchor="middle" fill="#666">CRD: PostgresCluster 저장</text>
+
+  <line x1="340" y1="120" x2="340" y2="160" stroke="#8aa5c4" stroke-width="2"/>
+  <polygon points="340,168 333,155 347,155" fill="#8aa5c4"/>
+  <text x="400" y="146" font-family="sans-serif" font-size="11" fill="#666">watch 이벤트</text>
+
+  <rect x="220" y="172" width="240" height="66" rx="8" fill="#eef8f1" stroke="#2e9e63" stroke-width="2"/>
+  <text x="340" y="196" font-family="sans-serif" font-size="14" font-weight="bold" text-anchor="middle" fill="#1a6b45">컨트롤러</text>
+  <text x="340" y="214" font-family="sans-serif" font-size="11" text-anchor="middle" fill="#444">원하는 상태(spec) vs</text>
+  <text x="340" y="228" font-family="sans-serif" font-size="11" text-anchor="middle" fill="#444">실제 상태 비교</text>
+
+  <!-- 루프 화살표 -->
+  <path d="M 460 205 C 560 205, 560 260, 460 260" fill="none" stroke="#c98a3d" stroke-width="2.5"/>
+  <polygon points="460,260 472,255 470,268" fill="#c98a3d"/>
+  <text x="560" y="235" font-family="sans-serif" font-size="12" fill="#a3611c" text-anchor="middle">30초마다</text>
+  <text x="560" y="250" font-family="sans-serif" font-size="12" fill="#a3611c" text-anchor="middle">재조정</text>
+
+  <rect x="220" y="264" width="240" height="60" rx="8" fill="#fdf6ec" stroke="#c98a3d" stroke-width="2"/>
+  <text x="340" y="286" font-family="sans-serif" font-size="13" font-weight="bold" text-anchor="middle" fill="#a3611c">액션 실행</text>
+  <text x="340" y="304" font-family="sans-serif" font-size="11" text-anchor="middle" fill="#444">스케일업 / 페일오버 / 설정 갱신</text>
+
+  <line x1="340" y1="324" x2="340" y2="352" stroke="#8aa5c4" stroke-width="2"/>
+  <polygon points="340,360 333,347 347,347" fill="#8aa5c4"/>
+
+  <rect x="220" y="364" width="240" height="50" rx="8" fill="#ffffff" stroke="#8aa5c4"/>
+  <text x="340" y="386" font-family="sans-serif" font-size="12" text-anchor="middle" fill="#222">status 서브리소스 갱신</text>
+  <text x="340" y="402" font-family="sans-serif" font-size="11" text-anchor="middle" fill="#666">readyReplicas, primaryPod 기록</text>
+
+  <text x="620" y="400" font-family="sans-serif" font-size="12" fill="#999" text-anchor="middle">레벨 기반 설계:</text>
+  <text x="620" y="418" font-family="sans-serif" font-size="12" fill="#999" text-anchor="middle">이벤트를 놓쳐도 다음 주기에 수렴</text>
+</svg>
