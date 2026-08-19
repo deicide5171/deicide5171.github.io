@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="32" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">스팟 노드 회수와 재스케줄링 흐름</text>
+
+  <!-- 노드 그룹 -->
+  <text x="40" y="64" font-family="sans-serif" font-size="15" font-weight="bold" fill="#5b7a9d">온디맨드 노드 그룹</text>
+  <rect x="40" y="74" width="220" height="80" rx="8" fill="#eef4fb" stroke="#b9cfe8"/>
+  <text x="150" y="100" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">상태 저장 워크로드</text>
+  <text x="150" y="118" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">(DB, 큐, 코어 애드온)</text>
+  <text x="150" y="138" font-family="sans-serif" font-size="11" fill="#3a6ea5" text-anchor="middle">회수 없음</text>
+
+  <text x="320" y="64" font-family="sans-serif" font-size="15" font-weight="bold" fill="#a3823f">스팟 노드 그룹</text>
+  <rect x="320" y="74" width="440" height="80" rx="8" fill="#fdf6ec" stroke="#e8d3ae"/>
+  <rect x="340" y="90" width="120" height="48" rx="6" fill="#ffffff" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="400" y="110" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">노드 1</text>
+  <text x="400" y="126" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">API 레플리카 A</text>
+  <rect x="480" y="90" width="120" height="48" rx="6" fill="#ffffff" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="540" y="110" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">노드 2</text>
+  <text x="540" y="126" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">API 레플리카 B</text>
+  <rect x="620" y="90" width="120" height="48" rx="6" fill="#fff0f0" stroke="#d9534f" stroke-width="2" stroke-dasharray="4,3"/>
+  <text x="680" y="110" font-family="sans-serif" font-size="11" fill="#a83a34" text-anchor="middle">노드 3</text>
+  <text x="680" y="126" font-family="sans-serif" font-size="10" fill="#a83a34" text-anchor="middle">회수 예정 ⚠</text>
+
+  <line x1="60" y1="176" x2="740" y2="176" stroke="#ddd" stroke-width="1"/>
+
+  <!-- 타임라인 -->
+  <text x="40" y="204" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1a6b45">회수 대응 타임라인</text>
+
+  <rect x="40" y="220" width="150" height="52" rx="6" fill="#fff0f0" stroke="#d9534f" stroke-width="1.5"/>
+  <text x="115" y="240" font-family="sans-serif" font-size="12" fill="#a83a34" text-anchor="middle">종료 알림 수신</text>
+  <text x="115" y="256" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">(약 2분 전 통지)</text>
+
+  <line x1="190" y1="246" x2="222" y2="246" stroke="#999" stroke-width="1.5"/>
+  <polygon points="222,246 213,241 213,251" fill="#999"/>
+
+  <rect x="226" y="220" width="150" height="52" rx="6" fill="#fdf6ec" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="301" y="240" font-family="sans-serif" font-size="12" fill="#8a4a2e" text-anchor="middle">cordon</text>
+  <text x="301" y="256" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">신규 스케줄 차단</text>
+
+  <line x1="376" y1="246" x2="408" y2="246" stroke="#999" stroke-width="1.5"/>
+  <polygon points="408,246 399,241 399,251" fill="#999"/>
+
+  <rect x="412" y="220" width="150" height="52" rx="6" fill="#fdf6ec" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="487" y="240" font-family="sans-serif" font-size="12" fill="#8a4a2e" text-anchor="middle">drain</text>
+  <text x="487" y="256" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">파드 축출 + SIGTERM</text>
+
+  <line x1="562" y1="246" x2="594" y2="246" stroke="#999" stroke-width="1.5"/>
+  <polygon points="594,246 585,241 585,251" fill="#999"/>
+
+  <rect x="598" y="220" width="160" height="52" rx="6" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="678" y="240" font-family="sans-serif" font-size="12" fill="#3a6ea5" text-anchor="middle">다른 노드로 재스케줄</text>
+  <text x="678" y="256" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">토폴로지 분산 유지</text>
+
+  <!-- 하단 요약 -->
+  <rect x="40" y="300" width="720" height="120" rx="8" fill="#f9f9f9" stroke="#ddd"/>
+  <text x="60" y="324" font-family="sans-serif" font-size="13" fill="#333" font-weight="bold">설계 포인트</text>
+  <text x="60" y="348" font-family="sans-serif" font-size="12" fill="#555">· 상태 저장 워크로드는 온디맨드 그룹, 상태 없는 워크로드는 스팟 그룹으로 분리</text>
+  <text x="60" y="368" font-family="sans-serif" font-size="12" fill="#555">· 같은 디플로이먼트의 레플리카는 토폴로지 분산 제약으로 여러 노드에 흩어둔다</text>
+  <text x="60" y="388" font-family="sans-serif" font-size="12" fill="#555">· PodDisruptionBudget으로 동시 축출 가능한 파드 수를 제한한다</text>
+  <text x="60" y="408" font-family="sans-serif" font-size="12" fill="#555">· 유사 스펙의 인스턴스 타입을 여러 개 후보로 묶어 특정 타입 의존도를 낮춘다</text>
+</svg>
