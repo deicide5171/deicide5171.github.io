@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>쓰고 나서 바로 읽었는데 없다 — 복제 지연 모니터링과 해소 전략</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">쓰고 나서 바로 읽었는데 없다 — 복제 지연 모니터링과 해소 전략</div>
+<p style="font-size:14px; color:#999;">2026. 8. 26. · 데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 읽기를 레플리카로 분산하면 방금 쓴 데이터가 안 보이는 문제가 생길 수 있습니다. <b>복제 지연(replication lag)</b>이 왜 생기고, 무엇을 측정하고, 어떻게 완화하는지 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">방금 저장했는데 왜 안 보일까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽기 트래픽을 레플리카로 분산하는 구성은 DB 확장의 가장 흔한 첫걸음입니다. 그런데 이 구성을 넣자마자 나오는 버그 리포트가 있습니다. "방금 저장한 글이 목록에 안 보여요"라거나 "결제 상태를 업데이트했는데 다음 화면에서 예전 값이 뜬다"는 식입니다. 원인은 대부분 같습니다. 쓰기는 프라이머리에 즉시 반영되지만, 레플리카에는 복제 스트림을 통해 약간의 시간차를 두고 반영되기 때문입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">문제는 지연이 생긴다는 사실 자체가 아니라, 그 지연을 측정하지 않고 방치하는 것입니다. 정상 상태에서 수 밀리초였던 지연이 트래픽 급증이나 긴 트랜잭션 하나 때문에 수십 초로 벌어지는 일이 실제로 일어나고, 이때 애플리케이션이 아무 대응도 하지 않으면 사용자에게 보이는 데이터 일관성이 예고 없이 깨집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 지연은 파이프라인 여러 단계에서 쌓입니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">복제 지연은 하나의 원인이 아니라 파이프라인 여러 단계의 누적입니다. 프라이머리가 WAL을 생성하는 시점부터 레플리카가 그 WAL을 적용해 쿼리에 반영하는 시점까지 여러 구간을 거칩니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">단계</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">무엇이 지연을 만드는가</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">WAL 생성</td>
+<td style="border:1px solid #ddd; padding:10px;">대용량 트랜잭션·벌크 업데이트</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">네트워크 전송</td>
+<td style="border:1px solid #ddd; padding:10px;">지리적 거리, 대역폭 부족</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">레플리카 적용</td>
+<td style="border:1px solid #ddd; padding:10px;">I/O 부하, 단일 스레드 적용 병목</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">읽기 라우팅</td>
+<td style="border:1px solid #ddd; padding:10px;">지연 상태를 모르고 무조건 레플리카로 전송</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">MySQL은 레플리카가 릴레이 로그를 단일 스레드로 순차 적용하던 시절 이 병목이 특히 컸고, 지금은 멀티스레드 복제로 완화됐습니다. PostgreSQL은 스트리밍 복제 자체는 빠르지만, 레플리카에서 실행 중인 긴 읽기 쿼리가 hot_standby_feedback 설정에 따라 WAL 적용을 지연시킬 수 있다는 점이 특유의 함정입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — "바이트 차이"가 아니라 "시간 차이"로 봐야 합니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">복제 지연을 측정할 때 흔한 실수는 프라이머리와 레플리카의 LSN(로그 위치) 차이만 보는 것입니다. 실제로 사용자가 체감하는 지연은 "이 데이터가 언제 반영됐는가"라는 시간 개념입니다. PostgreSQL은 pg_stat_replication에서 write_lag, flush_lag, replay_lag을 시간 단위로 직접 제공하고, MySQL은 Seconds_Behind_Source로 근사치를 제공합니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">-- PostgreSQL: 프라이머리에서 각 레플리카의 지연을 시간 단위로 확인
+SELECT
+  application_name,
+  client_addr,
+  write_lag,
+  flush_lag,
+  replay_lag
+FROM pg_stat_replication;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">replay_lag이 실제로 "지금 이 레플리카에 쿼리를 날리면 그 결과가 몇 초 전 프라이머리 상태와 같은가"에 가장 가까운 지표입니다. 모니터링 대시보드에는 이 값을 시계열로 쌓고, 임계치를 넘으면 알림을 울리는 것이 기본입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 지연을 감안한 읽기 라우팅</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">def get_order_status(order_id, just_wrote=False):
+    if just_wrote:
+        # read-your-writes 보장을 위해 프라이머리로 직접 읽음
+        return primary_db.query(
+            "SELECT status FROM orders WHERE id = %s", [order_id]
+        )
+
+    replica = pick_replica_with_low_lag(max_lag_seconds=2)
+    if replica is None:
+        # 모든 레플리카가 임계치를 넘으면 프라이머리로 폴백
+        return primary_db.query(
+            "SELECT status FROM orders WHERE id = %s", [order_id]
+        )
+    return replica.query(
+        "SELECT status FROM orders WHERE id = %s", [order_id]
+    )</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">결제·주문 상태처럼 방금 쓴 값을 즉시 읽어야 하는 화면에서는 애초에 레플리카로 보내지 않고 프라이머리로 강제 라우팅하는 것이 가장 단순하고 확실한 해법입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 모든 읽기를 레플리카로 보내지 마세요</b> — read-your-writes가 요구되는 화면은 프라이머리 직접 읽기로 고정하고, 몇 초 지연을 감내할 수 있는 화면만 레플리카로 보내세요.<br>
+<b>2. 지연 급증 원인을 구분해서 대응하세요</b> — 트래픽 급증은 레플리카 증설로, 벌크 배치로 인한 지연은 배치를 청크 단위로 나누는 것이 더 근본적인 해법입니다.<br>
+<b>3. 알림 임계치는 서비스 SLA에 맞춰 정하세요</b> — 지연 0초를 목표로 하면 알림 피로만 쌓입니다. 실제로 문제가 되는 수준을 기준으로 설정하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 복제 지연은 WAL 생성부터 레플리카 적용까지 파이프라인 여러 단계의 누적이며, 읽기-쓰기 분리 구조에서는 근본적으로 사라지지 않습니다.<br>
+② LSN 바이트 차이가 아니라 replay_lag 같은 시간 단위 지표로 측정해야 사용자가 체감하는 지연과 일치합니다.<br>
+③ read-your-writes가 필요한 읽기는 프라이머리로 고정하고, 지연이 임계치를 넘은 레플리카는 라우팅에서 제외하는 것이 기본 대응입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 데이터베이스 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#복제지연 #ReplicationLag #PostgreSQL #MySQL #읽기쓰기분리 #DB모니터링 #데이터베이스</p>
+
+</body>
+</html>
