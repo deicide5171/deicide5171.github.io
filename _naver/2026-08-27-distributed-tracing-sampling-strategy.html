@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>트레이스를 다 저장하면 망한다 — 분산 트레이싱 샘플링, 헤드 vs 테일</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">트레이스를 다 저장하면 망한다 — 분산 트레이싱 샘플링, 헤드 vs 테일</div>
+<p style="font-size:14px; color:#999;">2026. 8. 27. · 인프라</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 마이크로서비스 트래픽이 커질수록 트레이스 전량 저장은 비용 폭탄이 됩니다. 언제 결정하느냐가 다른 헤드 샘플링과 테일 샘플링을 비교하고 실무 조합 전략을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 트레이스를 다 저장할 수 없을까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">마이크로서비스 하나가 초당 1만 건의 요청을 처리하고 요청 하나당 스팬이 평균 20개 생긴다면, 트레이스를 전부 저장하는 것만으로 초당 20만 스팬이 백엔드로 밀려듭니다. 대부분의 트레이싱 백엔드는 이 규모를 감당하지 못하거나 감당하더라도 비용이 감당 안 될 만큼 커집니다. 그래서 실무에서는 반드시 샘플링, 즉 트레이스의 일부만 골라 저장하는 정책이 필요합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">문제는 "무엇을 남길 것인가"입니다. 무작위로 1%만 남기면 저장 비용은 줄지만, 하필 문제가 있던 그 요청이 표본에서 빠질 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 헤드 샘플링, 시작할 때 결정합니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">헤드 샘플링(head-based sampling)은 트레이스가 시작되는 순간 이 트레이스를 저장할지 말지를 결정합니다. 가장 흔한 방식은 확률적 샘플링이고, 이 결정은 트레이스 컨텍스트에 담겨 하위 서비스로 전파됩니다. 구현이 단순하고 오버헤드가 거의 없다는 장점이 있지만, <b>트레이스의 결과(에러 여부, 지연시간)를 전혀 모르는 상태에서</b> 내려지는 결정이라는 한계가 있습니다. 전체 트래픽의 0.1%만 에러라면, 10% 확률 샘플링으로는 에러 트레이스 대부분을 놓칩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 테일 샘플링, 결과를 보고 결정합니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">테일 샘플링(tail-based sampling)은 트레이스의 모든 스팬이 도착할 때까지 기다렸다가, 완료된 시점에 "이 트레이스를 저장할 가치가 있는가"를 판단합니다. "에러가 하나라도 있으면 100% 저장", "지연시간이 P99를 넘으면 저장", "그 외에는 1%만 무작위 저장" 같은 정책 조합이 가능합니다. 대신 트레이스가 끝날 때까지 모든 스팬을 버퍼에 들고 있어야 하므로 메모리 사용량이 늘고, 판단을 내리기 전까지 익스포트를 미루므로 관측 지연이 늘어납니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">헤드 샘플링</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">테일 샘플링</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">결정 시점</td>
+<td style="border:1px solid #ddd; padding:10px;">트레이스 시작 시</td>
+<td style="border:1px solid #ddd; padding:10px;">트레이스 완료 시</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">에러 트레이스 포착율</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음(확률에 종속)</td>
+<td style="border:1px solid #ddd; padding:10px;">높음(정책으로 100% 가능)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">구현 복잡도</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음</td>
+<td style="border:1px solid #ddd; padding:10px;">높음(트레이스 ID 라우팅 필요)</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-27-distributed-tracing-sampling-strategy-1.svg" alt="헤드 샘플링은 트레이스 시작 시점에, 테일 샘플링은 모든 스팬 수집 후 완료 시점에 저장 여부를 결정하는 흐름 비교도" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — OpenTelemetry Collector 테일 샘플링 설정</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">processors:
+  tail_sampling:
+    decision_wait: 10s          # 트레이스 완료를 기다리는 최대 시간
+    num_traces: 100000          # 버퍼에 유지할 최대 트레이스 수
+    policies:
+      - name: errors-policy
+        type: status_code
+        status_code: { status_codes: [ERROR] }   # 에러는 100% 저장
+      - name: slow-policy
+        type: latency
+        latency: { threshold_ms: 1000 }           # 1초 이상 지연도 100% 저장
+      - name: baseline-sample
+        type: probabilistic
+        probabilistic: { sampling_percentage: 5 } # 나머지는 5%만 무작위 저장</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 설정은 "에러 또는 느린 요청은 전부 남기고, 정상 요청은 5%만 표본으로 남긴다"는 정책을 구현합니다. 정책이 여러 개면 OR 조건으로 평가되어, 하나라도 만족하면 샘플링됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 헤드 샘플링을 먼저 앞단에 두고 테일 샘플링을 뒤에 조합하세요</b> — 헤드 샘플링으로 트래픽을 10~20% 정도로 줄여 Collector 부하를 낮추고, 그 위에서 테일 샘플링 정책을 적용하는 2단계 구조가 실무에서 흔히 쓰입니다.<br>
+<b>2. 트레이스 ID 기준 일관 샘플링을 놓치지 마세요</b> — 여러 서비스가 각자 확률적으로 결정하면 같은 트레이스의 스팬 일부만 남는 반쪽짜리 트레이스가 생깁니다.<br>
+<b>3. decision_wait은 가장 긴 트레이스보다 여유 있게 잡으세요</b> — 비동기 백그라운드 작업이 포함된 트레이스는 완료까지 수 초가 걸릴 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 헤드 샘플링은 결과를 모른 채 확률로 결정해 오버헤드가 적지만 에러/느린 트레이스를 놓치기 쉽습니다.<br>
+② 테일 샘플링은 완료된 트레이스의 실제 결과를 보고 결정해 에러·지연 트레이스를 확실히 남기지만 버퍼링 비용이 듭니다.<br>
+③ 실무에서는 헤드 샘플링으로 전체 볼륨을 낮추고 테일 샘플링 정책으로 중요한 트레이스를 골라내는 조합이 표준적입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 인프라 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#분산트레이싱 #샘플링 #OpenTelemetry #옵저버빌리티 #APM #인프라</p>
+
+</body>
+</html>
