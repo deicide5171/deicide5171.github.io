@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="30" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">PostGIS raster 타입 질의 흐름</text>
+
+  <!-- 타일 저장 -->
+  <text x="40" y="58" font-family="sans-serif" font-size="14" font-weight="bold" fill="#3a6ea5">타일 단위 저장 (raster2pgsql)</text>
+  <rect x="40" y="66" width="60" height="60" fill="#eef4fb" stroke="#4a7ab5"/>
+  <rect x="100" y="66" width="60" height="60" fill="#eef4fb" stroke="#4a7ab5"/>
+  <rect x="160" y="66" width="60" height="60" fill="#eef4fb" stroke="#4a7ab5"/>
+  <rect x="40" y="126" width="60" height="60" fill="#eef4fb" stroke="#4a7ab5"/>
+  <rect x="100" y="126" width="60" height="60" fill="#eef4fb" stroke="#4a7ab5"/>
+  <rect x="160" y="126" width="60" height="60" fill="#eef4fb" stroke="#4a7ab5"/>
+  <text x="130" y="204" font-family="sans-serif" font-size="11" fill="#5b7a9d" text-anchor="middle">각 타일 = 테이블의 한 행 + GiST 공간 인덱스</text>
+
+  <!-- ST_Value -->
+  <rect x="260" y="66" width="230" height="70" rx="8" fill="#f0f7f4" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="375" y="90" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1a6b45" text-anchor="middle">ST_Value(rast, point)</text>
+  <text x="375" y="110" font-family="sans-serif" font-size="11" fill="#555" text-anchor="middle">지점 → 픽셀값 조회</text>
+  <text x="375" y="126" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">예: 특정 좌표의 고도값</text>
+
+  <!-- ST_SummaryStats -->
+  <rect x="260" y="146" width="230" height="70" rx="8" fill="#fdf6ec" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="375" y="170" font-family="sans-serif" font-size="13" font-weight="bold" fill="#8a4a2e" text-anchor="middle">ST_Clip + ST_SummaryStats</text>
+  <text x="375" y="190" font-family="sans-serif" font-size="11" fill="#555" text-anchor="middle">폴리곤 → 존별 통계</text>
+  <text x="375" y="206" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">예: 행정구역 평균 고도</text>
+
+  <line x1="220" y1="100" x2="256" y2="100" stroke="#999" stroke-width="1.3"/>
+  <line x1="220" y1="160" x2="256" y2="160" stroke="#999" stroke-width="1.3"/>
+
+  <line x1="20" y1="240" x2="780" y2="240" stroke="#eee" stroke-width="1"/>
+
+  <!-- 벡터-래스터 변환 -->
+  <text x="40" y="266" font-family="sans-serif" font-size="14" font-weight="bold" fill="#333">벡터 ↔ 래스터 상호 변환</text>
+
+  <rect x="60" y="280" width="180" height="70" rx="8" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="150" y="308" font-family="sans-serif" font-size="12" fill="#3a6ea5" text-anchor="middle">래스터</text>
+  <text x="150" y="326" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">(토지피복 분류)</text>
+
+  <line x1="240" y1="300" x2="330" y2="300" stroke="#9b5fc9" stroke-width="1.5"/>
+  <polygon points="330,300 321,295 321,305" fill="#9b5fc9"/>
+  <text x="285" y="292" font-family="sans-serif" font-size="10" fill="#7a4a9d" text-anchor="middle">DumpAsPolygons</text>
+
+  <rect x="334" y="280" width="180" height="70" rx="8" fill="#f5eefb" stroke="#9b5fc9" stroke-width="1.5"/>
+  <text x="424" y="308" font-family="sans-serif" font-size="12" fill="#7a4a9d" text-anchor="middle">벡터 폴리곤</text>
+  <text x="424" y="326" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">(클래스별 영역)</text>
+
+  <line x1="334" y1="330" x2="244" y2="330" stroke="#c98a3d" stroke-width="1.5"/>
+  <polygon points="244,330 253,325 253,335" fill="#c98a3d"/>
+  <text x="285" y="345" font-family="sans-serif" font-size="10" fill="#8a4a2e" text-anchor="middle">ST_AsRaster</text>
+
+  <rect x="560" y="280" width="200" height="70" rx="8" fill="#fff7f0" stroke="#ff8a3d"/>
+  <text x="660" y="304" font-family="sans-serif" font-size="12" font-weight="bold" fill="#a35a1f" text-anchor="middle">주의: NoData 처리</text>
+  <text x="660" y="322" font-family="sans-serif" font-size="10" fill="#555" text-anchor="middle">ST_BandIsNoData로 결손 픽셀</text>
+  <text x="660" y="336" font-family="sans-serif" font-size="10" fill="#555" text-anchor="middle">제외 후 통계 계산</text>
+</svg>
