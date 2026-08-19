@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">:has() — 관계 조건으로 부모/형제를 선택하는 세 가지 방향</text>
+
+  <!-- 자손 방향 -->
+  <rect x="50" y="70" width="220" height="130" rx="8" fill="#eef7f1" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="160" y="94" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1a6b45" text-anchor="middle">① 자손 관계</text>
+  <rect x="80" y="108" width="160" height="34" rx="5" fill="#ffffff" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="160" y="130" font-family="sans-serif" font-size="12" fill="#1a6b45" text-anchor="middle">.form-group (선택됨)</text>
+  <line x1="160" y1="142" x2="160" y2="156" stroke="#2e9e63" stroke-width="1.5"/>
+  <rect x="90" y="158" width="140" height="30" rx="5" fill="#fff" stroke="#999"/>
+  <text x="160" y="177" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">.error-message</text>
+  <text x="160" y="216" font-family="sans-serif" font-size="12" fill="#555" text-anchor="middle">:has(.error-message)</text>
+
+  <!-- 형제 방향 -->
+  <rect x="290" y="70" width="220" height="130" rx="8" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="400" y="94" font-family="sans-serif" font-size="14" font-weight="bold" fill="#2f5a8c" text-anchor="middle">② 형제 관계</text>
+  <rect x="310" y="115" width="80" height="30" rx="5" fill="#fff" stroke="#999"/>
+  <text x="350" y="134" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">input:checked</text>
+  <line x1="390" y1="130" x2="410" y2="130" stroke="#4a7ab5" stroke-width="1.5"/>
+  <polygon points="410,130 402,125 402,135" fill="#4a7ab5"/>
+  <rect x="412" y="115" width="90" height="30" rx="5" fill="#ffffff" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="457" y="134" font-family="sans-serif" font-size="11" fill="#2f5a8c" text-anchor="middle">.option-label</text>
+  <text x="400" y="216" font-family="sans-serif" font-size="12" fill="#555" text-anchor="middle">.option:has(input:checked) + .option-label</text>
+
+  <!-- 자기 자신 상태 -->
+  <rect x="530" y="70" width="220" height="130" rx="8" fill="#fdf6ec" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="640" y="94" font-family="sans-serif" font-size="14" font-weight="bold" fill="#a3611c" text-anchor="middle">③ 자기 자신 상태</text>
+  <rect x="560" y="108" width="160" height="34" rx="5" fill="#ffffff" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="640" y="130" font-family="sans-serif" font-size="12" fill="#a3611c" text-anchor="middle">fieldset (선택됨)</text>
+  <line x1="640" y1="142" x2="640" y2="156" stroke="#c98a3d" stroke-width="1.5"/>
+  <rect x="590" y="158" width="100" height="30" rx="5" fill="#fff" stroke="#999"/>
+  <text x="640" y="177" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">:focus-visible</text>
+  <text x="640" y="216" font-family="sans-serif" font-size="12" fill="#555" text-anchor="middle">:has(:focus-visible)</text>
+
+  <!-- 하단 설명 -->
+  <rect x="50" y="260" width="700" height="150" rx="8" fill="#f7f9fc" stroke="#c9d6e8"/>
+  <text x="70" y="288" font-family="sans-serif" font-size="14" font-weight="bold" fill="#3a5a8c">기존 CSS 결합자의 방향 제약</text>
+  <text x="70" y="316" font-family="sans-serif" font-size="13" fill="#333">자손 결합자( )·자식(&gt;)·형제(~, +)는 전부 "아래 또는 뒤"로만 뻗어나갈 수 있었다</text>
+  <text x="70" y="342" font-family="sans-serif" font-size="13" fill="#333">→ 자식 상태를 보고 부모나 앞쪽 형제를 스타일링하려면 JS(MutationObserver 등)가 필요했다</text>
+  <text x="70" y="374" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1a6b45">:has()는 "괄호 안 조건이 매칭되면 이 요소 자체를 선택한다"는 관계 조건자로 이 제약을 없앤다</text>
+</svg>
