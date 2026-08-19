@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">패킷 처리 경로: XDP는 커널 스택 진입 전에 붙는다</text>
+
+  <!-- NIC -->
+  <rect x="30" y="150" width="110" height="60" rx="8" fill="#eef4fb" stroke="#4a7ab5" stroke-width="2"/>
+  <text x="85" y="185" font-family="sans-serif" font-size="14" font-weight="bold" fill="#2c5583" text-anchor="middle">NIC</text>
+
+  <line x1="140" y1="180" x2="185" y2="180" stroke="#888" stroke-width="2"/>
+  <polygon points="185,180 176,175 176,185" fill="#888"/>
+
+  <!-- XDP hook -->
+  <rect x="190" y="140" width="150" height="80" rx="8" fill="#eaf7ef" stroke="#2e9e63" stroke-width="3"/>
+  <text x="265" y="170" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1a6b45" text-anchor="middle">XDP 훅</text>
+  <text x="265" y="190" font-family="sans-serif" font-size="12" fill="#1a6b45" text-anchor="middle">(eBPF 프로그램)</text>
+  <text x="265" y="206" font-family="sans-serif" font-size="11" fill="#3d8a63" text-anchor="middle">sk_buff 할당 이전</text>
+
+  <!-- 판정 갈래 -->
+  <line x1="340" y1="180" x2="380" y2="130" stroke="#d0413b" stroke-width="2"/>
+  <polygon points="380,130 369,131 375,140" fill="#d0413b"/>
+  <rect x="385" y="95" width="150" height="50" rx="6" fill="#fdeceb" stroke="#d0413b" stroke-width="2"/>
+  <text x="460" y="116" font-family="sans-serif" font-size="13" font-weight="bold" fill="#a3271f" text-anchor="middle">XDP_DROP</text>
+  <text x="460" y="133" font-family="sans-serif" font-size="11" fill="#a3271f" text-anchor="middle">(악성 트래픽 즉시 폐기)</text>
+
+  <line x1="340" y1="180" x2="380" y2="230" stroke="#c98a3d" stroke-width="2"/>
+  <polygon points="380,230 375,220 369,229" fill="#c98a3d"/>
+  <rect x="385" y="215" width="150" height="50" rx="6" fill="#fdf6ec" stroke="#c98a3d" stroke-width="2"/>
+  <text x="460" y="236" font-family="sans-serif" font-size="13" font-weight="bold" fill="#a3611c" text-anchor="middle">XDP_TX</text>
+  <text x="460" y="253" font-family="sans-serif" font-size="11" fill="#a3611c" text-anchor="middle">(같은 NIC로 즉시 반사)</text>
+
+  <line x1="340" y1="195" x2="580" y2="195" stroke="#2e9e63" stroke-width="2"/>
+  <polygon points="580,195 571,190 571,200" fill="#2e9e63"/>
+
+  <!-- 커널 네트워크 스택 -->
+  <rect x="585" y="140" width="185" height="120" rx="8" fill="#f5f5f5" stroke="#999" stroke-width="2"/>
+  <text x="677" y="165" font-family="sans-serif" font-size="13" font-weight="bold" fill="#555" text-anchor="middle">일반 트래픽만</text>
+  <text x="677" y="190" font-family="sans-serif" font-size="12" fill="#555" text-anchor="middle">sk_buff 할당</text>
+  <text x="677" y="210" font-family="sans-serif" font-size="12" fill="#555" text-anchor="middle">netfilter / iptables</text>
+  <text x="677" y="230" font-family="sans-serif" font-size="12" fill="#555" text-anchor="middle">TCP/IP 스택 → 소켓</text>
+  <text x="677" y="250" font-family="sans-serif" font-size="11" fill="#999" text-anchor="middle">(여기부터 CPU 비용 발생)</text>
+
+  <!-- 맵 -->
+  <rect x="190" y="300" width="380 " height="0" fill="none"/>
+  <rect x="190" y="300" width="380" height="70" rx="8" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="380" y="322" font-family="sans-serif" font-size="13" font-weight="bold" fill="#2c5583" text-anchor="middle">eBPF 맵 (BPF_MAP_TYPE_LPM_TRIE 등)</text>
+  <text x="380" y="342" font-family="sans-serif" font-size="12" fill="#5b7a9d" text-anchor="middle">차단 IP/CIDR, per-IP 레이트 카운터를 커널-유저 공간이 공유</text>
+  <text x="380" y="358" font-family="sans-serif" font-size="11" fill="#7a95b3" text-anchor="middle">bpftool로 실시간 조회·갱신 가능</text>
+
+  <line x1="380" y1="300" x2="300" y2="220" stroke="#4a7ab5" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="405" y="285" font-family="sans-serif" font-size="11" fill="#4a7ab5">판정 참조</text>
+
+  <text x="400" y="410" font-family="sans-serif" font-size="13" fill="#888" text-anchor="middle">iptables/netfilter 대비 CPU 사이클을 크게 절약해 SYN 플러드·볼류메트릭 DDoS 완화에 사용</text>
+</svg>

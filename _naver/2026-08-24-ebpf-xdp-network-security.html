@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>커널 스택 진입 전에 막는다 — eBPF/XDP로 하는 네트워크 보안·DDoS 완화</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">커널 스택 진입 전에 막는다 — eBPF/XDP로 하는 네트워크 보안·DDoS 완화</div>
+<p style="font-size:14px; color:#999;">2026. 8. 24. · 인프라</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — eBPF/XDP는 패킷이 커널 네트워크 스택에 들어가기도 전, NIC 드라이버 수준에서 판정을 끝내 iptables보다 훨씬 적은 비용으로 <b>DDoS 트래픽</b>을 걸러냅니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">iptables만으로는 왜 부족할까요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">초당 수백만 패킷 규모의 SYN 플러드나 볼류메트릭 DDoS 앞에서 iptables는 근본적인 한계를 드러냅니다. netfilter 체인은 패킷마다 커널 소켓 버퍼(sk_buff)를 할당하고 여러 훅을 거쳐 규칙을 순회하는데, 이 과정 자체가 이미 상당한 CPU 사이클을 소모합니다. 악성 트래픽인지 판정하기도 전에 자원을 다 써버리는 셈입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">eBPF와 XDP(eXpress Data Path)는 이 문제를 아예 다른 지점에서 접근합니다. 패킷이 커널 네트워크 스택에 들어가기도 전, NIC 드라이버 수준에서 프로그램을 실행해 판정을 끝냅니다. Cloudflare가 자사 DDoS 완화 파이프라인에, Meta가 Katran L4 로드밸런서에, Cilium이 쿠버네티스 네트워킹 데이터 플레인에 이 기술을 쓰는 이유입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — XDP 훅의 위치가 성능의 전부입니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">XDP 프로그램은 NIC 드라이버가 패킷을 받은 직후, sk_buff 구조체를 할당하기 전에 실행됩니다. <b>XDP_DROP</b>은 패킷을 즉시 폐기해 CPU 비용이 최소이고, <b>XDP_PASS</b>는 일반 커널 스택으로 정상 전달, <b>XDP_TX</b>는 패킷을 수정해 같은 NIC로 즉시 반사, <b>XDP_REDIRECT</b>는 다른 인터페이스나 CPU로 전달합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">동작 모드도 세 가지입니다. <b>네이티브(native)</b> 모드는 드라이버가 직접 지원해 가장 빠르고, <b>오프로드(offloaded)</b> 모드는 스마트NIC에서 실행돼 CPU를 아예 쓰지 않으며, <b>제네릭(generic)</b> 모드는 드라이버 지원이 없을 때 소프트웨어 에뮬레이션이라 이미 sk_buff가 할당된 뒤라 성능 이점이 줄어듭니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — iptables vs XDP vs DPDK</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">iptables/netfilter</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">XDP/eBPF</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">DPDK</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">처리 위치</td>
+<td style="border:1px solid #ddd; padding:10px;">커널 스택 내부</td>
+<td style="border:1px solid #ddd; padding:10px;">드라이버 직후, 스택 진입 전</td>
+<td style="border:1px solid #ddd; padding:10px;">커널 우회, 유저 폴링</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">동적 갱신</td>
+<td style="border:1px solid #ddd; padding:10px;">규칙 재적재 필요</td>
+<td style="border:1px solid #ddd; padding:10px;">맵으로 무중단 갱신</td>
+<td style="border:1px solid #ddd; padding:10px;">자체 관리 필요</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">대표 활용</td>
+<td style="border:1px solid #ddd; padding:10px;">범용 방화벽</td>
+<td style="border:1px solid #ddd; padding:10px;">DDoS 완화, L4 LB</td>
+<td style="border:1px solid #ddd; padding:10px;">초고속 패킷 처리</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-24-ebpf-xdp-network-security-1.svg" alt="XDP 훅 위치와 패킷 처리 경로" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — per-IP 레이트 리미팅 XDP 프로그램</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">SEC("xdp")
+int xdp_ratelimit(struct xdp_md *ctx) {
+    void *data = (void *)(long)ctx-&gt;data;
+    void *data_end = (void *)(long)ctx-&gt;data_end;
+
+    struct ethhdr *eth = data;
+    if ((void *)(eth + 1) &gt; data_end) return XDP_PASS;
+
+    struct iphdr *ip = (void *)(eth + 1);
+    if ((void *)(ip + 1) &gt; data_end) return XDP_PASS;
+
+    __u32 src_ip = ip-&gt;saddr;
+    __u64 *count = bpf_map_lookup_elem(&amp;rate_map, &amp;src_ip);
+    __u64 now = bpf_ktime_get_ns();
+
+    if (count &amp;&amp; now - *count &lt; 1000000000ULL) {
+        return XDP_DROP; // 임계치 초과 시 즉시 폐기
+    }
+
+    bpf_map_update_elem(&amp;rate_map, &amp;src_ip, &amp;now, BPF_ANY);
+    return XDP_PASS;
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실전에서는 슬라이딩 윈도 카운터, CIDR 단위 차단을 위한 LPM_TRIE 맵, 화이트리스트 우선 처리 등을 추가로 조합합니다. bpftool map dump로 맵 상태를 실시간 점검할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 검증기(verifier) 제약을 설계 초기에 고려하세요</b> — 무한 루프 금지, 스택 크기 제한 같은 정적 검증을 통과해야 로드됩니다. 복잡한 로직은 tail call로 쪼개거나 맵에 상태를 위임하세요.<br>
+<b>2. 네이티브 모드 지원 여부를 먼저 확인하세요</b> — 모든 NIC 드라이버가 지원하지 않으며, 제네릭 모드로 떨어지면 기대한 성능 이득이 줄어듭니다.<br>
+<b>3. 관측성 없는 XDP는 블랙박스가 됩니다</b> — 프로그램 자체에 카운터 맵을 두고 Prometheus exporter로 노출하는 체계를 함께 구축하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① XDP는 sk_buff 할당 이전 시점에서 패킷을 판정해 iptables보다 훨씬 적은 CPU 비용으로 DDoS 트래픽을 걸러냅니다.<br>
+② 맵을 통해 커널 프로그램과 유저 공간이 차단 목록·카운터를 공유하며 재적재 없이 실시간 갱신이 가능합니다.<br>
+③ 검증기 제약과 드라이버별 네이티브/제네릭 모드 차이를 사전에 파악해야 기대한 성능을 얻을 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 인프라 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#eBPF #XDP #DDoS완화 #네트워크보안 #커널 #Cilium #인프라</p>
+
+</body>
+</html>
