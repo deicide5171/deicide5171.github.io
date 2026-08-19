@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="32" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">두 단순화 알고리즘의 정점 제거 기준 비교</text>
+
+  <!-- Douglas-Peucker 패널 -->
+  <rect x="30" y="55" width="350" height="170" rx="8" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="205" y="78" font-family="sans-serif" font-size="14" font-weight="bold" fill="#2f5a8c" text-anchor="middle">Douglas-Peucker — 수직 거리 기준</text>
+
+  <line x1="60" y1="180" x2="350" y2="180" stroke="#999" stroke-width="1" stroke-dasharray="4,3"/>
+  <polyline points="60,180 130,110 205,150 280,95 350,180" fill="none" stroke="#2f5a8c" stroke-width="2"/>
+  <circle cx="60" cy="180" r="5" fill="#2f5a8c"/>
+  <circle cx="350" cy="180" r="5" fill="#2f5a8c"/>
+  <circle cx="130" cy="110" r="5" fill="#d0413b"/>
+  <circle cx="205" cy="150" r="5" fill="#999"/>
+  <circle cx="280" cy="95" r="5" fill="#d0413b"/>
+
+  <line x1="60" y1="180" x2="350" y2="180" stroke="#4a7ab5" stroke-width="1" stroke-dasharray="2,2"/>
+  <line x1="130" y1="110" x2="130" y2="180" stroke="#d0413b" stroke-width="1" stroke-dasharray="2,2"/>
+  <text x="140" y="145" font-family="sans-serif" font-size="10" fill="#d0413b">거리 큼→보존</text>
+
+  <text x="205" y="205" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">거리 작은 정점(회색)만 제거</text>
+
+  <!-- VW 패널 -->
+  <rect x="420" y="55" width="350" height="170" rx="8" fill="#eef7f1" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="595" y="78" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1a6b45" text-anchor="middle">Visvalingam-Whyatt — 삼각형 면적 기준</text>
+
+  <polyline points="450,180 520,110 595,150 670,95 740,180" fill="none" stroke="#1a6b45" stroke-width="2"/>
+  <circle cx="450" cy="180" r="5" fill="#1a6b45"/>
+  <circle cx="740" cy="180" r="5" fill="#1a6b45"/>
+  <circle cx="520" cy="110" r="5" fill="#2e9e63"/>
+  <circle cx="595" cy="150" r="5" fill="#999"/>
+  <circle cx="670" cy="95" r="5" fill="#2e9e63"/>
+
+  <polygon points="520,110 595,150 670,95" fill="none" stroke="#c98a3d" stroke-width="1" stroke-dasharray="3,2"/>
+  <text x="595" y="130" font-family="sans-serif" font-size="10" fill="#a3611c" text-anchor="middle">유효 면적 최소 → 제거 후보</text>
+
+  <text x="595" y="205" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">이웃과 만드는 삼각형 면적이 작은 정점부터 제거</text>
+
+  <!-- TopoJSON 하단 -->
+  <rect x="30" y="250" width="740" height="170" rx="8" fill="#fdf6ec" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="400" y="274" font-family="sans-serif" font-size="14" font-weight="bold" fill="#a3611c" text-anchor="middle">TopoJSON — 공유 경계를 arc로 한 번만 저장</text>
+
+  <!-- 두 폴리곤이 독립 단순화될 때 -->
+  <text x="60" y="300" font-family="sans-serif" font-size="12" font-weight="bold" fill="#d0413b">개별 단순화 (위상 오류)</text>
+  <polyline points="60,320 110,308 160,320" fill="none" stroke="#4a7ab5" stroke-width="2"/>
+  <polyline points="60,326 112,336 160,326" fill="none" stroke="#2e9e63" stroke-width="2"/>
+  <text x="180" y="325" font-family="sans-serif" font-size="11" fill="#d0413b">← 같은 경계인데 서로 다르게 단순화돼 틈 발생</text>
+
+  <!-- arc 공유 방식 -->
+  <text x="60" y="365" font-family="sans-serif" font-size="12" font-weight="bold" fill="#1a6b45">arc 단위 단순화 (위상 보존)</text>
+  <polyline points="60,388 110,376 160,388" fill="none" stroke="#333" stroke-width="2.5"/>
+  <text x="180" y="392" font-family="sans-serif" font-size="11" fill="#1a6b45">← 하나의 arc를 두 폴리곤이 함께 참조, 항상 일치</text>
+
+  <text x="400" y="410" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">각 폴리곤은 좌표 대신 arc ID 목록만 저장 → 단순화도 arc 단위로 1회만 수행</text>
+</svg>

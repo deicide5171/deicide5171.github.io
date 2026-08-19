@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">트레이스 컨텍스트가 이어지는 경계, 끊기는 경계</text>
+
+  <!-- HTTP 요청 -->
+  <rect x="30" y="70" width="120" height="46" rx="6" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="90" y="98" font-family="sans-serif" font-size="13" fill="#2f5a8c" text-anchor="middle">HTTP 요청</text>
+
+  <line x1="150" y1="93" x2="185" y2="93" stroke="#2e9e63" stroke-width="2"/>
+  <polygon points="185,93 176,88 176,98" fill="#2e9e63"/>
+
+  <rect x="190" y="70" width="130" height="46" rx="6" fill="#eef7f1" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="255" y="92" font-family="sans-serif" font-size="13" fill="#1a6b45" text-anchor="middle">컨트롤러</text>
+  <text x="255" y="107" font-family="sans-serif" font-size="10" fill="#1a6b45" text-anchor="middle">자동 계측 스팬</text>
+
+  <line x1="320" y1="93" x2="355" y2="93" stroke="#2e9e63" stroke-width="2"/>
+  <polygon points="355,93 346,88 346,98" fill="#2e9e63"/>
+
+  <!-- @Async 경계 -->
+  <rect x="360" y="55" width="150" height="76" rx="6" fill="#fdf6ec" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="435" y="76" font-family="sans-serif" font-size="12" font-weight="bold" fill="#a3611c" text-anchor="middle">@Async 스레드풀 경계</text>
+  <text x="435" y="94" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">스레드로컬 자동 전파 X</text>
+  <text x="435" y="110" font-family="sans-serif" font-size="11" fill="#1a6b45" text-anchor="middle">ContextSnapshot으로 복원</text>
+  <text x="435" y="124" font-family="sans-serif" font-size="10" fill="#2e9e63" text-anchor="middle">→ 이어짐 (명시적 래핑 시)</text>
+
+  <line x1="510" y1="93" x2="545" y2="93" stroke="#2e9e63" stroke-width="2"/>
+  <polygon points="545,93 536,88 536,98" fill="#2e9e63"/>
+
+  <rect x="550" y="70" width="120" height="46" rx="6" fill="#eef7f1" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="610" y="92" font-family="sans-serif" font-size="13" fill="#1a6b45" text-anchor="middle">DB 쿼리</text>
+  <text x="610" y="107" font-family="sans-serif" font-size="10" fill="#1a6b45" text-anchor="middle">자동 계측</text>
+
+  <!-- 메시지큐 경계 -->
+  <text x="90" y="180" font-family="sans-serif" font-size="14" font-weight="bold" fill="#333">↓ 이벤트 발행 (Kafka)</text>
+
+  <rect x="30" y="200" width="180" height="60" rx="6" fill="#fdf6ec" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="120" y="222" font-family="sans-serif" font-size="12" font-weight="bold" fill="#a3611c" text-anchor="middle">발행자 프로세스</text>
+  <text x="120" y="240" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">traceparent를</text>
+  <text x="120" y="253" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">메시지 헤더에 직접 기록</text>
+
+  <line x1="210" y1="230" x2="290" y2="230" stroke="#c98a3d" stroke-width="2.5" stroke-dasharray="6,4"/>
+  <polygon points="290,230 280,225 280,235" fill="#c98a3d"/>
+  <text x="250" y="216" font-family="sans-serif" font-size="10" fill="#a3611c" text-anchor="middle">프로세스 경계(자동 전파 불가)</text>
+
+  <rect x="295" y="200" width="180" height="60" rx="6" fill="#fdf6ec" stroke="#c98a3d" stroke-width="1.5"/>
+  <text x="385" y="222" font-family="sans-serif" font-size="12" font-weight="bold" fill="#a3611c" text-anchor="middle">소비자 프로세스</text>
+  <text x="385" y="240" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">헤더에서 추출해</text>
+  <text x="385" y="253" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">새 스팬의 부모로 지정</text>
+
+  <line x1="475" y1="230" x2="510" y2="230" stroke="#2e9e63" stroke-width="2"/>
+  <polygon points="510,230 501,225 501,235" fill="#2e9e63"/>
+  <rect x="515" y="200" width="150" height="60" rx="6" fill="#eef7f1" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="590" y="225" font-family="sans-serif" font-size="12" fill="#1a6b45" text-anchor="middle">같은 트레이스로</text>
+  <text x="590" y="243" font-family="sans-serif" font-size="12" fill="#1a6b45" text-anchor="middle">이어짐 (수동 주입 시)</text>
+
+  <!-- 하단 요약 박스 -->
+  <rect x="30" y="300" width="740" height="120" rx="8" fill="#f7f9fc" stroke="#c9d6e8"/>
+  <text x="50" y="326" font-family="sans-serif" font-size="14" font-weight="bold" fill="#3a5a8c">핵심: 스레드 경계와 프로세스 경계는 자동으로 이어지지 않는다</text>
+  <text x="50" y="354" font-family="sans-serif" font-size="13" fill="#333">· 같은 프로세스 내 스레드 전환(@Async, CompletableFuture) → ContextPropagation API로 캡처·복원 필요</text>
+  <text x="50" y="378" font-family="sans-serif" font-size="13" fill="#333">· 프로세스 경계(메시지 큐, 다른 서비스 호출) → traceparent 헤더로 수동 주입·추출 필요</text>
+  <text x="50" y="402" font-family="sans-serif" font-size="13" fill="#d0413b">· 누락돼도 에러가 나지 않는다 — 트레이스가 조용히 새 루트로 끊길 뿐이다</text>
+</svg>

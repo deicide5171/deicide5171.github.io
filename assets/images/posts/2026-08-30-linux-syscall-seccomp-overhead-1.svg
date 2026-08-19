@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="30" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">seccomp BPF 필터가 시스템콜을 가로채는 경로</text>
+
+  <!-- 프로세스 -->
+  <rect x="40" y="60" width="160" height="60" rx="8" fill="#eef4fb" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="120" y="86" font-family="sans-serif" font-size="13" font-weight="bold" fill="#2f5a8c" text-anchor="middle">애플리케이션</text>
+  <text x="120" y="104" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">read(), write() 호출</text>
+
+  <line x1="200" y1="90" x2="240" y2="90" stroke="#333" stroke-width="2"/>
+  <polygon points="240,90 230,85 230,95" fill="#333"/>
+  <text x="220" y="76" font-family="sans-serif" font-size="11" fill="#333" text-anchor="middle">syscall</text>
+
+  <!-- BPF 필터 -->
+  <rect x="245" y="55" width="220" height="70" rx="8" fill="#fdf6ec" stroke="#c98a3d" stroke-width="2"/>
+  <text x="355" y="78" font-family="sans-serif" font-size="13" font-weight="bold" fill="#a3611c" text-anchor="middle">seccomp BPF 필터</text>
+  <text x="355" y="96" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">시스템콜 번호·인자 검사</text>
+  <text x="355" y="112" font-family="sans-serif" font-size="10" fill="#a3611c" text-anchor="middle">매 호출마다 실행됨 ← 오버헤드 지점</text>
+
+  <line x1="465" y1="90" x2="500" y2="90" stroke="#333" stroke-width="2"/>
+  <polygon points="500,90 490,85 490,95" fill="#333"/>
+
+  <!-- 판정 결과 3분기 -->
+  <rect x="505" y="30" width="130" height="34" rx="6" fill="#eef7f1" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="570" y="52" font-family="sans-serif" font-size="12" fill="#1a6b45" text-anchor="middle">ALLOW → 커널 실행</text>
+
+  <rect x="505" y="76" width="130" height="34" rx="6" fill="#fdeceb" stroke="#d0413b" stroke-width="1.5"/>
+  <text x="570" y="98" font-family="sans-serif" font-size="12" fill="#d0413b" text-anchor="middle">ERRNO → 에러 반환</text>
+
+  <rect x="505" y="122" width="130" height="34" rx="6" fill="#f5f0fb" stroke="#7a5ab5" stroke-width="1.5"/>
+  <text x="570" y="144" font-family="sans-serif" font-size="12" fill="#5a3a8c" text-anchor="middle">KILL → 프로세스 종료</text>
+
+  <!-- 빈도 그래프 -->
+  <text x="400" y="200" font-family="sans-serif" font-size="14" font-weight="bold" fill="#333" text-anchor="middle">시스템콜 호출 빈도가 오버헤드를 증폭시킨다</text>
+
+  <line x1="80" y1="380" x2="740" y2="380" stroke="#999" stroke-width="1.5"/>
+  <line x1="80" y1="220" x2="80" y2="380" stroke="#999" stroke-width="1.5"/>
+  <text x="45" y="225" font-family="sans-serif" font-size="11" fill="#666">체감</text>
+  <text x="45" y="238" font-family="sans-serif" font-size="11" fill="#666">오버헤드</text>
+  <text x="400" y="405" font-family="sans-serif" font-size="12" fill="#666" text-anchor="middle">초당 시스템콜 호출 수 →</text>
+
+  <polyline points="80,370 200,362 350,330 500,280 650,220" fill="none" stroke="#c98a3d" stroke-width="3"/>
+
+  <text x="150" y="392" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">CPU 집약</text>
+  <text x="330" y="392" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">일반 API 서버</text>
+  <text x="520" y="392" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">고빈도 프록시</text>
+  <text x="670" y="392" font-family="sans-serif" font-size="10" fill="#888" text-anchor="middle">파일 I/O 배치</text>
+</svg>

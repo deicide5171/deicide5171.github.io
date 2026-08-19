@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>서버가 재시작해도 워크플로는 이어진다 — Durable Execution과 Temporal 실전</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">서버가 재시작해도 워크플로는 이어진다 — Durable Execution과 Temporal 실전</div>
+<p style="font-size:14px; color:#999;">2026. 8. 30. · 시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — Temporal 같은 <b>Durable Execution</b> 엔진은 워크플로를 평범한 순차 코드로 짜게 하되, 실행 과정을 이벤트 히스토리로 영속화해 프로세스가 죽어도 정확히 그 지점부터 이어서 재개하게 만듭니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">며칠 걸리는 워크플로, 상태 테이블로는 한계가 있습니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">주문 생성 → 결제 승인 대기(최대 3일) → 재고 예약 → 배송 요청 → 실패 시 전체 보상, 이런 워크플로를 순수 코드로 짜면 상태 저장, 재시작 복구, 타임아웃, 재시도가 전부 수작업이 됩니다. 크론잡과 상태 테이블로 흉내 내면 지금 이 주문이 어느 단계인지 조회 쿼리로 역추적해야 하고, 배포 중 서버가 재시작하면 그 사이 진행 중이던 워크플로의 상태를 어떻게 복구할지 매번 새로 고민하게 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>Durable Execution</b>은 이 문제를 다른 각도에서 풉니다. 워크플로 로직을 평범한 함수(순차 코드, if, for, try/catch)로 작성하게 하고, 그 실행 과정 전체를 이벤트 로그로 영속화해서 프로세스가 어느 지점에서 죽어도 정확히 그 지점부터 이어서 재개할 수 있게 만드는 실행 모델입니다. Temporal, AWS Step Functions, Cadence 같은 도구가 이 모델을 구현합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 이벤트 소싱으로 만드는 재개 가능성</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Durable Execution 엔진의 핵심 트릭은 워크플로 코드 자체가 아니라 <b>워크플로가 만든 이벤트 히스토리</b>를 영속화한다는 것입니다. 워크플로 함수 안에서 액티비티(결제 API 호출 같은 외부 부작용 작업)를 실행하면 그 호출의 시작·완료·결과가 이벤트로 서버에 기록됩니다. 워커가 죽었다가 다시 뜨면 워크플로 함수를 처음부터 다시 실행하되, 이미 기록된 이벤트가 있는 지점까지는 실제로 재실행하지 않고 저장된 결과를 그대로 반환(리플레이)합니다. 히스토리에 없는 지점, 즉 죽기 직전 실행 중이던 부분부터만 진짜로 재실행됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 리플레이 모델 덕분에 개발자는 재시도·체크포인트 로직을 직접 짤 필요가 없습니다. 대신 워크플로 함수는 <b>결정적(deterministic)</b>이어야 한다는 제약이 붙습니다 — 같은 히스토리를 주면 항상 같은 순서로 같은 액티비티를 호출해야 리플레이가 성립하기 때문입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 워크플로와 액티비티의 역할 분리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Temporal은 무엇을 어떤 순서로 할지 정하는 <b>워크플로</b>와 실제 부작용을 일으키는 <b>액티비티</b>를 명확히 분리합니다. 워크플로는 결정적이어야 하므로 네트워크 호출·DB 쓰기 같은 비결정적 작업은 전부 액티비티로 뽑아내고, 워크플로는 그 액티비티를 어떤 순서·조건으로 호출할지만 오케스트레이션합니다. 액티비티는 각각 독립적으로 재시도 정책을 가질 수 있고, 실패하면 워크플로 코드 안에서 try/catch로 잡아 보상 로직을 실행하면 됩니다 — 별도의 사가 프레임워크 없이도 사가 패턴이 자연스럽게 코드로 표현됩니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">전통적 오케스트레이션</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Durable Execution</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">워크플로 표현</td>
+<td style="border:1px solid #ddd; padding:10px;">상태 컬럼 + 단계별 핸들러</td>
+<td style="border:1px solid #ddd; padding:10px;">평범한 순차 코드</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">장기 대기(며칠)</td>
+<td style="border:1px solid #ddd; padding:10px;">별도 스케줄러·크론 필요</td>
+<td style="border:1px solid #ddd; padding:10px;">코드에 그대로 표현</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">재시작 복구</td>
+<td style="border:1px solid #ddd; padding:10px;">상태 컬럼 기반 수동 로직</td>
+<td style="border:1px solid #ddd; padding:10px;">히스토리 리플레이로 자동</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 시그널·쿼리로 실행 중인 워크플로와 상호작용</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">며칠씩 대기하는 워크플로는 중간에 외부 이벤트(승인 버튼 클릭, 결제 웹훅)를 받아야 합니다. Temporal은 이를 <b>시그널(signal)</b>로 처리합니다 — 실행 중인 워크플로 인스턴스에 비동기 메시지를 보내면 코드 안의 대기 지점이 깨어나 처리를 계속합니다. 반대로 현재 상태를 외부에서 들여다보고 싶으면 <b>쿼리(query)</b>를 씁니다 — 상태를 변경하지 않고 읽기만 하는 요청으로, 별도의 상태 조회 API를 만들 필요가 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-30-durable-execution-temporal-workflow-1.svg" alt="워커가 죽었다가 재시작할 때 이벤트 히스토리를 리플레이해 이미 완료된 액티비티는 재실행하지 않고 중단 지점부터 이어가는 흐름도" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — TypeScript Temporal 워크플로</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">// order-workflow.ts — 주문 처리 워크플로 (결정적 코드)
+import { proxyActivities, sleep, condition, defineSignal, setHandler } from '@temporalio/workflow';
+
+const { chargePayment, reserveInventory, shipOrder, refundPayment } =
+  proxyActivities(&#123;
+    startToCloseTimeout: '1 minute',
+    retry: &#123; maximumAttempts: 5, backoffCoefficient: 2 &#125;,
+  &#125;);
+
+export const cancelSignal = defineSignal('cancel');
+
+export async function orderWorkflow(orderId) {
+  let cancelled = false;
+  setHandler(cancelSignal, () =&gt; &#123; cancelled = true; &#125;);
+
+  // 결제 승인 대기 — 최대 3일, 코드에 그대로 표현
+  await condition(() =&gt; cancelled, '3 days');
+  if (cancelled) return 'cancelled-before-payment';
+
+  const charge = await chargePayment(orderId);
+  try {
+    await reserveInventory(orderId);
+    await shipOrder(orderId);
+    return 'completed';
+  } catch (err) {
+    // 실패 시 보상 트랜잭션 — 별도 사가 프레임워크 불필요
+    await refundPayment(charge.id);
+    throw err;
+  }
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 코드는 워커가 재시작해도 대기 중이던 지점이나 reserveInventory 실행 도중이었던 지점을 정확히 기억해 이어서 실행합니다 — 별도의 상태 저장 코드가 코드베이스 어디에도 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>결정성 제약을 어기면 리플레이가 조용히 어긋납니다.</b> 워크플로 코드에서 시스템 시간·랜덤값 같은 비결정적 동작을 직접 쓰면, 배포 후 리플레이 시 히스토리와 실제 실행 경로가 갈라지는 에러가 납니다. 부작용과 비결정성은 반드시 액티비티로 격리해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>워크플로 코드 변경은 버저닝이 필요합니다.</b> 이미 진행 중인 인스턴스가 있는 상태에서 로직을 바꾸면 리플레이가 깨질 수 있어, Temporal은 patched() API로 신·구 로직을 분기해 지원합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 모든 워크플로가 Durable Execution을 필요로 하지는 않습니다. 초 단위로 끝나는 짧은 요청-응답 흐름이라면 이점보다 인프라 복잡도(별도 서버, 워커 클러스터 운영)가 더 클 수 있습니다. 실행 시간이 길거나 외부 이벤트 대기, 복잡한 보상 로직이 필요한 워크플로에 맞는 도구입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#DurableExecution #Temporal #워크플로오케스트레이션 #사가패턴 #시스템설계 #분산시스템</p>
+
+</body>
+</html>

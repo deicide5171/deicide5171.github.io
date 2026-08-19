@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">Durable Execution — 이벤트 히스토리 리플레이로 재개하기</text>
+
+  <!-- 타임라인 축 -->
+  <line x1="60" y1="120" x2="740" y2="120" stroke="#cccccc" stroke-width="3"/>
+
+  <!-- 완료된 액티비티들 -->
+  <circle cx="140" cy="120" r="9" fill="#2e9e63"/>
+  <text x="140" y="100" font-family="sans-serif" font-size="13" fill="#1a6b45" text-anchor="middle">시작</text>
+
+  <rect x="190" y="150" width="140" height="42" rx="6" fill="#eef7f1" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="260" y="176" font-family="sans-serif" font-size="13" fill="#1a6b45" text-anchor="middle">chargePayment</text>
+  <line x1="230" y1="150" x2="230" y2="120" stroke="#2e9e63" stroke-width="2"/>
+  <text x="230" y="140" font-family="sans-serif" font-size="11" fill="#2e9e63" text-anchor="middle">완료 기록</text>
+
+  <rect x="360" y="150" width="150" height="42" rx="6" fill="#eef7f1" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="435" y="176" font-family="sans-serif" font-size="13" fill="#1a6b45" text-anchor="middle">reserveInventory</text>
+  <line x1="435" y1="150" x2="435" y2="120" stroke="#2e9e63" stroke-width="2"/>
+  <text x="435" y="140" font-family="sans-serif" font-size="11" fill="#2e9e63" text-anchor="middle">완료 기록</text>
+
+  <!-- 워커 죽는 지점 -->
+  <line x1="540" y1="100" x2="558" y2="140" stroke="#d0413b" stroke-width="4"/>
+  <line x1="558" y1="100" x2="540" y2="140" stroke="#d0413b" stroke-width="4"/>
+  <text x="549" y="90" font-family="sans-serif" font-size="13" font-weight="bold" fill="#d0413b" text-anchor="middle">워커 프로세스 다운</text>
+  <text x="549" y="160" font-family="sans-serif" font-size="12" fill="#888" text-anchor="middle">(shipOrder 실행 도중)</text>
+
+  <!-- 미완료 지점 -->
+  <rect x="600" y="150" width="130" height="42" rx="6" fill="#fdf6ec" stroke="#c98a3d" stroke-width="1.5" stroke-dasharray="5,4"/>
+  <text x="665" y="176" font-family="sans-serif" font-size="13" fill="#a3611c" text-anchor="middle">shipOrder</text>
+  <text x="665" y="204" font-family="sans-serif" font-size="11" fill="#888" text-anchor="middle">기록 없음(미완료)</text>
+
+  <text x="400" y="240" font-family="sans-serif" font-size="14" font-weight="bold" fill="#333" text-anchor="middle">↓ 워커 재시작 시, 워크플로 함수를 처음부터 다시 실행 ↓</text>
+
+  <!-- 리플레이 영역 -->
+  <rect x="40" y="270" width="720" height="150" rx="8" fill="#f7f9fc" stroke="#c9d6e8"/>
+  <text x="60" y="296" font-family="sans-serif" font-size="14" font-weight="bold" fill="#3a5a8c">새 워커가 이벤트 히스토리를 읽으며 리플레이</text>
+
+  <rect x="70" y="316" width="180" height="46" rx="6" fill="#ffffff" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="160" y="338" font-family="sans-serif" font-size="13" fill="#1a6b45" text-anchor="middle">chargePayment</text>
+  <text x="160" y="354" font-family="sans-serif" font-size="11" fill="#2e9e63" text-anchor="middle">저장된 결과 즉시 반환</text>
+
+  <rect x="280" y="316" width="190" height="46" rx="6" fill="#ffffff" stroke="#2e9e63" stroke-width="1.5"/>
+  <text x="375" y="338" font-family="sans-serif" font-size="13" fill="#1a6b45" text-anchor="middle">reserveInventory</text>
+  <text x="375" y="354" font-family="sans-serif" font-size="11" fill="#2e9e63" text-anchor="middle">저장된 결과 즉시 반환</text>
+
+  <line x1="480" y1="339" x2="510" y2="339" stroke="#8aa5c4" stroke-width="2"/>
+  <polygon points="510,339 500,334 500,344" fill="#8aa5c4"/>
+
+  <rect x="520" y="316" width="180" height="46" rx="6" fill="#fff3e6" stroke="#c98a3d" stroke-width="2"/>
+  <text x="610" y="338" font-family="sans-serif" font-size="13" font-weight="bold" fill="#a3611c" text-anchor="middle">shipOrder</text>
+  <text x="610" y="354" font-family="sans-serif" font-size="11" fill="#a3611c" text-anchor="middle">여기부터 실제로 재실행</text>
+
+  <text x="400" y="400" font-family="sans-serif" font-size="13" fill="#666" text-anchor="middle">완료된 액티비티는 재호출 없이 히스토리 값을 재사용 — 미완료 지점부터만 실제 실행</text>
+</svg>

@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="28" font-family="sans-serif" font-size="18" font-weight="bold" fill="#222" text-anchor="middle">지하 시설물 단면 — 서로 다른 깊이 기준의 정합과 BIM-GIS 지오레퍼런싱</text>
+
+  <!-- 지상 -->
+  <rect x="0" y="40" width="800" height="70" fill="#eaf3ff"/>
+  <text x="60" y="65" font-family="sans-serif" font-size="12" fill="#3a5a8c" font-weight="bold">지상 (BIM, 로컬 좌표계)</text>
+  <rect x="80" y="55" width="90" height="50" fill="#dbe8f7" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="125" y="85" font-family="sans-serif" font-size="10" fill="#2f5a8c" text-anchor="middle">건물 A</text>
+  <rect x="600" y="50" width="110" height="55" fill="#dbe8f7" stroke="#4a7ab5" stroke-width="1.5"/>
+  <text x="655" y="82" font-family="sans-serif" font-size="10" fill="#2f5a8c" text-anchor="middle">지하철역 구조물</text>
+
+  <!-- 지표면 -->
+  <line x1="0" y1="110" x2="800" y2="110" stroke="#7a5a2f" stroke-width="3"/>
+  <text x="770" y="105" font-family="sans-serif" font-size="10" fill="#7a5a2f" text-anchor="end">지표면(변동)</text>
+
+  <!-- 지하 영역 -->
+  <rect x="0" y="110" width="800" height="300" fill="#f7f2e8"/>
+  <text x="60" y="130" font-family="sans-serif" font-size="12" fill="#a3611c" font-weight="bold">지하 (GIS, 지리 좌표계)</text>
+
+  <!-- 통신관 (얕음) -->
+  <line x1="60" y1="150" x2="740" y2="150" stroke="#4a7ab5" stroke-width="8" stroke-linecap="round"/>
+  <text x="60" y="142" font-family="sans-serif" font-size="11" fill="#2f5a8c">통신관 — 지표하 1.2m (상대 깊이 기록)</text>
+
+  <!-- 상수도관 -->
+  <line x1="60" y1="220" x2="740" y2="220" stroke="#2e9e63" stroke-width="10" stroke-linecap="round"/>
+  <text x="60" y="205" font-family="sans-serif" font-size="11" fill="#1a6b45">상수도관 — EL. 23.1m (절대 표고 기록)</text>
+
+  <!-- 가스관 -->
+  <line x1="60" y1="290" x2="740" y2="290" stroke="#c98a3d" stroke-width="9" stroke-linecap="round"/>
+  <text x="60" y="275" font-family="sans-serif" font-size="11" fill="#a3611c">가스관 — 지표하 2.8m (상대 깊이 기록)</text>
+
+  <!-- 전력구 (충돌 위험) -->
+  <rect x="330" y="205" width="140" height="30" fill="#fdecec" stroke="#d0413b" stroke-width="2"/>
+  <text x="400" y="225" font-family="sans-serif" font-size="10" fill="#d0413b" text-anchor="middle" font-weight="bold">전력구 — 기준면 불일치로 충돌 오판 위험</text>
+
+  <!-- 화살표: 기준면 통일 필요 -->
+  <path d="M 500 150 Q 520 185 500 220" fill="none" stroke="#d0413b" stroke-width="2" stroke-dasharray="4,3"/>
+  <polygon points="500,220 494,209 506,211" fill="#d0413b"/>
+  <text x="530" y="185" font-family="sans-serif" font-size="10" fill="#d0413b">같은 수직 기준면으로</text>
+  <text x="530" y="198" font-family="sans-serif" font-size="10" fill="#d0413b">환산해야 실제 이격거리 판정 가능</text>
+
+  <!-- 지오레퍼런싱 화살표 -->
+  <line x1="655" y1="105" x2="655" y2="205" stroke="#7a5a8c" stroke-width="2" stroke-dasharray="5,4"/>
+  <text x="700" y="130" font-family="sans-serif" font-size="10" fill="#5a3a8c" text-anchor="middle">지오레퍼런싱</text>
+  <text x="700" y="144" font-family="sans-serif" font-size="10" fill="#5a3a8c" text-anchor="middle">(로컬↔지리좌표</text>
+  <text x="700" y="158" font-family="sans-serif" font-size="10" fill="#5a3a8c" text-anchor="middle">+ 수직 오프셋)</text>
+
+  <rect x="40" y="390" width="720" height="50" rx="6" fill="#fff7f0" stroke="#e8d3ae"/>
+  <text x="400" y="412" font-family="sans-serif" font-size="12" fill="#5a4632" text-anchor="middle" font-weight="bold">상대 깊이와 절대 표고가 혼재하면 실제로 안전한 이격거리도 모델에서는 충돌로, 혹은 그 반대로 나타난다</text>
+  <text x="400" y="430" font-family="sans-serif" font-size="11" fill="#5a4632" text-anchor="middle">→ 통합 전 모든 z값을 하나의 수직 기준면으로 변환하는 단계가 선행돼야 한다</text>
+</svg>
