@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>네이티브 이미지 없이 JVM 시작 시간 줄이기 — AppCDS와 CRaC</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">네이티브 이미지 없이 JVM 시작 시간 줄이기 — AppCDS와 CRaC</div>
+<p style="font-size:14px; color:#999;">2026. 8. 25. · 백엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — GraalVM 네이티브 이미지로 전환하지 않고도 순수 JVM에서 시작 시간을 줄이는 <b>AppCDS</b>(클래스 로딩 캐시)와 <b>CRaC</b>(체크포인트/복원) 방식을 비교했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">몇 초의 시작 시간이 스케일링 속도를 깎아먹습니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">서버리스나 쿠버네티스 환경에서 파드를 스케일 아웃할 때마다 JVM이 클래스를 로딩하고 JIT 컴파일을 워밍업하는 데 수 초가 걸리면, 그 몇 초가 트래픽 급증 대응 속도를 그대로 깎아먹습니다. 가장 화끈한 해법은 GraalVM 네이티브 이미지로 AOT 컴파일하는 것이지만, 리플렉션·동적 프록시가 많은 기존 Spring 애플리케이션을 호환시키는 작업은 결코 가볍지 않습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">네이티브 이미지로 가지 않고도 순수 JVM 위에서 시작 시간을 단축하는 방법이 두 가지 있습니다. 클래스 로딩 단계를 캐시하는 <b>AppCDS</b>와, 애플리케이션이 완전히 초기화된 상태를 스냅숏으로 저장했다가 복원하는 <b>CRaC</b>입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — AppCDS, 클래스 로딩과 검증을 미리 끝내둡니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">JVM 시작 시간의 상당 부분은 클래스 파일을 읽고 파싱하고 바이트코드를 검증하는 과정에서 소모됩니다. <b>AppCDS(Application Class-Data Sharing)</b>는 애플리케이션 클래스와 의존 라이브러리 클래스까지 미리 아카이브(.jsa 파일)로 만들어 메모리 매핑으로 공유하는 기능입니다. 이후 실행에서는 이 아카이브를 매핑하기만 하면 되므로 클래스 파싱·검증 비용이 크게 줄어듭니다. JDK 19부터는 -XX:+AutoCreateSharedArchive 옵션으로 아카이브 생성·갱신을 JVM이 자동 관리해줍니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — CRaC, 실행 중인 프로세스 자체를 스냅숏합니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">CRaC는 접근 방식이 근본적으로 다릅니다. 애플리케이션이 완전히 부팅되고 워밍업까지 끝난 시점의 JVM 프로세스 전체 상태를 리눅스 체크포인트 기능(CRIU)으로 통째로 저장합니다. 이후 컨테이너를 새로 띄울 때는 그 스냅숏을 복원하기만 하면, 이미 한참 실행되어 워밍업이 끝난 프로세스가 그 자리에서 이어 실행되는 것처럼 동작합니다. 다만 체크포인트 시점에 열려 있던 소켓·파일 핸들을 애플리케이션이 직접 정리하고 복원 후 재개하는 협조가 필요합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 세 가지 접근 비교</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">AppCDS</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">CRaC</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">접근 방식</td>
+<td style="border:1px solid #ddd; padding:10px;">클래스 로딩 결과 캐시</td>
+<td style="border:1px solid #ddd; padding:10px;">프로세스 전체 상태 스냅숏</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">시작 시간 개선</td>
+<td style="border:1px solid #ddd; padding:10px;">중간</td>
+<td style="border:1px solid #ddd; padding:10px;">큼(수십ms대 가능)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">코드 호환성</td>
+<td style="border:1px solid #ddd; padding:10px;">거의 그대로</td>
+<td style="border:1px solid #ddd; padding:10px;">체크포인트 훅 대응 필요</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — AppCDS 아카이브 생성과 CRaC 체크포인트/복원</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># AppCDS: 클래스 로딩 목록 기록
+java -XX:ArchiveClassesAtExit=app-cds.jsa -jar app.jar
+
+# AppCDS: 아카이브를 사용해 구동
+java -XX:SharedArchiveFile=app-cds.jsa -jar app.jar
+
+# CRaC: 체크포인트 생성
+java -XX:CRaCCheckpointTo=/checkpoint/app -jar app.jar
+jcmd &lt;pid&gt; JDK.checkpoint
+
+# CRaC: 체크포인트로부터 복원 (수십 ms 내 기동)
+java -XX:CRaCRestoreFrom=/checkpoint/app</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. CRaC 도입 전 체크포인트-복원 훅을 반드시 점검하세요</b> — DB 커넥션, 파일 디스크립터처럼 그대로 복원하면 안 되는 리소스는 org.crac.Resource 인터페이스로 명시적으로 처리해야 합니다.<br>
+<b>2. AppCDS 아카이브는 배포 파이프라인의 일부로 관리하세요</b> — 코드나 의존성이 바뀌면 아카이브도 다시 만들어야 합니다.<br>
+<b>3. 컨테이너 이미지 크기와 시작 시간을 함께 보세요</b> — CRaC 스냅숏 파일은 힙 크기에 비례해 커질 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① AppCDS는 클래스 로딩·검증만 캐시하는 저위험·저효과 접근이고, CRaC는 프로세스 전체를 스냅숏하는 고효과·고관리비용 접근입니다.<br>
+② CRaC는 체크포인트 시점의 소켓·파일 상태를 애플리케이션이 직접 정리·재개해야 하는 협조형 생명주기가 필요합니다.<br>
+③ 두 방식 모두 GraalVM 네이티브 이미지로 전환하기 어려운 기존 JVM 애플리케이션의 현실적인 대안이며, 병행해서 쓸 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 백엔드 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#JVM #AppCDS #CRaC #시작시간최적화 #SpringBoot #체크포인트복원</p>
+
+</body>
+</html>
