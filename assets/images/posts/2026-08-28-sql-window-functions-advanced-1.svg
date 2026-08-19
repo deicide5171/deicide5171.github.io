@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">ORDER BY 정렬 위에서 이동하는 윈도우 프레임</text>
+
+  <text x="60" y="70" font-family="sans-serif" font-size="13" fill="#5b7a9d">user_id로 PARTITION, ordered_at으로 ORDER BY 된 행들</text>
+
+  <!-- row sequence -->
+  <g font-family="sans-serif" font-size="13">
+    <rect x="60" y="90" width="100" height="46" rx="6" fill="#ffffff" stroke="#999"/>
+    <text x="110" y="110" text-anchor="middle" fill="#333">1/10</text>
+    <text x="110" y="127" text-anchor="middle" fill="#666">100</text>
+
+    <rect x="170" y="90" width="100" height="46" rx="6" fill="#ffffff" stroke="#999"/>
+    <text x="220" y="110" text-anchor="middle" fill="#333">1/15</text>
+    <text x="220" y="127" text-anchor="middle" fill="#666">140</text>
+
+    <rect x="280" y="90" width="100" height="46" rx="6" fill="#eefaf1" stroke="#2e9e63" stroke-width="2"/>
+    <text x="330" y="110" text-anchor="middle" fill="#1a6b45" font-weight="bold">1/20</text>
+    <text x="330" y="127" text-anchor="middle" fill="#1a6b45" font-weight="bold">90</text>
+
+    <rect x="390" y="90" width="100" height="46" rx="6" fill="#eefaf1" stroke="#2e9e63" stroke-width="2"/>
+    <text x="440" y="110" text-anchor="middle" fill="#1a6b45" font-weight="bold">1/25</text>
+    <text x="440" y="127" text-anchor="middle" fill="#1a6b45" font-weight="bold">200</text>
+
+    <rect x="500" y="90" width="100" height="46" rx="6" fill="#fdf6ec" stroke="#c98a3d" stroke-width="2.5"/>
+    <text x="550" y="110" text-anchor="middle" fill="#a3611c" font-weight="bold">1/30</text>
+    <text x="550" y="127" text-anchor="middle" fill="#a3611c" font-weight="bold">160 ← 현재 행</text>
+
+    <rect x="610" y="90" width="100" height="46" rx="6" fill="#ffffff" stroke="#999"/>
+    <text x="660" y="110" text-anchor="middle" fill="#333">2/5</text>
+    <text x="660" y="127" text-anchor="middle" fill="#666">120</text>
+  </g>
+
+  <!-- frame bracket -->
+  <path d="M 280 150 L 280 165 L 600 165 L 600 150" fill="none" stroke="#c98a3d" stroke-width="2"/>
+  <text x="440" y="182" font-family="sans-serif" font-size="13" fill="#a3611c" text-anchor="middle" font-weight="bold">ROWS BETWEEN 2 PRECEDING AND CURRENT ROW</text>
+  <text x="440" y="200" font-family="sans-serif" font-size="12" fill="#888" text-anchor="middle">recent_avg = (90 + 200 + 160) / 3 = 150</text>
+
+  <!-- lag/lead illustration -->
+  <text x="400" y="250" font-family="sans-serif" font-size="16" font-weight="bold" fill="#222" text-anchor="middle">lag() / lead() — 앞뒤 행 값 참조</text>
+
+  <rect x="330" y="270" width="100" height="46" rx="6" fill="#eef4fb" stroke="#4a7ab5"/>
+  <text x="380" y="290" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#2b5a8a">이전 행</text>
+  <text x="380" y="307" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#2b5a8a">lag()</text>
+
+  <rect x="440" y="270" width="100" height="46" rx="6" fill="#fdf6ec" stroke="#c98a3d" stroke-width="2"/>
+  <text x="490" y="290" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#a3611c" font-weight="bold">현재 행</text>
+
+  <rect x="550" y="270" width="100" height="46" rx="6" fill="#eef4fb" stroke="#4a7ab5"/>
+  <text x="600" y="290" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#2b5a8a">다음 행</text>
+  <text x="600" y="307" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#2b5a8a">lead()</text>
+
+  <line x1="430" y1="293" x2="440" y2="293" stroke="#4a7ab5" stroke-width="2"/>
+  <line x1="540" y1="293" x2="550" y2="293" stroke="#4a7ab5" stroke-width="2"/>
+
+  <text x="400" y="360" font-family="sans-serif" font-size="14" fill="#333" text-anchor="middle">RANGE는 ORDER BY 값이 같은 행을 하나로 묶고, ROWS는 물리적 행 개수로만 계산합니다</text>
+  <text x="400" y="384" font-family="sans-serif" font-size="12" fill="#888" text-anchor="middle">동점 값이 있는 데이터에서는 두 방식의 결과가 달라질 수 있습니다</text>
+</svg>
