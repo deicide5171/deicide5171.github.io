@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="32" font-family="sans-serif" font-size="19" font-weight="bold" fill="#222" text-anchor="middle">세 패러다임의 서로 다른 구조적 약점</text>
+
+  <!-- REST column -->
+  <rect x="40" y="60" width="220" height="340" rx="8" fill="#eef4fb" stroke="#4a7ab5" stroke-width="2"/>
+  <text x="150" y="90" font-family="sans-serif" font-size="16" font-weight="bold" fill="#2b5a8a" text-anchor="middle">REST</text>
+  <text x="150" y="115" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">자원 중심, 고정 응답</text>
+
+  <rect x="60" y="135" width="180" height="70" rx="6" fill="#ffffff" stroke="#4a7ab5"/>
+  <text x="150" y="158" font-family="sans-serif" font-size="12" fill="#a3211c" text-anchor="middle" font-weight="bold">오버페칭</text>
+  <text x="150" y="176" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">필요 없는 필드까지 받음</text>
+  <text x="150" y="192" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">GET /posts/42 (모든 필드)</text>
+
+  <rect x="60" y="215" width="180" height="70" rx="6" fill="#ffffff" stroke="#4a7ab5"/>
+  <text x="150" y="238" font-family="sans-serif" font-size="12" fill="#a3211c" text-anchor="middle" font-weight="bold">언더페칭</text>
+  <text x="150" y="256" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">여러 엔드포인트 추가 호출</text>
+  <text x="150" y="272" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">/posts + /users 두 번</text>
+
+  <text x="150" y="320" font-family="sans-serif" font-size="12" fill="#1a6b45" text-anchor="middle" font-weight="bold">강점: HTTP 캐싱 그대로 활용</text>
+  <text x="150" y="340" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">URL이 캐시 키 역할</text>
+
+  <!-- GraphQL column -->
+  <rect x="290" y="60" width="220" height="340" rx="8" fill="#eefaf1" stroke="#2e9e63" stroke-width="2"/>
+  <text x="400" y="90" font-family="sans-serif" font-size="16" font-weight="bold" fill="#1a6b45" text-anchor="middle">GraphQL</text>
+  <text x="400" y="115" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">클라이언트가 필드 선택</text>
+
+  <rect x="310" y="135" width="180" height="90" rx="6" fill="#ffffff" stroke="#2e9e63"/>
+  <text x="400" y="158" font-family="sans-serif" font-size="12" fill="#a3211c" text-anchor="middle" font-weight="bold">N+1 쿼리</text>
+  <text x="400" y="176" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">게시글 100개 → 작성자</text>
+  <text x="400" y="192" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">100번 개별 조회</text>
+  <text x="400" y="210" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">→ DataLoader로 배치화</text>
+
+  <text x="400" y="320" font-family="sans-serif" font-size="12" fill="#1a6b45" text-anchor="middle" font-weight="bold">강점: 오버/언더페칭 해결</text>
+  <text x="400" y="340" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">쿼리로 정확히 필요한 필드만</text>
+
+  <!-- gRPC column -->
+  <rect x="540" y="60" width="220" height="340" rx="8" fill="#fdf6ec" stroke="#c98a3d" stroke-width="2"/>
+  <text x="650" y="90" font-family="sans-serif" font-size="16" font-weight="bold" fill="#a3611c" text-anchor="middle">gRPC</text>
+  <text x="650" y="115" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">Protobuf 강타입 스키마</text>
+
+  <rect x="560" y="135" width="180" height="90" rx="6" fill="#ffffff" stroke="#c98a3d"/>
+  <text x="650" y="158" font-family="sans-serif" font-size="12" fill="#a3211c" text-anchor="middle" font-weight="bold">강결합</text>
+  <text x="650" y="176" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">스키마 변경 시 클라이언트</text>
+  <text x="650" y="192" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">서버 재생성·배포 동기화</text>
+  <text x="650" y="210" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">브라우저 직접 호출 어려움</text>
+
+  <text x="650" y="320" font-family="sans-serif" font-size="12" fill="#1a6b45" text-anchor="middle" font-weight="bold">강점: HTTP/2 바이너리 성능</text>
+  <text x="650" y="340" font-family="sans-serif" font-size="11" fill="#666" text-anchor="middle">내부 서비스 간 고성능 통신</text>
+</svg>
