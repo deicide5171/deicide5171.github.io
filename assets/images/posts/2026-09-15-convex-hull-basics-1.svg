@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="44" font-family="sans-serif" font-size="24" font-weight="bold" fill="#222" text-anchor="middle">볼록 껍질 — 점들을 감싸는 최소 볼록 다각형</text>
+
+  <!-- Left: scattered points -->
+  <rect x="70" y="90" width="290" height="290" rx="12" fill="#fafafa" stroke="#ddd"/>
+  <text x="215" y="118" font-family="sans-serif" font-size="16" fill="#888" text-anchor="middle">흩어진 점들</text>
+  <g fill="#c0392b">
+    <circle cx="140" cy="160" r="6"/><circle cx="290" cy="150" r="6"/><circle cx="320" cy="260" r="6"/>
+    <circle cx="230" cy="340" r="6"/><circle cx="120" cy="300" r="6"/><circle cx="200" cy="220" r="6"/>
+    <circle cx="250" cy="200" r="6"/><circle cx="180" cy="280" r="6"/>
+  </g>
+
+  <!-- Arrow -->
+  <line x1="375" y1="235" x2="440" y2="235" stroke="#888" stroke-width="3" marker-end="url(#a)"/>
+
+  <!-- Right: convex hull -->
+  <rect x="450" y="90" width="290" height="290" rx="12" fill="#fafafa" stroke="#ddd"/>
+  <text x="595" y="118" font-family="sans-serif" font-size="16" fill="#03c75a" text-anchor="middle">볼록 껍질(고무줄)</text>
+  <!-- hull polygon over same relative points shifted +380 -->
+  <polygon points="520,160 670,150 700,260 610,340 500,300" fill="#03c75a" fill-opacity="0.15" stroke="#03c75a" stroke-width="2.5"/>
+  <g fill="#c0392b">
+    <circle cx="520" cy="160" r="6"/><circle cx="670" cy="150" r="6"/><circle cx="700" cy="260" r="6"/>
+    <circle cx="610" cy="340" r="6"/><circle cx="500" cy="300" r="6"/><circle cx="580" cy="220" r="6"/>
+    <circle cx="630" cy="200" r="6"/><circle cx="560" cy="280" r="6"/>
+  </g>
+
+  <text x="400" y="410" font-family="sans-serif" font-size="15" fill="#333" text-anchor="middle">바깥 점들을 이어 감싸며, 안으로 파인 곳이 없다(볼록)</text>
+
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#888"/>
+    </marker>
+  </defs>
+</svg>
