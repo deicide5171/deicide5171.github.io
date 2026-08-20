@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>LIKE 검색이 뭔가요 — 왜 '%앞' 검색은 인덱스를 못 타나</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">LIKE 검색이 뭔가요 — 왜 '%앞' 검색은 인덱스를 못 타나</div>
+<p style="font-size:14px; color:#999;">2026. 9. 11. · 데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — LIKE는 부분 일치 검색이며, <b>'값%'(앞 고정)</b>은 인덱스를 타 빠르지만 '%값%'은 못 타 느립니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">이름에 '김'이 들어간 사람 찾기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">정확 일치가 아니라 "부분 포함"을 찾을 때 <b>LIKE</b>를 씁니다. <code>%</code>는 임의 문자열, <code>_</code>는 한 글자입니다. 이 패턴을 어디에 두느냐에 따라 인덱스를 탈 수도, 못 탈 수도 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">LIKE 패턴과 성능</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">패턴</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">의미</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">인덱스</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">'김%'</td>
+<td style="border:1px solid #ddd; padding:10px;">김으로 시작</td>
+<td style="border:1px solid #ddd; padding:10px;">탈 수 있음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">'%김'</td>
+<td style="border:1px solid #ddd; padding:10px;">김으로 끝</td>
+<td style="border:1px solid #ddd; padding:10px;">못 탐</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">'%김%'</td>
+<td style="border:1px solid #ddd; padding:10px;">김 포함</td>
+<td style="border:1px solid #ddd; padding:10px;">못 탐</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 앞 와일드카드는 못 타나</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">인덱스는 사전처럼 "앞 글자 순" 정렬
+'김%' -> "김"으로 시작 구간만 보면 됨 (빠름)
+'%김' -> 뒷 글자로는 못 찾아 전부 뒤짐 (느림)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">자동완성처럼 <b>접두어 검색(<code>'값%'</code>)</b>으로 설계하면 빠릅니다. 중간 포함(<code>'%값%'</code>)이 꼭 필요하면 <b>전문 검색</b>(pg_trgm, Elasticsearch)을 고려하세요. 대소문자 무시엔 <code>ILIKE</code>를 씁니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 본문 검색에 <code>'%값%'</code> LIKE를 남발하면 데이터가 커질수록 매우 느려집니다. 전문 검색 엔진이 낫습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#LIKE #SQL #인덱스 #검색최적화 #데이터베이스기초</p>
+
+</body>
+</html>
