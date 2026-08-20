@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="44" font-family="sans-serif" font-size="23" font-weight="bold" fill="#222" text-anchor="middle">경도 1도의 실제 거리는 위도마다 다르다</text>
+
+  <!-- Globe -->
+  <circle cx="400" cy="255" r="150" fill="#eef6ff" stroke="#3b7dd8" stroke-width="2"/>
+
+  <!-- Equator -->
+  <line x1="250" y1="255" x2="550" y2="255" stroke="#03c75a" stroke-width="2"/>
+  <ellipse cx="400" cy="255" rx="150" ry="42" fill="none" stroke="#3b7dd8" stroke-width="1" stroke-dasharray="4 3"/>
+
+  <!-- Meridians converging at poles -->
+  <path d="M400,105 Q340,255 400,405" fill="none" stroke="#c0392b" stroke-width="1.5"/>
+  <path d="M400,105 Q460,255 400,405" fill="none" stroke="#c0392b" stroke-width="1.5"/>
+
+  <!-- Equator gap (wide) -->
+  <line x1="340" y1="255" x2="460" y2="255" stroke="#c0392b" stroke-width="5"/>
+  <text x="400" y="240" font-family="sans-serif" font-size="13" fill="#c0392b" text-anchor="middle">적도: 넓음 (~111km)</text>
+
+  <!-- High latitude gap (narrow) -->
+  <line x1="378" y1="160" x2="422" y2="160" stroke="#c0392b" stroke-width="5"/>
+  <text x="400" y="148" font-family="sans-serif" font-size="13" fill="#c0392b" text-anchor="middle">고위도: 좁음 (~88km)</text>
+
+  <text x="400" y="435" font-family="sans-serif" font-size="14" fill="#333" text-anchor="middle">위경도는 각도 → 거리는 하버사인/미터 좌표계로 계산해야 정확</text>
+</svg>
