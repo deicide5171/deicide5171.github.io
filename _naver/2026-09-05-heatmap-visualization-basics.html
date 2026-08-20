@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>히트맵으로 밀집도 보여주기 — 지도 위 데이터 시각화 입문</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">히트맵으로 밀집도 보여주기 — 지도 위 데이터 시각화 입문</div>
+<p style="font-size:14px; color:#999;">2026. 9. 5. · GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 히트맵은 밀집도를 <b>색의 농도</b>로 표현해 분포 패턴을 한눈에 보여주며, 개별 위치·클릭이 중요하면 마커/클러스터링을 씁니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">점 수만 개를 그냥 찍으면 안 보인다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"사용자가 어디 몰려 있나" 같은 분석에서는 개별 위치보다 <b>어디에 얼마나 모여 있는가(밀집도)</b>가 중요합니다. 마커 수만 개는 겹쳐 안 보이지만, <b>히트맵</b>은 밀집도를 색으로 보여줍니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-05-heatmap-visualization-basics-1.svg" alt="같은 위치 데이터를 개별 마커로 찍었을 때는 겹쳐서 알아보기 어렵지만, 히트맵으로 표현하면 밀집도가 색의 농도로 한눈에 드러나는 것을 비교하는 다이어그램" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">히트맵 vs 마커/클러스터링</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">보여주는 것</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">개별 마커</td>
+<td style="border:1px solid #ddd; padding:10px;">각 위치의 정확한 지점</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">클러스터링</td>
+<td style="border:1px solid #ddd; padding:10px;">묶음 개수 + 개별 위치</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">히트맵</td>
+<td style="border:1px solid #ddd; padding:10px;">밀집도(분포 경향)</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">어떻게 색이 정해지나</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">1. 각 포인트가 주변에 "열"을 퍼뜨림
+2. 가까이 모이면 열이 겹쳐 더 뜨거워짐
+3. 열 세기를 색으로 (파랑=낮음 -> 빨강=높음)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">각 포인트에 <b>가중치</b>(매출액, 심각도 등)를 부여하면 개수가 적어도 값이 큰 지점을 뜨겁게 표현할 수 있습니다. 줌 레벨에 따라 반경도 조정해야 합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 히트맵은 분포 경향을 보여주는 것이라, "정확히 몇 건인지", "이 지점이 어디인지"가 중요하면 마커나 클러스터링을 써야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#히트맵 #Heatmap #데이터시각화 #GIS입문 #웹지도</p>
+
+</body>
+</html>
