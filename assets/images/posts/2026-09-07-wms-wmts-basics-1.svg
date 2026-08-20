@@ -1,0 +1,40 @@
+<svg viewBox="0 0 800 450" width="800" height="450" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="35" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">WMS vs WMTS</text>
+
+  <!-- WMS -->
+  <rect x="40" y="70" width="330" height="320" rx="8" fill="#eaf6ff" stroke="#4a90d9" stroke-width="2"/>
+  <text x="205" y="100" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1a4a7a">WMS (실시간 렌더링)</text>
+  <rect x="80" y="130" width="90" height="40" rx="5" fill="#fff" stroke="#4a90d9"/>
+  <text x="125" y="155" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">클라이언트</text>
+  <line x1="170" y1="150" x2="240" y2="150" stroke="#888" stroke-width="2" marker-end="url(#w)"/>
+  <text x="205" y="140" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#666">영역 요청</text>
+  <rect x="245" y="130" width="90" height="40" rx="5" fill="#fff" stroke="#4a90d9"/>
+  <text x="290" y="148" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#333">서버</text>
+  <text x="290" y="163" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#c0392b">매번 그림</text>
+  <line x1="290" y1="170" x2="205" y2="210" stroke="#888" stroke-width="2" marker-end="url(#w)"/>
+  <rect x="140" y="215" width="130" height="80" fill="#cfe0f5" stroke="#4a90d9"/>
+  <text x="205" y="260" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#333">그려진 이미지</text>
+  <text x="205" y="330" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">자유로운 영역·스타일</text>
+  <text x="205" y="355" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#c0392b">느리고 캐싱 어려움</text>
+
+  <!-- WMTS -->
+  <rect x="430" y="70" width="330" height="320" rx="8" fill="#f0f7f4" stroke="#03c75a" stroke-width="2"/>
+  <text x="595" y="100" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#0a5a30">WMTS (미리 자른 타일)</text>
+  <g stroke="#3a8a5a" stroke-width="1" fill="#dff0e8">
+    <rect x="490" y="140" width="45" height="45"/><rect x="535" y="140" width="45" height="45"/>
+    <rect x="580" y="140" width="45" height="45"/><rect x="625" y="140" width="45" height="45"/>
+    <rect x="490" y="185" width="45" height="45"/><rect x="535" y="185" width="45" height="45"/>
+    <rect x="580" y="185" width="45" height="45"/><rect x="625" y="185" width="45" height="45"/>
+  </g>
+  <text x="580" y="265" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#333">z/x/y 타일로 잘라둠</text>
+  <text x="595" y="310" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">같은 타일 캐시 재사용</text>
+  <text x="595" y="335" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#0a5a30">빠름, 서버 부담 적음</text>
+  <text x="595" y="360" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">스타일·영역은 고정</text>
+
+  <defs>
+    <marker id="w" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#888"/>
+    </marker>
+  </defs>
+</svg>
