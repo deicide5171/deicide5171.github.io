@@ -1,0 +1,34 @@
+<svg viewBox="0 0 800 450" width="800" height="450" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="35" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">2D 평면 좌표 vs Cesium 3D 좌표</text>
+
+  <!-- Left: 2D map -->
+  <rect x="40" y="70" width="330" height="220" rx="8" fill="#eaf6ff" stroke="#4a90d9" stroke-width="2"/>
+  <text x="205" y="100" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1a4a7a">2D 지도 (Leaflet/OpenLayers)</text>
+  <line x1="80" y1="260" x2="330" y2="260" stroke="#888" stroke-width="1.5"/>
+  <line x1="80" y1="260" x2="80" y2="120" stroke="#888" stroke-width="1.5"/>
+  <text x="335" y="264" font-family="sans-serif" font-size="11" fill="#666">X</text>
+  <text x="70" y="115" font-family="sans-serif" font-size="11" fill="#666">Y</text>
+  <circle cx="220" cy="180" r="6" fill="#e05252"/>
+  <text x="220" y="205" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">평면 투영 좌표 (x, y)</text>
+  <text x="205" y="245" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">카메라 = 팬 + 줌</text>
+
+  <!-- Right: 3D globe -->
+  <rect x="430" y="70" width="330" height="220" rx="8" fill="#f0f7f4" stroke="#03c75a" stroke-width="2"/>
+  <text x="595" y="100" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#0a5a30">Cesium (3D 지구본)</text>
+  <circle cx="595" cy="190" r="70" fill="#cfe8d8" stroke="#3a8a5a" stroke-width="2"/>
+  <ellipse cx="595" cy="190" rx="70" ry="20" fill="none" stroke="#3a8a5a" stroke-width="1" stroke-dasharray="4,3"/>
+  <circle cx="620" cy="165" r="5" fill="#e05252"/>
+  <line x1="620" y1="165" x2="680" y2="120" stroke="#e08a2b" stroke-width="2" marker-end="url(#arrow2)"/>
+  <text x="700" y="115" font-family="sans-serif" font-size="11" fill="#8a4a10">카메라(위치+방향+FOV)</text>
+  <text x="595" y="265" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">Cartesian3.fromDegrees(경도,위도,고도)</text>
+
+  <!-- Bottom note -->
+  <text x="400" y="330" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#555">Cesium은 WGS84 타원체 위의 3차원 위치와, 위치·방향·시야각을 갖는 카메라로 장면을 표현한다</text>
+
+  <defs>
+    <marker id="arrow2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#e08a2b"/>
+    </marker>
+  </defs>
+</svg>

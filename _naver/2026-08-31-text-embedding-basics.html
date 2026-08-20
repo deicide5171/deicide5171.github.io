@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>임베딩이 뭔가요 — 텍스트를 벡터로 바꾸는 임베딩 개념 입문</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">임베딩이 뭔가요 — 텍스트를 벡터로 바꾸는 임베딩 개념 입문</div>
+<p style="font-size:14px; color:#999;">2026. 8. 31. · AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 임베딩은 텍스트를 <b>의미 기반으로 비교 가능한 숫자 벡터</b>로 바꾸는 기술로, 시맨틱 검색과 RAG의 기반이 됩니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 컴퓨터는 글자를 그대로 이해하지 못하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"강아지"와 "개"는 사람에게는 비슷한 의미지만, 컴퓨터에게는 서로 다른 문자열일 뿐입니다. <b>임베딩(embedding)</b>은 단어나 문장을 의미가 비슷할수록 가까운 위치에 놓이는 숫자 벡터로 바꾸는 기술입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">임베딩이 하는 일</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">입력</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">출력(단순화)</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">의미</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">"강아지"</td>
+<td style="border:1px solid #ddd; padding:10px;">[0.12, -0.05, 0.88, ...]</td>
+<td style="border:1px solid #ddd; padding:10px;">수백~수천 차원 벡터</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">"개"</td>
+<td style="border:1px solid #ddd; padding:10px;">[0.14, -0.03, 0.85, ...]</td>
+<td style="border:1px solid #ddd; padding:10px;">"강아지"와 벡터가 가깝다</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">"자동차"</td>
+<td style="border:1px solid #ddd; padding:10px;">[-0.72, 0.41, 0.02, ...]</td>
+<td style="border:1px solid #ddd; padding:10px;">"강아지"와 벡터가 멀다</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 임베딩 생성과 유사도 계산</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">def get_embedding(text):
+    response = client.embeddings.create(
+        model="text-embedding-3-small",
+        input=text,
+    )
+    return np.array(response.data[0].embedding)
+
+def cosine_similarity(a, b):
+    return np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+vec1 = get_embedding("강아지가 공원에서 뛰어논다")
+vec2 = get_embedding("개 한 마리가 잔디밭을 뛰어다닌다")
+print(cosine_similarity(vec1, vec2))  # 높은 값</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">두 문장은 단어가 거의 겹치지 않지만 의미는 비슷하므로 유사도가 <b>높게</b> 나옵니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">임베딩은 어디에 쓰이는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>시맨틱 검색</b>은 키워드가 정확히 일치하지 않아도 의미가 비슷한 문서를 찾습니다. <b>RAG</b>는 질문과 관련된 문서를 임베딩 유사도로 찾아 LLM에 전달합니다. 추천 시스템과 클러스터링에도 널리 쓰입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">임베딩 벡터는 저장 공간을 많이 차지합니다. 문서가 많아지면 <b>전용 벡터 DB</b>(Pinecone, Qdrant, pgvector 등)를 검토해야 합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 임베딩 모델이 바뀌면 기존에 저장해둔 벡터와 호환되지 않습니다. 모델을 교체할 때는 전체 데이터를 재임베딩해야 한다는 점을 미리 고려하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#임베딩 #Embedding #RAG #AI기초 #시맨틱검색</p>
+
+</body>
+</html>
