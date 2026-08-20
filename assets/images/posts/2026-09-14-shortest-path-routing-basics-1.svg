@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="44" font-family="sans-serif" font-size="24" font-weight="bold" fill="#222" text-anchor="middle">도로망을 그래프로 — 최단경로 찾기</text>
+
+  <!-- edges -->
+  <line x1="160" y1="230" x2="640" y2="230" stroke="#bbb" stroke-width="6"/>
+  <line x1="160" y1="230" x2="400" y2="360" stroke="#03c75a" stroke-width="6"/>
+  <line x1="400" y1="360" x2="640" y2="230" stroke="#03c75a" stroke-width="6"/>
+
+  <!-- edge weights -->
+  <rect x="360" y="205" width="80" height="26" fill="#fff" stroke="#ccc"/>
+  <text x="400" y="224" font-family="sans-serif" font-size="15" fill="#c0392b" text-anchor="middle">A→B: 5분</text>
+  <text x="250" y="315" font-family="sans-serif" font-size="15" fill="#2a8f66" text-anchor="middle">2분</text>
+  <text x="550" y="315" font-family="sans-serif" font-size="15" fill="#2a8f66" text-anchor="middle">2분</text>
+
+  <!-- nodes -->
+  <circle cx="160" cy="230" r="28" fill="#3b7dd8"/>
+  <text x="160" y="238" font-family="sans-serif" font-size="20" font-weight="bold" fill="#fff" text-anchor="middle">A</text>
+  <circle cx="640" cy="230" r="28" fill="#3b7dd8"/>
+  <text x="640" y="238" font-family="sans-serif" font-size="20" font-weight="bold" fill="#fff" text-anchor="middle">B</text>
+  <circle cx="400" cy="360" r="28" fill="#e08e2b"/>
+  <text x="400" y="368" font-family="sans-serif" font-size="20" font-weight="bold" fill="#fff" text-anchor="middle">C</text>
+
+  <text x="400" y="110" font-family="sans-serif" font-size="16" fill="#333" text-anchor="middle">교차로=노드, 도로=간선, 간선 비용=거리/시간</text>
+  <text x="400" y="418" font-family="sans-serif" font-size="16" font-weight="bold" fill="#03c75a" text-anchor="middle">A→C→B (2+2=4분) &lt; A→B(5분) → 최단경로는 C를 경유</text>
+</svg>
