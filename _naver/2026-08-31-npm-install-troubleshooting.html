@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>npm install이 자꾸 실패할 때 — 캐시와 lock 파일 문제 해결</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">npm install이 자꾸 실패할 때 — 캐시와 lock 파일 문제 해결</div>
+<p style="font-size:14px; color:#999;">2026. 8. 31. · 프론트엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 원인 모를 install 실패는 대부분 캐시나 lock 파일 문제이며, <b>node_modules와 package-lock.json을 지우고 재설치</b>하면 대부분 해결됩니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 어제까지 되던 install이 갑자기 안 될까</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">npm install이 갑자기 실패하면 대부분 코드 문제가 아니라 <b>로컬 환경 상태</b> 문제입니다. Node 버전 변경, 캐시 손상, package-lock.json 충돌이 대부분을 차지합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">흔한 에러와 원인</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">에러 메시지</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">주된 원인</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">ERESOLVE unable to resolve...</td>
+<td style="border:1px solid #ddd; padding:10px;">패키지 간 버전 충돌</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">EINTEGRITY</td>
+<td style="border:1px solid #ddd; padding:10px;">npm 캐시 손상</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">gyp ERR! build error</td>
+<td style="border:1px solid #ddd; padding:10px;">네이티브 모듈 빌드 실패</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">진단 및 해결 순서</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># 1. 버전 확인
+node -v && npm -v
+
+# 2. 캐시 정리
+npm cache clean --force
+
+# 3. 확실한 초기화 (가장 흔한 해결책)
+rm -rf node_modules package-lock.json
+npm install
+
+# 4. 최후 수단
+npm install --legacy-peer-deps</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">3번 완전 초기화만으로 대부분의 이상 증상은 해결됩니다. <b>--legacy-peer-deps</b>는 버전 충돌을 강제로 무시하는 것이므로, 팀 프로젝트에서는 원인 패키지를 찾아 버전을 맞추는 것이 더 안전합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>package-lock.json을 git에 커밋하지 않으면</b> 팀원마다 다른 버전이 설치돼 "내 컴퓨터에서는 되는데" 문제가 생깁니다. 반드시 커밋하세요.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Node 버전 관리자(nvm, fnm)로 프로젝트별 버전을 고정하면 팀원 간 불일치를 크게 줄일 수 있습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — CI 환경에서는 npm install 대신 <b>npm ci</b>를 써야 합니다. lock 파일을 그대로 신뢰해 설치하므로 재현 가능한 빌드를 보장하고 속도도 더 빠릅니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#npm #프론트엔드트러블슈팅 #패키지매니저 #자바스크립트 #개발환경</p>
+
+</body>
+</html>
