@@ -1,0 +1,38 @@
+<svg viewBox="0 0 800 450" width="800" height="450" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="35" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">GeoJSON 지오메트리 타입 3가지</text>
+
+  <!-- Point -->
+  <rect x="40" y="70" width="220" height="320" rx="8" fill="#eaf6ff" stroke="#4a90d9" stroke-width="2"/>
+  <text x="150" y="100" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="bold" fill="#1a4a7a">Point</text>
+  <circle cx="150" cy="180" r="8" fill="#e05252"/>
+  <text x="150" y="215" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">하나의 점</text>
+  <rect x="60" y="250" width="180" height="110" fill="#ffffff" stroke="#ccc"/>
+  <text x="70" y="270" font-family="monospace" font-size="10" fill="#333">"coordinates":</text>
+  <text x="70" y="288" font-family="monospace" font-size="10" fill="#333">[126.978,</text>
+  <text x="70" y="304" font-family="monospace" font-size="10" fill="#333"> 37.5665]</text>
+  <text x="150" y="345" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#666">[경도, 위도]</text>
+
+  <!-- LineString -->
+  <rect x="290" y="70" width="220" height="320" rx="8" fill="#f0f7f4" stroke="#03c75a" stroke-width="2"/>
+  <text x="400" y="100" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="bold" fill="#0a5a30">LineString</text>
+  <polyline points="330,200 380,160 430,210 470,170" fill="none" stroke="#0a5a30" stroke-width="3"/>
+  <circle cx="330" cy="200" r="4" fill="#0a5a30"/>
+  <circle cx="380" cy="160" r="4" fill="#0a5a30"/>
+  <circle cx="430" cy="210" r="4" fill="#0a5a30"/>
+  <circle cx="470" cy="170" r="4" fill="#0a5a30"/>
+  <text x="400" y="240" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">점들을 잇는 선</text>
+  <rect x="310" y="255" width="180" height="105" fill="#ffffff" stroke="#ccc"/>
+  <text x="320" y="275" font-family="monospace" font-size="9" fill="#333">[[126.9,37.5],</text>
+  <text x="320" y="290" font-family="monospace" font-size="9" fill="#333"> [127.0,37.6],</text>
+  <text x="320" y="305" font-family="monospace" font-size="9" fill="#333"> ...]</text>
+
+  <!-- Polygon -->
+  <rect x="540" y="70" width="220" height="320" rx="8" fill="#fff3e6" stroke="#e08a2b" stroke-width="2"/>
+  <text x="650" y="100" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="bold" fill="#8a4a10">Polygon</text>
+  <polygon points="590,220 700,170 720,230 650,260" fill="#ffe0b3" stroke="#8a4a10" stroke-width="2"/>
+  <text x="650" y="290" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">닫힌 면(첫점=끝점)</text>
+  <rect x="560" y="300" width="180" height="70" fill="#ffffff" stroke="#ccc"/>
+  <text x="570" y="320" font-family="monospace" font-size="9" fill="#333">[[[a,b],[c,d],</text>
+  <text x="570" y="335" font-family="monospace" font-size="9" fill="#333"> ...,[a,b]]]</text>
+</svg>
