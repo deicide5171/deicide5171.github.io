@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>SQL에서 NULL이 뭔가요 — '값 없음'이 만드는 함정</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">SQL에서 NULL이 뭔가요 — '값 없음'이 만드는 함정</div>
+<p style="font-size:14px; color:#999;">2026. 9. 10. · 데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — NULL은 "값 없음(모름)"으로 0·빈 문자열과 다르며, <b>= NULL로 비교되지 않아</b> IS NULL을 써야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">NULL은 0도 빈 문자열도 아니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">SQL에서 <b>NULL</b>은 "값이 없음(모름)"을 뜻합니다. 숫자 0이나 빈 문자열과는 다릅니다. 문제는 이 NULL이 비교·계산에서 예상 밖으로 동작한다는 점입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">NULL의 함정</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">시도</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">결과</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">WHERE col = NULL</td>
+<td style="border:1px solid #ddd; padding:10px;">아무것도 안 나옴</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">WHERE col IS NULL</td>
+<td style="border:1px solid #ddd; padding:10px;">올바른 방법</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">1 + NULL</td>
+<td style="border:1px solid #ddd; padding:10px;">결과가 NULL</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">올바른 처리</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">-- NULL 여부
+SELECT * FROM users WHERE phone IS NULL;
+-- NULL 대체
+SELECT name, COALESCE(phone, '미등록') FROM users;
+-- COUNT(col)은 NULL을 안 센다
+SELECT COUNT(*), COUNT(phone) FROM users;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">비교는 반드시 <code>IS NULL</code>/<code>IS NOT NULL</code>로 하세요(<code>= NULL</code>은 항상 매칭 안 됨). 화면 표시엔 <code>COALESCE(값, 기본값)</code>으로 대체값을 주고, 집계·조인에서 NULL이 빠지거나 무시되는지 확인하세요.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — NULL이 있는 컬럼으로 조인하면 매칭이 빠지고, <code>COUNT(컬럼)</code>은 NULL을 세지 않습니다. 의도와 맞는지 확인하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#NULL #SQL #ISNULL #COALESCE #데이터베이스기초</p>
+
+</body>
+</html>
