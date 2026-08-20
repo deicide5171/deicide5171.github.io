@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>WMS와 WMTS가 뭔가요 — 공공 지도 서비스 표준 이해하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">WMS와 WMTS가 뭔가요 — 공공 지도 서비스 표준 이해하기</div>
+<p style="font-size:14px; color:#999;">2026. 9. 7. · GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — WMS는 <b>실시간 렌더링 이미지</b>, WMTS는 <b>미리 잘라둔 타일</b>을 제공하며, 빠른 배경 지도는 WMTS가 유리합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">공공 지도 데이터에서 만나는 약어</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">공공 GIS 포털에서 데이터를 가져오려면 WMS, WMTS, WFS가 나옵니다. <b>OGC</b>가 정한 지도 서비스 표준으로, 어떤 걸 쓰는지에 따라 방식과 성능이 달라집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-07-wms-wmts-basics-1.svg" alt="WMS는 요청 영역마다 서버가 지도 이미지를 실시간으로 그려 보내고, WMTS는 미리 잘라둔 타일을 그대로 전달해 캐싱에 유리한 차이를 보여주는 다이어그램" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">WMS vs WMTS vs WFS</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">서비스</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">받는 것</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">특징</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">WMS</td>
+<td style="border:1px solid #ddd; padding:10px;">그려진 이미지</td>
+<td style="border:1px solid #ddd; padding:10px;">실시간 렌더링</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">WMTS</td>
+<td style="border:1px solid #ddd; padding:10px;">미리 잘라둔 타일</td>
+<td style="border:1px solid #ddd; padding:10px;">캐싱 가능, 빠름</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">WFS</td>
+<td style="border:1px solid #ddd; padding:10px;">벡터 좌표 데이터</td>
+<td style="border:1px solid #ddd; padding:10px;">직접 스타일·분석</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">빠른 배경 지도가 필요하면 <b>WMTS</b>가 유리합니다. 미리 만든 타일을 캐싱해 재사용하기 때문입니다. WMS는 매 요청마다 렌더링해 느립니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">데이터를 직접 분석·스타일링하려면 이미지가 아니라 벡터 좌표를 주는 <b>WFS</b>를 써야 합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 국내 공공 WMS/WMTS는 EPSG:5179 같은 국내 좌표계로 제공되는 경우가 많습니다. 웹 지도와 맞추려면 좌표계를 확인하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#WMS #WMTS #OGC #GIS입문 #공공데이터</p>
+
+</body>
+</html>
