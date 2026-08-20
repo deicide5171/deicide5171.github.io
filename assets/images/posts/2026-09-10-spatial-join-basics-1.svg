@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="44" font-family="sans-serif" font-size="24" font-weight="bold" fill="#222" text-anchor="middle">공간 조인 — 위치로 데이터를 연결</text>
+
+  <!-- District polygons -->
+  <rect x="90" y="100" width="300" height="150" fill="#eef6ff" stroke="#3b7dd8" stroke-width="2"/>
+  <text x="240" y="90" font-family="sans-serif" font-size="14" fill="#3b7dd8" text-anchor="middle">A구 (폴리곤)</text>
+  <rect x="90" y="250" width="300" height="120" fill="#f0f7f4" stroke="#03c75a" stroke-width="2"/>
+  <text x="240" y="392" font-family="sans-serif" font-size="14" fill="#03c75a" text-anchor="middle">B구 (폴리곤)</text>
+
+  <!-- Cafe points -->
+  <circle cx="160" cy="160" r="8" fill="#e08e2b" stroke="#fff" stroke-width="2"/>
+  <text x="172" y="156" font-family="sans-serif" font-size="12" fill="#333">카페1</text>
+  <circle cx="300" cy="200" r="8" fill="#e08e2b" stroke="#fff" stroke-width="2"/>
+  <text x="312" y="196" font-family="sans-serif" font-size="12" fill="#333">카페2</text>
+  <circle cx="200" cy="310" r="8" fill="#e08e2b" stroke="#fff" stroke-width="2"/>
+  <text x="212" y="306" font-family="sans-serif" font-size="12" fill="#333">카페3</text>
+
+  <!-- Arrow -->
+  <line x1="410" y1="235" x2="480" y2="235" stroke="#888" stroke-width="3" marker-end="url(#a)"/>
+  <text x="445" y="222" font-family="sans-serif" font-size="13" fill="#888" text-anchor="middle">공간 조인</text>
+
+  <!-- Result table -->
+  <rect x="500" y="140" width="250" height="180" rx="8" fill="#fafafa" stroke="#ddd"/>
+  <text x="625" y="168" font-family="sans-serif" font-size="15" font-weight="bold" fill="#222" text-anchor="middle">결과 (점이 어느 면 안?)</text>
+  <line x1="515" y1="182" x2="735" y2="182" stroke="#ddd"/>
+  <text x="530" y="210" font-family="sans-serif" font-size="14" fill="#333">카페1  →  A구</text>
+  <text x="530" y="242" font-family="sans-serif" font-size="14" fill="#333">카페2  →  A구</text>
+  <text x="530" y="274" font-family="sans-serif" font-size="14" fill="#333">카페3  →  B구</text>
+  <text x="530" y="304" font-family="sans-serif" font-size="12" fill="#999">ST_Contains(면, 점)</text>
+
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#888"/>
+    </marker>
+  </defs>
+</svg>
