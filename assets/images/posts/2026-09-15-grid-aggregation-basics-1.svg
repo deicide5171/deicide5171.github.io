@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="42" font-family="sans-serif" font-size="24" font-weight="bold" fill="#222" text-anchor="middle">격자 집계 — 점을 칸으로 묶어 요약</text>
+
+  <!-- Left: scattered points -->
+  <text x="200" y="82" font-family="sans-serif" font-size="16" fill="#888" text-anchor="middle">점이 수십만 개(겹침)</text>
+  <rect x="70" y="100" width="260" height="260" fill="#fafafa" stroke="#ddd"/>
+  <g fill="#c0392b">
+    <circle cx="110" cy="140" r="4"/><circle cx="130" cy="160" r="4"/><circle cx="120" cy="150" r="4"/>
+    <circle cx="140" cy="145" r="4"/><circle cx="115" cy="170" r="4"/><circle cx="135" cy="135" r="4"/>
+    <circle cx="250" cy="300" r="4"/><circle cx="270" cy="310" r="4"/><circle cx="260" cy="290" r="4"/>
+    <circle cx="200" cy="220" r="4"/><circle cx="210" cy="240" r="4"/><circle cx="190" cy="230" r="4"/>
+    <circle cx="290" cy="150" r="4"/><circle cx="150" cy="300" r="4"/><circle cx="100" cy="330" r="4"/>
+  </g>
+
+  <!-- Arrow -->
+  <line x1="345" y1="230" x2="415" y2="230" stroke="#888" stroke-width="3" marker-end="url(#a)"/>
+  <text x="380" y="216" font-family="sans-serif" font-size="12" fill="#888" text-anchor="middle">집계</text>
+
+  <!-- Right: grid with counts / color -->
+  <text x="600" y="82" font-family="sans-serif" font-size="16" fill="#03c75a" text-anchor="middle">칸별 개수 → 색으로</text>
+  <g stroke="#fff" stroke-width="2">
+    <rect x="470" y="100" width="86" height="86" fill="#33a76f"/>
+    <rect x="556" y="100" width="86" height="86" fill="#d9f0e4"/>
+    <rect x="642" y="100" width="86" height="86" fill="#7fcfa8"/>
+    <rect x="470" y="186" width="86" height="86" fill="#d9f0e4"/>
+    <rect x="556" y="186" width="86" height="86" fill="#7fcfa8"/>
+    <rect x="642" y="186" width="86" height="86" fill="#d9f0e4"/>
+    <rect x="470" y="272" width="86" height="86" fill="#d9f0e4"/>
+    <rect x="556" y="272" width="86" height="86" fill="#0b7a44"/>
+    <rect x="642" y="272" width="86" height="86" fill="#d9f0e4"/>
+  </g>
+  <text x="513" y="150" font-family="sans-serif" font-size="15" fill="#fff" text-anchor="middle">6</text>
+  <text x="599" y="315" font-family="sans-serif" font-size="15" fill="#fff" text-anchor="middle">3</text>
+
+  <text x="400" y="410" font-family="sans-serif" font-size="15" fill="#333" text-anchor="middle">지역을 칸으로 나눠 각 칸의 점 개수를 세고 색으로 밀도를 표현</text>
+
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#888"/>
+    </marker>
+  </defs>
+</svg>
