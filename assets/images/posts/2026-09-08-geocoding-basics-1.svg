@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="46" font-family="sans-serif" font-size="24" font-weight="bold" fill="#222" text-anchor="middle">지오코딩과 역지오코딩</text>
+
+  <!-- Left: address box -->
+  <rect x="60" y="140" width="230" height="90" rx="10" fill="#f0f7f4" stroke="#03c75a" stroke-width="2"/>
+  <text x="175" y="175" font-family="sans-serif" font-size="17" font-weight="bold" fill="#222" text-anchor="middle">주소 (Address)</text>
+  <text x="175" y="205" font-family="sans-serif" font-size="15" fill="#555" text-anchor="middle">서울 중구 세종대로 110</text>
+
+  <!-- Right: coordinate box -->
+  <rect x="510" y="140" width="230" height="90" rx="10" fill="#eef3fb" stroke="#3b7dd8" stroke-width="2"/>
+  <text x="625" y="175" font-family="sans-serif" font-size="17" font-weight="bold" fill="#222" text-anchor="middle">좌표 (Lat/Lng)</text>
+  <text x="625" y="205" font-family="sans-serif" font-size="15" fill="#555" text-anchor="middle">37.5665, 126.9780</text>
+
+  <!-- Geocoding arrow (left to right, top) -->
+  <line x1="300" y1="165" x2="500" y2="165" stroke="#03c75a" stroke-width="3" marker-end="url(#arrGreen)"/>
+  <text x="400" y="150" font-family="sans-serif" font-size="16" font-weight="bold" fill="#03c75a" text-anchor="middle">지오코딩</text>
+
+  <!-- Reverse geocoding arrow (right to left, bottom) -->
+  <line x1="500" y1="210" x2="300" y2="210" stroke="#3b7dd8" stroke-width="3" marker-end="url(#arrBlue)"/>
+  <text x="400" y="238" font-family="sans-serif" font-size="16" font-weight="bold" fill="#3b7dd8" text-anchor="middle">역지오코딩</text>
+
+  <!-- Bottom captions -->
+  <text x="175" y="300" font-family="sans-serif" font-size="14" fill="#777" text-anchor="middle">사람이 읽는 형태</text>
+  <text x="625" y="300" font-family="sans-serif" font-size="14" fill="#777" text-anchor="middle">지도가 읽는 형태</text>
+
+  <text x="400" y="370" font-family="sans-serif" font-size="15" fill="#333" text-anchor="middle">지오코딩: 주소 → 좌표 (지도에 마커 표시)</text>
+  <text x="400" y="398" font-family="sans-serif" font-size="15" fill="#333" text-anchor="middle">역지오코딩: 좌표 → 주소 (내 위치를 주소로 표시)</text>
+
+  <defs>
+    <marker id="arrGreen" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#03c75a"/>
+    </marker>
+    <marker id="arrBlue" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#3b7dd8"/>
+    </marker>
+  </defs>
+</svg>
