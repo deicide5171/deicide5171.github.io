@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="44" font-family="sans-serif" font-size="24" font-weight="bold" fill="#222" text-anchor="middle">WKT — 도형을 텍스트로 표현</text>
+
+  <!-- Point -->
+  <rect x="60" y="90" width="220" height="240" rx="12" fill="#fafafa" stroke="#ddd"/>
+  <circle cx="170" cy="185" r="9" fill="#03c75a"/>
+  <text x="170" y="255" font-family="sans-serif" font-size="15" font-weight="bold" fill="#333" text-anchor="middle">POINT</text>
+  <text x="170" y="285" font-family="monospace" font-size="12" fill="#555" text-anchor="middle">POINT(127 37)</text>
+
+  <!-- LineString -->
+  <rect x="290" y="90" width="220" height="240" rx="12" fill="#fafafa" stroke="#ddd"/>
+  <polyline points="320,230 360,150 420,190 470,140" fill="none" stroke="#3b7dd8" stroke-width="3.5"/>
+  <circle cx="320" cy="230" r="4" fill="#3b7dd8"/><circle cx="360" cy="150" r="4" fill="#3b7dd8"/>
+  <circle cx="420" cy="190" r="4" fill="#3b7dd8"/><circle cx="470" cy="140" r="4" fill="#3b7dd8"/>
+  <text x="400" y="255" font-family="sans-serif" font-size="15" font-weight="bold" fill="#333" text-anchor="middle">LINESTRING</text>
+  <text x="400" y="285" font-family="monospace" font-size="11" fill="#555" text-anchor="middle">LINESTRING(0 0,1 1,2 1)</text>
+
+  <!-- Polygon -->
+  <rect x="520" y="90" width="220" height="240" rx="12" fill="#fafafa" stroke="#ddd"/>
+  <polygon points="560,230 570,150 660,145 690,215 630,250" fill="#e08e2b" fill-opacity="0.35" stroke="#e08e2b" stroke-width="3"/>
+  <text x="630" y="278" font-family="sans-serif" font-size="15" font-weight="bold" fill="#333" text-anchor="middle">POLYGON</text>
+  <text x="630" y="305" font-family="monospace" font-size="11" fill="#555" text-anchor="middle">POLYGON((0 0,4 0,4 4,0 0))</text>
+
+  <text x="400" y="375" font-family="sans-serif" font-size="15" fill="#333" text-anchor="middle">WKT(텍스트) = 사람이 읽기 쉬움 · WKB(이진) = 저장·전송에 작고 빠름</text>
+  <text x="400" y="405" font-family="sans-serif" font-size="14" fill="#777" text-anchor="middle">좌표는 경도 위도(x y) 순서</text>
+</svg>
