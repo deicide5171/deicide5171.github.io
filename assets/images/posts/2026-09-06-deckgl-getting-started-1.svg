@@ -1,0 +1,45 @@
+<svg viewBox="0 0 800 450" width="800" height="450" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="35" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">deck.gl 렌더링 구조</text>
+
+  <!-- data -->
+  <rect x="40" y="90" width="180" height="90" rx="8" fill="#eaf6ff" stroke="#4a90d9" stroke-width="2"/>
+  <text x="130" y="122" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1a4a7a">대용량 데이터</text>
+  <text x="130" y="145" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">수십만 개 좌표</text>
+  <text x="130" y="163" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">[[경도,위도], ...]</text>
+
+  <line x1="220" y1="135" x2="290" y2="135" stroke="#888" stroke-width="2" marker-end="url(#d)"/>
+
+  <!-- layers -->
+  <rect x="300" y="90" width="200" height="90" rx="8" fill="#f0f7f4" stroke="#03c75a" stroke-width="2"/>
+  <text x="400" y="118" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#0a5a30">레이어(Layer)</text>
+  <text x="400" y="140" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#333">Scatterplot / Arc / Hexagon</text>
+  <text x="400" y="158" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#333">데이터를 어떻게 그릴지 정의</text>
+
+  <line x1="500" y1="135" x2="570" y2="135" stroke="#888" stroke-width="2" marker-end="url(#d)"/>
+
+  <!-- GPU -->
+  <rect x="580" y="90" width="180" height="90" rx="8" fill="#fff3e6" stroke="#e08a2b" stroke-width="2"/>
+  <text x="670" y="122" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#8a4a10">GPU(WebGL)</text>
+  <text x="670" y="145" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">수십만 개를</text>
+  <text x="670" y="163" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">한 번에 렌더링</text>
+
+  <line x1="670" y1="180" x2="670" y2="225" stroke="#888" stroke-width="2" marker-end="url(#d)"/>
+
+  <!-- map with points -->
+  <rect x="150" y="235" width="500" height="165" rx="8" fill="#dff0e8" stroke="#3a8a5a" stroke-width="2"/>
+  <text x="400" y="262" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#0a5a30">배경 지도(MapLibre 등) 위에 겹쳐 표시</text>
+  <g fill="#e05252" opacity="0.7">
+    <circle cx="230" cy="310" r="3"/><circle cx="260" cy="330" r="3"/><circle cx="290" cy="300" r="3"/>
+    <circle cx="320" cy="340" r="3"/><circle cx="350" cy="315" r="3"/><circle cx="380" cy="335" r="3"/>
+    <circle cx="410" cy="305" r="3"/><circle cx="440" cy="345" r="3"/><circle cx="470" cy="320" r="3"/>
+    <circle cx="500" cy="335" r="3"/><circle cx="530" cy="310" r="3"/><circle cx="560" cy="340" r="3"/>
+    <circle cx="245" cy="360" r="3"/><circle cx="335" cy="365" r="3"/><circle cx="425" cy="370" r="3"/><circle cx="515" cy="360" r="3"/>
+  </g>
+
+  <defs>
+    <marker id="d" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#888"/>
+    </marker>
+  </defs>
+</svg>
