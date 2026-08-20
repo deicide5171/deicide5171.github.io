@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="42" font-family="sans-serif" font-size="24" font-weight="bold" fill="#222" text-anchor="middle">폴리곤의 중심점(centroid)</text>
+
+  <!-- Convex polygon with centroid inside -->
+  <g>
+    <polygon points="130,120 260,100 300,220 200,300 110,240" fill="#f0f7f4" stroke="#03c75a" stroke-width="2"/>
+    <circle cx="200" cy="196" r="7" fill="#03c75a"/>
+    <text x="200" y="180" font-family="sans-serif" font-size="13" fill="#03c75a" text-anchor="middle" font-weight="bold">centroid</text>
+    <text x="205" y="345" font-family="sans-serif" font-size="15" fill="#333" text-anchor="middle">볼록한 도형 — 중심점이 면 안에</text>
+  </g>
+
+  <!-- Concave (C-shape) polygon with centroid outside -->
+  <g>
+    <polygon points="520,110 700,110 700,160 580,160 580,290 700,290 700,340 520,340" fill="#fff7f0" stroke="#f0a04b" stroke-width="2"/>
+    <circle cx="560" cy="225" r="7" fill="#c0392b"/>
+    <text x="560" y="210" font-family="sans-serif" font-size="13" fill="#c0392b" text-anchor="middle" font-weight="bold">centroid</text>
+    <text x="610" y="385" font-family="sans-serif" font-size="15" fill="#333" text-anchor="middle">오목한 도형 — 중심점이 면 밖으로</text>
+  </g>
+
+  <text x="400" y="425" font-family="sans-serif" font-size="14" fill="#777" text-anchor="middle">오목한 도형은 point-on-surface로 면 안을 보장한다</text>
+</svg>
