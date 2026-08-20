@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>UPSERT가 뭔가요 — 있으면 수정, 없으면 삽입 한 번에</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">UPSERT가 뭔가요 — 있으면 수정, 없으면 삽입 한 번에</div>
+<p style="font-size:14px; color:#999;">2026. 9. 10. · 데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — UPSERT는 "있으면 UPDATE, 없으면 INSERT"를 <b>한 문장으로</b> 처리하며, 조회-분기 방식보다 동시 요청에 안전합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">"있으면 수정, 없으면 삽입"을 어떻게</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">조회수 카운트에서 행이 있으면 +1(UPDATE), 없으면 새로(INSERT) 만들어야 합니다. "조회 → 분기"로 하면 코드도 길고 동시 요청이 끼면 충돌하죠. <b>UPSERT</b>는 이를 한 문장으로 처리합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">DB별 문법</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">DB</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">문법</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">PostgreSQL</td>
+<td style="border:1px solid #ddd; padding:10px;">ON CONFLICT DO UPDATE</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">MySQL</td>
+<td style="border:1px solid #ddd; padding:10px;">ON DUPLICATE KEY UPDATE</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">표준 SQL</td>
+<td style="border:1px solid #ddd; padding:10px;">MERGE</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예시 (PostgreSQL)</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">INSERT INTO page_views (page_id, views)
+VALUES (10, 1)
+ON CONFLICT (page_id)
+DO UPDATE SET views = page_views.views + 1;
+-- 없으면 views=1, 있으면 기존 +1</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"충돌"을 판단할 <b>UNIQUE 제약</b>(기본키/유니크 인덱스)이 있어야 동작합니다. DB가 원자적으로 처리해 동시 요청에도 안전합니다. DB마다 세부 동작이 다르니 문서를 확인하세요.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 충돌 기준이 될 UNIQUE 제약이 없으면 UPSERT는 충돌을 감지하지 못해 항상 INSERT만 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#UPSERT #ONCONFLICT #SQL #데이터베이스기초 #DB</p>
+
+</body>
+</html>
