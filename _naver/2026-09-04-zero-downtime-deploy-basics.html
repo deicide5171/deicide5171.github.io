@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>무중단 배포가 뭔가요 — 롤링·블루그린 개념 처음 이해하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">무중단 배포가 뭔가요 — 롤링·블루그린 개념 처음 이해하기</div>
+<p style="font-size:14px; color:#999;">2026. 9. 4. · 시스템설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 롤링은 서버를 순차 교체해 자원 부담이 적고, 블루그린은 환경을 통째로 띄워 <b>즉시 롤백</b>이 가능합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">배포할 때마다 서비스가 멈춘다면</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">서버를 껐다 켜는 동안 접속하면 에러를 봅니다. <b>무중단 배포</b>는 서비스를 멈추지 않고 새 버전으로 교체하는 전략으로, 핵심은 "새 버전이 준비될 때까지 기존 버전이 계속 요청을 받는 것"입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">대표적인 두 방식</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">개념</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">롤링</td>
+<td style="border:1px solid #ddd; padding:10px;">서버를 몇 대씩 순차 교체 (자원 적게 듦)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">블루그린</td>
+<td style="border:1px solid #ddd; padding:10px;">새 환경 통째로 띄운 뒤 전환 (즉시 롤백, 자원 2배)</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">각 방식의 흐름</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">[롤링] 1대씩 v2로 교체 -> 헬스체크 통과하면 재투입 (반복)
+[블루그린] 그린(v2) 검증 -> 트래픽 한 번에 전환 -> 문제 시 블루로 롤백</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>무중단 배포의 전제는 헬스체크입니다.</b> 새 버전이 요청 받을 준비가 됐는지 확인한 뒤 트래픽을 보내야 부팅 중 서버로 트래픽이 가는 것을 막습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">롤링 배포는 v1·v2가 잠깐 공존하므로, DB 스키마 변경은 <b>양쪽 버전 모두와 호환되게</b> 단계적으로 해야 합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 블루그린은 롤백이 빠르지만 두 배의 서버를 잠깐 동시 운영해야 합니다. 자원 여유와 비용을 함께 고려하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#무중단배포 #롤링배포 #블루그린 #시스템설계기초 #배포</p>
+
+</body>
+</html>
