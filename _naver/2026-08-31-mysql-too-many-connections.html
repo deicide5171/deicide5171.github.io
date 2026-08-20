@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>MySQL Too many connections 에러 원인과 해결</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">MySQL Too many connections 에러 원인과 해결</div>
+<p style="font-size:14px; color:#999;">2026. 8. 31. · 데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — max_connections를 올리기 전에 <b>PROCESSLIST의 Sleep 연결 비율</b>부터 확인해야 커넥션 누수를 진짜로 해결할 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 한도를 올리는 것만으로는 안 되는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Too many connections 에러를 처음 만나면 대부분 max_connections 값을 늘려서 대응합니다. 하지만 이는 임시방편입니다. 실제 동시 접속자가 늘어서가 아니라 <b>애플리케이션이 커넥션을 제대로 반납하지 않아서</b> 발생하는 경우가 훨씬 많기 때문입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">원인을 좁히는 순서</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">확인 항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">명령</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">의미</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">현재 연결 수</td>
+<td style="border:1px solid #ddd; padding:10px;">SHOW STATUS LIKE 'Threads_connected'</td>
+<td style="border:1px solid #ddd; padding:10px;">실제로 한도에 근접했는지</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">연결 출처</td>
+<td style="border:1px solid #ddd; padding:10px;">SHOW PROCESSLIST</td>
+<td style="border:1px solid #ddd; padding:10px;">특정 서버가 몰아 연결하는지</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Sleep 비율</td>
+<td style="border:1px solid #ddd; padding:10px;">PROCESSLIST의 Command 컬럼</td>
+<td style="border:1px solid #ddd; padding:10px;">커넥션 반납 누락 의심</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">SHOW PROCESSLIST에서 <b>Command: Sleep</b>인 연결이 대다수라면, 쿼리 실행 중이 아니라 커넥션 풀에 반납되지 않고 방치된 연결일 가능성이 높습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">커넥션 풀 크기 계산 공식</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">max_connections(DB) >= 인스턴스 수 × 풀 최대 크기 + 여유분
+
+예: 인스턴스 5대 × 풀 크기 20 = 100
+    관리 작업 여유분 20을 더해 최소 120 이상으로 설정</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">오토스케일링 환경이라면 <b>최대 스케일 시점</b>의 인스턴스 수를 기준으로 계산해야 스케일 아웃 도중 커넥션 고갈을 막을 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>애플리케이션 커넥션 풀에 타임아웃을 반드시 설정하세요.</b> 커넥션을 반납하지 않는 코드가 있으면 결국 풀이 고갈됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">다수의 애플리케이션 인스턴스가 DB에 직접 연결하는 대신 <b>ProxySQL</b>을 거치면 DB 쪽 연결 수를 훨씬 적게 유지할 수 있습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 배치 작업이나 관리 스크립트가 커넥션을 안 닫고 종료되는 경우도 흔한 원인입니다. cron 스크립트는 커넥션 정리를 명시적으로 확인하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#MySQL #TooManyConnections #데이터베이스트러블슈팅 #커넥션풀 #백엔드</p>
+
+</body>
+</html>
