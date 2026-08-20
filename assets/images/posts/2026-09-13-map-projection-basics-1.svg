@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="44" font-family="sans-serif" font-size="24" font-weight="bold" fill="#222" text-anchor="middle">투영법 — 둥근 지구를 평면에</text>
+
+  <!-- Globe -->
+  <circle cx="200" cy="230" r="120" fill="#eef6ff" stroke="#3b7dd8" stroke-width="2"/>
+  <ellipse cx="200" cy="230" rx="120" ry="42" fill="none" stroke="#3b7dd8" stroke-width="1" stroke-dasharray="4 3"/>
+  <line x1="200" y1="110" x2="200" y2="350" stroke="#3b7dd8" stroke-width="1" stroke-dasharray="4 3"/>
+  <text x="200" y="388" font-family="sans-serif" font-size="15" fill="#3b7dd8" text-anchor="middle">둥근 지구</text>
+
+  <!-- Arrow -->
+  <line x1="335" y1="230" x2="405" y2="230" stroke="#888" stroke-width="3" marker-end="url(#a)"/>
+  <text x="370" y="216" font-family="sans-serif" font-size="13" fill="#888" text-anchor="middle">투영</text>
+
+  <!-- Flat map (mercator: poles stretched) -->
+  <rect x="430" y="120" width="320" height="220" fill="#f0f7f4" stroke="#03c75a" stroke-width="2"/>
+  <!-- equator region small country -->
+  <rect x="540" y="215" width="34" height="34" fill="#e08e2b" stroke="#8a5a12"/>
+  <text x="557" y="270" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">적도 부근</text>
+  <!-- high latitude stretched -->
+  <rect x="470" y="132" width="70" height="60" fill="#e08e2b" fill-opacity="0.6" stroke="#8a5a12"/>
+  <text x="505" y="126" font-family="sans-serif" font-size="12" fill="#333" text-anchor="middle">고위도(과장)</text>
+
+  <text x="590" y="388" font-family="sans-serif" font-size="15" fill="#03c75a" text-anchor="middle">평면 지도(메르카토르)</text>
+
+  <text x="400" y="422" font-family="sans-serif" font-size="14" fill="#777" text-anchor="middle">메르카토르: 각도·모양 보존, 고위도 면적은 크게 과장됨</text>
+
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#888"/>
+    </marker>
+  </defs>
+</svg>
