@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>위도와 경도가 뭔가요 — 지구 위 위치를 나타내는 좌표</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">위도와 경도가 뭔가요 — 지구 위 위치를 나타내는 좌표</div>
+<p style="font-size:14px; color:#999;">2026. 9. 9. · GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 위도는 적도 기준 남북 위치, 경도는 본초자오선 기준 동서 위치로, 두 값이 만나는 지점이 지구 위 한 점입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">지구 위 한 점을 어떻게 숫자로 나타내나</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">지도 앱에서 어떤 장소는 37.5665, 126.9780 같은 두 숫자로 표현됩니다. 이것이 <b>위도</b>와 <b>경도</b>입니다. 지구를 가로·세로 선으로 나눠, 가로선(위도)과 세로선(경도)이 만나는 지점으로 위치를 콕 집습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">위도와 경도</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">기준선</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">범위</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">위도(남북)</td>
+<td style="border:1px solid #ddd; padding:10px;">적도 0°</td>
+<td style="border:1px solid #ddd; padding:10px;">-90° ~ +90°</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">경도(동서)</td>
+<td style="border:1px solid #ddd; padding:10px;">본초자오선 0°</td>
+<td style="border:1px solid #ddd; padding:10px;">-180° ~ +180°</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">서울은 위도 약 37.5°(북), 경도 약 127°(동)입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">순서를 헷갈리지 말자</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">사람: 위도, 경도 -> 서울 37.5665, 126.9780
+GeoJSON 등: 경도, 위도 -> [126.9780, 37.5665]
+-> 순서를 바꾸면 엉뚱한 나라에 점이 찍힌다</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">소수점 5자리면 약 1m, 6자리면 약 0.1m 정밀도입니다. 위경도는 각도라, 두 점 사이 실제 거리는 지구 곡률을 고려한 계산(하버사인 등)이 필요합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 사람은 "위도, 경도"로 말하지만 GeoJSON·많은 라이브러리는 [경도, 위도] 순서입니다. 순서를 반드시 확인하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#위도 #경도 #좌표 #GIS기초 #위경도</p>
+
+</body>
+</html>
