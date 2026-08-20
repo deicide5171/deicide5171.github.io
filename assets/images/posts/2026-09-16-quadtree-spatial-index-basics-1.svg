@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="44" font-family="sans-serif" font-size="24" font-weight="bold" fill="#222" text-anchor="middle">쿼드트리 — 공간을 네 칸씩 반복 분할</text>
+
+  <!-- Outer square -->
+  <rect x="230" y="90" width="340" height="320" fill="none" stroke="#03c75a" stroke-width="3"/>
+
+  <!-- First split: quarters -->
+  <line x1="400" y1="90" x2="400" y2="410" stroke="#03c75a" stroke-width="2"/>
+  <line x1="230" y1="250" x2="570" y2="250" stroke="#03c75a" stroke-width="2"/>
+
+  <!-- Subsplit top-right (many points -> subdivided) -->
+  <line x1="485" y1="90" x2="485" y2="250" stroke="#7fcfa8" stroke-width="1.5"/>
+  <line x1="400" y1="170" x2="570" y2="170" stroke="#7fcfa8" stroke-width="1.5"/>
+
+  <!-- points: clustered in top-right -->
+  <g fill="#c0392b">
+    <circle cx="510" cy="120" r="5"/><circle cx="540" cy="140" r="5"/><circle cx="520" cy="200" r="5"/>
+    <circle cx="450" cy="120" r="5"/><circle cx="430" cy="210" r="5"/><circle cx="555" cy="215" r="5"/>
+    <circle cx="300" cy="150" r="5"/><circle cx="330" cy="330" r="5"/><circle cx="480" cy="350" r="5"/>
+  </g>
+
+  <text x="315" y="175" font-family="sans-serif" font-size="13" fill="#888" text-anchor="middle">점 적음</text>
+  <text x="640" y="150" font-family="sans-serif" font-size="13" fill="#c0392b" text-anchor="middle">점 많음</text>
+  <text x="640" y="170" font-family="sans-serif" font-size="13" fill="#c0392b" text-anchor="middle">→ 더 잘게</text>
+
+  <text x="400" y="440" font-family="sans-serif" font-size="15" fill="#333" text-anchor="middle">점이 몰린 칸은 다시 4칸으로 — 검색 시 관계없는 칸은 통째로 건너뛴다</text>
+</svg>

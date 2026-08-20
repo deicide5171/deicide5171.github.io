@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="42" font-family="sans-serif" font-size="24" font-weight="bold" fill="#222" text-anchor="middle">TIN — 삼각형으로 지형 표현</text>
+
+  <!-- Left: scattered elevation points -->
+  <rect x="60" y="90" width="290" height="290" rx="12" fill="#fafafa" stroke="#ddd"/>
+  <text x="205" y="118" font-family="sans-serif" font-size="15" fill="#888" text-anchor="middle">흩어진 표고점</text>
+  <g fill="#c0392b">
+    <circle cx="110" cy="160" r="5"/><circle cx="200" cy="140" r="5"/><circle cx="290" cy="170" r="5"/>
+    <circle cx="150" cy="240" r="5"/><circle cx="250" cy="230" r="5"/><circle cx="120" cy="330" r="5"/>
+    <circle cx="220" cy="330" r="5"/><circle cx="300" cy="300" r="5"/>
+  </g>
+
+  <!-- Arrow -->
+  <line x1="365" y1="235" x2="430" y2="235" stroke="#888" stroke-width="3" marker-end="url(#a)"/>
+  <text x="397" y="221" font-family="sans-serif" font-size="12" fill="#888" text-anchor="middle">삼각분할</text>
+
+  <!-- Right: triangulated -->
+  <rect x="450" y="90" width="290" height="290" rx="12" fill="#fafafa" stroke="#ddd"/>
+  <text x="595" y="118" font-family="sans-serif" font-size="15" fill="#03c75a" text-anchor="middle">삼각망(TIN)</text>
+  <g stroke="#03c75a" stroke-width="1.8" fill="#03c75a" fill-opacity="0.12">
+    <polygon points="500,160 590,140 540,240"/>
+    <polygon points="590,140 680,170 540,240"/>
+    <polygon points="680,170 690,300 540,240"/>
+    <polygon points="540,240 690,300 610,330"/>
+    <polygon points="540,240 610,330 510,330"/>
+  </g>
+  <g fill="#c0392b">
+    <circle cx="500" cy="160" r="4"/><circle cx="590" cy="140" r="4"/><circle cx="680" cy="170" r="4"/>
+    <circle cx="540" cy="240" r="4"/><circle cx="690" cy="300" r="4"/><circle cx="510" cy="330" r="4"/>
+    <circle cx="610" cy="330" r="4"/>
+  </g>
+
+  <text x="400" y="415" font-family="sans-serif" font-size="15" fill="#333" text-anchor="middle">점을 삼각형으로 이어 지형 표면을 만든다 (복잡한 곳엔 촘촘히)</text>
+
+  <defs>
+    <marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#888"/>
+    </marker>
+  </defs>
+</svg>
