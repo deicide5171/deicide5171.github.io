@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>SSL 인증서 만료 직전, 뭘 확인해야 할까 — Let's Encrypt 자동 갱신 점검</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">SSL 인증서 만료 직전, 뭘 확인해야 할까 — Let's Encrypt 자동 갱신 점검</div>
+<p style="font-size:14px; color:#999;">2026. 9. 1. · 인프라</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 자동 갱신을 설정했다고 끝난 게 아니라 <b>certbot renew --dry-run</b>으로 정기적으로 실제 동작을 검증해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 자동 갱신을 설정했는데도 사고가 나는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Let's Encrypt 인증서는 유효기간이 90일로 짧아 자동 갱신을 전제로 설계됐습니다. 문제는 설정만 해두고 확인을 안 하다가, 갱신 스크립트가 조용히 실패하고 있던 것을 만료 당일에야 알게 되는 경우입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">갱신 실패의 흔한 원인</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">원인</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">증상</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">cron 자체가 등록 안 됨</td>
+<td style="border:1px solid #ddd; padding:10px;">만료 직전까지 로그 없음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">HTTP-01용 80포트 차단</td>
+<td style="border:1px solid #ddd; padding:10px;">갱신 시도 타임아웃</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Nginx reload 누락</td>
+<td style="border:1px solid #ddd; padding:10px;">갱신은 성공, 서비스는 옛 인증서</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">확인 및 대응 명령</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># 인증서 만료일 확인
+echo | openssl s_client -servername example.com -connect example.com:443 2&gt;/dev/null | openssl x509 -noout -dates
+
+# 상태 확인
+sudo certbot certificates
+
+# 실제 발급 없이 갱신 시뮬레이션
+sudo certbot renew --dry-run</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>--dry-run</b>은 실제 인증서를 발급하지 않고 갱신 프로세스만 검증하므로 Rate Limit 걱정 없이 정기 점검할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">서버 안의 cron만 믿지 말고, <b>외부 모니터링 서비스</b>로 인증서 만료일을 주기적으로 확인하는 것이 이중 안전장치가 됩니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — Let's Encrypt는 짧은 기간 반복 발급 시 Rate Limit에 걸립니다. 테스트할 때는 반드시 --staging 옵션을 사용하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#SSL #HTTPS #LetsEncrypt #인증서갱신 #인프라트러블슈팅</p>
+
+</body>
+</html>
