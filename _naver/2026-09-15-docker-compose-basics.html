@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>도커 컴포즈가 뭔가요 — 여러 컨테이너를 한 번에 실행하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">도커 컴포즈가 뭔가요 — 여러 컨테이너를 한 번에 실행하기</div>
+<p style="font-size:14px; color:#999;">2026. 9. 15. · 인프라</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 도커 컴포즈는 여러 컨테이너 구성을 하나의 YAML에 적어 <b>명령 한 줄로 실행</b>하는 도구입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">컨테이너를 하나씩 띄우기 번거롭다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">웹·DB·Redis를 함께 띄우려면 <code>docker run</code>을 각각 실행하고 옵션을 일일이 지정해야 합니다. <b>도커 컴포즈</b>는 여러 컨테이너 구성을 하나의 YAML에 적어두고 명령 한 줄로 전부 실행합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">docker-compose.yml 예시</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">services:
+  web:
+    build: .
+    ports: ["8080:80"]
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: secret</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">명령</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">명령</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">하는 일</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">up -d</td>
+<td style="border:1px solid #ddd; padding:10px;">백그라운드 실행</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">down</td>
+<td style="border:1px solid #ddd; padding:10px;">전부 중지·삭제</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">팀원이 <code>docker compose up</code> 한 줄로 동일한 개발 환경을 띄웁니다. 컴포즈 네트워크 안에서 서비스는 <b>이름으로 통신</b>합니다(웹→DB 호스트를 <code>db</code>로).</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 컴포즈는 단일 호스트용입니다. 여러 서버에 걸친 대규모 운영은 쿠버네티스 같은 오케스트레이터를 쓰세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#도커컴포즈 #DockerCompose #Docker #컨테이너 #인프라기초</p>
+
+</body>
+</html>

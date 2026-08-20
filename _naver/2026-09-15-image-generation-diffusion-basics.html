@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>AI 이미지 생성이 뭔가요 — 디퓨전 모델의 원리</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">AI 이미지 생성이 뭔가요 — 디퓨전 모델의 원리</div>
+<p style="font-size:14px; color:#999;">2026. 9. 15. · AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 디퓨전 모델은 <b>잡음에서 시작해 조금씩 제거하며</b> 이미지를 만들고, 텍스트 프롬프트가 방향을 잡습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">글로 그림을 만든다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"노을 지는 해변의 강아지"를 입력하면 AI가 그림을 그려줍니다. 뒤에 있는 대표 기술이 <b>디퓨전 모델</b>입니다. 노이즈에서 시작해 조금씩 정리해 이미지를 만든다는 발상이죠.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">디퓨전의 직관</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">학습: 깨끗한 이미지에 노이즈를 더해 잡음으로
+생성: 반대로 잡음에서 노이즈를 조금씩 제거
+      프롬프트가 "무엇을 그릴지" 방향을 잡음</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">흐릿한 사진에서 초점을 서서히 맞추는 것과 비슷합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">용어</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">용어</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">의미</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">프롬프트</td>
+<td style="border:1px solid #ddd; padding:10px;">무엇을 그릴지 지시</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">네거티브 프롬프트</td>
+<td style="border:1px solid #ddd; padding:10px;">넣고 싶지 않은 요소</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">seed</td>
+<td style="border:1px solid #ddd; padding:10px;">무작위 시작값(같으면 같은 결과)</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">스타일·구도·조명을 구체적으로 적을수록 결과가 좋습니다. seed를 고정하고 프롬프트를 조금씩 바꿔 원하는 방향으로 다듬을 수 있습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 실제 인물·브랜드·특정 작가 스타일을 흉내 내 쓰면 저작권·초상권 문제가 될 수 있습니다. 정책과 라이선스를 확인하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#이미지생성 #Diffusion #생성AI #AI이미지 #AI기초</p>
+
+</body>
+</html>
