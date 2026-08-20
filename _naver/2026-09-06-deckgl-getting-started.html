@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>deck.gl 시작하기 — 대용량 데이터를 지도에 그리는 첫걸음</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">deck.gl 시작하기 — 대용량 데이터를 지도에 그리는 첫걸음</div>
+<p style="font-size:14px; color:#999;">2026. 9. 6. · GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — deck.gl은 <b>GPU(WebGL)로 수십만~수백만 개</b>의 데이터를 부드럽게 그리는 대용량 시각화 라이브러리입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마커 라이브러리로는 안 되는 규모</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Leaflet 마커로 점 수십만 개를 그리면 각 마커가 DOM 요소라 버벅입니다. <b>deck.gl</b>은 GPU(WebGL)를 직접 활용해 대량의 점·선·면을 한 번에 렌더링합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-06-deckgl-getting-started-1.svg" alt="deck.gl이 데이터를 여러 레이어로 나누고 GPU(WebGL)로 대량의 점을 한 번에 렌더링해 지도 위에 겹쳐 표시하는 구조를 보여주는 다이어그램" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심: 레이어</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">레이어</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">용도</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">ScatterplotLayer</td>
+<td style="border:1px solid #ddd; padding:10px;">점 대량 표시</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">ArcLayer</td>
+<td style="border:1px solid #ddd; padding:10px;">두 지점 잇는 곡선(이동 흐름)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">HexagonLayer</td>
+<td style="border:1px solid #ddd; padding:10px;">육각형 격자 밀집도 집계</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 포인트 레이어</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">new ScatterplotLayer(&#123;
+  data: points, // 수십만 개
+  getPosition: d =&gt; d.position,
+  getRadius: 30,
+  getFillColor: [255, 80, 80],
+&#125;)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">data에 대량 배열을 넣고 getPosition으로 위치를 알려주면 GPU로 한꺼번에 그립니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">deck.gl은 배경 지도를 직접 그리지 않습니다. 데이터 시각화 레이어를 담당하고 <b>배경 지도는 MapLibre·Mapbox와 함께 겹쳐</b> 씁니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 모든 지도에 deck.gl이 필요한 건 아닙니다. 수천 개 수준이면 Leaflet·MapLibre로 충분하고, deck.gl은 대용량일 때 진가를 발휘합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#deckgl #WebGL #데이터시각화 #GIS입문 #웹지도</p>
+
+</body>
+</html>

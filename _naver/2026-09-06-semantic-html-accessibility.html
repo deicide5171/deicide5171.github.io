@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>시맨틱 HTML이 뭔가요 — div 대신 태그를 골라 쓰는 이유</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">시맨틱 HTML이 뭔가요 — div 대신 태그를 골라 쓰는 이유</div>
+<p style="font-size:14px; color:#999;">2026. 9. 6. · 프론트엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 시맨틱 HTML은 의미에 맞는 태그를 쓰는 것으로, <b>div 버튼은 키보드·스크린리더 지원이 없어</b> 진짜 button을 써야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">div로 다 만들 수 있는데 왜 안 그러나</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">div로 버튼처럼 보이게 만들 수 있지만, 화면엔 똑같아 보여도 스크린 리더·키보드 사용자에게는 "버튼"으로 인식되지 않습니다. <b>시맨틱 HTML</b>은 접근성과 SEO의 기본입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">시맨틱 태그 예시</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">의미</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">시맨틱 태그</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">내비게이션</td>
+<td style="border:1px solid #ddd; padding:10px;">&lt;nav&gt;</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">본문 주요 영역</td>
+<td style="border:1px solid #ddd; padding:10px;">&lt;main&gt;</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">클릭 동작</td>
+<td style="border:1px solid #ddd; padding:10px;">&lt;button&gt;</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">div 버튼 vs 진짜 button</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">나쁨: &lt;div class="btn" onclick="submit()"&gt;전송&lt;/div&gt;
+  -> Tab 포커스 X, Enter 실행 X, 스크린리더 인식 X
+
+좋음: &lt;button onclick="submit()"&gt;전송&lt;/button&gt;
+  -> 키보드 접근·실행·"전송 버튼" 읽힘 다 공짜로</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 접근성이 중요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">시각장애인은 스크린리더로 웹을 "듣고", 손을 못 쓰는 사용자는 키보드만으로 조작합니다. 접근성은 법적 의무이기도 하고 검색엔진의 구조 이해(SEO)에도 유리합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">먼저 시맨틱 태그로 안 되는지 확인하고 안 될 때만 ARIA를 쓰세요. <b>이미지에는 alt, 폼 입력에는 label</b>을 반드시 붙여야 합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 마우스 없이 Tab·Enter만으로 모든 버튼·링크·폼을 조작할 수 있어야 접근성 최소 기준을 만족합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#시맨틱HTML #웹접근성 #a11y #HTML #프론트엔드기초</p>
+
+</body>
+</html>
