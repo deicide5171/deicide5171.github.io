@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>트리거가 뭔가요 — 데이터가 바뀔 때 자동으로 실행되는 동작</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">트리거가 뭔가요 — 데이터가 바뀔 때 자동으로 실행되는 동작</div>
+<p style="font-size:14px; color:#999;">2026. 9. 8. · 데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 트리거는 데이터 변경 시 자동 실행되는 DB 동작으로 이력·무결성에 유용하지만, <b>로직이 코드 밖에 숨어</b> 추적이 어려울 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">데이터가 바뀔 때 자동으로 하고 싶다면</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"주문 생성 시 재고 차감", "수정 시 이력 기록" 같은 작업을 DB가 알아서 하게 할 수 있습니다. <b>트리거</b>는 INSERT·UPDATE·DELETE 발생 시 자동 실행되도록 등록해둔 동작입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 변경 이력 남기기</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">CREATE TRIGGER log_user_update
+AFTER UPDATE ON users
+FOR EACH ROW
+BEGIN
+    INSERT INTO user_history (user_id, old_name, changed_at)
+    VALUES (OLD.id, OLD.name, NOW());
+END;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">애플리케이션에서 이력 코드를 안 짜도 users 수정 시마다 DB가 알아서 기록합니다. OLD는 변경 전, NEW는 변경 후 값입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">유용한 경우와 위험한 경우</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">유용: 감사 로그, 무결성 강제, 집계 갱신
+위험: 로직이 숨어 추적 어려움, 연쇄 트리거, 디버깅 악화</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>트리거는 "숨은 로직"이 되기 쉽습니다.</b> 코드 어디에도 없는데 데이터가 바뀌면 신입이 원인을 못 찾습니다. 쓴다면 문서화하고 팀이 알아야 합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 트리거 실패가 원래 INSERT·UPDATE를 롤백시킬 수 있습니다. 복잡한 비즈니스 로직은 트리거보다 애플리케이션에 두세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#트리거 #Trigger #SQL #데이터베이스기초 #DB</p>
+
+</body>
+</html>
