@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="42" font-family="sans-serif" font-size="24" font-weight="bold" fill="#222" text-anchor="middle">지도 레이어 — 층을 겹쳐 그리기</text>
+
+  <!-- Stacked parallelograms (isometric-ish) -->
+  <!-- layer 1 base -->
+  <polygon points="230,300 560,300 640,350 310,350" fill="#e9f2e9" stroke="#7fb87f" stroke-width="2"/>
+  <text x="655" y="335" font-family="sans-serif" font-size="14" fill="#555">배경(베이스맵)</text>
+
+  <!-- layer 2 roads -->
+  <polygon points="230,240 560,240 640,290 310,290" fill="#fde9d0" stroke="#e0a35c" stroke-width="2"/>
+  <line x1="290" y1="270" x2="590" y2="258" stroke="#e0872b" stroke-width="3"/>
+  <text x="655" y="275" font-family="sans-serif" font-size="14" fill="#555">도로(벡터)</text>
+
+  <!-- layer 3 markers -->
+  <polygon points="230,180 560,180 640,230 310,230" fill="#eef3fb" stroke="#3b7dd8" stroke-width="2"/>
+  <circle cx="360" cy="205" r="6" fill="#c0392b"/><circle cx="470" cy="200" r="6" fill="#c0392b"/>
+  <text x="655" y="215" font-family="sans-serif" font-size="14" fill="#555">마커(벡터)</text>
+
+  <!-- top: combined -->
+  <text x="400" y="150" font-family="sans-serif" font-size="16" fill="#03c75a" text-anchor="middle">↑ 위로 갈수록 나중에 그려짐(가림)</text>
+
+  <text x="400" y="405" font-family="sans-serif" font-size="15" fill="#333" text-anchor="middle">아래(배경)부터 위(마커)로 순서대로 겹쳐 하나의 지도 완성</text>
+</svg>
