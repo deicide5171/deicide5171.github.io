@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>커버링 인덱스가 뭔가요 — 테이블 안 읽고 조회 끝내기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">커버링 인덱스가 뭔가요 — 테이블 안 읽고 조회 끝내기</div>
+<p style="font-size:14px; color:#999;">2026. 9. 20. · 데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 커버링 인덱스는 쿼리에 필요한 컬럼을 인덱스에 다 담아 <b>테이블 접근을 없앱니다.</b>
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">인덱스를 탔는데도 느리다?</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">인덱스로 행을 찾아도 나머지 컬럼을 읽으려면 테이블 본체를 다시 뒤집니다. 이 추가 접근을 없애는 게 <b>커버링 인덱스</b>입니다. 필요한 컬럼이 인덱스에 다 있으면 테이블을 볼 필요가 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">어떻게 동작하나</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">SELECT name FROM users WHERE user_id = 100;
+
+CREATE INDEX idx_cover ON users (user_id, name);
+-- user_id로 찾고 name도 인덱스에 있어
+-- 테이블 접근 불필요</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">일반 인덱스와 비교</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">테이블 접근</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">일반 인덱스</td>
+<td style="border:1px solid #ddd; padding:10px;">위치 찾고 → 테이블에서 나머지 읽음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">커버링 인덱스</td>
+<td style="border:1px solid #ddd; padding:10px;">인덱스만으로 완성(접근 없음)</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">꼭 필요한 컬럼만 조회하는 빈번한 핵심 쿼리에 적용하면 효과가 큽니다. 조건 컬럼을 앞, 가져올 컬럼을 뒤에 두는 식으로 설계합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 인덱스에 컬럼을 많이 넣으면 인덱스가 커지고 쓰기가 느려집니다. <code>SELECT *</code>는 커버가 어렵습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#인덱스 #커버링인덱스 #DB성능 #SQL #데이터베이스기초</p>
+
+</body>
+</html>
