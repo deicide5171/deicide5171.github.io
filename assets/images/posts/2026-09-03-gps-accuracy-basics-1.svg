@@ -1,0 +1,34 @@
+<svg viewBox="0 0 800 450" width="800" height="450" xmlns="http://www.w3.org/2000/svg">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="35" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">GPS 측위 원리와 멀티패스 오차</text>
+
+  <!-- satellites -->
+  <g fill="#4a90d9">
+    <rect x="120" y="70" width="34" height="20" rx="3"/>
+    <rect x="380" y="60" width="34" height="20" rx="3"/>
+    <rect x="620" y="75" width="34" height="20" rx="3"/>
+  </g>
+  <text x="137" y="110" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#1a4a7a">위성1</text>
+  <text x="397" y="100" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#1a4a7a">위성2</text>
+  <text x="637" y="115" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#1a4a7a">위성3</text>
+
+  <!-- receiver -->
+  <circle cx="300" cy="330" r="10" fill="#e05252"/>
+  <text x="300" y="360" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">수신기(내 위치)</text>
+
+  <!-- direct signals -->
+  <line x1="137" y1="92" x2="298" y2="322" stroke="#3a8a5a" stroke-width="2"/>
+  <line x1="397" y1="82" x2="302" y2="322" stroke="#3a8a5a" stroke-width="2"/>
+  <text x="200" y="220" font-family="sans-serif" font-size="11" fill="#0a5a30">직접 신호(정확)</text>
+
+  <!-- building + multipath -->
+  <rect x="560" y="230" width="70" height="140" fill="#d8d8d8" stroke="#999" stroke-width="1.5"/>
+  <text x="595" y="300" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#555">빌딩</text>
+  <line x1="637" y1="95" x2="600" y2="240" stroke="#e08a2b" stroke-width="2" stroke-dasharray="5,3"/>
+  <line x1="600" y1="240" x2="310" y2="328" stroke="#e08a2b" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="470" y="300" font-family="sans-serif" font-size="11" fill="#8a4a10">반사 신호(멀티패스 오차)</text>
+
+  <!-- explanation box -->
+  <rect x="90" y="385" width="620" height="50" rx="6" fill="#f7f7f7" stroke="#ccc"/>
+  <text x="400" y="415" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#333">최소 4개 위성의 신호 도달 시간 차이로 위치 계산 · 반사·실내·빌딩숲에서 정확도 저하</text>
+</svg>
