@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>지도 타일 z/x/y가 뭔가요 — 타일 좌표 체계 이해하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">지도 타일 z/x/y가 뭔가요 — 타일 좌표 체계 이해하기</div>
+<p style="font-size:14px; color:#999;">2026. 9. 2. · GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — z는 줌 레벨, x·y는 그 레벨에서의 가로·세로 타일 인덱스이며, 줌이 1 올라갈 때마다 타일 개수는 <b>4배</b>로 늘어납니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">타일 URL에 있는 그 숫자 세 개</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">웹 지도를 다뤄보면 /&#123;z&#125;/&#123;x&#125;/&#123;y&#125;.png 같은 URL 패턴을 항상 만납니다. 이 세 숫자를 모르면 왜 지도가 안 보이는지, 왜 엉뚱한 지역이 나오는지 디버깅할 수 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-02-map-tile-zxy-explained-1.svg" alt="줌 레벨이 올라갈수록 타일이 4배씩 늘어나는 타일 피라미드 구조와, z/x/y 좌표가 각각 줌 레벨과 가로·세로 인덱스를 의미하는 것을 보여주는 다이어그램" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">z, x, y의 의미</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">값</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">의미</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">범위</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">z</td>
+<td style="border:1px solid #ddd; padding:10px;">줌 레벨(클수록 확대)</td>
+<td style="border:1px solid #ddd; padding:10px;">보통 0~22</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">x</td>
+<td style="border:1px solid #ddd; padding:10px;">가로 타일 인덱스</td>
+<td style="border:1px solid #ddd; padding:10px;">0 ~ 2^z - 1</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">y</td>
+<td style="border:1px solid #ddd; padding:10px;">세로 타일 인덱스</td>
+<td style="border:1px solid #ddd; padding:10px;">0 ~ 2^z - 1</td>
+</tr>
+</table>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">z=0: 1개 (지구 전체가 한 장)
+z=1: 4개, z=2: 16개
+z=10: 약 100만 개
+z=18: 약 687억 개</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 위경도를 타일 좌표로 변환</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">function lonLatToTile(lon, lat, zoom) &#123;
+  const n = Math.pow(2, zoom);
+  const x = Math.floor((lon + 180) / 360 * n);
+  const latRad = lat * Math.PI / 180;
+  const y = Math.floor(
+    (1 - Math.log(Math.tan(latRad) + 1 / Math.cos(latRad)) / Math.PI) / 2 * n
+  );
+  return &#123; z: zoom, x, y &#125;;
+&#125;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 변환식은 <b>웹 메르카토르(EPSG:3857)</b> 투영법을 전제로 하며, 대부분의 웹 지도가 이를 쓰기 때문에 사실상 표준입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">같은 z/x/y는 항상 같은 이미지이므로 <b>CDN에서 장기 캐싱</b>하기 좋은 구조입니다. 데이터 갱신 시에는 URL에 버전을 붙여 무효화합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 지도가 상하로 뒤집혀 보이면 y축 방향을 의심하세요. 슬리피맵은 y가 위에서 아래로 증가하지만 TMS 규격은 아래에서 위로 증가합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#지도타일 #타일좌표 #GIS입문 #웹지도 #슬리피맵</p>
+
+</body>
+</html>
