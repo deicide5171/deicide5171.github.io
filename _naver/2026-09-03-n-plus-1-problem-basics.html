@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>N+1 문제가 뭔가요 — 쿼리가 갑자기 수백 번 나가는 이유</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">N+1 문제가 뭔가요 — 쿼리가 갑자기 수백 번 나가는 이유</div>
+<p style="font-size:14px; color:#999;">2026. 9. 3. · 데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 목록 조회 1번 + 각 항목의 연관 데이터 조회 N번이 따로 나가 쿼리가 폭증하는 현상이며, <b>Fetch Join으로 한 번에 가져오는 것</b>이 기본 해결책입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">리스트 하나 조회했을 뿐인데 쿼리가 수백 번</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">게시글 10개를 조회했는데 쿼리가 11번, 100개면 101번 나가는 경우가 있습니다. 이것이 <b>N+1 문제</b>입니다. 목록 쿼리 1번 + 각 항목의 연관 데이터 쿼리 N번이 따로 나가 데이터가 많아질수록 쿼리 수가 폭증합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 발생하는가</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">List&lt;Post&gt; posts = postRepository.findAll(); // 쿼리 1번
+
+for (Post post : posts) &#123;
+    post.getAuthor().getName();
+    // -> 게시글마다 SELECT * FROM users WHERE id = ? 가 한 번씩!
+&#125;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">ORM이 연관 데이터를 "실제로 쓸 때 가져오는(지연 로딩)" 특성 때문에 코드만 봐서는 눈치채기 어렵습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">해결의 기본 아이디어</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">@Query("SELECT p FROM Post p JOIN FETCH p.author")
+List&lt;Post&gt; findAllWithAuthor();
+// -> 쿼리 1번으로 끝난다</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"필요한 연관 데이터를 처음부터 JOIN해서 한 번에 가져오는 것"이 핵심입니다. 프레임워크마다 이름은 다릅니다(Fetch Join, select_related, includes).</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">프레임워크별 해결 키워드</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">프레임워크</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">해결 방법</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">JPA/Hibernate</td>
+<td style="border:1px solid #ddd; padding:10px;">Fetch Join, @EntityGraph</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Django</td>
+<td style="border:1px solid #ddd; padding:10px;">select_related, prefetch_related</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Rails</td>
+<td style="border:1px solid #ddd; padding:10px;">includes</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">N+1은 <b>개발 단계에선 데이터가 적어 안 보이다가 운영에서 갑자기 느려집니다.</b> ORM이 날리는 SQL 로그를 켜두고 확인하는 습관이 중요합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 무조건 다 JOIN하는 것도 답이 아닙니다. 그 데이터가 필요 없는 화면에서도 불필요한 JOIN이 생기므로 화면별로 필요한 만큼만 조절하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#N+1문제 #ORM #쿼리성능 #데이터베이스기초 #JPA</p>
+
+</body>
+</html>
