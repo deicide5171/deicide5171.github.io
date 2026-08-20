@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>SQL COALESCE와 NULLIF가 뭔가요 — NULL 다루는 두 함수</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">SQL COALESCE와 NULLIF가 뭔가요 — NULL 다루는 두 함수</div>
+<p style="font-size:14px; color:#999;">2026. 9. 20. · 데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — COALESCE는 <b>NULL을 기본값으로</b>, NULLIF는 <b>특정 값을 NULL로</b> 바꿉니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">NULL 때문에 결과가 이상하다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">NULL을 원하는 값으로 대체하거나, 반대로 특정 값을 NULL로 바꾸고 싶을 때 <b>COALESCE</b>와 <b>NULLIF</b>를 씁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">COALESCE — 첫 non-NULL</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">COALESCE(nickname, name, '이름없음')
+-- 앞에서부터 처음 만나는 non-NULL 반환
+
+SELECT SUM(COALESCE(amount, 0)) FROM orders;
+-- NULL을 0으로 채워 합계</pre>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">NULLIF — 같으면 NULL</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">NULLIF(value, 0)   -- value가 0이면 NULL
+
+SELECT total / NULLIF(count, 0) FROM stats;
+-- count=0이면 NULL → 0으로 나누기 에러 방지</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">언제 무엇인가</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">함수</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">동작</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">COALESCE</td>
+<td style="border:1px solid #ddd; padding:10px;">첫 non-NULL 반환(NULL→대체값)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">NULLIF</td>
+<td style="border:1px solid #ddd; padding:10px;">같으면 NULL(특정 값→NULL)</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">분모를 <code>NULLIF(x, 0)</code>으로 감싸면 0일 때 에러 대신 NULL이 나옵니다. 집계·표시 전엔 COALESCE로 NULL을 채웁니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — <code>COALESCE</code>는 SQL 표준이라 이식성이 좋습니다. <code>ISNULL·IFNULL</code>은 특정 DB 전용입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#SQL #COALESCE #NULLIF #NULL #데이터베이스기초</p>
+
+</body>
+</html>

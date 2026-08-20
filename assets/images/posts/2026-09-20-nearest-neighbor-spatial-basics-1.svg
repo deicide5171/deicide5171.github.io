@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="42" font-family="sans-serif" font-size="24" font-weight="bold" fill="#222" text-anchor="middle">최근접 이웃 검색 (nearest neighbor)</text>
+
+  <rect x="80" y="70" width="640" height="310" fill="#f7fbf9" stroke="#ddd" stroke-width="1"/>
+
+  <!-- query point -->
+  <circle cx="380" cy="220" r="10" fill="#03c75a"/>
+  <text x="380" y="205" font-family="sans-serif" font-size="14" font-weight="bold" fill="#03c75a" text-anchor="middle">내 위치</text>
+
+  <!-- search radius -->
+  <circle cx="380" cy="220" r="95" fill="none" stroke="#03c75a" stroke-width="1.5" stroke-dasharray="6 5"/>
+
+  <!-- candidate points -->
+  <circle cx="450" cy="250" r="7" fill="#c0392b"/>
+  <line x1="380" y1="220" x2="450" y2="250" stroke="#c0392b" stroke-width="2"/>
+  <text x="470" y="255" font-family="sans-serif" font-size="13" fill="#c0392b" font-weight="bold">가장 가까움</text>
+
+  <circle cx="300" cy="160" r="7" fill="#888"/>
+  <circle cx="470" cy="150" r="7" fill="#888"/>
+  <circle cx="250" cy="300" r="7" fill="#888"/>
+  <circle cx="560" cy="300" r="7" fill="#888"/>
+  <circle cx="600" cy="130" r="7" fill="#888"/>
+  <circle cx="160" cy="200" r="7" fill="#888"/>
+
+  <text x="380" y="345" font-family="sans-serif" font-size="14" fill="#333" text-anchor="middle">기준점에서 거리가 가장 작은 후보를 고른다 (반경 조건으로 먼 것 배제)</text>
+  <text x="400" y="410" font-family="sans-serif" font-size="14" fill="#777" text-anchor="middle">데이터가 많으면 공간 인덱스(R-Tree/GiST)로 가까운 후보부터 좁힌다</text>
+</svg>

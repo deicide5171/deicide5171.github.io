@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>최근접 이웃 검색이 뭔가요 — 가장 가까운 지점 찾기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 이미지(지도/도형)는 별도 SVG 파일을 캡처하거나 PNG로 변환해 삽입한다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">최근접 이웃 검색이 뭔가요 — 가장 가까운 지점 찾기</div>
+<p style="font-size:14px; color:#999;">2026. 9. 20. · GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 기준점에서 <b>가장 가까운 대상(들)을 찾는</b> 공간 질의로, 데이터가 많으면 공간 인덱스로 후보를 좁힙니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">제일 가까운 매장은?</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"가장 가까운 카페", "제일 가까운 지하철역"처럼 한 지점에서 가장 가까운 대상 하나(또는 K개)를 찾는 것이 <b>최근접 이웃 검색</b>입니다. 가까운 순서로 K개면 KNN입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">순진한 방법 vs 인덱스</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방법</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방식</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">전수 비교</td>
+<td style="border:1px solid #ddd; padding:10px;">모든 지점과 거리 계산(느림)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">공간 인덱스</td>
+<td style="border:1px solid #ddd; padding:10px;">R-Tree로 가까운 후보만 계산(빠름)</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">데이터가 많으면 전수 비교는 감당이 안 됩니다. 공간 인덱스로 "가까울 만한 영역"부터 좁혀 들어갑니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">PostGIS의 <code>&lt;-&gt;</code> 연산자와 GiST 인덱스로 "가장 가까운 K개"를 효율적으로 찾습니다. "반경 X 이내" 조건을 함께 걸면 너무 먼 결과를 배제합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 위경도에서 단순 좌표 차이는 실제 거리와 다릅니다. 정확하려면 구면 거리(지오그래피)나 투영 좌표계를 쓰세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#최근접이웃 #nearestneighbor #공간검색 #GIS #GIS기초</p>
+
+</body>
+</html>
