@@ -1,0 +1,98 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Segoe UI', 'Malgun Gothic', sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#f7f7f5"/>
+  <text x="400" y="34" text-anchor="middle" font-size="20" font-weight="bold" fill="#222">Terrain-RGB 인코딩 → Martini 메시 생성 파이프라인</text>
+
+  <!-- Panel 1: Terrain-RGB pixel -->
+  <g>
+    <rect x="30" y="60" width="330" height="360" rx="10" fill="#ffffff" stroke="#ccc"/>
+    <text x="195" y="90" text-anchor="middle" font-size="16" font-weight="bold" fill="#2b6cb0">1. Terrain-RGB 픽셀 인코딩</text>
+
+    <!-- pixel grid -->
+    <g transform="translate(55,110)">
+      <rect x="0" y="0" width="260" height="120" fill="#eef3f8" stroke="#c9d6e3"/>
+      <!-- highlighted pixel -->
+      <rect x="100" y="40" width="40" height="40" fill="#ffd166" stroke="#b8860b" stroke-width="2"/>
+      <text x="120" y="65" text-anchor="middle" font-size="12" fill="#5a4632" font-weight="bold">R,G,B</text>
+      <!-- grid lines -->
+      <line x1="40" y1="0" x2="40" y2="120" stroke="#c9d6e3"/>
+      <line x1="80" y1="0" x2="80" y2="120" stroke="#c9d6e3"/>
+      <line x1="120" y1="0" x2="120" y2="120" stroke="#c9d6e3"/>
+      <line x1="160" y1="0" x2="160" y2="120" stroke="#c9d6e3"/>
+      <line x1="200" y1="0" x2="200" y2="120" stroke="#c9d6e3"/>
+      <line x1="0" y1="40" x2="260" y2="40" stroke="#c9d6e3"/>
+      <line x1="0" y1="80" x2="260" y2="80" stroke="#c9d6e3"/>
+    </g>
+
+    <!-- formula -->
+    <rect x="55" y="250" width="260" height="70" rx="6" fill="#f4f4f4" stroke="#ddd"/>
+    <text x="65" y="275" font-size="12" fill="#222" font-family="Consolas, monospace">height = -10000 +</text>
+    <text x="65" y="293" font-size="12" fill="#222" font-family="Consolas, monospace">  (R*256*256+G*256+B)</text>
+    <text x="65" y="311" font-size="12" fill="#222" font-family="Consolas, monospace">  * 0.1</text>
+
+    <text x="195" y="345" text-anchor="middle" font-size="13" fill="#444">픽셀의 R·G·B 값을 24비트</text>
+    <text x="195" y="363" text-anchor="middle" font-size="13" fill="#444">정수로 합쳐 고도(m)로 복원</text>
+    <text x="195" y="390" text-anchor="middle" font-size="12" fill="#888">→ 이미지 포맷(PNG) 하나로</text>
+    <text x="195" y="406" text-anchor="middle" font-size="12" fill="#888">   고해상도 표고 데이터 배포</text>
+  </g>
+
+  <!-- Arrow -->
+  <g>
+    <line x1="372" y1="240" x2="418" y2="240" stroke="#03c75a" stroke-width="3" marker-end="url(#arrow)"/>
+    <text x="395" y="225" text-anchor="middle" font-size="12" fill="#03c75a" font-weight="bold">디코딩</text>
+  </g>
+
+  <!-- Panel 2: Martini mesh -->
+  <g>
+    <rect x="430" y="60" width="340" height="360" rx="10" fill="#ffffff" stroke="#ccc"/>
+    <text x="600" y="90" text-anchor="middle" font-size="16" font-weight="bold" fill="#2b6cb0">2. Martini RTIN 메시화</text>
+
+    <g transform="translate(455,115)">
+      <rect x="0" y="0" width="290" height="230" fill="#eef7f0" stroke="#c9e3d0"/>
+
+      <!-- Flat area: sparse triangles (right-angle isoceles pattern) -->
+      <g stroke="#5c9c6b" stroke-width="1" fill="none">
+        <line x1="0" y1="0" x2="145" y2="0"/>
+        <line x1="145" y1="0" x2="0" y2="115"/>
+        <line x1="0" y1="0" x2="0" y2="115"/>
+        <line x1="145" y1="0" x2="290" y2="0"/>
+        <line x1="290" y1="0" x2="145" y2="115"/>
+        <line x1="145" y1="0" x2="145" y2="115"/>
+        <line x1="0" y1="115" x2="145" y2="115"/>
+        <line x1="145" y1="115" x2="0" y2="230"/>
+        <line x1="0" y1="115" x2="0" y2="230"/>
+      </g>
+
+      <!-- Mountain area: dense irregular triangles -->
+      <g stroke="#2f6b40" stroke-width="1" fill="none">
+        <line x1="145" y1="115" x2="290" y2="115"/>
+        <line x1="290" y1="115" x2="145" y2="230"/>
+        <line x1="145" y1="115" x2="145" y2="230"/>
+        <line x1="180" y1="115" x2="180" y2="150"/>
+        <line x1="180" y1="150" x2="215" y2="115"/>
+        <line x1="180" y1="150" x2="145" y2="180"/>
+        <line x1="180" y1="150" x2="215" y2="185"/>
+        <line x1="215" y1="185" x2="255" y2="150"/>
+        <line x1="215" y1="185" x2="180" y2="230"/>
+        <line x1="215" y1="185" x2="255" y2="215"/>
+        <line x1="255" y1="150" x2="290" y2="115"/>
+        <line x1="255" y1="150" x2="290" y2="180"/>
+        <line x1="145" y1="180" x2="180" y2="230"/>
+        <line x1="255" y1="215" x2="290" y2="230"/>
+        <line x1="255" y1="215" x2="180" y2="230"/>
+      </g>
+
+      <text x="72" y="60" text-anchor="middle" font-size="11" fill="#3d7a4a">평지: 큰 삼각형</text>
+      <text x="215" y="200" text-anchor="middle" font-size="11" fill="#245030">산악: 세밀한 삼각형</text>
+    </g>
+
+    <text x="600" y="365" text-anchor="middle" font-size="13" fill="#444">경사가 급한 영역만 재귀적으로</text>
+    <text x="600" y="383" text-anchor="middle" font-size="13" fill="#444">삼각형을 세분화(오차 임계값 기반)</text>
+    <text x="600" y="406" text-anchor="middle" font-size="12" fill="#888">→ 평지 정점 수 최소화로 GPU 부하 절감</text>
+  </g>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#03c75a"/>
+    </marker>
+  </defs>
+</svg>
