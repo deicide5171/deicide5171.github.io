@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Bun 런타임 내부 구조 — Node.js·Deno와 다른 설계가 만드는 성능 차이</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Bun 런타임 내부 구조 — Node.js·Deno와 다른 설계가 만드는 성능 차이</div>
+<p style="font-size:14px; color:#999;">백엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — V8 대신 JavaScriptCore, C++ 대신 Zig로 만들어져 <b>콜드 스타트를 극적으로 줄인</b> Bun 런타임의 내부 아키텍처를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 자바스크립트 런타임을 다시 봐야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">서버리스·엣지 컴퓨팅 환경이 늘면서 런타임 시작 시간 자체가 병목이 되는 워크로드가 많아졌습니다. Node.js는 V8 엔진 초기화, libuv 이벤트 루프, 모듈 시스템 해석에 수십~수백 밀리초가 걸리고, <b>요청마다 새 컨테이너를 띄우는 서버리스 함수라면 이 비용이 매 요청에 전가</b>됩니다. Bun은 엔진 선택부터 런타임 구현 언어까지 다시 설계해 이 문제에 접근했습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">V8 대신 JavaScriptCore, libuv 대신 자체 이벤트 루프</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Bun은 자바스크립트 엔진으로 <b>Safari의 JavaScriptCore(JSC)</b>를 채택했습니다. JSC는 시작 시간과 메모리 최적화에 강점이 있는 엔진으로, Bun 팀이 서버 워크로드에 맞게 추가 튜닝했습니다. 런타임 자체도 C++이 아니라 가비지 컬렉션이 없는 Zig 언어로 작성됐고, 이벤트 루프도 리눅스 io_uring을 적극 활용하는 자체 I/O 계층으로 구현됐습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Node.js</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Bun</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">JS 엔진</td>
+<td style="border:1px solid #ddd; padding:10px;">V8</td>
+<td style="border:1px solid #ddd; padding:10px;">JavaScriptCore</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">콜드 스타트</td>
+<td style="border:1px solid #ddd; padding:10px;">상대적으로 느림</td>
+<td style="border:1px solid #ddd; padding:10px;">매우 빠름</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">번들러·테스트 러너·패키지 매니저의 런타임 통합</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Node.js 생태계에서는 런타임, 번들러, 테스트 러너, 패키지 매니저가 각각 독립적인 도구로 존재합니다. Bun은 이 네 가지를 <b>하나의 바이너리 안에 네이티브로 통합</b>했습니다. bun install은 병렬 다운로드와 전역 캐시 하드링크로 빠르고, bun build·bun test도 별도 설정 없이 즉시 동작합니다. 이는 도구 사이의 프로세스 경계와 파일 I/O 왕복을 줄이는 효과로 이어집니다.</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Bun 네이티브 HTTP 서버 예제</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">Bun.serve({
+  port: 3000,
+  fetch(req) {
+    const url = new URL(req.url);
+    if (url.pathname === "/health") {
+      return new Response("OK", { status: 200 });
+    }
+    return new Response("Not Found", { status: 404 });
+  },
+});
+
+// bun run server.ts (TypeScript 트랜스파일 내장)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Bun은 TypeScript 파일을 별도 트랜스파일 없이 바로 실행하고, <b>Web 표준 fetch/Request/Response API</b>를 서버 사이드에서도 그대로 제공합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>Node.js API 호환성은 대부분이지 전부가 아닙니다.</b> 일부 네이티브 애드온(N-API)이나 드문 API는 완전히 동작하지 않을 수 있으므로, 마이그레이션 전 실제 의존성으로 호환성을 검증해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>콜드 스타트가 중요한 워크로드에서 이점이 가장 큽니다.</b> 서버리스나 CLI 도구는 확실한 이득을 보지만, 상시 실행 서버는 체감 효과가 작을 수 있습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — Bun의 대규모 프로덕션 검증 사례는 Node.js보다 아직 적으므로, 트래픽이 큰 핵심 서비스에는 점진적 도입이 안전합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#Bun #JavaScript런타임 #JavaScriptCore #Nodejs비교 #콜드스타트</p>
+
+</body>
+</html>
