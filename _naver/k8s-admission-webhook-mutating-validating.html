@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Kubernetes Admission Webhook 내부 동작 — Mutating과 Validating으로 클러스터 정책 강제하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Kubernetes Admission Webhook 내부 동작 — Mutating과 Validating으로 클러스터 정책 강제하기</div>
+<p style="font-size:14px; color:#999;">인프라</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — API 서버가 오브젝트를 저장하기 직전 <b>Mutating·Validating 두 단계</b>로 요청을 검사·수정하는 Admission Webhook의 처리 파이프라인과 실패 모드를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 승인 단계를 다시 봐야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">RBAC은 "누가 어떤 리소스에 어떤 동작을 할 수 있는가"를 결정하지만, <b>"그 요청의 내용이 규칙에 맞는가"는 전혀 검사하지 않습니다.</b> 개발자에게 파드 생성 권한이 있어도, latest 태그 이미지를 쓰거나 리소스 requests/limits를 아예 설정하지 않은 매니페스트를 RBAC은 막지 못합니다. Kubernetes API 서버는 이 틈을 메우기 위해 요청이 etcd에 저장되기 직전 마지막 관문으로 Admission Webhook을 제공합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">요청이 etcd에 도달하기까지의 파이프라인</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">kubectl apply로 보낸 요청은 <b>인증 → 인가(RBAC) → 어드미션 컨트롤</b> 순으로 통과해야 합니다. 먼저 Mutating Admission Webhook들이 순서대로 실행되며 오브젝트를 수정하고(사이드카 자동 주입 등), 스키마 검증을 거친 뒤 Validating Admission Webhook들이 병렬로 실행되며 검사만 하고 거부하거나 통과시킵니다. Validating 단계는 <b>수정 후 최종 오브젝트를 기준으로 검사</b>한다는 점이 중요합니다.</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">웹훅은 결국 외부 HTTP 서버다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Admission Webhook의 실체는 API 서버가 HTTPS로 호출하는 외부 서버입니다. API 서버는 AdmissionReview 오브젝트를 보내고, 웹훅 서버는 허용 여부(및 JSON Patch)를 담아 응답합니다. 이 구조 때문에 <b>웹훅 서버의 가용성이 곧 클러스터의 파드 생성 가용성</b>과 직결됩니다. failurePolicy를 Fail로 두면 웹훅이 응답하지 않을 때 요청 전체가 막히고, Ignore로 두면 검증 없이 통과됩니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">설정</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">웹훅 다운 시</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">적합한 용도</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">failurePolicy: Fail</td>
+<td style="border:1px solid #ddd; padding:10px;">요청 전체 거부</td>
+<td style="border:1px solid #ddd; padding:10px;">보안·컴플라이언스</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">failurePolicy: Ignore</td>
+<td style="border:1px solid #ddd; padding:10px;">검증 생략 통과</td>
+<td style="border:1px solid #ddd; padding:10px;">부가 기능</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">리소스 제한 강제 웹훅 설정 예제</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingWebhookConfiguration
+metadata:
+  name: require-resource-limits
+webhooks:
+  - name: resource-limits.example.com
+    clientConfig:
+      service:
+        name: policy-webhook-svc
+        namespace: policy-system
+        path: "/validate-pods"
+    rules:
+      - apiGroups: [""]
+        operations: ["CREATE"]
+        resources: ["pods"]
+    failurePolicy: Fail
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values: ["kube-system"]</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">namespaceSelector로 시스템 네임스페이스를 제외하지 않으면, 웹훅 배포 자체가 <b>자기 자신 때문에 막히는 교착 상태</b>에 빠질 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>웹훅 서버는 반드시 고가용성으로 배포해야 합니다.</b> failurePolicy: Fail을 쓴다면 레플리카가 한 대뿐일 때 재시작되는 짧은 순간 클러스터 전체의 파드 생성이 멈출 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>타임아웃을 짧게 설정해야 합니다.</b> 기본 10초 동안 웹훅이 응답하지 않으면 요청 전체가 지연되므로, 1~2초 이내 응답하도록 로직을 가볍게 유지해야 합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 대부분의 정책 강제 요구사항은 이미 성숙한 OPA Gatekeeper·Kyverno 같은 정책 엔진으로 선언적으로 표현 가능하니, 직접 웹훅 서버를 만들기 전에 먼저 검토해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#쿠버네티스 #AdmissionWebhook #정책강제 #K8sAPI서버 #클러스터보안</p>
+
+</body>
+</html>
