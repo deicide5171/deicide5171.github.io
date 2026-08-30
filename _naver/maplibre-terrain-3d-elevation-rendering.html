@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>MapLibre GL JS Terrain — 표고 데이터(DEM)로 3D 지형 렌더링하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">MapLibre GL JS Terrain — 표고 데이터(DEM)로 3D 지형 렌더링하기</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — Terrain-RGB 타일의 고도 값을 GPU 셰이더에서 <b>메시 정점 Z좌표로 변형</b>해 3D 지형을 만드는 MapLibre Terrain의 원리를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 MapLibre Terrain을 알아야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">등산로 지도, 재난 대응, 드론 경로 계획처럼 지형 자체가 핵심 정보인 서비스에서는 <b>등고선만으로는 직관성이 떨어집니다.</b> MapLibre GL JS는 terrain 소스로 표고 데이터를 실제 3D 메시로 변형해 렌더링합니다. 결과물 품질을 제어하려면 인코딩 방식과 변형 과정을 이해해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-24-maplibre-terrain-3d-elevation-rendering-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Terrain-RGB 타일: 표고 값을 이미지 픽셀로 인코딩하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">지형 서비스는 표고 값을 <b>일반 PNG 이미지의 RGB 채널에 인코딩</b>한 Terrain-RGB 타일을 씁니다. 정해진 공식으로 픽셀 값을 조합해 정밀한 고도를 복원합니다. 지형 데이터가 그냥 PNG이므로 기존 CDN·캐싱 인프라를 그대로 재사용할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">GPU에서 평면 타일이 3D 메시로 변형되는 과정</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">MapLibre는 격자 메시를 미리 준비해두고, 디코딩한 고도 값을 <b>버텍스 셰이더 단계에서 정점의 Z좌표로 대입</b>합니다. 벡터·위성 레이어는 이 지형 메시 위에 드레이핑돼 자연스럽게 씌워집니다. 카메라를 기울이면(pitch) 입체감이 드러납니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">설명</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Terrain-RGB 타일</td>
+<td style="border:1px solid #ddd; padding:10px;">표고를 PNG RGB로 인코딩</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">exaggeration</td>
+<td style="border:1px solid #ddd; padding:10px;">고도 시각적 과장 배율</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">hillshade</td>
+<td style="border:1px solid #ddd; padding:10px;">경사면에 음영을 넣는 레이어</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — Terrain 소스 설정과 exaggeration 적용</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">map.addSource('terrain-dem', {
+  type: 'raster-dem',
+  tiles: ['https://example.com/terrain-rgb/{z}/{x}/{y}.png'],
+  tileSize: 256,
+  maxzoom: 14,
+});
+
+map.setTerrain({
+  source: 'terrain-dem',
+  exaggeration: 1.5,
+});
+
+map.addLayer({
+  id: 'hillshade',
+  type: 'hillshade',
+  source: 'terrain-dem',
+  paint: { 'hillshade-exaggeration': 0.5 },
+});
+
+map.easeTo({ pitch: 60, bearing: -20 });</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>exaggeration을 지역 특성에 맞게 조정하세요.</b> 평지에서는 기본값으로 굴곡이 거의 안 보이지만, 산악 지형에서 과도하게 높이면 비현실적으로 보입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>지형 타일의 해상도와 maxzoom을 실제 필요 수준으로 제한하세요.</b> 특정 줌 이상에서는 해상도 향상 없이 타일 요청만 늘어날 수 있습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 모바일 기기에서는 지형 렌더링 성능을 별도로 테스트하세요. 3D 메시 변형과 hillshade 조합은 저사양 GPU에서 프레임 드롭을 유발할 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#MapLibre #Terrain #DEM #3D웹지도 #지형렌더링</p>
+
+</body>
+</html>
