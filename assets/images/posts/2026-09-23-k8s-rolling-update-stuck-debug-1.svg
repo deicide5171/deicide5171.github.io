@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">롤링 업데이트: maxSurge / maxUnavailable / Readiness</text>
+
+  <!-- Old pods row -->
+  <text x="120" y="70" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#555">기존(v1) Pod</text>
+  <rect x="60" y="80" width="60" height="45" rx="6" fill="#eef4ff" stroke="#3b6fd6" stroke-width="1.5"/>
+  <rect x="130" y="80" width="60" height="45" rx="6" fill="#eef4ff" stroke="#3b6fd6" stroke-width="1.5"/>
+  <rect x="200" y="80" width="60" height="45" rx="6" fill="#f7c9c9" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="230" y="107" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#8a1f1f">종료 대기</text>
+
+  <text x="400" y="70" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#555">새(v2) Pod</text>
+  <rect x="340" y="80" width="60" height="45" rx="6" fill="#fff5e9" stroke="#e08b2b" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="370" y="107" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#8a5314">Not Ready</text>
+
+  <rect x="410" y="80" width="60" height="45" rx="6" fill="#f0f0f0" stroke="#999" stroke-width="1.5" stroke-dasharray="3,3"/>
+  <text x="440" y="107" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#777">대기중</text>
+
+  <!-- maxUnavailable box -->
+  <rect x="180" y="150" width="120" height="60" rx="8" fill="#fdeeee" stroke="#c0392b" stroke-width="2"/>
+  <text x="240" y="175" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="#8a1f1f">maxUnavailable</text>
+  <text x="240" y="195" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#5a2727">동시에 내릴 수</text>
+  <text x="240" y="207" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#5a2727">있는 최대 수</text>
+
+  <!-- maxSurge box -->
+  <rect x="380" y="150" width="120" height="60" rx="8" fill="#fff5e9" stroke="#e08b2b" stroke-width="2"/>
+  <text x="440" y="175" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="#8a5314">maxSurge</text>
+  <text x="440" y="195" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#5a4632">추가로 띄울 수</text>
+  <text x="440" y="207" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#5a4632">있는 최대 수</text>
+
+  <!-- Readiness gate box -->
+  <rect x="80" y="250" width="640" height="120" rx="10" fill="#f5f5f5" stroke="#999" stroke-width="1.5"/>
+  <text x="400" y="278" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#333">Readiness Probe 통과 여부가 진행을 결정</text>
+
+  <rect x="120" y="295" width="200" height="55" rx="6" fill="#fdeeee" stroke="#c0392b" stroke-width="1.5"/>
+  <text x="220" y="318" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#8a1f1f" font-weight="bold">Probe 실패</text>
+  <text x="220" y="336" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#5a2727">→ 옛 Pod 안 내려감</text>
+
+  <rect x="480" y="295" width="200" height="55" rx="6" fill="#eafaf0" stroke="#03a35a" stroke-width="1.5"/>
+  <text x="580" y="318" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#03612f" font-weight="bold">Probe 통과</text>
+  <text x="580" y="336" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#26543a">→ 다음 단계 진행</text>
+
+  <text x="400" y="405" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#777">initialDelaySeconds가 부팅 시간보다 짧으면 Probe가 조기에 실패한다</text>
+</svg>

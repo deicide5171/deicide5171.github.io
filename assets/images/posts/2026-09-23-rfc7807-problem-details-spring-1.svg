@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">에러 응답 통일: 제각각 → RFC 7807</text>
+
+  <!-- Before scattered -->
+  <text x="180" y="65" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#8a1f1f">Before: 컨트롤러마다 제각각</text>
+
+  <rect x="60" y="80" width="240" height="34" rx="5" fill="#fdeeee" stroke="#c0392b"/>
+  <text x="180" y="102" text-anchor="middle" font-family="monospace" font-size="11" fill="#5a2727">{"error": "..."}</text>
+
+  <rect x="60" y="122" width="240" height="34" rx="5" fill="#fdeeee" stroke="#c0392b"/>
+  <text x="180" y="144" text-anchor="middle" font-family="monospace" font-size="11" fill="#5a2727">{"message": "...", "code": 400}</text>
+
+  <rect x="60" y="164" width="240" height="34" rx="5" fill="#fdeeee" stroke="#c0392b"/>
+  <text x="180" y="186" text-anchor="middle" font-family="monospace" font-size="11" fill="#5a2727">{"errors": [...]}</text>
+
+  <!-- Arrow through GlobalExceptionHandler -->
+  <rect x="330" y="120" width="150" height="70" rx="8" fill="#fff5e9" stroke="#e08b2b" stroke-width="2"/>
+  <text x="405" y="148" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="#8a5314">GlobalException</text>
+  <text x="405" y="166" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="#8a5314">Handler</text>
+
+  <line x1="300" y1="97" x2="330" y2="140" stroke="#999" stroke-width="1.5" marker-end="url(#r1)"/>
+  <line x1="300" y1="139" x2="330" y2="150" stroke="#999" stroke-width="1.5" marker-end="url(#r1)"/>
+  <line x1="300" y1="181" x2="330" y2="160" stroke="#999" stroke-width="1.5" marker-end="url(#r1)"/>
+
+  <line x1="480" y1="155" x2="540" y2="155" stroke="#03a35a" stroke-width="2.5" marker-end="url(#r2)"/>
+
+  <defs>
+    <marker id="r1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#999"/></marker>
+    <marker id="r2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#03a35a"/></marker>
+  </defs>
+
+  <!-- After: RFC 7807 -->
+  <rect x="540" y="70" width="200" height="180" rx="8" fill="#eafaf0" stroke="#03a35a" stroke-width="2"/>
+  <text x="640" y="95" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#03612f">RFC 7807</text>
+
+  <text x="560" y="118" font-family="monospace" font-size="12" fill="#26543a">type</text>
+  <text x="560" y="140" font-family="monospace" font-size="12" fill="#26543a">title</text>
+  <text x="560" y="162" font-family="monospace" font-size="12" fill="#26543a">status</text>
+  <text x="560" y="184" font-family="monospace" font-size="12" fill="#26543a">detail</text>
+  <text x="560" y="206" font-family="monospace" font-size="12" fill="#26543a">instance</text>
+  <text x="560" y="228" font-family="monospace" font-size="11" fill="#5a8a6a">+ 커스텀 필드</text>
+
+  <!-- Bottom summary -->
+  <rect x="60" y="280" width="680" height="120" rx="10" fill="#f5f5f5" stroke="#999" stroke-width="1.5"/>
+  <text x="400" y="308" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#333">Spring Boot 3의 ProblemDetail 클래스</text>
+  <text x="400" y="335" text-anchor="middle" font-family="sans-serif" font-size="12.5" fill="#555">별도 라이브러리 없이 application/problem+json 형식으로 자동 응답</text>
+  <text x="400" y="360" text-anchor="middle" font-family="sans-serif" font-size="12.5" fill="#555">setProperty()로 서비스별 확장 필드를 자유롭게 추가 가능</text>
+  <text x="400" y="385" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#c0392b">주의: detail 필드에 내부 구현 정보 노출 금지</text>
+</svg>

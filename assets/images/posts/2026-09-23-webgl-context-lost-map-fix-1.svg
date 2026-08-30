@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">WebGL Context Lost → 복구 흐름</text>
+
+  <!-- Step 1 -->
+  <rect x="40" y="70" width="170" height="90" rx="8" fill="#eef4ff" stroke="#3b6fd6" stroke-width="2"/>
+  <text x="125" y="98" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1f3d7a">정상 렌더링</text>
+  <text x="125" y="120" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#333">텍스처/버퍼가</text>
+  <text x="125" y="138" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#333">GPU에 업로드됨</text>
+
+  <line x1="210" y1="115" x2="260" y2="115" stroke="#333" stroke-width="2" marker-end="url(#w1)"/>
+
+  <!-- Step 2 -->
+  <rect x="265" y="70" width="190" height="90" rx="8" fill="#fdeeee" stroke="#c0392b" stroke-width="2"/>
+  <text x="360" y="95" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#8a1f1f">GPU 자원 회수</text>
+  <text x="360" y="115" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#5a2727">(메모리 압박, 드라이버</text>
+  <text x="360" y="132" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#5a2727">크래시, 절전 전환 등)</text>
+  <text x="360" y="150" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="#8a1f1f">webglcontextlost 발생</text>
+
+  <line x1="455" y1="115" x2="505" y2="115" stroke="#333" stroke-width="2" marker-end="url(#w1)"/>
+
+  <!-- Step 3 -->
+  <rect x="510" y="70" width="230" height="90" rx="8" fill="#fff5e9" stroke="#e08b2b" stroke-width="2"/>
+  <text x="625" y="95" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#8a5314">event.preventDefault()</text>
+  <text x="625" y="118" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#5a4632">호출해야만 브라우저가</text>
+  <text x="625" y="136" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#5a4632">복구를 시도함</text>
+  <text x="625" y="152" text-anchor="middle" font-family="sans-serif" font-size="10.5" fill="#c0392b" font-weight="bold">빠뜨리면 영영 복구 안 됨</text>
+
+  <defs>
+    <marker id="w1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#333"/></marker>
+    <marker id="w2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#03a35a"/></marker>
+  </defs>
+
+  <line x1="360" y1="160" x2="360" y2="230" stroke="#333" stroke-width="2" marker-end="url(#w2)"/>
+
+  <!-- Step 4 -->
+  <rect x="180" y="235" width="360" height="90" rx="8" fill="#eafaf0" stroke="#03a35a" stroke-width="2"/>
+  <text x="360" y="263" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#03612f">webglcontextrestored 발생</text>
+  <text x="360" y="286" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#26543a">map.setStyle(map.getStyle())로</text>
+  <text x="360" y="306" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#26543a">텍스처·버퍼·레이어 재생성</text>
+
+  <rect x="580" y="235" width="180" height="90" rx="8" fill="#f5f5f5" stroke="#999" stroke-width="1.5"/>
+  <text x="670" y="263" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">복구 지연/실패 시</text>
+  <text x="670" y="283" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="#333">새로고침 안내로</text>
+  <text x="670" y="303" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="#333">전환 (타임아웃)</text>
+
+  <text x="400" y="400" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#777">모바일 환경은 GPU 메모리 여유가 적어 더 자주 발생</text>
+</svg>

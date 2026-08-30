@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">에이전트 루프에 걸어야 할 안전장치</text>
+
+  <!-- Loop cycle -->
+  <circle cx="250" cy="220" r="130" fill="none" stroke="#3b6fd6" stroke-width="2" stroke-dasharray="6,4"/>
+
+  <rect x="190" y="100" width="120" height="55" rx="8" fill="#eef4ff" stroke="#3b6fd6" stroke-width="2"/>
+  <text x="250" y="132" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1f3d7a">계획(Plan)</text>
+
+  <rect x="330" y="195" width="120" height="55" rx="8" fill="#eef4ff" stroke="#3b6fd6" stroke-width="2"/>
+  <text x="390" y="227" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1f3d7a">실행(Act)</text>
+
+  <rect x="190" y="290" width="120" height="55" rx="8" fill="#eef4ff" stroke="#3b6fd6" stroke-width="2"/>
+  <text x="250" y="322" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1f3d7a">관찰(Observe)</text>
+
+  <rect x="60" y="195" width="120" height="55" rx="8" fill="#eef4ff" stroke="#3b6fd6" stroke-width="2"/>
+  <text x="120" y="227" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#1f3d7a">판단(Decide)</text>
+
+  <line x1="270" y1="155" x2="340" y2="200" stroke="#3b6fd6" stroke-width="2" marker-end="url(#lp)"/>
+  <line x1="380" y1="250" x2="290" y2="290" stroke="#3b6fd6" stroke-width="2" marker-end="url(#lp)"/>
+  <line x1="210" y1="300" x2="140" y2="250" stroke="#3b6fd6" stroke-width="2" marker-end="url(#lp)"/>
+  <line x1="130" y1="195" x2="210" y2="150" stroke="#3b6fd6" stroke-width="2" marker-end="url(#lp)"/>
+
+  <defs>
+    <marker id="lp" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#3b6fd6"/>
+    </marker>
+  </defs>
+
+  <!-- Guardrails on the right -->
+  <rect x="500" y="80" width="260" height="80" rx="8" fill="#fff5e9" stroke="#e08b2b" stroke-width="2"/>
+  <text x="630" y="108" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#8a5314">① 최대 반복 횟수</text>
+  <text x="630" y="130" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#5a4632">(max_iterations) 절대 상한</text>
+  <text x="630" y="148" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#5a4632">어떤 경우든 결국 멈춤</text>
+
+  <rect x="500" y="175" width="260" height="80" rx="8" fill="#fdeeee" stroke="#c0392b" stroke-width="2"/>
+  <text x="630" y="203" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#8a1f1f">② 반복 호출 감지</text>
+  <text x="630" y="225" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#5a2727">동일 (도구, 인자) N회 반복 시</text>
+  <text x="630" y="243" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#5a2727">더 빨리 개입</text>
+
+  <rect x="500" y="270" width="260" height="80" rx="8" fill="#eafaf0" stroke="#03a35a" stroke-width="2"/>
+  <text x="630" y="298" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#03612f">③ 명시적 종료 조건</text>
+  <text x="630" y="320" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#26543a">프롬프트가 아니라</text>
+  <text x="630" y="338" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#26543a">코드 레벨에서 강제</text>
+
+  <text x="400" y="425" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#777">중단 시에는 사유와 진행 상황을 요약해 사용자에게 반환</text>
+</svg>

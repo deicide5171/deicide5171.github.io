@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>소셜 로그인 redirect_uri mismatch 에러 잡기 — OAuth2 콜백 URL 설정 가이드</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">소셜 로그인 redirect_uri mismatch 에러 잡기 — OAuth2 콜백 URL 설정 가이드</div>
+<p style="font-size:14px; color:#999;">백엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — redirect_uri_mismatch는 인가 서버가 요청 URL과 콘솔 등록 URL을 <b>프로토콜·호스트·경로·슬래시까지 문자 그대로 비교</b>하다 실패했을 때 발생합니다. Spring Security OAuth2 기준으로 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 로컬에서는 되던 로그인이 배포하면 막힐까</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">로컬 개발 환경에서는 잘 되던 구글·카카오 소셜 로그인이 운영 서버에 배포하자마자 redirect_uri_mismatch 에러로 막힙니다. 화면에는 등록된 리디렉션 URI와 일치하지 않는다는 메시지만 뜨고, 정작 어떤 URL이 왜 어긋났는지는 알려주지 않아 답답합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 에러는 OAuth2 인가 서버가 보안을 위해 <b>인가 요청의 redirect_uri가 콘솔에 등록해둔 값과 문자 그대로 정확히 일치하는지</b> 검사하기 때문에 발생합니다. 프로토콜, 호스트, 포트, 경로, 끝의 슬래시까지 완전히 같아야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-23-oauth2-redirect-uri-mismatch-fix-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 — 환경별로 다른 값을 하드코딩하면 반드시 어긋난다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">로컬, 스테이징, 운영은 호스트가 다 다릅니다. 이 값을 코드에 하드코딩해두면 배포 환경이 바뀔 때마다 콘솔 등록값과 어긋나는 사고가 반복됩니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">spring:
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID}
+            client-secret: ${GOOGLE_CLIENT_SECRET}
+            # {baseUrl}이 요청 시점의 실제 호스트로 자동 치환된다
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Spring Security의 <b>{baseUrl} 플레이스홀더</b>를 쓰면 실제 요청 호스트 기준으로 redirect_uri가 자동 생성됩니다. 다만 콘솔에는 로컬용, 스테이징용, 운영용 URL을 <b>모두</b> 승인된 리디렉션 URI 목록에 등록해둬야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">흔한 원인 체크리스트</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">원인</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">확인 방법</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">http/https 프로토콜 불일치</td>
+<td style="border:1px solid #ddd; padding:10px;">프록시 뒤에서 실제 요청 프로토콜 확인</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">경로 끝 슬래시 유무</td>
+<td style="border:1px solid #ddd; padding:10px;">/callback과 /callback/은 다른 값</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">X-Forwarded 헤더 미반영</td>
+<td style="border:1px solid #ddd; padding:10px;">forward-headers-strategy 설정 확인</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">로드밸런서 뒤에 배포한 경우가 가장 까다롭습니다. 실제 사용자는 https로 접속했지만 프록시가 내부적으로 http로 전달하면 <b>{baseUrl}이 잘못 계산되어 콘솔에 등록한 https 값과 어긋납니다</b>. 이 경우 server.forward-headers-strategy: native 설정을 켜서 X-Forwarded-Proto 헤더를 신뢰하도록 만들어야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>에러 화면의 힌트를 놓치지 마세요.</b> 대부분의 인가 서버는 실제 요청에 담긴 redirect_uri 값을 URL 파라미터나 에러 상세에 노출합니다. 이 값을 콘솔 등록값과 문자 단위로 비교하면 원인을 빠르게 좁힐 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>모든 배포 환경 URL을 처음부터 콘솔에 등록해두는 습관을 들이세요.</b> 나중에 스테이징 환경을 추가할 때마다 이 에러를 다시 겪는 팀이 많습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — ngrok 같은 로컬 HTTPS 터널링 도구는 재시작할 때마다 주소가 바뀌므로, 고정 서브도메인 옵션을 쓰지 않으면 매번 콘솔에 새로 등록해야 하는 번거로움이 반복됩니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#OAuth2 #소셜로그인 #SpringSecurity #redirecturi #인증</p>
+
+</body>
+</html>

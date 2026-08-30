@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="36" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">MCP 서버 - 클라이언트 통신 흐름 (stdio)</text>
+
+  <!-- Client box -->
+  <rect x="50" y="90" width="220" height="130" rx="10" fill="#eef4ff" stroke="#3b6fd6" stroke-width="2"/>
+  <text x="160" y="120" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="bold" fill="#1f3d7a">AI 클라이언트</text>
+  <text x="160" y="145" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#333">(Claude Desktop, IDE)</text>
+  <text x="160" y="175" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#555">서버 프로세스를</text>
+  <text x="160" y="195" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#555">직접 실행 &amp; 관리</text>
+
+  <!-- Server box -->
+  <rect x="530" y="90" width="220" height="130" rx="10" fill="#eafaf0" stroke="#03a35a" stroke-width="2"/>
+  <text x="640" y="120" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="bold" fill="#03612f">MCP 서버 프로세스</text>
+  <text x="640" y="145" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#333">(server.py)</text>
+  <text x="640" y="175" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#555">get_ticket_status()</text>
+  <text x="640" y="195" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#555">도구 함수 실행</text>
+
+  <!-- Arrows stdio -->
+  <line x1="270" y1="140" x2="530" y2="140" stroke="#3b6fd6" stroke-width="2.5" marker-end="url(#arrow1)"/>
+  <text x="400" y="130" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1f3d7a">stdin: tools/call 요청</text>
+
+  <line x1="530" y1="180" x2="270" y2="180" stroke="#03a35a" stroke-width="2.5" marker-end="url(#arrow2)"/>
+  <text x="400" y="200" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#03612f">stdout: JSON-RPC 응답</text>
+
+  <defs>
+    <marker id="arrow1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#3b6fd6"/>
+    </marker>
+    <marker id="arrow2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#03a35a"/>
+    </marker>
+  </defs>
+
+  <!-- Warning box for stderr -->
+  <rect x="530" y="260" width="220" height="90" rx="10" fill="#fff5e9" stroke="#e08b2b" stroke-width="2"/>
+  <text x="640" y="285" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#8a5314">디버그 로그는</text>
+  <text x="640" y="305" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#8a5314">stderr로만!</text>
+  <text x="640" y="328" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#8a5314">stdout에 섞이면 프로토콜 손상</text>
+
+  <line x1="640" y1="220" x2="640" y2="260" stroke="#e08b2b" stroke-width="2" stroke-dasharray="4,3"/>
+
+  <!-- Bottom note -->
+  <rect x="50" y="260" width="220" height="90" rx="10" fill="#f5f5f5" stroke="#999" stroke-width="1.5"/>
+  <text x="160" y="290" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#333">설정 파일에는</text>
+  <text x="160" y="312" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#333">절대 경로(command/args)를</text>
+  <text x="160" y="334" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#333">명시해야 인식됨</text>
+
+  <text x="400" y="410" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#777">타입 힌트 + docstring → 클라이언트가 읽는 도구 스키마</text>
+</svg>

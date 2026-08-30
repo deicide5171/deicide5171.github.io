@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">utf8 vs utf8mb4 — 이모지 저장 비교</text>
+
+  <!-- utf8 side -->
+  <rect x="60" y="80" width="320" height="150" rx="10" fill="#fdeeee" stroke="#c0392b" stroke-width="2"/>
+  <text x="220" y="110" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="bold" fill="#8a1f1f">utf8 (MySQL 레거시)</text>
+  <text x="220" y="135" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#5a2727">최대 3바이트까지만 저장</text>
+
+  <text x="90" y="170" font-family="sans-serif" font-size="14" fill="#333">입력: 😀 (4바이트 필요)</text>
+  <rect x="90" y="185" width="90" height="26" fill="#f7c9c9" stroke="#c0392b"/>
+  <text x="135" y="203" text-anchor="middle" font-family="monospace" font-size="12" fill="#5a2727">3바이트만</text>
+  <text x="200" y="203" font-family="sans-serif" font-size="20" fill="#c0392b">✕</text>
+  <text x="230" y="203" font-family="sans-serif" font-size="13" fill="#8a1f1f">→ ? 로 깨짐</text>
+
+  <!-- utf8mb4 side -->
+  <rect x="420" y="80" width="320" height="150" rx="10" fill="#eafaf0" stroke="#03a35a" stroke-width="2"/>
+  <text x="580" y="110" text-anchor="middle" font-family="sans-serif" font-size="16" font-weight="bold" fill="#03612f">utf8mb4</text>
+  <text x="580" y="135" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#26543a">최대 4바이트까지 저장 (진짜 UTF-8)</text>
+
+  <text x="450" y="170" font-family="sans-serif" font-size="14" fill="#333">입력: 😀 (4바이트 필요)</text>
+  <rect x="450" y="185" width="120" height="26" fill="#bdeed1" stroke="#03a35a"/>
+  <text x="510" y="203" text-anchor="middle" font-family="monospace" font-size="12" fill="#03612f">4바이트 전체</text>
+  <text x="600" y="203" font-family="sans-serif" font-size="20" fill="#03a35a">✓</text>
+  <text x="625" y="203" font-family="sans-serif" font-size="13" fill="#03612f">정상 저장</text>
+
+  <!-- checklist box -->
+  <rect x="60" y="260" width="680" height="140" rx="10" fill="#f5f5f5" stroke="#999" stroke-width="1.5"/>
+  <text x="400" y="288" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#333">모두 utf8mb4로 일치해야 하는 5곳</text>
+
+  <g font-family="sans-serif" font-size="13.5" fill="#333">
+    <text x="100" y="320">① 서버 기본 문자셋</text>
+    <text x="330" y="320">② 데이터베이스</text>
+    <text x="530" y="320">③ 테이블</text>
+    <text x="100" y="355">④ 컬럼(CONVERT TO CHARACTER SET)</text>
+    <text x="450" y="355">⑤ 연결(JDBC characterEncoding)</text>
+  </g>
+  <text x="400" y="382" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#c0392b">하나라도 utf8로 남으면 이모지가 깨짐</text>
+</svg>

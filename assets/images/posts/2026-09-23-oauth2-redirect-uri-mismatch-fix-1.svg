@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">redirect_uri 검증 흐름</text>
+
+  <!-- App box -->
+  <rect x="50" y="80" width="200" height="90" rx="8" fill="#eef4ff" stroke="#3b6fd6" stroke-width="2"/>
+  <text x="150" y="112" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#1f3d7a">내 애플리케이션</text>
+  <text x="150" y="135" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">redirect_uri=</text>
+  <text x="150" y="153" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#333">https://example.com/callback</text>
+
+  <line x1="250" y1="125" x2="440" y2="125" stroke="#3b6fd6" stroke-width="2" marker-end="url(#a1)"/>
+  <text x="345" y="115" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#1f3d7a">인가 요청</text>
+
+  <!-- Auth server box -->
+  <rect x="440" y="80" width="220" height="150" rx="8" fill="#fff5e9" stroke="#e08b2b" stroke-width="2"/>
+  <text x="550" y="108" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#8a5314">OAuth2 인가 서버</text>
+  <text x="550" y="132" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#333">등록된 화이트리스트:</text>
+  <text x="550" y="152" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#333">https://example.com/callback</text>
+  <text x="550" y="172" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="#03612f">문자 그대로 완전 일치?</text>
+  <text x="550" y="196" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#5a4632">프로토콜/호스트/경로/슬래시</text>
+  <text x="550" y="216" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#5a4632">모두 비교</text>
+
+  <defs>
+    <marker id="a1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#3b6fd6"/>
+    </marker>
+    <marker id="a2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#03a35a"/>
+    </marker>
+    <marker id="a3" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#c0392b"/>
+    </marker>
+  </defs>
+
+  <!-- match result -->
+  <line x1="440" y1="270" x2="250" y2="270" stroke="#03a35a" stroke-width="2.5" marker-end="url(#a2)"/>
+  <rect x="60" y="250" width="180" height="45" rx="6" fill="#eafaf0" stroke="#03a35a"/>
+  <text x="150" y="277" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#03612f" font-weight="bold">일치 → 인가 코드 발급</text>
+
+  <line x1="440" y1="330" x2="250" y2="330" stroke="#c0392b" stroke-width="2.5" marker-end="url(#a3)"/>
+  <rect x="60" y="310" width="180" height="45" rx="6" fill="#fdeeee" stroke="#c0392b"/>
+  <text x="150" y="337" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#8a1f1f" font-weight="bold">불일치 → mismatch 에러</text>
+
+  <!-- checklist -->
+  <rect x="440" y="255" width="260" height="110" rx="8" fill="#f5f5f5" stroke="#999" stroke-width="1.5"/>
+  <text x="460" y="278" font-family="sans-serif" font-size="12.5" fill="#333">흔한 불일치 지점:</text>
+  <text x="460" y="298" font-family="sans-serif" font-size="12" fill="#333">http vs https / 포트 유무</text>
+  <text x="460" y="318" font-family="sans-serif" font-size="12" fill="#333">/callback vs /callback/</text>
+  <text x="460" y="338" font-family="sans-serif" font-size="12" fill="#333">프록시 뒤 X-Forwarded-Proto 미반영</text>
+
+  <text x="400" y="420" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#777">환경별(로컬/스테이징/운영) URL을 모두 콘솔에 등록해야 함</text>
+</svg>

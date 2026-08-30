@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">세션 저장 위치: 로컬 메모리 vs Redis 중앙화</text>
+
+  <!-- Before: local memory -->
+  <text x="200" y="65" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#8a1f1f">Before: 로컬 메모리</text>
+
+  <rect x="60" y="80" width="90" height="55" rx="6" fill="#eef4ff" stroke="#3b6fd6" stroke-width="1.5"/>
+  <text x="105" y="112" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#1f3d7a">사용자</text>
+
+  <rect x="220" y="75" width="140" height="60" rx="6" fill="#f7c9c9" stroke="#c0392b" stroke-width="2"/>
+  <text x="290" y="98" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="#8a1f1f">서버 A</text>
+  <text x="290" y="118" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#5a2727">세션(메모리)</text>
+
+  <rect x="220" y="150" width="140" height="60" rx="6" fill="#f0f0f0" stroke="#999" stroke-width="2"/>
+  <text x="290" y="173" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="#555">서버 B</text>
+  <text x="290" y="193" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#777">세션 없음!</text>
+
+  <line x1="150" y1="100" x2="220" y2="105" stroke="#3b6fd6" stroke-width="2" marker-end="url(#s1)"/>
+  <text x="185" y="90" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#1f3d7a">로그인</text>
+
+  <line x1="150" y1="115" x2="220" y2="180" stroke="#c0392b" stroke-width="2" stroke-dasharray="4,3" marker-end="url(#s2)"/>
+  <text x="175" y="160" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#8a1f1f">다음 요청</text>
+
+  <text x="290" y="235" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#8a1f1f" font-weight="bold">→ 다시 로그인하라고 뜸</text>
+
+  <!-- After: Redis -->
+  <text x="600" y="65" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#03612f">After: Redis 중앙화</text>
+
+  <rect x="460" y="80" width="90" height="55" rx="6" fill="#eef4ff" stroke="#3b6fd6" stroke-width="1.5"/>
+  <text x="505" y="112" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#1f3d7a">사용자</text>
+
+  <rect x="620" y="70" width="130" height="55" rx="6" fill="#eafaf0" stroke="#03a35a" stroke-width="2"/>
+  <text x="685" y="102" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="#03612f">서버 A</text>
+
+  <rect x="620" y="145" width="130" height="55" rx="6" fill="#eafaf0" stroke="#03a35a" stroke-width="2"/>
+  <text x="685" y="177" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="bold" fill="#03612f">서버 B</text>
+
+  <rect x="600" y="230" width="170" height="55" rx="8" fill="#fff5e9" stroke="#e08b2b" stroke-width="2"/>
+  <text x="685" y="253" text-anchor="middle" font-family="sans-serif" font-size="13" font-weight="bold" fill="#8a5314">Redis</text>
+  <text x="685" y="273" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#8a5314">세션 중앙 저장</text>
+
+  <line x1="550" y1="100" x2="620" y2="97" stroke="#3b6fd6" stroke-width="2" marker-end="url(#s1)"/>
+  <line x1="685" y1="125" x2="685" y2="230" stroke="#e08b2b" stroke-width="2"/>
+  <line x1="685" y1="200" x2="685" y2="230" stroke="#e08b2b" stroke-width="2"/>
+  <line x1="550" y1="115" x2="620" y2="170" stroke="#03a35a" stroke-width="2" marker-end="url(#s3)"/>
+
+  <text x="685" y="330" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#03612f" font-weight="bold">→ 어느 서버든 같은 세션 조회</text>
+
+  <defs>
+    <marker id="s1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#3b6fd6"/></marker>
+    <marker id="s2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#c0392b"/></marker>
+    <marker id="s3" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#03a35a"/></marker>
+  </defs>
+</svg>
