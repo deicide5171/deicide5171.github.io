@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <!-- Left panel: low zoom, clustered -->
+  <rect x="30" y="40" width="340" height="330" rx="10" fill="#f6f9fc" stroke="#c8d6e5" stroke-width="2"/>
+  <text x="200" y="70" text-anchor="middle" font-size="16" font-weight="bold" fill="#22345a">줌 레벨 낮음 (클러스터)</text>
+
+  <circle cx="130" cy="160" r="34" fill="#51bbd6" opacity="0.85"/>
+  <text x="130" y="166" text-anchor="middle" font-size="16" font-weight="bold" fill="#0b3a4a">42</text>
+
+  <circle cx="260" cy="140" r="44" fill="#f1f075" opacity="0.9"/>
+  <text x="260" y="147" text-anchor="middle" font-size="18" font-weight="bold" fill="#5a4c00">128</text>
+
+  <circle cx="180" cy="270" r="26" fill="#51bbd6" opacity="0.85"/>
+  <text x="180" y="276" text-anchor="middle" font-size="13" font-weight="bold" fill="#0b3a4a">15</text>
+
+  <circle cx="290" cy="290" r="20" fill="#11b4da"/>
+  <text x="200" y="330" text-anchor="middle" font-size="12" fill="#555">가까운 포인트를 하나의 원으로 표시</text>
+
+  <!-- Arrow -->
+  <line x1="380" y1="200" x2="420" y2="200" stroke="#555" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="400" y="185" text-anchor="middle" font-size="13" fill="#555">줌 인</text>
+
+  <!-- Right panel: high zoom, unclustered -->
+  <rect x="430" y="40" width="340" height="330" rx="10" fill="#f6f9fc" stroke="#c8d6e5" stroke-width="2"/>
+  <text x="600" y="70" text-anchor="middle" font-size="16" font-weight="bold" fill="#22345a">줌 레벨 높음 (개별 포인트)</text>
+
+  <g fill="#11b4da">
+    <circle cx="480" cy="120" r="7"/>
+    <circle cx="505" cy="140" r="7"/>
+    <circle cx="470" cy="160" r="7"/>
+    <circle cx="520" cy="115" r="7"/>
+    <circle cx="540" cy="150" r="7"/>
+    <circle cx="600" cy="200" r="7"/>
+    <circle cx="625" cy="220" r="7"/>
+    <circle cx="590" cy="235" r="7"/>
+    <circle cx="650" cy="205" r="7"/>
+    <circle cx="670" cy="240" r="7"/>
+    <circle cx="700" cy="180" r="7"/>
+    <circle cx="720" cy="290" r="7"/>
+    <circle cx="500" cy="300" r="7"/>
+    <circle cx="540" cy="320" r="7"/>
+    <circle cx="480" cy="330" r="7"/>
+  </g>
+  <text x="600" y="355" text-anchor="middle" font-size="12" fill="#555">clusterMaxZoom 이상에서는 원본 포인트로 표시</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="415" text-anchor="middle" font-size="13" fill="#333" font-weight="bold">Supercluster: 줌 레벨에 따라 포인트를 동적으로 묶고 푸는 공간 인덱스</text>
+</svg>
