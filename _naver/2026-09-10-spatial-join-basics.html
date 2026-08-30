@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>공간 조인이 뭔가요 — 위치로 데이터를 연결하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">공간 조인이 뭔가요 — 위치로 데이터를 연결하기</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 공간 조인은 공통 값이 아니라 <b>위치 관계(포함·교차·근접)</b>로 두 데이터를 연결합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">"각 카페가 어느 구에 있나"를 어떻게 붙이나</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">카페 위치(점)와 자치구 경계(면)가 따로 있고 공통 ID가 없을 때, "각 카페가 어느 구에 속하는지"를 알려면 <b>공간 조인</b>을 씁니다. 일반 조인이 "같은 값"으로 잇는다면, 공간 조인은 "포함·교차·근접" 같은 공간 관계로 잇습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">일반 조인 vs 공간 조인</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">일반 조인</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">공간 조인</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">기준</td>
+<td style="border:1px solid #ddd; padding:10px;">같은 값(ID)</td>
+<td style="border:1px solid #ddd; padding:10px;">공간 관계</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">예</td>
+<td style="border:1px solid #ddd; padding:10px;">id = id</td>
+<td style="border:1px solid #ddd; padding:10px;">점이 면 안에?</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">자주 쓰는 공간 관계</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">포함(within/contains): 카페가 어느 구에? (ST_Contains)
+교차(intersects):     도로가 어느 구를 지나나? (ST_Intersects)
+근접(distance):       500m 내 지하철역? (ST_DWithin)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">공간 조인은 데이터가 크면 느리니 <b>공간 인덱스(GiST)</b>로 후보를 좁히세요. 두 데이터의 <b>좌표계(EPSG)</b>가 같아야 위치 판정이 맞고, 거리 기반은 미터 단위 좌표계가 편합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 점이 경계선에 걸리거나 도형이 여러 영역에 걸치면 결과가 여러 건이 됩니다. within·intersects 중 어떤 관계를 쓸지 명확히 정하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#공간조인 #SpatialJoin #PostGIS #공간분석 #GIS기초</p>
+
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>래스터 리샘플링이 뭔가요 — 격자 데이터 크기 바꾸기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 이미지(격자/도형)는 별도 SVG 파일을 캡처하거나 PNG로 변환해 삽입한다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">래스터 리샘플링이 뭔가요 — 격자 데이터 크기 바꾸기</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 리샘플링은 래스터의 해상도를 바꿀 때 픽셀 값을 새로 계산하며, <b>범주형은 최근접·연속값은 이중선형</b>을 씁니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">해상도 다른 래스터가 안 맞는다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">위성영상·고도 데이터는 픽셀(격자)로 된 <b>래스터</b>입니다. 해상도가 다른 두 래스터를 겹치거나 확대·축소하려면 새 격자에 맞게 픽셀 값을 다시 계산해야 합니다. 이것이 <b>리샘플링</b>입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">대표적인 방법</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방법</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">적합</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">최근접</td>
+<td style="border:1px solid #ddd; padding:10px;">가까운 픽셀 값 그대로</td>
+<td style="border:1px solid #ddd; padding:10px;">범주형</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">이중선형</td>
+<td style="border:1px solid #ddd; padding:10px;">주변 4개 가중평균</td>
+<td style="border:1px solid #ddd; padding:10px;">연속값</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">삼차회선</td>
+<td style="border:1px solid #ddd; padding:10px;">주변 16개로 부드럽게</td>
+<td style="border:1px solid #ddd; padding:10px;">고품질 연속값</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">토지분류처럼 "숲=1, 물=2" 범주 값에 평균을 내면 "1.5"라는 무의미한 값이 나오므로, 범주형은 최근접을 씁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">분류·라벨 래스터는 최근접만 씁니다. 리샘플링은 대상 격자에 맞추는 작업이라 기준 래스터의 좌표계·픽셀 정렬을 먼저 정합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 업샘플링(저→고해상도)은 새 디테일을 만드는 게 아니라 보간된 값일 뿐입니다. 범주형에 평균 계열은 금지입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#래스터 #리샘플링 #resampling #GIS #GIS기초</p>
+
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>웹소켓이 뭔가요 — 실시간 통신이 필요할 때</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">웹소켓이 뭔가요 — 실시간 통신이 필요할 때</div>
+<p style="font-size:14px; color:#999;">시스템설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 웹소켓은 한 번 연결하면 <b>양쪽이 언제든 메시지를 보낼 수 있는 양방향 통신</b>으로, 실시간 채팅·협업에 적합합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">HTTP만으로는 실시간이 어렵다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">일반 HTTP는 "요청하면 응답"하는 단방향이라 서버가 먼저 말을 걸 수 없습니다. <b>웹소켓</b>은 연결을 한 번 맺으면 양쪽 모두 언제든 메시지를 보낼 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">HTTP 폴링 vs 웹소켓</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">폴링</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">웹소켓</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">방향</td>
+<td style="border:1px solid #ddd; padding:10px;">물어봐야 함</td>
+<td style="border:1px solid #ddd; padding:10px;">양방향</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">연결</td>
+<td style="border:1px solid #ddd; padding:10px;">요청마다 새로</td>
+<td style="border:1px solid #ddd; padding:10px;">유지</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">실시간성</td>
+<td style="border:1px solid #ddd; padding:10px;">폴링 주기만큼 지연</td>
+<td style="border:1px solid #ddd; padding:10px;">즉시</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">웹소켓의 동작</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">1. HTTP로 "웹소켓으로 업그레이드" 요청(핸드셰이크)
+2. 서버 수락 -> 웹소켓 연결로 전환
+3. 양쪽이 자유롭게 메시지 주고받음
+-> "전화를 걸어두고 계속 통화"하는 것과 비슷</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">언제 필요한가</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">적합: 채팅, 실시간 협업, 게임, 시세
+과함: 가끔 오는 알림 -> SSE / 단순 조회 -> HTTP</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">서버→클라이언트 한 방향 알림만 필요하면 <b>SSE가 더 간단</b>합니다. 진짜 양방향이 필요할 때만 웹소켓을 쓰세요.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 연결을 계속 열어두므로 동시 접속자가 많으면 관리 부담이 큽니다. 끊김 감지·자동 재연결 로직도 필요합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#WebSocket #웹소켓 #실시간통신 #시스템설계기초 #네트워크</p>
+
+</body>
+</html>

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>URL만 지켜서는 부족하다 — Spring Security 메서드 레벨 인가(@PreAuthorize) 실전</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">URL만 지켜서는 부족하다 — Spring Security 메서드 레벨 인가(@PreAuthorize) 실전</div>
+<p style="font-size:14px; color:#999;">백엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — URL 단위 인가로는 표현할 수 없는 "이 리소스는 소유자만" 같은 세밀한 규칙을 <b>@PreAuthorize·@PostAuthorize</b>와 커스텀 PermissionEvaluator로 메서드 레벨에 적용하는 Spring Security 실전 패턴을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">URL만 봐서는 알 수 없는 소유 관계</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">SecurityFilterChain에서 authorizeHttpRequests()로 URL 패턴별 접근 제어를 설정하는 방식은 역할 기반의 큰 틀은 잘 표현하지만, "이 게시글은 작성자 본인이거나 관리자만 수정할 수 있다"처럼 리소스의 실제 소유 관계를 확인해야 하는 규칙은 표현할 방법이 없습니다. URL만 보고는 그 뒤에 오는 게시글 ID가 누구 것인지 알 수 없기 때문입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Spring Security의 <b>메서드 레벨 인가</b>는 이 문제를 어노테이션 하나로 해결합니다. @PreAuthorize, @PostAuthorize를 서비스 메서드에 붙이면 AOP로 인가 규칙이 자동 적용되어 비즈니스 로직과 권한 검증 코드가 분리됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — @PreAuthorize vs @PostAuthorize</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">@PreAuthorize는 메서드 실행 전에 SpEL 표현식을 평가해 통과하지 못하면 메서드 자체를 실행하지 않습니다. @PostAuthorize는 메서드 실행 후 반환값을 기준으로 판단합니다. 다만 @PostAuthorize는 이미 메서드가 실행된 뒤에 걸러내므로 데이터 조회 자체는 이미 일어났다는 점을 감안해야 합니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">@PreAuthorize("hasRole('ADMIN')")
+public void deleteAnyPost(Long postId) { ... }
+
+@PostAuthorize("returnObject.authorId == authentication.name or hasRole('ADMIN')")
+public Post getPost(Long postId) { ... }</pre>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 커스텀 PermissionEvaluator</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">SpEL 표현식 안에 소유권 검증 로직을 직접 풀어쓰면 표현식이 금방 복잡해집니다. Spring Security는 hasPermission()이라는 SpEL 함수와 PermissionEvaluator 인터페이스를 제공해, 실제 권한 판단 로직을 별도의 빈으로 분리할 수 있게 합니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">@Component
+public class PostPermissionEvaluator implements PermissionEvaluator {
+    @Override
+    public boolean hasPermission(Authentication auth, Serializable targetId,
+                                  String targetType, Object permission) {
+        Post post = postRepository.findById((Long) targetId).orElse(null);
+        if (post == null) return false;
+        boolean isAdmin = auth.getAuthorities().stream()
+                .anyMatch(a -&gt; a.getAuthority().equals("ROLE_ADMIN"));
+        return isAdmin || post.getAuthorId().equals(auth.getName());
+    }
+}</pre>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">@PreAuthorize("hasPermission(#postId, 'Post', 'write')")
+public void updatePost(Long postId, PostUpdateRequest request) { ... }</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">hasPermission()을 쓰면 실제 판단 로직이 한 곳에 모이고, 어노테이션은 "무슨 권한이 필요한가"만 선언적으로 표현하게 됩니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-28-spring-security-method-level-authorization-1.svg" alt="컨트롤러에서 서비스 메서드 호출 시 AOP 프록시가 가로채 PreAuthorize의 SpEL 표현식을 평가하고, hasPermission 함수는 별도의 PermissionEvaluator 빈에 실제 판단을 위임하는 구조" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — URL 레벨과 메서드 레벨은 보완 관계입니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">URL 레벨 인가는 "이 엔드포인트 자체에 접근할 최소 자격이 있는가"를 빠르게 걸러내는 1차 방어선이고, 메서드 레벨은 도메인 객체까지 내려가 "이 사용자가 이 리소스에 이 작업을 할 수 있는가"를 판단하는 2차 정밀 검증입니다. 둘 중 하나만 있으면 각각 다른 위험이 생기므로 함께 써야 합니다.</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. SpEL 표현식에 복잡한 로직을 직접 쓰지 마세요</b> — 한 줄을 넘어가면 커스텀 PermissionEvaluator나 별도 빈 참조로 옮기세요.<br>
+<b>2. @PostAuthorize의 부작용을 인지하세요</b> — 반환값 기준 검증이라 DB 조회는 이미 실행된 상태입니다.<br>
+<b>3. @EnableMethodSecurity 설정을 잊지 마세요</b> — 없으면 @PreAuthorize는 조용히 무시됩니다. 통합 테스트로 인가 거부를 검증하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① @PreAuthorize는 실행 전 인자 기준, @PostAuthorize는 실행 후 반환값 기준으로 인가를 판단하며 시점이 다릅니다.<br>
+② 복잡한 소유권 검증은 hasPermission()과 커스텀 PermissionEvaluator로 분리해야 재사용성과 테스트 가능성이 유지됩니다.<br>
+③ URL 레벨은 1차 방어선, 메서드 레벨은 리소스 단위 2차 정밀 검증으로 서로 다른 층위를 담당하므로 둘 다 필요합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 백엔드 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#SpringSecurity #PreAuthorize #메서드보안 #인가 #백엔드 #SpringBoot #PermissionEvaluator</p>
+
+</body>
+</html>

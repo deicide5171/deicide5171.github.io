@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>동기 vs 비동기 처리, 언제 무엇을 써야 할까</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">동기 vs 비동기 처리, 언제 무엇을 써야 할까</div>
+<p style="font-size:14px; color:#999;">시스템설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 사용자가 즉시 결과를 알아야 하는 작업은 <b>동기</b>로, 그렇지 않은 작업은 <b>비동기</b>로 분리하는 것이 기본 원칙입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 모든 요청을 즉시 처리하면 안 되는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">회원가입 시 DB 저장은 즉시 끝나야 하지만 환영 이메일 발송은 몇 초 늦어져도 문제없습니다. 두 작업을 똑같이 동기로 묶으면, 이메일 서버가 느려질 때 회원가입 자체가 실패하는 불필요한 결합이 생깁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">동기 처리 vs 비동기 처리</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">동기</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">비동기</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">처리 방식</td>
+<td style="border:1px solid #ddd; padding:10px;">결과 나올 때까지 대기</td>
+<td style="border:1px solid #ddd; padding:10px;">요청만 넣고 즉시 응답</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">실패 영향</td>
+<td style="border:1px solid #ddd; padding:10px;">하나가 느리면 전체 지연</td>
+<td style="border:1px solid #ddd; padding:10px;">전체 응답에 영향 없음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">적합한 작업</td>
+<td style="border:1px solid #ddd; padding:10px;">결제 승인</td>
+<td style="border:1px solid #ddd; padding:10px;">이메일 발송, 통계 집계</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 메시지 큐를 이용한 비동기 처리</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">@PostMapping("/signup")
+public ResponseEntity&lt;?&gt; signup(@RequestBody SignupRequest request) &#123;
+    User user = userService.createUser(request); // 동기
+
+    eventPublisher.publish(new UserSignedUpEvent(user.getId())); // 비동기
+
+    return ResponseEntity.ok(user);
+&#125;
+
+@EventListener
+public void handleUserSignedUp(UserSignedUpEvent event) &#123;
+    emailService.sendWelcomeEmail(event.getUserId());
+&#125;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">회원가입 응답 시간은 이메일 발송 속도와 무관해지고, 이메일 서버 장애가 있어도 회원가입은 성공합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">비동기로 처리한 작업의 실패는 눈에 보이지 않습니다. 큐에 넣고 끝이 아니라 <b>재시도·알림 모니터링 체계</b>가 함께 있어야 합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 모든 것을 비동기로 만들면 시스템이 오히려 복잡해집니다. 결과를 바로 알아야 하는 핵심 흐름까지 비동기로 만들면 나쁜 UX가 됩니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#동기비동기 #비동기처리 #시스템설계기초 #메시지큐 #백엔드</p>
+
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>z-index가 뭔가요 — 요소가 겹칠 때 앞뒤 순서 정하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">z-index가 뭔가요 — 요소가 겹칠 때 앞뒤 순서 정하기</div>
+<p style="font-size:14px; color:#999;">프론트엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — z-index는 요소가 겹칠 때 앞뒤(z축) 순서를 정하며(클수록 위), <b>position이 static이 아니어야</b> 동작합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">모달이 다른 요소 뒤에 숨는다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">팝업을 띄웠는데 다른 요소에 가려 안 보일 때가 있죠. 요소가 겹칠 때 "누가 앞에 보일지"는 <b>z-index</b>로 정합니다. 값이 클수록 앞에 옵니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">기본 개념</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">.back  { z-index: 1; }   /* 뒤 */
+.front { z-index: 10; }  /* 앞(위) */
+* position이 static이 아닐 때만 동작</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 큰 값을 줘도 안 먹을까</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">부모 A(z:1) 안의 자식(z:9999)
+부모 B(z:2)
+-> A의 자식이 9999여도 B보다 뒤!
+   (자식은 부모 A의 쌓임 맥락 안에서만 겨룸)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">z-index가 안 먹으면 대부분 <b>position이 static</b>입니다(relative 등을 먼저). 값을 마구 키우지 말고 레이어 단계(모달 1000, 툴팁 1100)를 정해 관리하세요.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 부모에 transform·opacity·z-index가 있으면 새 쌓임 맥락이 생겨 자식 z-index가 바깥과 직접 안 겨룹니다. 모달이 안 뜨는 흔한 원인입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#zindex #CSS #쌓임맥락 #레이어 #프론트엔드기초</p>
+
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>LLM 레드티밍과 적대적 테스트 방법론</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">모델을 공격해봐야 안전한지 안다 — LLM 레드티밍과 적대적 테스트 방법론</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — <b>레드티밍</b>은 알려진 기준 통과 여부를 보는 Eval과 달리, 사람이나 자동화된 공격자가 모델을 실제로 공격해 <b>아직 모르는 약점</b>을 능동적으로 찾아내는 활동입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">골든 데이터셋만으로는 부족한 이유</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">LLM 애플리케이션이 프로덕션에 나가기 전 흔히 거치는 검증은 골든 데이터셋 기반 Eval입니다. 정해진 입력에 대해 기대하는 출력이 나오는지 확인하는 방식으로 회귀 여부를 잡는 데는 효과적이지만, 우리가 예상한 입력에서만 검증한다는 한계가 있습니다. 실제 공격자는 개발팀이 예상하지 못한 방식으로 모델을 몰아붙입니다. 이 간극을 메우는 것이 레드티밍입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 레드티밍은 방어가 아니라 발견입니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">프롬프트 인젝션 방어는 알려진 공격 패턴을 막는 방화벽에 가깝고, Eval 프레임워크는 품질이 기대 수준을 유지하는지 확인하는 회귀 테스트에 가깝습니다. 반면 레드티밍은 아직 알려지지 않은 약점을 찾아내는 활동입니다. 그래서 보안 전문 인력이나 별도의 공격팀이 방어팀과 분리되어 독립적으로 수행하는 경우가 많습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 무엇을 노리는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">LLM 레드티밍은 탈옥(jailbreak), 프롬프트 인젝션, 데이터 유출, 툴 오남용, 환각 유발 등 여러 공격 범주를 다룹니다. 탈옥은 대화를 여러 턴에 걸쳐 점진적으로 유도하는 방식이 단발성 요청보다 성공률이 높다고 알려져 있어, 시나리오도 멀티턴 대화 흐름으로 설계해야 실효성이 있습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">공격 범주</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">설명</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">탈옥</td>
+<td style="border:1px solid #ddd; padding:10px;">안전 정책 우회해 금지된 출력 유도</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">프롬프트 인젝션</td>
+<td style="border:1px solid #ddd; padding:10px;">외부 입력에 숨긴 지시로 에이전트 조작</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">툴 오남용</td>
+<td style="border:1px solid #ddd; padding:10px;">코드 실행·결제 등 도구를 의도치 않게 실행</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 수동과 자동화의 병행</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">초기 레드티밍은 전문 인력이 직접 프롬프트를 짜며 공격하는 수동 방식이 중심이었지만, 규모가 커지면서 별도의 공격자 LLM이 목표 행동을 유도하도록 프롬프트를 진화시키는 자동화된 적대적 테스트가 함께 쓰입니다. 실무에서는 자동화 도구로 넓은 범위를 빠르게 스캔하고, 사람 레드티머가 맥락 의존적 시나리오에 집중하는 병행이 표준이 되고 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">발견된 성공적인 공격 사례는 그대로 회귀 테스트 스위트에 편입시켜, 같은 취약점이 다시 열리지 않는지 이후 배포마다 자동으로 검증하게 만드는 것이 발견과 방어를 연결하는 핵심 고리입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 레드티밍 세션 로그 구조화</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">red_team_case = {
+    "id": "RT-2026-0142",
+    "category": "jailbreak",
+    "technique": "multi-turn-roleplay-escalation",
+    "target_behavior": "제조법 관련 실질적 정보 노출",
+    "outcome": "blocked",       # blocked | succeeded | partial
+    "severity": "high",
+    "discovered_by": "manual",  # manual | automated
+    "regression_test_added": True,
+}
+# 성공/부분 성공 케이스는 반드시 Eval 회귀 테스트셋에 편입</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 레드티밍과 Eval을 혼동하지 마세요</b> — Eval은 기준 유지 확인, 레드티밍은 미지의 약점 발견입니다.<br>
+<b>2. 에이전트형 시스템은 툴 오남용 범주를 반드시 포함하세요</b> — 잘못된 행동은 잘못된 답변보다 실제 피해로 직결됩니다.<br>
+<b>3. 심각도 기준으로 배포 게이트를 거세요</b> — 개인정보 유출 등 고위험 항목은 해결 전까지 배포를 막아야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 레드티밍은 알려진 기준 충족을 확인하는 Eval과 달리 아직 모르는 약점을 능동적으로 찾아내는 활동입니다.<br>
+② 탈옥, 프롬프트 인젝션, 툴 오남용 등 공격 범주별로 다른 탐색 전략과 멀티턴 시나리오 설계가 필요합니다.<br>
+③ 자동화된 테스트와 사람 레드티머를 병행하고, 발견 사례는 회귀 테스트 자산으로 반드시 편입시켜야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 AI 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#레드티밍 #AI보안 #적대적테스트 #LLM안전성 #jailbreak #프롬프트인젝션 #AIgovernance</p>
+
+</body>
+</html>

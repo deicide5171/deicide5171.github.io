@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>setTimeout과 setInterval이 뭔가요 — 자바스크립트 타이머</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">setTimeout과 setInterval이 뭔가요 — 자바스크립트 타이머</div>
+<p style="font-size:14px; color:#999;">프론트엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — setTimeout은 일정 시간 뒤 한 번, setInterval은 간격마다 반복 실행하며, <b>반환 id로 반드시 취소</b>해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">"3초 뒤에", "1초마다" 실행하려면</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">알림을 3초 뒤 닫거나 1초마다 시계를 갱신하는 동작이 필요하죠. JS는 <b>setTimeout</b>(정해진 시간 뒤 한 번)과 <b>setInterval</b>(간격마다 반복)로 이를 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">사용법</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">const t = setTimeout(() => {...}, 3000); // 3초 뒤 한 번
+clearTimeout(t);                          // 취소
+const i = setInterval(() => {...}, 1000); // 1초마다
+clearInterval(i);                         // 멈춤
+// 시간 단위는 ms (1000ms = 1초)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><code>setInterval</code>을 걸고 안 멈추면 <b>메모리 누수</b>가 납니다. React라면 <code>useEffect</code> cleanup에서 <code>clearInterval</code>을 호출하세요. <code>setTimeout(fn, 1000)</code>은 "정확히 1초"가 아니라 "최소 1초 후"입니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 작업이 오래 걸리면 setInterval은 겹칠 수 있습니다. 이전 작업이 끝난 뒤 다음을 예약하는 재귀 setTimeout이 더 안전할 때가 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#setTimeout #setInterval #타이머 #자바스크립트 #프론트엔드기초</p>
+
+</body>
+</html>

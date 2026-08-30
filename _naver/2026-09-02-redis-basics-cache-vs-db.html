@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Redis가 뭔가요 — 언제 캐시로 쓰고 언제 DB로 쓸까</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Redis가 뭔가요 — 언제 캐시로 쓰고 언제 DB로 쓸까</div>
+<p style="font-size:14px; color:#999;">데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 캐시 용도는 TTL로 관리하고 유실돼도 복구 가능하지만, <b>DB 대체 용도로 쓸 때는 영속성과 복제 설정이 필수</b>입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Redis는 캐시인가 DB인가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Redis는 인메모리 저장소지만 캐시로도, 메인 DB처럼도 쓰입니다. 메모리 기반이라 빠르면서도 디스크 백업(영속성) 기능을 함께 제공하기 때문입니다. 다만 "가능하다"와 "안전하다"는 다른 문제입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">캐시로 쓸 때 vs DB로 쓸 때</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">관점</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">캐시</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">주 DB</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">데이터 유실</td>
+<td style="border:1px solid #ddd; padding:10px;">허용(원본에서 재생성)</td>
+<td style="border:1px solid #ddd; padding:10px;">허용 안 됨</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">데이터 원본</td>
+<td style="border:1px solid #ddd; padding:10px;">다른 DB가 원본</td>
+<td style="border:1px solid #ddd; padding:10px;">Redis 자체가 원본</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 캐시로 쓰는 전형적인 패턴</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">def get_product(product_id, redis_client, db):
+    cached = redis_client.get(f"product:&#123;product_id&#125;")
+    if cached:
+        return json.loads(cached)
+
+    product = db.query("SELECT * FROM products WHERE id = %s", product_id)
+    redis_client.setex(f"product:&#123;product_id&#125;", 300, json.dumps(product))
+    return product</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>setex</b>로 TTL을 걸면 메모리가 무한히 쌓이지 않고, 원본 데이터가 바뀌어도 일정 시간 후 자동 갱신됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Redis가 DB처럼 쓰이는 대표 사례</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">세션 저장소, 실시간 랭킹(Sorted Set), 분산 락, Pub/Sub 메시지 브로커 등입니다. 이 경우 Redis 자체가 유일한 데이터 소스라 <b>영속성 설정과 복제</b>가 필수입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">캐시 용도라면 영속성 설정에 크게 신경 쓰지 않아도 됩니다. 서버 재시작으로 캐시가 날아가도 원본 DB에서 다시 채워지기 때문입니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 메모리가 가득 차면 maxmemory-policy에 따라 오래된 키를 자동으로 지웁니다. 중요한 데이터라면 이 정책이 예상치 못한 유실로 이어질 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#Redis #캐시 #인메모리DB #데이터베이스기초 #입문</p>
+
+</body>
+</html>

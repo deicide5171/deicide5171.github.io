@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>실시간 응답이 필요 없다면 절반 값에 처리한다 — 배치 LLM 추론 파이프라인 최적화</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">실시간 응답이 필요 없다면 절반 값에 처리한다 — 배치 LLM 추론 파이프라인 최적화</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 대규모 문서 분류·요약처럼 즉시 응답이 필요 없는 작업을 실시간 API로 처리하면 처리량과 비용 양쪽에서 손해입니다. <b>배치 추론</b>이 실시간 서빙과 다르게 최적화해야 하는 지점을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실시간 API로 대량 처리하면 두 가지가 낭비됩니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">콜센터 상담 로그 200만 건을 감성 분석하거나 전체 고객 데이터베이스의 이력서를 요약하는 작업에 실시간 채팅 API를 그대로 쓰면 두 가지가 함께 낭비됩니다. 하나는 처리량입니다. 실시간 API는 응답 지연을 짧게 유지하려고 요청마다 즉시 스케줄링하는데, 이 방식은 GPU 배치 크기를 충분히 키우지 못해 처리량 상한이 낮습니다. 다른 하나는 비용입니다. 대부분의 LLM 제공사는 지연 시간 보장이 없는 배치 API를 실시간 대비 절반 이하 가격에 제공합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>배치 추론(batch inference)</b>은 지금 당장 답이 필요 없다는 제약을 역이용해 처리량과 비용을 최적화하는 별도의 파이프라인 설계입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 지연 시간 최적화와 처리량 최적화는 다른 문제입니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실시간 서빙은 개별 요청의 지연 시간을 낮추는 게 목표입니다. 반대로 배치 추론은 전체 작업 집합의 처리량, 즉 총 N개 요청을 얼마나 빠르고 싸게 다 처리하느냐가 목표이므로, 개별 요청의 응답이 늦어도 상관없는 대신 GPU를 최대한 꽉 채워 돌리는 것이 이득입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 차이는 배치 크기 선택에 직접 영향을 줍니다. 실시간 서빙에서 배치 크기를 늘리면 뒤에 도착한 요청이 앞선 요청의 디코딩이 끝날 때까지 기다려야 해 지연 시간이 늘어나지만, 배치 추론에서는 지연 시간 제약이 없으므로 GPU 메모리가 허용하는 한 배치 크기를 최대로 키우는 것이 곧 처리량 향상입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 연속 배칭: 정적 배치의 낭비를 없앱니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">과거의 정적 배치는 같은 배치에 묶인 모든 요청이 가장 긴 응답이 끝날 때까지 GPU 슬롯을 붙잡고 있어야 했습니다 — 짧은 응답을 생성한 요청도 배치 전체가 끝날 때까지 자리를 비우지 못하는 낭비가 있었습니다. <b>연속 배칭(continuous batching)</b>은 토큰 생성 단위로 스케줄링을 재구성해서, 응답이 먼저 끝난 요청의 슬롯에 대기 중이던 새 요청을 즉시 채워 넣습니다. vLLM, TensorRT-LLM, Hugging Face TGI가 이 방식을 채택하고 있습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">정적 배치</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">연속 배칭</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">배치 구성 단위</td>
+<td style="border:1px solid #ddd; padding:10px;">요청 전체가 끝날 때까지 고정</td>
+<td style="border:1px solid #ddd; padding:10px;">토큰 단위로 재구성</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">짧은 응답의 GPU 점유</td>
+<td style="border:1px solid #ddd; padding:10px;">배치 전체가 끝날 때까지 유지</td>
+<td style="border:1px solid #ddd; padding:10px;">끝나는 즉시 슬롯 반납·재사용</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">GPU 활용률</td>
+<td style="border:1px solid #ddd; padding:10px;">응답 길이 편차가 크면 낮아짐</td>
+<td style="border:1px solid #ddd; padding:10px;">편차와 무관하게 높게 유지</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 프로바이더 배치 API: 인프라 없이 처리량 이득 얻기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">자체 GPU 인프라를 운영하지 않는다면, Anthropic·OpenAI 같은 프로바이더가 제공하는 배치 API를 쓰는 것이 합리적입니다. 요청 파일(JSONL)을 업로드하면 프로바이더가 내부적으로 유휴 용량을 활용해 처리하고, 보통 몇 시간 내 완료된 결과 파일을 돌려줍니다. 실시간 API 대비 토큰당 단가가 절반 수준으로 낮은 대신, 개별 요청의 응답 시점을 보장하지 않는다는 제약을 받아들여야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 배치 API 요청 파일 구성과 폴링</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># batch_submit.py — JSONL 배치 요청 파일 생성
+requests = []
+for doc_id, text in enumerate(documents):
+    requests.append(&#123;
+        "custom_id": f"doc-&#123;doc_id&#125;",
+        "params": &#123;
+            "model": "claude-haiku-4-5",
+            "max_tokens": 256,
+            "messages": [
+                &#123;"role": "user", "content": f"다음 문서를 3문장으로 요약하라:\n\n&#123;text&#125;"&#125;
+            ]
+        &#125;
+    &#125;)
+
+# batch = client.messages.batches.create(requests=requests)
+
+# batch_poll.py — 부분 실패는 요청 단위로 분리
+def wait_for_batch(client, batch_id):
+    while True:
+        batch = client.messages.batches.retrieve(batch_id)
+        if batch.processing_status == "ended":
+            break
+        time.sleep(60)
+
+    results, failures = [], []
+    for r in client.messages.batches.results(batch_id):
+        (results if r.result.type == "succeeded" else failures).append(r)
+    return results, failures</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>부분 실패를 배치 단위가 아니라 요청 단위로 처리해야 합니다.</b> 실패한 custom_id만 추려 새 배치로 재제출하는 재시도 파이프라인을 처음부터 설계에 넣어야, 실패율이 몇 % 있다는 이유로 전체를 다시 돌리는 낭비를 피할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>프롬프트 캐싱과 배치를 함께 쓰면 이득이 배가됩니다.</b> 같은 시스템 프롬프트나 few-shot 예시를 매 요청마다 반복한다면, 프롬프트 캐싱을 배치 요청에도 적용해 반복되는 프리픽스의 처리 비용을 줄일 수 있습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 배치 크기를 무한정 키우는 것도 능사는 아닙니다. 자체 인프라를 운영한다면 배치가 커질수록 KV 캐시 메모리 사용량도 함께 늘어 GPU 메모리 한계에 부딪힙니다. 최적 배치 크기는 모델 크기와 GPU 사양에 따라 실측으로 찾아야 하는 값입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#배치추론 #LLM #연속배칭 #vLLM #추론최적화 #AI인프라</p>
+
+</body>
+</html>

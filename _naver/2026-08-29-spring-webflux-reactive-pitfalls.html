@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Spring WebFlux 리액티브 프로그래밍 함정</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">블로킹 코드 한 줄이 스레드 풀을 멈춘다 — Spring WebFlux 함정과 디버깅</div>
+<p style="font-size:14px; color:#999;">백엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — WebFlux의 소수 <b>이벤트 루프 스레드</b>에서 블로킹 호출 하나가 발생하면 그 스레드가 담당하던 모든 요청이 함께 멈추므로, 블로킹 코드는 반드시 별도 스케줄러로 격리해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">"리액티브니까 빠를 것"이라는 착각</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Spring MVC에서 WebFlux로 넘어가는 팀이 흔히 겪는 착각이 있습니다. 리액티브니까 당연히 빠를 것이라는 기대입니다. 실제로는 WebFlux를 도입한 뒤 처리량이 오히려 떨어지거나 알 수 없는 지연이 간헐적으로 발생하는 사례가 드물지 않습니다. 원인은 대부분 "이벤트 루프 스레드에서는 절대 블로킹해서는 안 된다"는 규칙을 어딘가에서 어겼기 때문입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 스레드 모델의 근본적 차이</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Spring MVC(Tomcat)는 요청마다 스레드 하나를 할당합니다. WebFlux(Netty)는 정반대로, CPU 코어 수에 맞춘 소수의 이벤트 루프 스레드가 매우 많은 요청을 논블로킹 I/O로 동시에 처리합니다. I/O 작업을 시작해두고 결과가 오면 콜백으로 이어받는 식이라 스레드가 기다리며 노는 시간이 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 블로킹 호출 하나가 전체를 멈춥니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">적은 수의 이벤트 루프 스레드 중 하나가 블로킹 호출(동기 JDBC, Thread.sleep() 등)을 만나 멈추면, 그 스레드가 처리하던 <b>다른 모든 요청까지 함께 멈춥니다.</b> 개발 환경에서는 문제없어 보이다가, 운영에서 동시 요청이 몰리면 응답 시간이 갑자기 치솟는 형태로 나타나 원인 파악이 늦어지기 쉽습니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">// 잘못된 예 - 이벤트 루프 스레드에서 블로킹 JDBC 실행
+public Mono&lt;Report&gt; getReport(String id) {
+    return Mono.fromCallable(() -&gt; legacyJdbcRepository.findById(id))
+               .map(this::toReport);
+}
+
+// 수정 - 블로킹 전용 스레드 풀로 옮김
+public Mono&lt;Report&gt; getReportFixed(String id) {
+    return Mono.fromCallable(() -&gt; legacyJdbcRepository.findById(id))
+               .subscribeOn(Schedulers.boundedElastic())
+               .map(this::toReport);
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 끊긴 스택 트레이스와 디버깅</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">리액티브 체인에서는 연산자마다 실행 스레드가 바뀌고 콜백이 비동기로 실행되기 때문에, 스택 트레이스가 예외가 조립된 체인의 원래 위치를 보여주지 못하는 경우가 흔합니다. Project Reactor는 Hooks.onOperatorDebug()나 ReactorDebugAgent로 조립 위치를 스택 트레이스에 덧붙일 수 있지만, 성능 오버헤드가 있어 문제 재현 시 임시로 활성화하는 것이 일반적입니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Spring MVC</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Spring WebFlux</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">스레드 모델</td>
+<td style="border:1px solid #ddd; padding:10px;">요청당 스레드 할당</td>
+<td style="border:1px solid #ddd; padding:10px;">소수 이벤트 루프 + 논블로킹</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">블로킹 호출 영향</td>
+<td style="border:1px solid #ddd; padding:10px;">해당 요청만 지연</td>
+<td style="border:1px solid #ddd; padding:10px;">이벤트 루프 전체 지연 가능</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">블로킹 코드 처리</td>
+<td style="border:1px solid #ddd; padding:10px;">기본 동작과 호환</td>
+<td style="border:1px solid #ddd; padding:10px;">boundedElastic로 명시적 격리</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 레거시 블로킹 라이브러리 경계를 명확히 표시하세요</b> — 코드 리뷰 단계에서 이 호출은 블로킹인가를 체크리스트화하세요.<br>
+<b>2. BlockHound 같은 도구로 블로킹 호출을 자동 탐지하세요</b> — 테스트 환경에 통합해두면 배포 전에 실수를 잡아낼 수 있습니다.<br>
+<b>3. WebFlux 전면 도입 전 I/O 스택 전체를 점검하세요</b> — R2DBC, WebClient로 전체 스택을 일관되게 맞추는 것이 전제조건입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① WebFlux는 소수 이벤트 루프 스레드가 논블로킹 I/O로 많은 요청을 처리하는 모델이라 블로킹 하나가 전체를 지연시킵니다.<br>
+② 블로킹 호출은 반드시 Schedulers.boundedElastic()으로 명시적으로 옮겨야 합니다.<br>
+③ 리액티브 체인은 스택 트레이스가 끊기기 쉬워 Hooks.onOperatorDebug()나 BlockHound 같은 도구가 중요해집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 백엔드 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#SpringWebFlux #리액티브프로그래밍 #ProjectReactor #Netty #자바 #백엔드 #디버깅</p>
+
+</body>
+</html>

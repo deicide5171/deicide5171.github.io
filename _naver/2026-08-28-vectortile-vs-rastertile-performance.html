@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>지도 타일, 그림으로 줄까 좌표로 줄까 — 벡터타일 vs 래스터타일 성능 비교</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">지도 타일, 그림으로 줄까 좌표로 줄까 — 벡터타일 vs 래스터타일 성능 비교</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 지도 타일을 미리 그려진 이미지로 줄지, 스타일링 가능한 좌표 데이터로 줄지에 따라 네트워크 전송량, 렌더링 방식, 다국어·다크모드 대응력이 어떻게 달라지는지 <b>벡터타일 vs 래스터타일</b> 성능 관점에서 비교했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">같은 타일이라는 이름, 다른 내용물</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">웹 지도에서 타일이라는 단위는 같지만, 그 안에 무엇이 들어있는지는 두 갈래로 갈립니다. 하나는 서버가 미리 렌더링해둔 PNG/JPEG 이미지를 그대로 내려주는 <b>래스터 타일</b>이고, 다른 하나는 도로·건물·라벨의 실제 좌표와 속성을 담은 압축 바이너리(MVT)를 내려줘 클라이언트가 그 자리에서 그리는 <b>벡터 타일</b>입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"그림을 받아서 붙이는가"와 "좌표를 받아서 그리는가"라는 근본적인 차이가 성능·용량·표현력 전반에 걸쳐 서로 다른 트레이드오프를 만듭니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 무엇을 미리 계산하고 무엇을 그 자리에서 계산하나요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">래스터 타일은 서버가 스타일까지 반영해 완성된 이미지를 미리 만들어둡니다. 스타일을 바꾸려면 타일 자체를 재렌더링해서 재배포해야 합니다. 벡터 타일은 원본 지리 데이터만 압축해서 내려주고, 실제 그리기는 클라이언트의 스타일 명세를 기준으로 WebGL이 그 자리에서 수행합니다. 스타일 JSON 하나만 바꾸면 다크모드, 다국어 라벨을 서버 재배포 없이 즉시 적용할 수 있습니다.</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 네트워크 전송량과 확대·축소 체감</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">기준</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">래스터 타일</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">벡터 타일</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">스타일 변경</td>
+<td style="border:1px solid #ddd; padding:10px;">타일 재생성·재배포 필요</td>
+<td style="border:1px solid #ddd; padding:10px;">스타일 JSON만 교체</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">확대·축소 체감</td>
+<td style="border:1px solid #ddd; padding:10px;">새 이미지 로딩 전 흐릿함</td>
+<td style="border:1px solid #ddd; padding:10px;">GPU 재투영으로 매끄러움</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">클라이언트 부담</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음</td>
+<td style="border:1px solid #ddd; padding:10px;">높음(GPU 렌더링)</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-28-vectortile-vs-rastertile-performance-1.svg" alt="래스터 타일은 서버에서 완성된 이미지를 만들어 전송하고 클라이언트는 그대로 붙이는 반면, 벡터 타일은 좌표 데이터만 전송하고 클라이언트 GPU가 스타일을 적용해 그 자리에서 그리는 구조 비교" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 클라이언트 성능이라는 반대급부</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">벡터 타일은 클라이언트가 매 프레임 스타일 규칙을 적용해 그려야 하므로 저사양 모바일에서는 프레임 드랍이 생길 수 있습니다. 반대로 래스터 타일은 이미지를 붙이기만 하므로 오래된 기기에서도 예측 가능합니다. 위성영상처럼 연속 톤 이미지는 벡터화 자체가 불가능하므로 래스터가 유일한 선택지입니다.</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — MapLibre GL JS로 벡터 타일 스타일 전환</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">import maplibregl from "maplibre-gl";
+
+const map = new maplibregl.Map({
+  container: "map",
+  style: "/styles/light.json",
+  center: [127.0, 37.5],
+  zoom: 11,
+});
+
+// 다크모드 전환: 같은 벡터 타일 데이터를 재요청하지 않고 스타일만 교체
+function toggleDarkMode(isDark) {
+  map.setStyle(isDark ? "/styles/dark.json" : "/styles/light.json");
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">같은 타일 소스를 두고 paint 속성만 바꾼 스타일 JSON을 여러 개 준비해두면, 서버에 새 요청을 보내지 않고도 클라이언트에서 즉시 스타일을 전환할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 저사양 기기가 타깃이면 벡터 타일 레이어 수를 제한하세요</b> — 줌 레벨별로 표시 레이어를 줄이는 것이 일반적입니다.<br>
+<b>2. 위성·항공 이미지는 벡터화 대상이 아닙니다</b> — 이 경우는 래스터 타일이 유일하게 맞는 선택입니다.<br>
+<b>3. 하이브리드 구성도 고려하세요</b> — 배경 지도는 벡터, 위성영상·열지도 오버레이는 래스터로 겹쳐 쓰는 구성이 흔합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① 래스터 타일은 완성된 이미지를 미리 전송해 클라이언트 부담이 낮지만 스타일 변경 시 재배포가 필요합니다.<br>
+② 벡터 타일은 좌표 데이터만 전송해 스타일 전환·다국어·고해상도 대응이 유연하지만 GPU 부담이 큽니다.<br>
+③ 위성·항공 원본처럼 벡터화가 불가능한 이미지는 래스터가 유일한 선택지이며, 배경은 벡터·오버레이는 래스터인 하이브리드 구성도 흔합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 GIS 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#벡터타일 #래스터타일 #웹지도 #MapLibre #GIS #지도성능 #MVT</p>
+
+</body>
+</html>

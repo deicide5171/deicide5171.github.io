@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>서브쿼리가 뭔가요 — 쿼리 안에 들어가는 또 하나의 쿼리</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">서브쿼리가 뭔가요 — 쿼리 안에 들어가는 또 하나의 쿼리</div>
+<p style="font-size:14px; color:#999;">데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 서브쿼리는 다른 쿼리 안에 중첩된 SELECT로, <b>안쪽 결과를 바깥 쿼리가 사용</b>합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">"평균보다 비싼 상품"을 한 번에</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">평균 가격보다 비싼 상품을 찾으려면 평균을 구하고 그 값으로 다시 조회해야 합니다. 이 두 단계를 하나의 쿼리 안에 넣는 것이 <b>서브쿼리</b>입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예시</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">SELECT name, price
+FROM products
+WHERE price > (SELECT AVG(price) FROM products);
+-- 괄호 안이 서브쿼리: 먼저 평균을 구해 비교</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">서브쿼리가 쓰이는 자리</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">위치</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">예</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">WHERE</td>
+<td style="border:1px solid #ddd; padding:10px;">price > (SELECT ...)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">FROM</td>
+<td style="border:1px solid #ddd; padding:10px;">(SELECT ...) AS t</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">IN</td>
+<td style="border:1px solid #ddd; padding:10px;">id IN (SELECT ...)</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><code>IN (서브쿼리)</code>는 데이터가 크면 느릴 수 있어, <b>JOIN으로 바꾸면</b> 더 빠른 경우가 많습니다. 복잡하면 CTE(<code>WITH</code>)로 단계를 나눠 이름 붙이면 읽기 쉽습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 바깥 행마다 안쪽 쿼리가 반복 실행되는 상관 서브쿼리는 매우 느릴 수 있습니다. EXPLAIN으로 실행 계획을 확인하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#서브쿼리 #Subquery #SQL #데이터베이스기초 #DB</p>
+
+</body>
+</html>

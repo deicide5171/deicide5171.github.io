@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>전역 예외 처리 입문 — @RestControllerAdvice로 에러 응답 통일하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">전역 예외 처리 입문 — @RestControllerAdvice로 에러 응답 통일하기</div>
+<p style="font-size:14px; color:#999;">백엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — @RestControllerAdvice는 전역 예외를 <b>한곳에서 잡아</b> 에러 응답을 통일하며, @ExceptionHandler로 예외별 상태코드를 정합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">컨트롤러마다 try-catch를 반복해야 하나</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">API마다 예외를 잡아 에러 응답을 만들면 비슷한 try-catch가 반복되고 형식도 제각각이 됩니다. <b>@RestControllerAdvice</b>는 전역 예외를 한곳에서 잡아 일관된 에러 응답으로 바꿔줍니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">동작 개념</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">없을 때</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">있을 때</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">try-catch 반복</td>
+<td style="border:1px solid #ddd; padding:10px;">한곳에 모음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">응답 형식 제각각</td>
+<td style="border:1px solid #ddd; padding:10px;">형식 통일</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">@RestControllerAdvice
+public class GlobalExceptionHandler {
+    @ExceptionHandler(UserNotFoundException.class)
+    public ResponseEntity&lt;ErrorResponse&gt; handleNotFound(UserNotFoundException e) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+            .body(new ErrorResponse("USER_NOT_FOUND", e.getMessage()));
+    }
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><code>{ code, message }</code> 같은 일관된 형식을 정하면 프론트가 다루기 쉽습니다. 예상 예외는 알맞은 4xx로, 예상 밖은 500으로 처리하고 로그로 추적하세요.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 스택 트레이스나 SQL 오류 원문을 응답에 그대로 담으면 보안에 취약합니다. 사용자에겐 일반 메시지, 상세는 서버 로그에만 남기세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#예외처리 #RestControllerAdvice #Spring #ExceptionHandler #백엔드기초</p>
+
+</body>
+</html>

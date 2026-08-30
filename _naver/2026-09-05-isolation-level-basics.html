@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>트랜잭션 격리수준이 뭔가요 — 동시성 문제를 그림으로 이해하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">트랜잭션 격리수준이 뭔가요 — 동시성 문제를 그림으로 이해하기</div>
+<p style="font-size:14px; color:#999;">데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 격리수준은 동시 트랜잭션이 서로를 얼마나 볼지 정하며, MySQL과 PostgreSQL의 <b>기본값이 달라</b> DB 이전 시 주의해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">동시에 같은 데이터를 건드리면</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">여러 사용자가 동시에 같은 데이터를 읽고 쓰면 예상치 못한 결과가 나옵니다. <b>격리수준</b>은 "동시 트랜잭션들이 서로를 얼마나 볼 수 있게 할지"를 정합니다. 강하면 안전하지만 느리고, 약하면 빠르지만 이상 현상이 생깁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">동시성이 만드는 세 가지 문제</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">문제</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">상황</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Dirty Read</td>
+<td style="border:1px solid #ddd; padding:10px;">커밋 안 된 데이터를 읽음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Non-Repeatable Read</td>
+<td style="border:1px solid #ddd; padding:10px;">두 번 읽었는데 값이 달라짐</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Phantom Read</td>
+<td style="border:1px solid #ddd; padding:10px;">행 개수가 달라짐</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">격리수준 4단계</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">READ UNCOMMITTED - 가장 약함 (Dirty Read 발생)
+READ COMMITTED   - 커밋된 것만 읽음
+REPEATABLE READ  - 재조회 시 값 고정
+SERIALIZABLE     - 가장 강함, 가장 느림</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">DB마다 기본값이 다르다</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">MySQL(InnoDB): REPEATABLE READ
+PostgreSQL:    READ COMMITTED
+-> DB를 바꾸면 동시성 동작이 달라질 수 있다</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">무조건 SERIALIZABLE로 올리면 안전하지만 성능이 크게 떨어집니다. 대부분 READ COMMITTED/REPEATABLE READ로 충분하고, 엄격한 트랜잭션에만 선택적으로 높이세요.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — "재고를 읽고→판단→차감" 같은 로직은 격리수준만으로 동시 판매를 못 막습니다. 별도의 락(비관/낙관적 락)이 필요합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#격리수준 #트랜잭션 #동시성 #데이터베이스기초 #DB</p>
+
+</body>
+</html>

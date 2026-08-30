@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>MySQL vs PostgreSQL, 새 프로젝트엔 뭘 써야 할까 — 실무 선택 기준</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">MySQL vs PostgreSQL, 새 프로젝트엔 뭘 써야 할까 — 실무 선택 기준</div>
+<p style="font-size:14px; color:#999;">데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 팀의 기존 경험이 가장 큰 결정 요인이고, <b>반정형 데이터·GIS</b>가 필요하면 PostgreSQL, 단순 CRUD 위주면 MySQL도 충분합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 아직도 이 질문이 반복되는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">새 프로젝트를 시작할 때마다 "MySQL이냐 PostgreSQL이냐"는 질문이 다시 등장합니다. 둘 다 오픈소스이고 웬만한 CRUD 서비스에는 어느 쪽을 써도 문제가 없기 때문에 오히려 결정이 더 어렵게 느껴집니다. 이 글은 어떤 기준으로 판단하면 되는지를 구체적으로 정리했습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 차이 비교</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">MySQL</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">PostgreSQL</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">기본 철학</td>
+<td style="border:1px solid #ddd; padding:10px;">단순함, 빠른 읽기 중심</td>
+<td style="border:1px solid #ddd; padding:10px;">표준 SQL 준수, 풍부한 기능</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">데이터 타입</td>
+<td style="border:1px solid #ddd; padding:10px;">기본 타입 위주</td>
+<td style="border:1px solid #ddd; padding:10px;">JSONB, 배열, 사용자 정의 타입</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">인덱스</td>
+<td style="border:1px solid #ddd; padding:10px;">B-Tree, Full-text</td>
+<td style="border:1px solid #ddd; padding:10px;">B-Tree·GiST·GIN·BRIN 등 다양</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">대표 채택 사례</td>
+<td style="border:1px solid #ddd; padding:10px;">전통적 웹서비스, WordPress 계열</td>
+<td style="border:1px solid #ddd; padding:10px;">복잡한 쿼리·분석, GIS(PostGIS)</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">판단 흐름</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">1. 팀에 이미 익숙한 DB가 있는가? → 있으면 그대로 간다
+2. JSON을 관계형처럼 쿼리해야 하는가? → PostgreSQL JSONB+GIN
+3. 공간 데이터(GIS)를 다루는가? → PostGIS가 사실상 표준
+4. 단순 CRUD 위주인가? → MySQL도 충분</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">코드로 보는 차이 — UPSERT 문법</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">-- MySQL
+INSERT INTO users (id, name) VALUES (1, 'Kim')
+ON DUPLICATE KEY UPDATE name = VALUES(name);
+
+-- PostgreSQL
+INSERT INTO users (id, name) VALUES (1, 'Kim')
+ON CONFLICT (id) DO UPDATE SET name = EXCLUDED.name;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">문법 하나만 봐도 마이그레이션이 생각보다 손이 많이 간다는 걸 알 수 있습니다. 이런 차이가 나중에 DB를 바꾸기 어렵게 만드는 락인 요소가 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>트랜잭션 격리수준 기본값이 다릅니다.</b> MySQL(InnoDB)은 REPEATABLE READ, PostgreSQL은 READ COMMITTED가 기본이라 마이그레이션 시 동시성 버그를 옮길 수 있으니 주의하세요.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">PostgreSQL은 <b>확장(extension) 생태계</b>가 강점입니다. pgvector, PostGIS, TimescaleDB로 하나의 DB를 확장할 수 있습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — MySQL은 복제와 운영 도구가 오래되고 검증된 편이라 대규모 트래픽 서비스에서 축적된 노하우가 많다는 점도 함께 고려하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#MySQL #PostgreSQL #데이터베이스선택 #DB비교 #백엔드</p>
+
+</body>
+</html>

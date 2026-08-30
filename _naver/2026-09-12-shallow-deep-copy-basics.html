@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>얕은 복사와 깊은 복사가 뭔가요 — 객체 복사의 함정</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">얕은 복사와 깊은 복사가 뭔가요 — 객체 복사의 함정</div>
+<p style="font-size:14px; color:#999;">프론트엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 얕은 복사(<code>{...obj}</code>)는 1단계만, 깊은 복사(<code>structuredClone</code>)는 <b>중첩까지 별도로</b> 복사합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">복사했는데 원본이 같이 바뀐다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">객체를 복사해 값을 바꿨더니 원본까지 바뀌는 경험이 있죠. 자바스크립트 객체는 값이 아니라 <b>참조(주소)</b>로 다뤄지기 때문입니다. 복사엔 얕은 복사와 깊은 복사가 있고, 차이를 모르면 버그가 납니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">얕은 복사 vs 깊은 복사</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">얕은 복사</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">깊은 복사</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">중첩 객체</td>
+<td style="border:1px solid #ddd; padding:10px;">참조 공유(같이 바뀜)</td>
+<td style="border:1px solid #ddd; padding:10px;">완전 별도</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">방법</td>
+<td style="border:1px solid #ddd; padding:10px;">{...obj}</td>
+<td style="border:1px solid #ddd; padding:10px;">structuredClone</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예시</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">const a = { name:"철수", info:{ age:20 } };
+const b = { ...a };            // 얕은 복사
+b.info.age = 99;
+console.log(a.info.age);       // 99 (원본도 바뀜!)
+const c = structuredClone(a);  // 깊은 복사
+c.info.age = 50;
+console.log(a.info.age);       // 99 (원본 안 바뀜)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">1단계 값만 있는 평평한 객체는 <code>{...obj}</code>로 충분합니다. 깊은 복사는 <b>structuredClone</b>을 쓰세요(<code>JSON.parse(JSON.stringify())</code>는 함수·Date를 못 다룸). React 상태는 원본 대신 복사본을 바꿔야 합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 중첩 상태를 얕게만 복사하면 원본이 변해 버그가 납니다. 바꾸는 부분까지 새로 복사하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#얕은복사 #깊은복사 #자바스크립트 #JavaScript #프론트엔드기초</p>
+
+</body>
+</html>

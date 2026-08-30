@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>AI 에이전트가 뭔가요 — 챗봇과 뭐가 다른가</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">AI 에이전트가 뭔가요 — 챗봇과 뭐가 다른가</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — AI 에이전트는 목표를 받아 스스로 <b>도구를 쓰고 결과를 보며 반복 판단</b>해 일을 처리하며, 답만 하는 챗봇과 다릅니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">챗봇과 에이전트는 뭐가 다른가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">일반 챗봇은 질문에 텍스트로 답만 합니다. <b>AI 에이전트</b>는 목표를 받으면 계획을 세우고, 도구를 써서 실제 행동을 하고, 결과를 보고 다시 판단하는 과정을 반복합니다. "항공권 알아봐줘"에 챗봇은 방법을 설명하지만, 에이전트는 검색 도구를 호출해 실제로 찾아옵니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">에이전트의 핵심 요소</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">요소</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">설명</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">LLM(두뇌)</td>
+<td style="border:1px solid #ddd; padding:10px;">무엇을 할지 판단·계획</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">도구(tools)</td>
+<td style="border:1px solid #ddd; padding:10px;">검색·API·코드 실행 등 행동 수단</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">반복 루프</td>
+<td style="border:1px solid #ddd; padding:10px;">행동 → 관찰 → 다음 행동</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">메모리</td>
+<td style="border:1px solid #ddd; padding:10px;">진행 상황·맥락 기억</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">동작 흐름</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">목표: "이번 주 서울 날씨 정리해줘"
+1. LLM: "날씨 API를 호출해야겠다" (판단)
+2. 도구 실행: 날씨 API 호출 -> 데이터 받음 (행동)
+3. LLM: "충분한가?" 판단 (관찰)
+4. 부족하면 다시 호출, 충분하면 정리해 답변 (반복/종료)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">에이전트는 강력하지만 예측이 어렵습니다. 결제·삭제 등 실제 영향을 주는 도구는 <b>사람 확인 단계(human-in-the-loop)</b>를 두세요. 단순 질의응답엔 일반 LLM으로 충분하고, 루프마다 LLM을 여러 번 호출하므로 비용·지연도 큽니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 에이전트는 루프를 무한정 돌 수 있으므로 루프 횟수 제한 같은 안전장치가 반드시 필요합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#AI에이전트 #Agent #LLM #자동화 #AI기초</p>
+
+</body>
+</html>

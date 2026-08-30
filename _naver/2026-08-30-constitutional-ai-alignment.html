@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>사람이 일일이 채점하지 않아도 되게 — Constitutional AI로 보는 RLHF 대안 정렬 기법</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">사람이 일일이 채점하지 않아도 되게 — Constitutional AI로 보는 RLHF 대안 정렬 기법</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — Constitutional AI는 사람이 매 응답을 채점하는 대신, 명시적 <b>원칙(헌법)</b> 문서를 기준으로 모델 스스로 자기 응답을 비평·수정하게 만들고, 이 데이터로 학습한 뒤 AI 판단자의 선호도로 강화학습까지 진행하는 정렬 기법입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">RLHF의 병목은 결국 사람입니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">RLHF(사람 피드백 기반 강화학습)로 모델을 정렬하려면 사람 라벨러가 수만~수십만 건의 응답 쌍을 놓고 어느 쪽이 더 나은지 매겨야 합니다. 이 과정은 비싸고 느리며, 라벨러 개인의 편향이나 피로도, 문화적 배경에 따라 판단 기준이 흔들리기도 합니다. 특히 "해로운 요청에 어떻게 답해야 하는가"처럼 미묘한 판단이 필요한 영역일수록 라벨러 간 합의가 잘 나오지 않습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Anthropic이 제안한 <b>Constitutional AI(CAI)</b>는 이 병목을 사람이 아니라 명시적으로 적어둔 원칙 목록(헌법)과 모델 자신의 비평 능력으로 대체하자는 접근입니다. 정답을 사람이 채점하는 게 아니라, 원칙에 비추어 응답이 왜 문제인지 모델이 스스로 설명하고 고치게 하는 것이 핵심입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 지도학습 단계: 자기 비평과 수정</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">CAI의 첫 단계는 감독 학습(SL) 단계입니다. 초기 모델에게 잠재적으로 유해할 수 있는 프롬프트를 주고 자유롭게 응답을 생성시킵니다. 그다음 같은 모델에게 헌법 원칙 중 하나를 무작위로 골라주며 "방금 응답이 이 원칙을 위반했는가, 어떻게 위반했는가"를 스스로 <b>비평(critique)</b>하게 하고, 이어서 그 비평을 반영해 응답을 <b>수정(revision)</b>하게 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 비평-수정 사이클을 여러 원칙에 대해 반복한 뒤, 최종 수정본과 원 프롬프트 쌍만 모아 지도학습 데이터셋으로 만들고 이걸로 모델을 파인튜닝합니다. 중요한 것은 사람이 "정답 응답"을 직접 작성하지 않는다는 점입니다. 사람이 하는 일은 헌법 원칙 문서를 작성하는 것뿐이고, 실제 비평·수정 텍스트는 전부 모델이 생성합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 강화학습 단계: RLAIF</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">두 번째 단계는 강화학습이지만, 보상 신호의 출처가 사람이 아니라 AI입니다. SL 단계로 얻은 모델에게 같은 프롬프트에 대해 응답 쌍을 여러 개 생성시키고, 별도의 AI 모델(또는 같은 모델)에게 헌법 원칙을 기준으로 어느 응답이 더 나은지 비교 판단을 시킵니다. 이 AI의 선호도 판단 데이터로 보상 모델(RM)을 학습시키고, 그 RM을 보상 함수 삼아 PPO 같은 강화학습으로 정책 모델을 최적화합니다. 이를 RLHF와 대비해 <b>RLAIF(RL from AI Feedback)</b>라고 부릅니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">RLHF</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Constitutional AI (RLAIF)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">선호도 라벨 출처</td>
+<td style="border:1px solid #ddd; padding:10px;">사람 라벨러</td>
+<td style="border:1px solid #ddd; padding:10px;">AI 모델(헌법 기준 판단)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">스케일 병목</td>
+<td style="border:1px solid #ddd; padding:10px;">라벨러 수·속도</td>
+<td style="border:1px solid #ddd; padding:10px;">원칙 프롬프트 설계·검증</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">판단 기준 일관성</td>
+<td style="border:1px solid #ddd; padding:10px;">라벨러마다 편차</td>
+<td style="border:1px solid #ddd; padding:10px;">같은 원칙 문서로 고정</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">사람의 역할</td>
+<td style="border:1px solid #ddd; padding:10px;">개별 응답 채점</td>
+<td style="border:1px solid #ddd; padding:10px;">원칙 문서 작성·검증</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — 헌법은 무엇으로 채워지나요</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">헌법 원칙은 추상적 가치 선언이 아니라 실행 가능한 판단 기준으로 작성돼야 효과가 있습니다. "도움이 되되 해롭지 않게"보다는 "요청이 위험한 정보를 포함하면, 그 정보 없이도 답할 수 있는 안전한 부분만 답하라"처럼 판단 절차를 지정하는 편이 모델의 비평·수정 단계에서 훨씬 안정적으로 작동합니다. 여러 원칙이 충돌할 때(유용성 vs 안전성 등) 어느 쪽을 우선할지에 대한 메타 원칙도 함께 넣어야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 비평-수정 프롬프트 구조</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">[원 프롬프트]
+사용자: (잠재적으로 유해할 수 있는 요청)
+
+[모델의 초기 응답]
+어시스턴트: (초기 응답 텍스트)
+
+[비평 프롬프트]
+아래 원칙에 비추어 위 응답의 문제점을 지적하라.
+원칙: "구체적 실행 지침으로 이어질 수 있는 정보는
+      일반론적 설명 이상으로 상세화하지 않는다."
+
+[모델이 생성한 비평]
+비평: 응답의 3번째 문단이 원칙을 위반한다. 구체적
+      절차를 단계별로 나열하고 있어 일반론 수준을
+      넘어선다.
+
+[수정 프롬프트]
+위 비평을 반영해 응답을 다시 작성하라.
+
+[모델이 생성한 수정본] &rarr; SL 학습 데이터로 사용</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>원칙 문서의 품질이 곧 정렬 품질의 상한입니다.</b> 원칙이 모호하면 비평 단계에서 모델이 헛다리를 짚거나, 문제없는 응답을 과도하게 검열하는 방향으로 수렴하기 쉽습니다. 원칙은 구체적 판단 절차 수준으로 작성하고, 상충하는 원칙 간 우선순위까지 명시해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>RLAIF는 사람 라벨링을 완전히 없애지 않습니다.</b> 헌법 원칙 자체의 타당성, AI 판단자의 편향 여부, 최종 모델의 실제 안전성은 여전히 사람이 표본 검토해야 합니다. "사람 개입 제거"가 아니라 "사람 개입 지점의 이동"으로 이해하는 것이 정확합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 같은 모델이 비평자·판단자 역할을 겸하면 그 모델이 이미 갖고 있는 맹점을 스스로 발견하지 못하는 자기 참조 편향이 생길 수 있습니다. 판단자 모델을 정책 모델과 다른 체크포인트로 분리하거나 사람 검수 표본을 정기적으로 섞어 완화해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#ConstitutionalAI #RLHF #RLAIF #AI정렬 #LLM안전성 #Anthropic</p>
+
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>쿠버네티스 네임스페이스가 뭔가요 — 하나의 클러스터를 나눠 쓰기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">쿠버네티스 네임스페이스가 뭔가요 — 하나의 클러스터를 나눠 쓰기</div>
+<p style="font-size:14px; color:#999;">인프라</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 네임스페이스는 하나의 클러스터를 <b>논리적으로 나눠</b> 팀·환경별로 격리하며, 이름 격리·쿼터·접근 제어를 줍니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">한 클러스터에 여러 팀·환경이 섞인다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">한 클러스터에 여러 팀 앱이나 개발/운영 환경이 함께 돌면 리소스가 뒤섞이고 이름이 충돌합니다. <b>네임스페이스</b>는 클러스터를 여러 공간으로 나눠 이를 해결합니다. 큰 사무실을 팀별 구역으로 나누는 셈이죠.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">무엇을 주나</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">기능</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">설명</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">이름 격리</td>
+<td style="border:1px solid #ddd; padding:10px;">다른 NS면 같은 이름 가능</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">리소스 쿼터</td>
+<td style="border:1px solid #ddd; padding:10px;">NS별 CPU·메모리 상한</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">접근 제어</td>
+<td style="border:1px solid #ddd; padding:10px;">NS 단위 권한(RBAC)</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">사용 예</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">kubectl create namespace dev
+kubectl apply -f app.yaml -n dev
+kubectl get pods -n prod
+# 기본 네임스페이스는 default</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">dev·staging·prod나 팀별로 나누면 리소스·권한이 분리됩니다. <b>ResourceQuota</b>로 한 NS가 자원을 독점하지 못하게 막으세요. 단, 완전한 보안 격리는 아니라 강한 격리엔 클러스터를 분리합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 네임스페이스 삭제는 그 안의 모든 리소스를 함께 지웁니다. 운영 네임스페이스 삭제는 매우 위험합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#쿠버네티스 #Kubernetes #Namespace #격리 #인프라기초</p>
+
+</body>
+</html>

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>빈 스코프가 뭔가요 — 싱글톤과 프로토타입의 차이</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">빈 스코프가 뭔가요 — 싱글톤과 프로토타입의 차이</div>
+<p style="font-size:14px; color:#999;">백엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 빈 스코프는 빈이 언제 몇 개 만들어지는지 정하며, 기본은 <b>싱글톤(하나 공유)</b>이라 상태를 두면 안 됩니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">빈은 몇 개 만들어질까</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">스프링 빈은 기본적으로 앱에 하나만 만들어져 공유됩니다. 하지만 요청마다 새로 만들어야 할 때도 있죠. <b>빈 스코프</b>는 빈이 언제·몇 개 만들어지고 얼마나 유지되는지를 정합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">주요 스코프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">스코프</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">설명</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">singleton</td>
+<td style="border:1px solid #ddd; padding:10px;">앱에 하나만(기본)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">prototype</td>
+<td style="border:1px solid #ddd; padding:10px;">주입할 때마다 새로</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">request/session</td>
+<td style="border:1px solid #ddd; padding:10px;">요청/세션마다 하나(웹)</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">싱글톤의 함정</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">싱글톤은 하나를 여러 곳이 공유
+-> 빈에 상태(변하는 필드)를 두면 위험!
+   여러 요청이 같은 필드를 건드려 데이터가 섞인다
+-> stateless로 설계해야 안전</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">대부분의 서비스·리포지토리 빈은 <b>싱글톤</b>이면 충분합니다. 요청별 데이터는 인스턴스 필드가 아니라 지역 변수·파라미터로 다루세요. prototype은 특수한 경우에만 씁니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 싱글톤 빈에 prototype을 주입하면 처음 한 번만 받아 계속 같은 걸 씁니다. 매번 새로 받으려면 ObjectProvider를 쓰세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#빈스코프 #BeanScope #Spring #싱글톤 #백엔드기초</p>
+
+</body>
+</html>

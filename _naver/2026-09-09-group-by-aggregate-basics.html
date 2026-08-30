@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>GROUP BY와 집계 함수가 뭔가요 — 데이터를 묶어서 세기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">GROUP BY와 집계 함수가 뭔가요 — 데이터를 묶어서 세기</div>
+<p style="font-size:14px; color:#999;">데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — GROUP BY는 같은 값끼리 행을 묶고, <b>COUNT·SUM·AVG</b> 같은 집계 함수로 각 그룹의 통계를 계산합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">"카테고리별 주문 수"를 어떻게 구하나</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">전체 주문을 하나하나 세지 않고 "카테고리별로 몇 건인지"를 한 번에 구하려면 <b>GROUP BY</b>를 씁니다. 같은 값끼리 행을 묶고, COUNT·SUM·AVG 같은 <b>집계 함수</b>로 각 그룹의 통계를 계산합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">자주 쓰는 집계 함수</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">함수</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">의미</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">COUNT(*)</td>
+<td style="border:1px solid #ddd; padding:10px;">행 개수</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">SUM / AVG</td>
+<td style="border:1px solid #ddd; padding:10px;">합계 / 평균</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">MAX / MIN</td>
+<td style="border:1px solid #ddd; padding:10px;">최대 / 최소</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">SELECT category,
+       COUNT(*)    AS 주문수,
+       AVG(amount) AS 평균금액
+FROM orders
+GROUP BY category;
+
+-- 주문 10건 이상 카테고리만:
+GROUP BY category HAVING COUNT(*) >= 10</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">SELECT에는 <b>그룹 컬럼과 집계 함수만</b> 넣으세요. 개별 행은 <code>WHERE</code>, 그룹 결과는 <code>HAVING</code>으로 거릅니다(<code>COUNT(*) >= 10</code>은 HAVING). 그룹 컬럼에 인덱스가 있으면 대량 그룹핑이 빨라집니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 그룹으로 묶지 않은 일반 컬럼을 SELECT에 넣으면 오류나 예상 밖 결과가 납니다. 그룹 컬럼과 집계 함수만 사용하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#GROUPBY #집계함수 #SQL #데이터베이스기초 #DB</p>
+
+</body>
+</html>

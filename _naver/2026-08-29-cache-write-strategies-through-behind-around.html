@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>캐시 쓰기 전략 write-through write-behind write-around</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">쓸 때도 전략이 필요하다 — write-through/write-behind/write-around 캐시 쓰기 전략 비교</div>
+<p style="font-size:14px; color:#999;">시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 캐시 읽기 전략은 흔히 논의되지만, 쓰기 시점에 캐시와 DB를 어떤 순서로 갱신할지 결정하는 <b>write-through</b>·<b>write-behind</b>·<b>write-around</b> 전략의 차이와 트레이드오프를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">쓰기 경로는 읽기 경로와 다른 문제입니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">캐싱을 이야기할 때 대부분의 논의는 캐시 미스 시 어떻게 채울 것인가, 즉 읽기 전략에 집중됩니다. 하지만 데이터가 갱신될 때 캐시와 원본 저장소 중 어디를 먼저, 어떻게 갱신할지에 따라 데이터 일관성·쓰기 지연·캐시 신선도가 완전히 달라집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — write-through, 캐시와 DB를 항상 함께 씁니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">write-through는 쓰기 요청이 오면 <b>캐시와 DB에 모두 쓰기를 완료한 뒤에야</b> 응답을 반환합니다. 캐시가 항상 DB와 동기화된 상태를 유지해 캐시 미스가 나도 최신 데이터를 그대로 가져올 수 있지만, 매 쓰기마다 두 저장소 모두 완료를 기다려야 해 쓰기 지연이 늘어납니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — write-behind, 캐시부터 응답하고 DB는 비동기로</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">write-behind는 쓰기 요청이 오면 <b>캐시에만 즉시 쓰고 응답을 반환</b>한 뒤, DB 반영은 백그라운드가 비동기로 배치 처리합니다. 쓰기 응답 속도가 빨라지고 DB 부하도 줄일 수 있지만, 캐시에만 반영되고 DB에 아직 반영되지 않은 상태에서 캐시가 장애로 죽으면 그 사이 쓰기가 유실될 수 있습니다. 조회수 카운터처럼 일부 유실이 허용되는 워크로드에 적합합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-08-29-cache-write-strategies-through-behind-around-1.svg" alt="캐시 쓰기 전략 세 가지 흐름" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 3 — write-around, 캐시를 건너뛰고 DB에만 씁니다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">write-around는 쓰기 시점에 캐시를 건드리지 않고 DB에만 씁니다. 이후 그 데이터를 읽을 때 캐시 미스가 나고, 그때 비로소 캐시를 채웁니다. 쓰기 후 곧바로 재조회되지 않는 로그성 데이터에 적합하지만, 쓰고 나서 바로 다시 읽히는 워크로드에 쓰면 첫 조회가 항상 캐시 미스로 시작됩니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">write-through</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">write-behind</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">write-around</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">쓰기 지연</td>
+<td style="border:1px solid #ddd; padding:10px;">높음</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음</td>
+<td style="border:1px solid #ddd; padding:10px;">DB 단독 지연</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">유실 위험</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음</td>
+<td style="border:1px solid #ddd; padding:10px;">있음</td>
+<td style="border:1px solid #ddd; padding:10px;">없음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">적합 워크로드</td>
+<td style="border:1px solid #ddd; padding:10px;">강한 일관성 필요</td>
+<td style="border:1px solid #ddd; padding:10px;">쓰기 폭주, 유실 허용</td>
+<td style="border:1px solid #ddd; padding:10px;">재조회 드묾</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 세 전략의 의사코드 비교</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># write-through
+def write_through(key, value):
+    db.write(key, value)
+    cache.set(key, value)
+    return "OK"
+
+# write-behind
+def write_behind(key, value):
+    cache.set(key, value)
+    write_queue.push({"key": key, "value": value})
+    return "OK"
+
+# write-around
+def write_around(key, value):
+    db.write(key, value)
+    cache.invalidate(key)  # 갱신이 아니라 무효화만
+    return "OK"</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 도입 시 이것만은 챙기세요</div>
+
+<div style="background-color:#fff7f0; border-left:4px solid #ff8a3d; padding:14px 16px; font-size:15px; color:#333; line-height:1.8;">
+<b>1. 하나의 전략을 시스템 전체에 강제하지 마세요</b> — 데이터 성격에 따라 다른 쓰기 전략을 조합하는 것이 자연스럽습니다.<br>
+<b>2. write-behind는 유실 허용 범위를 사전에 합의하세요</b> — 범위를 벗어나면 WAL이나 메시지 큐의 영속성 보장을 추가로 도입해야 합니다.<br>
+<b>3. write-around는 invalidate와 갱신을 혼동하지 마세요</b> — 실수로 갱신 로직을 넣으면 사실상 write-through가 됩니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마무리 — 3줄 요약</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">① write-through는 캐시와 DB를 항상 함께 갱신해 일관성이 강하지만 쓰기 지연이 늘어납니다.<br>
+② write-behind는 캐시만 즉시 쓰고 DB는 비동기로 미뤄 지연은 줄지만 장애 시 유실 위험이 있습니다.<br>
+③ write-around는 쓰기 시점에 캐시를 건드리지 않아 재조회가 드문 데이터에 적합합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">읽어주셔서 감사합니다. 다음 글에서는 다른 시스템 설계 주제로 찾아뵙겠습니다 🙂</p>
+
+<p style="font-size:14px; color:#03c75a;">#캐싱전략 #writethrough #writebehind #writearound #Redis #시스템설계 #캐시</p>
+
+</body>
+</html>

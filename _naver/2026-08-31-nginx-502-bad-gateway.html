@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Nginx 502 Bad Gateway, 원인과 해결법</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Nginx 502 Bad Gateway, 원인과 해결법</div>
+<p style="font-size:14px; color:#999;">인프라</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 502는 대부분 Nginx가 아니라 <b>업스트림 애플리케이션 서버</b> 문제이며, error.log의 메시지로 원인을 구분해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">502는 Nginx가 아니라 뒷단 문제일 때가 많다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">502 Bad Gateway는 Nginx가 뒤에 있는 애플리케이션 서버(업스트림)로부터 유효한 응답을 받지 못했다는 뜻입니다. Nginx 자체는 정상이고 원인은 대부분 업스트림 쪽에 있으므로, Nginx 로그만 보지 말고 애플리케이션 서버 상태까지 함께 봐야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">원인 후보와 확인 방법</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">원인</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">확인 방법</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">대응</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">업스트림 서버 다운</td>
+<td style="border:1px solid #ddd; padding:10px;">curl localhost:앱포트</td>
+<td style="border:1px solid #ddd; padding:10px;">프로세스 재시작·로그 확인</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">응답 지연(타임아웃)</td>
+<td style="border:1px solid #ddd; padding:10px;">error.log의 upstream timed out</td>
+<td style="border:1px solid #ddd; padding:10px;">proxy_read_timeout 조정</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Nginx 설정 오류</td>
+<td style="border:1px solid #ddd; padding:10px;">nginx -t</td>
+<td style="border:1px solid #ddd; padding:10px;">proxy_pass 주소 확인</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">로그 확인이 최우선</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">tail -f /var/log/nginx/error.log
+
+# "connect() failed (111: Connection refused)..."
+# "upstream timed out (110: Connection timed out)..."</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>Connection refused</b>면 애플리케이션이 죽어 있는 것이고, <b>timed out</b>이면 앱은 살아 있지만 응답이 늦는 것입니다. 원인도 대응도 완전히 다릅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">설정 예제 — 타임아웃과 재시도</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">upstream backend &#123;
+    server 127.0.0.1:8080;
+    server 127.0.0.1:8081 backup;
+&#125;
+
+location /api/ &#123;
+    proxy_pass http://backend;
+    proxy_read_timeout 30s;
+    proxy_next_upstream error timeout http_502;
+&#125;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">배포 직후에만 502가 발생한다면 <b>무중단 배포(롤링 업데이트)</b>로 전환하면 사라집니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — proxy_read_timeout을 무작정 늘리는 것은 임시방편입니다. 근본적으로는 왜 응답이 느려졌는지(느린 쿼리, 외부 API 대기 등)를 찾아야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#Nginx #502에러 #BadGateway #리버스프록시 #인프라트러블슈팅</p>
+
+</body>
+</html>

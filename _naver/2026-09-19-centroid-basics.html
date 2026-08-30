@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>중심점(centroid)이 뭔가요 — 폴리곤의 대표 위치 구하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 이미지(과녁/도형)는 별도 SVG 파일을 캡처하거나 PNG로 변환해 삽입한다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">중심점(centroid)이 뭔가요 — 폴리곤의 대표 위치 구하기</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 중심점(centroid)은 폴리곤을 대표하는 무게중심 점으로, <b>라벨·마커 위치</b>에 자주 씁니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">면 하나를 점 하나로</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">시·군·구 같은 면(폴리곤)에 라벨을 달거나 마커를 찍으려면 대표하는 점 하나가 필요합니다. 이때 쓰는 게 <b>중심점(centroid)</b>, 즉 도형의 무게중심입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">중심점 vs 대표점</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구분</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">특징</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">centroid</td>
+<td style="border:1px solid #ddd; padding:10px;">무게중심. 오목한 도형에선 면 밖으로 나갈 수 있음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">point on surface</td>
+<td style="border:1px solid #ddd; padding:10px;">반드시 면 "안"에 있는 대표점</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">C자 모양처럼 오목한 폴리곤은 중심점이 도형 바깥에 찍혀 라벨이 엉뚱한 곳에 놓일 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">폴리곤마다 이름을 달 땐 중심점에 텍스트를 놓으면 대체로 자연스럽습니다. 오목한 도형은 PostGIS의 <code>ST_PointOnSurface</code>처럼 면 안을 보장하는 함수를 쓰세요.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 위경도(도 단위)에서 그냥 평균하면 왜곡이 생길 수 있습니다. 정밀 계산은 투영 좌표계에서 하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#중심점 #centroid #폴리곤 #GIS #GIS기초</p>
+
+</body>
+</html>

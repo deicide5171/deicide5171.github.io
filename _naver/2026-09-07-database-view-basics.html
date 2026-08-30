@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>뷰(View)가 뭔가요 — 복잡한 쿼리를 이름 하나로</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">뷰(View)가 뭔가요 — 복잡한 쿼리를 이름 하나로</div>
+<p style="font-size:14px; color:#999;">데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 뷰는 복잡한 조회 쿼리에 이름을 붙여 <b>가상 테이블처럼 재사용</b>하는 기능이며, 일반 뷰는 성능이 원본 쿼리에 달렸습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">같은 복잡한 쿼리를 반복한다면</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">여러 테이블을 JOIN하는 복잡한 쿼리를 여러 곳에서 반복하면, 쿼리가 바뀔 때 모든 곳을 고쳐야 합니다. <b>뷰</b>는 이 쿼리에 이름을 붙여 가상 테이블처럼 저장해둡니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">뷰의 기본</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">CREATE VIEW active_user_orders AS
+SELECT u.name, o.item, o.price
+FROM users u JOIN orders o ON u.id = o.user_id
+WHERE u.status = 'ACTIVE';
+
+SELECT * FROM active_user_orders WHERE price > 10000;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">뷰는 데이터를 저장하는 게 아니라 조회할 때 안의 쿼리가 실행됩니다. "저장된 쿼리"에 가깝고, 원본이 바뀌면 결과도 자동으로 최신입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">일반 뷰 vs 구체화 뷰</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">일반 뷰: 조회할 때마다 쿼리 실행 (항상 최신, 무거우면 느림)
+구체화 뷰: 결과를 저장 (빠름, 원본 바뀌면 갱신 필요)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>일반 뷰는 성능을 마법처럼 개선하지 않습니다.</b> 원본 쿼리가 느리면 뷰도 느립니다. 뷰는 편의성·재사용을 위한 것입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">반복되고 무거운 집계는 결과를 저장하는 <b>구체화 뷰</b>를 검토하세요. 대신 갱신 전략이 필요합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 급여 컬럼을 뺀 뷰를 만들어 일반 사용자에게는 뷰만 조회하게 하면, 민감한 컬럼을 노출하지 않고 접근 제어를 할 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#View #뷰 #SQL #데이터베이스기초 #구체화뷰</p>
+
+</body>
+</html>

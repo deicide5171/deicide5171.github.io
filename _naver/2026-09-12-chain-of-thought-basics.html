@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>사고의 연쇄(CoT)가 뭔가요 — AI에게 '차근차근 생각해'라고 시키기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">사고의 연쇄(CoT)가 뭔가요 — AI에게 '차근차근 생각해'라고 시키기</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 사고의 연쇄(CoT)는 AI가 답을 바로 내지 않고 <b>중간 추론을 단계별로</b> 풀어쓰게 해 정답률을 높이는 기법입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">답만 바로 시키면 틀린다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">여러 단계 계산·논리가 필요한 문제에서 "정답만 말해"라고 하면 AI가 성급하게 틀립니다. <b>사고의 연쇄(CoT)</b>는 답을 바로 내지 말고 중간 추론 과정을 단계별로 풀어쓰게 합니다. 암산 대신 종이에 풀이를 적으면 정확해지는 것과 같죠.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">바로 답 vs 사고의 연쇄</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">지시</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">결과</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">바로 답</td>
+<td style="border:1px solid #ddd; padding:10px;">"정답은?"</td>
+<td style="border:1px solid #ddd; padding:10px;">오답 위험</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">CoT</td>
+<td style="border:1px solid #ddd; padding:10px;">"차근차근 생각 후"</td>
+<td style="border:1px solid #ddd; padding:10px;">정답률↑</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예시</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">Q: 사과 3개 1200원, 5개 사면? (단계별로)
+A: 1개 = 1200/3 = 400원
+   5개 = 400 x 5 = 2000원
+   정답: 2000원</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"차근차근 단계별로 풀어줘" 한 줄만 넣어도 수학·논리·다단계 판단의 정답률이 오릅니다. 최신 추론 모델은 CoT를 내부에서 자동으로 하기도 합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 중간 추론을 다 출력하면 토큰이 늘어 비용·지연이 큽니다. 최종 답만 필요하면 형식을 지정하거나 과정을 숨기세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#사고의연쇄 #ChainOfThought #CoT #프롬프트엔지니어링 #AI기초</p>
+
+</body>
+</html>

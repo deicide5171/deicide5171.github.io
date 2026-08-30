@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>메시지 큐가 뭔가요 — 왜 서비스 사이에 큐를 두는가</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">메시지 큐가 뭔가요 — 왜 서비스 사이에 큐를 두는가</div>
+<p style="font-size:14px; color:#999;">시스템설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 메시지 큐는 서비스 사이에 우체통을 두어 <b>부하 평준화·결합도 감소·장애 격리</b>를 해결하는 구조입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 서비스 A가 B를 직접 부르면 안 되는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">주문이 들어오면 재고 차감, 결제, 알림 등 후속 작업이 필요합니다. 주문 서비스가 이들을 직접 호출하면 하나라도 느려지거나 죽으면 주문 전체가 지연·실패합니다. <b>메시지 큐</b>는 서비스 사이에 우체통을 두는 방식입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">큐를 쓸 때와 안 쓸 때</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">상황</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">직접 호출</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">메시지 큐</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">B가 느릴 때</td>
+<td style="border:1px solid #ddd; padding:10px;">A도 느려짐</td>
+<td style="border:1px solid #ddd; padding:10px;">A는 영향 없음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">B가 죽었을 때</td>
+<td style="border:1px solid #ddd; padding:10px;">A의 요청 실패</td>
+<td style="border:1px solid #ddd; padding:10px;">메시지가 큐에 남음</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 용어</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">Producer: 메시지를 큐에 넣는 쪽
+Consumer: 큐에서 메시지를 꺼내 처리하는 쪽
+Broker: 큐를 관리하는 미들웨어 (Kafka, RabbitMQ, SQS)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">큐가 해결하는 문제 3가지</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>부하 평준화</b>(트래픽 폭주를 큐에 쌓아둠), <b>결합도 감소</b>(생산자는 소비자를 몰라도 됨), <b>장애 격리</b>(소비자가 죽어도 메시지는 큐에 남음)입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">즉시 결과를 보여줘야 하는 작업(결제 승인)에는 부적합하고, 나중에 처리돼도 되는 작업(알림, 통계)에 적합합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 같은 메시지가 두 번 처리될 수 있다는 것을 전제로, 소비자는 멱등성을 갖춰야 안전합니다. 큐 적체량(lag) 모니터링도 필수입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#메시지큐 #MessageQueue #시스템설계기초 #비동기 #백엔드</p>
+
+</body>
+</html>

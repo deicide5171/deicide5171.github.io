@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>쿠키 vs 세션 vs 로컬스토리지 — 브라우저 저장소 구분하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">쿠키 vs 세션 vs 로컬스토리지 — 브라우저 저장소 구분하기</div>
+<p style="font-size:14px; color:#999;">프론트엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 쿠키는 <b>매 요청에 자동 전송</b>돼 인증에, 로컬/세션스토리지는 <b>클라이언트 전용 데이터</b>에 적합합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">브라우저에 데이터를 저장하는 여러 방법</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">로그인 상태나 설정을 유지하려면 브라우저에 데이터를 저장해야 합니다. <b>쿠키·로컬스토리지·세션스토리지</b>의 차이를 알면 상황에 맞게 고를 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">세 저장소 비교</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">쿠키</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">로컬스토리지</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">세션스토리지</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">수명</td>
+<td style="border:1px solid #ddd; padding:10px;">만료일까지</td>
+<td style="border:1px solid #ddd; padding:10px;">영구</td>
+<td style="border:1px solid #ddd; padding:10px;">탭 닫으면 사라짐</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">서버 전송</td>
+<td style="border:1px solid #ddd; padding:10px;">자동</td>
+<td style="border:1px solid #ddd; padding:10px;">안 됨</td>
+<td style="border:1px solid #ddd; padding:10px;">안 됨</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">무엇을 언제 쓰나</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">인증 토큰 -> 쿠키(특히 HttpOnly)
+다크모드·최근 검색어 -> localStorage
+여러 단계 폼 임시값 -> sessionStorage</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>인증 토큰을 localStorage에 저장하면 XSS에 취약합니다.</b> 자바스크립트로 접근 가능해 악성 스크립트에 탈취당할 수 있어, HttpOnly 쿠키가 더 안전합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — HttpOnly 쿠키는 자동 전송되므로 CSRF에 노출될 수 있어 SameSite·CSRF 토큰 방어가 필요합니다. 어느 저장소에도 민감정보를 평문으로 두지 마세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#쿠키 #localStorage #웹저장소 #세션 #프론트엔드기초</p>
+
+</body>
+</html>

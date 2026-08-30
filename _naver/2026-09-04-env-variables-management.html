@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>환경변수와 .env 파일 제대로 관리하기 — 초보자 실수 모음</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">환경변수와 .env 파일 제대로 관리하기 — 초보자 실수 모음</div>
+<p style="font-size:14px; color:#999;">인프라</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 환경변수는 민감 설정을 코드 밖으로 분리하며, <b>.env는 반드시 .gitignore에</b> 넣고 프론트엔드 환경변수는 비밀이 아님을 기억하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 API 키를 코드에 그냥 쓰면 안 되나</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">비밀번호나 API 키를 코드에 적으면 GitHub에 올리는 순간 공개됩니다. 공개 저장소의 키를 봇이 몇 분 만에 발견해 악용하는 사고가 흔합니다. <b>환경변수</b>는 민감 설정값을 코드 밖으로 분리합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">.env 파일 기본 사용법</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># .env (git에는 올리지 않는다)
+DATABASE_URL=postgresql://user:pass@localhost:5432/mydb
+API_KEY=sk-abc123
+
+// Node.js
+import 'dotenv/config';
+const apiKey = process.env.API_KEY;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">초보자가 자주 하는 실수</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">1. .env를 git에 커밋 -> 즉시 키 폐기·재발급
+2. .env.example 안 만듦 -> 키 이름만 담아 커밋
+3. 프론트엔드에 비밀 키 -> 브라우저에서 다 보인다
+4. 배포 환경에 등록 빠뜨림 -> 서버·CI에 따로 등록</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>.env는 한 번 커밋되면 git 히스토리에 영구히 남습니다.</b> 뒤늦게 .gitignore에 추가해도 과거 커밋엔 남으므로, 실수로 올렸다면 파일 삭제로 끝내지 말고 키를 폐기·재발급하세요.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 프론트엔드 "환경변수"는 빌드 시점에 코드에 박혀 공개됩니다. 진짜 비밀이 필요한 작업은 반드시 백엔드를 거치도록 설계하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#환경변수 #env #설정관리 #보안 #개발입문</p>
+
+</body>
+</html>
