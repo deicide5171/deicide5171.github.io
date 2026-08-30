@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>CSS 컨테이너 쿼리로 컴포넌트 기반 반응형 만들기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">CSS 컨테이너 쿼리로 컴포넌트 기반 반응형 만들기</div>
+<p style="font-size:14px; color:#999;">프론트엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 미디어 쿼리는 <b>뷰포트</b> 기준, <b>컨테이너 쿼리</b>는 부모 컨테이너 크기 기준으로 스타일을 분기해, 컴포넌트가 놓인 위치와 무관하게 스스로 적응하게 만듭니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 미디어 쿼리만으론 한계가 있나</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">같은 카드 컴포넌트를 메인 영역과 사이드바에 각각 배치하면, 카드의 실제 폭은 뷰포트 크기가 아니라 "어떤 부모 컨테이너 안에 놓였는가"에 따라 달라집니다. 뷰포트가 1920px여도 사이드바 안 카드는 300px일 수 있는데, 미디어 쿼리는 이 상황을 구분하지 못합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">잘못된 접근 vs 올바른 접근</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">위치별로 <b>.sidebar .card</b> 같은 오버라이드 클래스를 만드는 방식은 배치 위치가 늘어날 때마다 규칙을 계속 추가해야 해서, 컴포넌트 재사용이라는 목적과 어긋납니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; overflow-x:auto; line-height:1.6;">.card-container {
+  container-type: inline-size;
+}
+
+&#64;container (min-width: 400px) {
+  .card { flex-direction: row; }
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">부모 요소에 <b>container-type: inline-size</b>를 선언하면 그 요소가 쿼리 대상 컨테이너로 등록됩니다. 같은 카드 컴포넌트가 폭 400px 이상인 곳에 놓이면 가로 배치, 좁은 곳에 놓이면 세로 배치가 자동으로 적용됩니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">미디어 쿼리</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">컨테이너 쿼리</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">기준</td>
+<td style="border:1px solid #ddd; padding:10px;">뷰포트 크기</td>
+<td style="border:1px solid #ddd; padding:10px;">부모 컨테이너 크기</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">적합한 대상</td>
+<td style="border:1px solid #ddd; padding:10px;">페이지 전체 레이아웃</td>
+<td style="border:1px solid #ddd; padding:10px;">재사용 컴포넌트</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — container-type: inline-size는 레이아웃 격리(containment)도 함께 발생시킵니다. 내부 콘텐츠 크기가 외부로 영향을 주지 않게 격리되므로, 적용 전후 레이아웃을 반드시 비교 확인하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">중첩된 컨테이너가 있다면 <b>container-name</b>으로 어떤 것을 기준으로 쿼리할지 명시하는 것이 안전합니다. cqw 같은 컨테이너 기준 상대 단위를 clamp()와 조합하면 카드 폭에 비례해 글자 크기를 키우는 것도 가능합니다. :has()와 조합하면 "이미지가 있고 폭이 400px 이상이면 가로 배치"처럼 여러 조건도 CSS만으로 처리할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#컨테이너쿼리 #ContainerQueries #CSS #반응형디자인 #컴포넌트설계</p>
+
+</body>
+</html>
