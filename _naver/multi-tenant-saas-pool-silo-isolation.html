@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>멀티테넌트 SaaS 아키텍처 — Pool vs Silo 모델과 Noisy Neighbor 격리 전략</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">멀티테넌트 SaaS 아키텍처 — Pool vs Silo 모델과 Noisy Neighbor 격리 전략</div>
+<p style="font-size:14px; color:#999;">아키텍처·시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 고객사를 <b>얼마나 묶고 나눌지</b> 결정하는 Pool·Silo·Bridge 모델의 트레이드오프와 Noisy Neighbor 완화 전략을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 멀티테넌시 아키텍처를 다시 봐야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">고객사마다 별도 인프라를 주면 안전하지만 비용이 선형으로 늘고, 모두 공유하면 비용은 아끼지만 <b>한 고객사의 트래픽 폭주가 다른 모든 고객사를 함께 끌어내리는</b> Noisy Neighbor 문제가 생깁니다. 실제로는 리소스 종류별로 격리 수준을 다르게 가져가는 것이 정답에 가깝습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Pool, Silo, Bridge 세 가지 배치 모델</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Pool 모델은 모든 테넌트가 <b>같은 인스턴스를 공유</b>하고 tenant_id 컬럼으로만 구분합니다. 비용은 최소지만 격리가 없습니다. Silo 모델은 테넌트마다 완전히 분리된 인프라를 두어 격리는 완벽하지만 비용이 테넌트 수만큼 곱해집니다. Bridge 모델은 리소스별로 격리 수준을 다르게 적용하는 하이브리드입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Noisy Neighbor를 막는 리소스별 격리 장치</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">컴퓨트 레벨에서는 <b>테넌트별 Rate Limiting과 동시성 상한</b>을 걸고, DB 레벨에서는 커넥션 풀러의 테넌트별 풀 분리나 무거운 쿼리 테넌트를 별도 읽기 복제본으로 라우팅합니다. 큐 레벨에서는 테넌트별 별도 파티션을 둡니다. 공통 원칙은 완전히 분리하지 않고도 한 테넌트가 쓸 자원의 상한을 명시적으로 긋는 것입니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">모델</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">격리 수준</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">적합한 대상</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Pool</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음(논리적 경계만)</td>
+<td style="border:1px solid #ddd; padding:10px;">초기 스타트업</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Silo</td>
+<td style="border:1px solid #ddd; padding:10px;">완전</td>
+<td style="border:1px solid #ddd; padding:10px;">규제 산업</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Bridge</td>
+<td style="border:1px solid #ddd; padding:10px;">리소스별 상이</td>
+<td style="border:1px solid #ddd; padding:10px;">성장 단계 SaaS</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">테넌트별 요청 상한 필터 예제</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">protected void doFilterInternal(HttpServletRequest req, HttpServletResponse res,
+                                 FilterChain chain) throws IOException, ServletException {
+    String tenantId = resolveTenant(req);
+    if (!limiters.get(tenantId).tryAcquire()) {
+        res.setStatus(429); // 이 테넌트만 제한, 다른 테넌트는 영향 없음
+        return;
+    }
+    chain.doFilter(req, res);
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>격리 수준을 나중에 올리는 것보다 처음부터 경계를 명확히 그어두는 것이 훨씬 쌉니다.</b> 모든 테이블에 tenant_id를 일관되게 포함시키고 누락 검증 자동화를 초기에 갖춰두면 이후 마이그레이션이 훨씬 수월해집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>PostgreSQL의 Row Level Security를 안전망으로 적극 활용하세요.</b> 애플리케이션 코드의 WHERE 절 누락이라는 실수를 DB 레벨에서 한 번 더 막아줍니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 엔터프라이즈 계약이 요구하는 "물리적 데이터 분리"는 계약서 문구를 정확히 확인해야 합니다. 암호화 키 분리로 충분한지, 별도 DB 인스턴스가 필요한지에 따라 아키텍처 변경 범위가 완전히 달라집니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#멀티테넌시 #SaaS아키텍처 #NoisyNeighbor #테넌트격리 #확장성</p>
+
+</body>
+</html>
