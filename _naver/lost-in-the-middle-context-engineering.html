@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>긴 컨텍스트가 오히려 성능을 떨어뜨리는 이유 — Lost in the Middle과 컨텍스트 구조화 전략</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">긴 컨텍스트가 오히려 성능을 떨어뜨리는 이유 — Lost in the Middle과 컨텍스트 구조화 전략</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 컨텍스트 윈도우가 커져도 모델은 <b>문서 중간의 정보를 잘 놓칩니다(Lost in the Middle)</b>. 원인과 완화 전략을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 컨텍스트 구조화를 다시 봐야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">컨텍스트 윈도우가 수십만~백만 토큰대까지 확장되면서, 청킹이나 검색 최적화 없이 문서를 통째로 넣으면 되지 않을까 기대하는 경우가 늘었습니다. 하지만 <b>'수용 가능한 길이'와 '실제로 균일하게 활용하는 능력'은 별개</b>라는 점이 여러 벤치마크에서 반복적으로 드러납니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">프롬프트 맨 앞과 맨 뒤에 배치된 정보는 모델이 잘 찾아내지만, <b>중간 어딘가에 묻힌 핵심 정보는 정답률이 눈에 띄게 떨어집니다.</b> 이를 Lost in the Middle이라 부르며, 컨텍스트가 길어질수록 이 U자형 성능 곡선이 더 뚜렷해지는 경향도 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">위치 편향은 어디서 오는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">트랜스포머 기반 모델은 학습 데이터의 분포와 위치 인코딩 방식의 특성상 시퀀스의 시작부와 끝부에 더 강하게 주의를 기울이는 경향이 학습 과정에서 굳어집니다. 이는 특정 모델만의 결함이 아니라 <b>현재 세대 아키텍처 전반에서 관찰되는 구조적 경향</b>에 가깝습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">컨텍스트 배치 전략</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 직접적인 완화 방법은 검색된 문서를 관련도 순서 그대로 넣지 않는 것입니다. <b>가장 중요한 문서를 맨 앞과 맨 끝에 배치</b>하고, 덜 중요한 문서를 중간에 두는 방식이 실무에서 자주 쓰입니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">전략</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방법</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">언제 유효한가</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">양끝 배치</td>
+<td style="border:1px solid #ddd; padding:10px;">최상위 문서를 처음·끝에 배치</td>
+<td style="border:1px solid #ddd; padding:10px;">문서 수가 적고 순위 신뢰도가 높을 때</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">요약 압축</td>
+<td style="border:1px solid #ddd; padding:10px;">저관련 문서는 요약해 토큰 축소</td>
+<td style="border:1px solid #ddd; padding:10px;">문서 수가 많아 위치 조정만으론 부족할 때</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">재순위 후 절단</td>
+<td style="border:1px solid #ddd; padding:10px;">rerank 후 상위 N개만 사용</td>
+<td style="border:1px solid #ddd; padding:10px;">recall은 넉넉하지만 노이즈가 많을 때</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 문서 순서 재배치 코드</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">def build_context(ranked_docs, top_k=8):
+    docs = ranked_docs[:top_k]
+    # 중요도 높은 절반을 양끝으로, 낮은 절반을 중간으로 재배치
+    front = docs[0::2]
+    back = docs[1::2]
+    reordered = front + list(reversed(back))
+    lines = []
+    for i, d in enumerate(reordered):
+        lines.append(f&quot;[문서 {i+1} | 출처: {d['source']}]\n{d['text']}&quot;)
+    return &quot;\n\n&quot;.join(lines)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">단순히 문서를 이어붙이는 대신 순서를 재배치하고 각 문서에 식별자를 부여하면, 모델이 인용 근거를 추적하기도 쉬워지고 중간 배치로 인한 손실도 줄일 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>긴 컨텍스트를 지원한다고 청킹·재순위 단계를 통째로 걷어내지 마세요.</b> 컨텍스트 윈도우가 커진 것은 넣어도 에러가 안 난다는 뜻이지, 다 활용한다는 보장이 아닙니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>정답이 컨텍스트의 어느 위치에 있는지 직접 실험해 보세요.</b> 답이 앞/중간/뒤에 오도록 배치를 바꿔가며 테스트하면 실제 위치 편향 곡선을 파악할 수 있습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 컨텍스트가 길어질수록 재순위 단계의 가치가 커집니다. 검색 recall만 높이고 재순위 없이 넣으면 노이즈가 늘어 위치 편향의 악영향이 더 커집니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#LostInTheMiddle #컨텍스트엔지니어링 #LLM #RAG #프롬프트설계</p>
+
+</body>
+</html>
