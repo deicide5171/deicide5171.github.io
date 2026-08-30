@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Apple SD Gothic Neo','Malgun Gothic',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#1a1a1a">ST_ClusterDBSCAN — 반경(eps)과 최소 포인트 수로 밀집 지역 찾기</text>
+
+  <!-- Step 1: raw points -->
+  <text x="140" y="60" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#334155">1) 원본 포인트 데이터</text>
+  <rect x="30" y="75" width="250" height="170" rx="8" fill="#f8fafc" stroke="#94a3b8"/>
+  <circle cx="70" cy="110" r="3.5" fill="#64748b"/>
+  <circle cx="85" cy="120" r="3.5" fill="#64748b"/>
+  <circle cx="75" cy="135" r="3.5" fill="#64748b"/>
+  <circle cx="95" cy="105" r="3.5" fill="#64748b"/>
+  <circle cx="180" cy="150" r="3.5" fill="#64748b"/>
+  <circle cx="195" cy="165" r="3.5" fill="#64748b"/>
+  <circle cx="200" cy="145" r="3.5" fill="#64748b"/>
+  <circle cx="215" cy="160" r="3.5" fill="#64748b"/>
+  <circle cx="140" cy="205" r="3.5" fill="#64748b"/>
+  <circle cx="230" cy="90" r="3.5" fill="#94a3b8"/>
+  <text x="155" y="230" text-anchor="middle" font-size="10" fill="#475569">좌표만 있는 점 집합 — 그룹 정보 없음</text>
+
+  <path d="M292,160 L335,160" stroke="#475569" stroke-width="2.5" fill="none" marker-end="url(#arrD)"/>
+  <defs>
+    <marker id="arrD" markerWidth="9" markerHeight="9" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#475569"/>
+    </marker>
+  </defs>
+
+  <!-- Step 2: DBSCAN result -->
+  <text x="500" y="60" text-anchor="middle" font-size="13.5" font-weight="bold" fill="#334155">2) eps 반경 안 min_points 이상이면 같은 클러스터</text>
+  <rect x="345" y="75" width="420" height="170" rx="8" fill="#eff6ff" stroke="#93c5fd"/>
+
+  <!-- cluster 1 -->
+  <circle cx="390" cy="110" r="26" fill="#bfdbfe" opacity="0.5"/>
+  <circle cx="390" cy="110" r="3.5" fill="#1d4ed8"/>
+  <circle cx="405" cy="120" r="3.5" fill="#1d4ed8"/>
+  <circle cx="395" cy="135" r="3.5" fill="#1d4ed8"/>
+  <circle cx="415" cy="105" r="3.5" fill="#1d4ed8"/>
+  <text x="390" y="150" text-anchor="middle" font-size="9.5" fill="#1e3a8a">클러스터 0</text>
+
+  <!-- cluster 2 -->
+  <circle cx="540" cy="155" r="28" fill="#bbf7d0" opacity="0.5"/>
+  <circle cx="530" cy="150" r="3.5" fill="#15803d"/>
+  <circle cx="545" cy="165" r="3.5" fill="#15803d"/>
+  <circle cx="550" cy="145" r="3.5" fill="#15803d"/>
+  <circle cx="565" cy="160" r="3.5" fill="#15803d"/>
+  <text x="540" y="195" text-anchor="middle" font-size="9.5" fill="#14532d">클러스터 1</text>
+
+  <!-- noise point -->
+  <circle cx="480" cy="205" r="3.5" fill="#94a3b8"/>
+  <text x="480" y="222" text-anchor="middle" font-size="9" fill="#64748b">고립점 → cid=NULL(노이즈)</text>
+
+  <circle cx="650" cy="90" r="3.5" fill="#94a3b8"/>
+  <text x="650" y="106" text-anchor="middle" font-size="9" fill="#64748b">노이즈</text>
+
+  <!-- bottom explanation boxes -->
+  <rect x="30" y="260" width="740" height="160" rx="8" fill="#f8fafc" stroke="#cbd5e1"/>
+  <text x="400" y="285" text-anchor="middle" font-size="14" font-weight="bold" fill="#334155">화면 줌 기반 클러스터링과의 차이</text>
+
+  <rect x="55" y="305" width="345" height="95" rx="6" fill="#fef2f2" stroke="#fca5a5"/>
+  <text x="227" y="327" text-anchor="middle" font-size="12" font-weight="bold" fill="#7f1d1d">클라이언트 마커 클러스터링</text>
+  <text x="227" y="349" text-anchor="middle" font-size="10.5" fill="#991b1b">화면 픽셀 격자 기준으로 시각적으로만 묶음</text>
+  <text x="227" y="368" text-anchor="middle" font-size="10.5" fill="#991b1b">줌 레벨 바뀌면 클러스터 구성도 매번 바뀜</text>
+
+  <rect x="415" y="305" width="330" height="95" rx="6" fill="#f0fdf4" stroke="#86efac"/>
+  <text x="580" y="327" text-anchor="middle" font-size="12" font-weight="bold" fill="#065f46">ST_ClusterDBSCAN(PostGIS)</text>
+  <text x="580" y="349" text-anchor="middle" font-size="10.5" fill="#0d7a5f">실제 좌표 거리(eps)와 밀도 기준으로 분석</text>
+  <text x="580" y="368" text-anchor="middle" font-size="10.5" fill="#0d7a5f">쿼리 결과로 영구 저장 가능한 진짜 그룹 ID</text>
+</svg>

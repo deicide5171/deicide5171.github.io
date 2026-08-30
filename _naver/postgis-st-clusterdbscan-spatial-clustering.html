@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>PostGIS ST_ClusterDBSCAN으로 공간 밀집 지역 자동 탐지하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">PostGIS ST_ClusterDBSCAN으로 공간 밀집 지역 자동 탐지하기</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 화면 줌 기반 클러스터링과 달리 <b>실제 좌표 거리와 밀도로 진짜 밀집 구역</b>을 찾는 PostGIS ST_ClusterDBSCAN을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 ST_ClusterDBSCAN을 다시 봐야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">마커 클러스터링은 화면에 겹쳐 보이는 마커를 시각적으로 묶는 것일 뿐, 줌 레벨이 바뀌면 구성 자체가 매번 달라지는 임시 그룹핑입니다. 실무에서는 <b>화면과 무관하게 데이터 자체의 공간적 밀집도를 분석해 영구적으로 저장</b>해야 할 때가 많습니다. PostGIS는 이를 ST_ClusterDBSCAN 함수로 SQL 한 번에 제공합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">거리(eps)와 최소 개수(minpoints)로 정의되는 밀집</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">DBSCAN은 클러스터 개수를 미리 지정할 필요가 없습니다. <b>eps(이웃 인정 최대 거리)와 minpoints(핵심점이 되기 위한 최소 이웃 수)</b>로 밀집을 정의합니다. 핵심점들이 서로 eps 거리 안에서 연쇄적으로 이어지면 하나의 클러스터가 되고, 어디에도 속하지 못한 점은 노이즈로 분류됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">윈도우 함수로 동작한다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">ST_ClusterDBSCAN은 GROUP BY가 아니라 <b>OVER() 절과 함께 윈도우 함수로 사용</b>합니다. 각 행에 클러스터 번호를 새 컬럼으로 반환하고 원래 행 개수는 그대로 유지됩니다. 이후 GROUP BY로 클러스터별 통계를 뽑는 후속 쿼리와 자연스럽게 이어집니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">클라이언트 클러스터링</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">ST_ClusterDBSCAN</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">판단 기준</td>
+<td style="border:1px solid #ddd; padding:10px;">화면 픽셀 거리</td>
+<td style="border:1px solid #ddd; padding:10px;">실제 좌표 거리와 밀도</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">결과 영속성</td>
+<td style="border:1px solid #ddd; padding:10px;">렌더링마다 재계산</td>
+<td style="border:1px solid #ddd; padding:10px;">쿼리 결과 영구 저장 가능</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">배달 요청 밀집 구역 탐지 예제</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">SELECT
+    id,
+    geom,
+    ST_ClusterDBSCAN(geom, eps := 500, minpoints := 5) OVER () AS cluster_id
+FROM delivery_requests;
+
+-- 클러스터별 통계
+SELECT
+    cluster_id,
+    COUNT(*) AS point_count,
+    ST_Centroid(ST_Collect(geom)) AS cluster_center
+FROM clustered
+WHERE cluster_id IS NOT NULL
+GROUP BY cluster_id;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-25-postgis-st-clusterdbscan-spatial-clustering-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>eps 단위는 사용 중인 SRID의 단위를 그대로 따릅니다.</b> EPSG:4326(위경도)로 계산하면 eps=500이 500도가 되어버리는 실수가 흔합니다. 미터 단위가 필요하면 EPSG:3857 같은 투영좌표계로 변환한 geometry를 써야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>minpoints를 너무 작게 잡으면 노이즈 필터링 효과가 거의 사라집니다.</b> 도메인 지식에 맞춰 의미 있는 최소 개수를 정해야 합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 대용량 테이블에서는 공간 인덱스(GiST)가 걸려 있어야 실행 계획이 합리적으로 나옵니다. 함수 자체가 인덱스를 직접 쓰진 않지만, WHERE 절과 함께 쓸 때 인덱스 유무가 전체 성능에 큰 영향을 줍니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#PostGIS #DBSCAN #공간클러스터링 #밀집지역분석 #SQL</p>
+
+</body>
+</html>

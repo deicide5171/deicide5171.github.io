@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>DynamoDB 싱글 테이블 설계 — 관계형 사고를 버리고 접근 패턴으로 모델링하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">DynamoDB 싱글 테이블 설계 — 관계형 사고를 버리고 접근 패턴으로 모델링하기</div>
+<p style="font-size:14px; color:#999;">DB·데이터 모델링</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — JOIN이 없는 DynamoDB에서 <b>관련 엔티티를 한 테이블에 미리 배치</b>해 한 번의 쿼리로 가져오는 싱글 테이블 설계를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 싱글 테이블 설계를 다시 봐야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">DynamoDB를 RDB처럼 엔티티마다 테이블을 나눠 설계하면, <b>JOIN이 없어 애플리케이션 코드가 여러 테이블에 여러 번 요청</b>을 보내고 결과를 직접 조립해야 합니다. 요청이 늘수록 지연시간과 비용이 함께 늘어납니다. 싱글 테이블 설계는 서로 다른 엔티티를 의도적으로 한 테이블에 함께 저장해 이 문제를 해결합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">스키마가 아니라 접근 패턴부터 설계한다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">RDB는 데이터 구조를 먼저 정의하고 쿼리는 나중에 짭니다. DynamoDB는 반대입니다. <b>실제로 어떤 조회를 얼마나 자주 하는지 먼저 전부 나열</b>한 뒤, 그 패턴을 파티션 키(PK)와 정렬 키(SK) 설계 하나로 커버하도록 데이터를 배치합니다. 그래서 접근 패턴을 최대한 철저히 미리 뽑아내는 것이 중요합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">오버로딩된 키와 GSI로 여러 엔티티를 한 테이블에</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">PK와 SK를 여러 엔티티 타입이 공유하는 범용 필드로 오버로딩합니다. 고객 정보는 PK=CUSTOMER#123, SK=CUSTOMER#123으로, 주문은 PK=CUSTOMER#123, SK=ORDER#456으로 저장하면 <b>한 번의 Query로 고객과 모든 주문을 함께</b> 받아옵니다. 역방향 조회는 Global Secondary Index(GSI)로 지원합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">RDB 다중 테이블</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">DynamoDB 싱글 테이블</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">설계 시작점</td>
+<td style="border:1px solid #ddd; padding:10px;">엔티티 관계</td>
+<td style="border:1px solid #ddd; padding:10px;">접근 패턴 목록</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">관계 조회</td>
+<td style="border:1px solid #ddd; padding:10px;">JOIN으로 결합</td>
+<td style="border:1px solid #ddd; padding:10px;">PK/SK로 저장 시점에 결합</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">고객·주문을 한 테이블에 오버로딩</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">table.put_item(Item={
+    'PK': 'CUSTOMER#123', 'SK': 'CUSTOMER#123',
+    'type': 'Customer', 'name': '김민준'
+})
+
+table.put_item(Item={
+    'PK': 'CUSTOMER#123', 'SK': 'ORDER#456',
+    'type': 'Order', 'status': 'SHIPPED'
+})
+
+response = table.query(
+    KeyConditionExpression='PK = :pk',
+    ExpressionAttributeValues={':pk': 'CUSTOMER#123'}
+)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>모든 워크로드에 싱글 테이블 설계가 정답은 아닙니다.</b> 접근 패턴이 자주 바뀌는 초기 서비스나 분석 쿼리가 잦은 워크로드라면 여러 테이블로 나누는 것이 더 유연합니다. 접근 패턴이 안정된 고트래픽 서비스에 특히 유리한 기법입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>엔티티 타입을 구분하는 type 속성과 일관된 키 네이밍 규칙을 처음부터 강제하세요.</b> 규칙이 흐트러지면 싱글 테이블의 장점인 예측 가능한 쿼리가 무너집니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — GSI 개수와 프로젝션 설계는 비용에 직접 영향을 줍니다. 필요 이상으로 많은 속성을 GSI에 복제하면 쓰기 비용이 늘어나므로, 실제 조회에 필요한 속성만 최소한으로 선택해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#DynamoDB #싱글테이블설계 #NoSQL모델링 #접근패턴 #GSI</p>
+
+</body>
+</html>

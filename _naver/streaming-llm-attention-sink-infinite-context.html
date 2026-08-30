@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>StreamingLLM과 Attention Sink — 슬라이딩 윈도우로 무한 길이 컨텍스트 스트리밍하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">StreamingLLM과 Attention Sink — 슬라이딩 윈도우로 무한 길이 컨텍스트 스트리밍하기</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 앞쪽 몇 개 토큰을 <b>절대 버리지 않는 Attention Sink</b> 개념으로, 고정 크기 캐시만으로 사실상 무한 길이 대화를 안정적으로 처리하는 StreamingLLM의 원리를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 무한 길이 스트리밍 추론을 다시 봐야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">멀티턴 챗봇이나 실시간 로그 요약 에이전트처럼 며칠씩 세션을 유지해야 하는 서비스가 늘면서, <b>컨텍스트 윈도우를 넘어서는 순간</b> 무슨 일이 벌어지는지가 실무 문제가 됐습니다. 오래된 토큰의 KV 캐시를 버리고 최근 토큰만 유지하는 단순 슬라이딩 윈도우 방식을 쓰면, 놀랍게도 모델이 갑자기 헛소리를 쏟아내며 품질이 붕괴하는 현상이 관찰됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">슬라이딩 윈도우 어텐션이 왜 실패하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">연구팀이 어텐션 맵을 시각화해보니, 대부분의 헤드가 의미적으로 중요하지 않은 <b>맨 앞 몇 개 토큰에 비정상적으로 큰 어텐션 점수</b>를 몰아준다는 사실이 드러났습니다. 소프트맥스가 모든 확률의 합을 1로 맞춰야 하다 보니, 특별히 주목할 대상이 없을 때도 잉여 확률을 초반 토큰에 배분하도록 모델이 스스로 적응한 것입니다. 이 토큰이 캐시에서 사라지면 어텐션 분포 전체가 왜곡됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Attention Sink: 앞쪽 토큰을 절대 버리지 않는다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">해법은 직관적입니다. 슬라이딩 윈도우로 최근 토큰의 KV 캐시만 유지하되, <b>시퀀스 맨 앞의 소수 토큰(보통 4개 내외)은 아무리 오래돼도 캐시에서 제거하지 않고</b> 항상 함께 어텐션 연산에 포함시킵니다. 이 고정된 토큰들이 의미적으로 중요해서가 아니라, 소프트맥스의 구조적 요구를 만족시키는 안전판 역할만 한다는 점이 흥미롭습니다. 결과적으로 캐시 크기는 일정하게 유지되면서도 이론상 임의 길이의 시퀀스를 처리할 수 있습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">캐시 크기</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">초장문 처리 품질</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">전체 캐시 유지</td>
+<td style="border:1px solid #ddd; padding:10px;">길이에 비례해 무한 증가</td>
+<td style="border:1px solid #ddd; padding:10px;">안정적(메모리가 버틴다면)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">단순 슬라이딩 윈도우</td>
+<td style="border:1px solid #ddd; padding:10px;">고정</td>
+<td style="border:1px solid #ddd; padding:10px;">sink가 밀리면 붕괴</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">StreamingLLM</td>
+<td style="border:1px solid #ddd; padding:10px;">고정(sink+윈도우)</td>
+<td style="border:1px solid #ddd; padding:10px;">안정적으로 유지</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">캐시 구성 로직 예제</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">def build_kv_cache(all_tokens_kv, sink_size=4, window_size=1020):
+    sink = all_tokens_kv[:sink_size]
+    recent = all_tokens_kv[-window_size:]
+    cache = concat(sink, recent)
+    return reassign_relative_positions(cache)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실제 구현에서는 위치 인코딩을 원본 절대 위치가 아니라 <b>캐시 안에서의 상대 위치로 다시 부여</b>하는 것이 핵심 디테일입니다. 이를 생략하면 sink와 최근 토큰 사이의 위치 간격이 원본과 달라져 품질이 흔들릴 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>StreamingLLM은 컨텍스트 확장이 아니라 메모리 고정 기법입니다.</b> sink 이전의 실제 대화 내용은 캐시에서 사라지므로, 그 내용을 참조해야 하는 질문에는 여전히 답하지 못합니다. 전체 내용을 참조해야 하는 작업에는 RAG나 진짜 긴 컨텍스트 모델이 필요합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>재학습 없이 기존 모델에 바로 적용 가능하다는 점이 실무 가치입니다.</b> 서빙 레이어의 캐시 관리 로직만 바꾸면 되므로 이미 배포된 모델에도 적용할 수 있습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — sink 개수는 4개 정도로 충분하다는 것이 논문의 실험 결과지만, 임의로 늘린다고 품질이 더 좋아지지는 않습니다. 모델과 서빙 프레임워크에 맞춰 검증이 필요합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#StreamingLLM #AttentionSink #LLM추론 #슬라이딩윈도우 #KV캐시</p>
+
+</body>
+</html>
