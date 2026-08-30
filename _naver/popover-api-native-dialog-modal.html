@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Popover API와 dialog — JS 없이 네이티브로 만드는 모달·팝오버 상태관리</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Popover API와 dialog — JS 없이 네이티브로 만드는 모달·팝오버 상태관리</div>
+<p style="font-size:14px; color:#999;">프론트엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 브라우저의 <b>top layer</b>에서 동작하는 Popover API와 dialog가 z-index 경쟁과 포커스 트랩을 어떻게 표준으로 대체하는지 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 Popover API를 다시 봐야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">모달·드롭다운을 직접 구현하면 z-index 경쟁, 포커스 트랩, 바깥 클릭 감지라는 세 가지 골칫거리를 겪습니다. Popover API와 dialog 요소는 이를 <b>브라우저 엔진의 새로운 렌더링 계층인 top layer</b>에서 처리하도록 표준화해, 상당 부분을 JS 없이 해결합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Top Layer: DOM 트리 순서와 무관하게 항상 맨 위</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">popover 속성이 붙은 요소나 showModal()로 연 dialog는 <b>일반 DOM 렌더링 트리와 완전히 분리된 별도 레이어</b>에서 그려져 항상 문서의 다른 콘텐츠보다 위에 렌더링됩니다. 부모의 overflow나 z-index 설정이 아예 영향을 주지 못합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선언적 상호작용: HTML 속성만으로 열고 닫기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">popovertarget 속성을 가진 버튼은 대상 id를 가리키기만 하면 클릭 시 자동으로 열리고 닫힙니다. <b>바깥 클릭이나 Esc로 자동 닫히는 light dismiss</b>도 내장돼 있습니다. dialog도 showModal()로 열면 배경 backdrop이 생기고 포커스가 내부로 트랩되며 Esc로 닫힙니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">기존 JS 모달</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Popover/dialog</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">렌더링 위치</td>
+<td style="border:1px solid #ddd; padding:10px;">z-index 의존</td>
+<td style="border:1px solid #ddd; padding:10px;">top layer(항상 최상단)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">바깥 클릭 닫기</td>
+<td style="border:1px solid #ddd; padding:10px;">이벤트 직접 부착</td>
+<td style="border:1px solid #ddd; padding:10px;">light dismiss 내장</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">JS 없이 동작하는 팝오버 예제</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">&lt;button popovertarget="user-menu"&gt;메뉴&lt;/button&gt;
+&lt;div id="user-menu" popover&gt;
+  &lt;a href="/profile"&gt;프로필&lt;/a&gt;
+  &lt;a href="/logout"&gt;로그아웃&lt;/a&gt;
+&lt;/div&gt;
+
+&lt;dialog id="confirm-dialog"&gt;
+  &lt;p&gt;정말 삭제하시겠습니까?&lt;/p&gt;
+  &lt;form method="dialog"&gt;&lt;button&gt;취소&lt;/button&gt;&lt;/form&gt;
+&lt;/dialog&gt;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>Popover API와 dialog는 목적이 다릅니다.</b> dialog의 showModal()은 배경을 완전히 막는 진짜 모달에, Popover API는 드롭다운·툴팁처럼 배경과 동시 상호작용 가능한 UI에 적합합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>브라우저 지원 범위를 반드시 확인하세요.</b> 비교적 최신 표준이라 구형 브라우저나 특정 WebView에서는 폴리필이 필요할 수 있습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 완전히 JS를 없앨 수 있는 것은 아닙니다. 애니메이션 트랜지션, 정교한 위치 계산, 다단계 폼 흐름에는 여전히 JS/CSS 로직이 필요합니다. 기본 동작은 표준에 맡기고 필요한 만큼만 커스텀 로직을 얹는 것이 실용적입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#PopoverAPI #dialog #웹접근성 #탑레이어 #네이티브HTML</p>
+
+</body>
+</html>
