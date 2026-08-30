@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>3D Gaussian Splatting — 웹 지도에 올라오는 실사 3D 재구성 기술</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">3D Gaussian Splatting — 웹 지도에 올라오는 실사 3D 재구성 기술</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 표면을 <b>반투명 타원체 수백만 개</b>로 표현해 GPU에서 실시간 렌더링하는 3D Gaussian Splatting이 웹 지도 생태계에 편입되는 과정을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 3D 재구성 방식을 다시 봐야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">디지털 트윈, 부동산 가상 투어처럼 실제 공간을 3D로 담는 표준 접근은 포토그래메트리로 사진을 겹쳐 폴리곤 메시를 만드는 것이었습니다. 문제는 나뭇잎, 전선, 유리창처럼 <b>매끈한 표면 가정을 깨뜨리는 대상</b>은 메시로 재구성하면 구멍이 나거나 뭉개진다는 것입니다. 2023년 발표된 3D Gaussian Splatting(3DGS)은 NeRF 수준의 사실감을 유지하면서도 일반 GPU에서 실시간 렌더링이 가능해 주목받고 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">폴리곤 대신 수백만 개의 반투명 타원체</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">3DGS는 장면을 매끈한 표면이 아니라, 공간에 흩뿌려진 <b>수십만~수백만 개의 3차원 가우시안(타원체) 집합</b>으로 표현합니다. 각 가우시안은 위치, 크기·방향, 색상, 불투명도라는 파라미터를 갖습니다. SfM으로 초기 포인트 클라우드를 얻은 뒤 학습하며, 오차가 큰 영역은 가우시안을 더 잘게 쪼개고 불필요한 것은 가지치기하는 적응적 밀도 제어를 반복합니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-26-3d-gaussian-splatting-web-mapping-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">얇은 구조물 처리</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">실시간성</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">폴리곤 메시</td>
+<td style="border:1px solid #ddd; padding:10px;">구멍·뭉개짐 발생</td>
+<td style="border:1px solid #ddd; padding:10px;">매우 빠름</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">NeRF</td>
+<td style="border:1px solid #ddd; padding:10px;">우수</td>
+<td style="border:1px solid #ddd; padding:10px;">느림</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">3D Gaussian Splatting</td>
+<td style="border:1px solid #ddd; padding:10px;">우수</td>
+<td style="border:1px solid #ddd; padding:10px;">빠름</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">래스터화 기반 실시간 렌더링</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">NeRF가 광선마다 신경망을 여러 번 통과시키는 무거운 볼륨 렌더링에 의존했다면, 3DGS는 <b>전통적 그래픽스 파이프라인에 가까운 래스터화(splat) 방식</b>으로 렌더링합니다. 카메라 시점이 정해지면 각 가우시안을 화면에 투영하고, 깊이 순서대로 정렬한 뒤 알파 블렌딩으로 겹쳐 그립니다. 이 병렬 구조 덕분에 GPU에서 초당 수백 프레임까지 렌더링이 가능합니다.</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">웹 뷰어 로딩 예제</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">const viewer = new GaussianSplatViewer({
+  canvas: document.getElementById("scene"),
+  splatUrl: "/models/site-scan.splat",
+  cameraControls: "orbit",
+});
+
+viewer.on("load", () => {
+  console.log(`가우시안 개수: ${viewer.splatCount}`);
+});</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>아직 표준 배포 포맷이 완전히 정착하지 않았습니다.</b> .splat, .ply 기반 여러 변형 포맷이 경쟁 중이며, 3D Tiles와의 통합은 현재진행형이라 도구 선택 시 유지보수 리스크를 감안해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>파일 크기와 GPU 메모리 사용량이 상당합니다.</b> 대규모 야외 장면은 압축·LOD 전략 없이는 모바일 기기에서 감당하기 어렵습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — "이 건물은 몇 층인가" 같은 구조화된 속성을 가우시안 하나하나에 붙이는 표준 방법이 아직 3D Tiles 메타데이터 확장만큼 성숙하지 않았습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#3DGaussianSplatting #실사3D #포토그래메트리 #웹지도 #NeRF</p>
+
+</body>
+</html>
