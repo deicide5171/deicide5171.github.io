@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Node.js Streams와 백프레셔 — 대용량 파일 처리에서 메모리를 지키는 파이프라인 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Node.js Streams와 백프레셔 — 대용량 파일 처리에서 메모리를 지키는 파이프라인 설계</div>
+<p style="font-size:14px; color:#999;">백엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 생산 속도가 소비 속도를 앞지를 때 <b>자동으로 속도를 늦추는 백프레셔</b> 메커니즘과 pipeline() 활용법을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 Node.js 백프레셔를 다시 봐야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">fs.readFile로 수 GB짜리 파일을 읽으면 <b>파일 전체가 그대로 메모리 사용량</b>이 되어 OOM으로 죽을 수 있습니다. Streams는 청크 단위로 흘려보내 이를 해결하지만, 생산 쪽이 소비 쪽보다 빠르면 처리 못 한 청크가 버퍼에 쌓여 똑같이 메모리를 다 써버립니다. 백프레셔가 이 흐름을 자동으로 조절합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">write()의 반환값이 신호를 보낸다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Writable의 write()는 boolean을 반환합니다. <b>false면 버퍼가 highWaterMark를 넘어섰으니 그만 보내라는 신호</b>입니다. 이를 무시하면 데이터가 버퍼에 계속 쌓여 메모리가 무한정 늘어납니다. drain 이벤트가 발생할 때까지 기다렸다가 재개하는 것이 올바른 처리입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">pipe()와 pipeline()이 이 규약을 대신 지켜준다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">pipe()는 백프레셔 처리를 자동화하지만 <b>에러 발생 시 나머지 스트림을 자동 정리해주지 않아</b> 리소스 누수 위험이 있습니다. stream.pipeline()은 백프레셔 처리는 동일하게 하면서 에러 시 관련된 모든 스트림을 자동 정리해줍니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">에러 시 정리</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">권장 여부</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">pipe()</td>
+<td style="border:1px solid #ddd; padding:10px;">자동으로 안 됨</td>
+<td style="border:1px solid #ddd; padding:10px;">레거시만 유지</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">pipeline()</td>
+<td style="border:1px solid #ddd; padding:10px;">자동 정리</td>
+<td style="border:1px solid #ddd; padding:10px;">신규 코드 기본</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">pipeline로 대용량 CSV 처리 예제</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">const { pipeline } = require('node:stream/promises');
+const fs = require('node:fs');
+
+async function processLargeFile() {
+  await pipeline(
+    fs.createReadStream('huge-input.csv'),
+    upperCaseTransform,
+    fs.createWriteStream('output.csv')
+  );
+}
+
+processLargeFile().catch(console.error);</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>highWaterMark를 무작정 키우는 것은 해결책이 아닙니다.</b> 버퍼가 커지면 메모리 사용량 상한선도 함께 올라갑니다. 프로파일링을 근거로만 조정해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>비동기 Transform에서 콜백을 빠뜨리면 파이프라인 전체가 멈춥니다.</b> 에러 처리 경로에서 callback() 호출을 누락하면 다음 청크를 영원히 기다리며 조용히 멈춰버립니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — Express나 Fastify에서도 같은 원리가 적용됩니다. 요청·응답 객체 자체가 스트림이므로 버퍼에 전부 담지 말고 pipeline()에 그대로 연결하면 대용량 파일도 일정한 메모리로 처리할 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#Nodejs #Streams #백프레셔 #pipeline #메모리관리</p>
+
+</body>
+</html>
