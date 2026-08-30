@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>이벤트 설계의 갈림길 — Notification vs State Transfer</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">이벤트 설계의 갈림길 — Event Notification과 Event-Carried State Transfer</div>
+<p style="font-size:14px; color:#999;">아키텍처·시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 이벤트에 ID만 담을지 전체 상태를 담을지는 <b>컨슈머-프로듀서 간 런타임 결합도</b>를 결정하는 아키텍처 선택입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 사소한 문제가 아닌가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"주문이 완료됐다"는 이벤트에 ID만 넣을지, 상품 목록·금액까지 전부 넣을지는 컨슈머가 데이터를 다시 얻기 위해 프로듀서에게 동기 호출을 해야 하는지를 결정합니다. 이 선택이 이벤트 기반 아키텍처가 추구하는 <b>느슨한 결합</b>이 실제로 달성되는지를 좌우합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Event Notification — 무슨 일이 있었다만 알린다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">최소한의 정보만 담는 방식으로, 컨슈머는 상세 정보가 필요하면 프로듀서 API를 다시 호출해야 합니다. 이벤트는 작고 단순하지만, <b>프로듀서에 대한 동기 의존성</b>이 생겨 프로듀서가 다운되면 컨슈머도 처리를 못하는 상황이 생깁니다.</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Event-Carried State Transfer — 데이터를 통째로 옮긴다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">필요한 데이터를 이벤트 자체에 전부 실어 보내, 컨슈머가 프로듀서에 대한 런타임 의존성 없이 동작합니다. 대신 이벤트가 커지고, 프로듀서의 내부 데이터 모델이 사실상 외부에 노출되어 <b>스키마 진화 부담</b>이 커지며 데이터 중복에 따른 최종 일관성을 감수해야 합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Notification</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">State Transfer</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">페이로드</td>
+<td style="border:1px solid #ddd; padding:10px;">작음(ID)</td>
+<td style="border:1px solid #ddd; padding:10px;">큼(전체 상태)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">결합도</td>
+<td style="border:1px solid #ddd; padding:10px;">동기 의존</td>
+<td style="border:1px solid #ddd; padding:10px;">독립적</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">같은 이벤트를 두 방식으로 설계한 예제</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">// Event Notification
+{
+  "eventType": "OrderCompleted",
+  "orderId": "12345",
+  "occurredAt": "2026-09-27T12:00:00Z"
+}
+
+// Event-Carried State Transfer
+{
+  "eventType": "OrderCompleted",
+  "orderId": "12345",
+  "occurredAt": "2026-09-27T12:00:00Z",
+  "customerId": "cust-9981",
+  "items": [{"sku": "SKU-001", "quantity": 2, "price": 15000}],
+  "totalAmount": 30000,
+  "shippingAddress": { "city": "서울", "zipcode": "04524" }
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">두 번째 방식이면 배송 서비스가 이 이벤트 하나만으로 배송 준비를 시작할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>컨슈머 수와 조회 패턴을 먼저 파악하세요.</b> 컨슈머가 하나뿐이면 Notification으로 충분하지만, 여러 개고 독립적 가용성이 필요하면 State Transfer가 정당화됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>혼합 전략도 흔합니다.</b> 자주 필요한 핵심 필드는 이벤트에 포함하고 드문 상세 정보는 별도 API로 남겨두는 절충안이 있습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — Fat 이벤트를 선택했다면 내부 도메인 모델을 그대로 노출하지 말고, 이벤트 전용 DTO를 별도로 두어 내부 리팩터링이 컨슈머에 영향을 주지 않도록 해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#이벤트기반아키텍처 #EventCarriedStateTransfer #EventNotification #이벤트설계 #MSA</p>
+
+</body>
+</html>
