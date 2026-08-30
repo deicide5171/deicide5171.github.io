@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>TCP TIME_WAIT 소켓이 쌓여 연결이 막힐 때 — 원인과 해결</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">TCP TIME_WAIT 소켓이 쌓여 연결이 막힐 때 — 원인과 해결</div>
+<p style="font-size:14px; color:#999;">인프라</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — TIME_WAIT는 <b>버그가 아니라 TCP의 정상 안전장치</b>입니다. 근본 해결은 커널 튜닝이 아니라 Keep-Alive와 커넥션 풀링으로 연결 재사용 구조를 만드는 것입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 갑자기 연결이 안 맺어질까</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">평소엔 멀쩡하던 서버가 트래픽이 몰리는 시간대나 부하 테스트 중에 갑자기 새 연결을 못 맺기 시작합니다. netstat -an으로 확인해 보면 <b>TIME_WAIT 상태의 소켓이 수만 개씩 쌓여 있는 것</b>을 발견하게 됩니다. TCP 연결을 정상적으로 종료하는 과정 자체가 이 대기 상태를 만들어내고, 쌓이는 속도가 정리되는 속도보다 빠르면 사용 가능한 포트가 고갈됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 문제는 짧은 연결을 아주 많이 맺고 끊는 구조(HTTP/1.1 keep-alive 없이 매번 새 연결을 여는 클라이언트, 아웃바운드 프록시)에서 흔하게 나타납니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-23-tcp-time-wait-socket-issue-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — TIME_WAIT는 TCP의 안전장치다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">TCP 연결을 능동적으로 닫는 쪽은 연결을 끊은 뒤에도 일정 시간(리눅스 기본값 기준 약 60초) 동안 TIME_WAIT 상태를 유지합니다. 마지막 ACK가 유실됐을 때 재전송 FIN에 대응하고, 지연 패킷이 새 연결로 잘못 전달되는 것을 막기 위해서입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">문제는 이 소켓이 <b>로컬 IP+포트, 상대 IP+포트 4-튜플을 계속 점유</b>한다는 점입니다. 특정 상대와 짧은 연결을 초당 수백~수천 번 맺고 끊으면 사용 가능한 로컬 포트가 바닥납니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — 서버 쪽이 먼저 닫지 않게 하는 것이 근본 해법</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">TIME_WAIT는 연결을 먼저 닫는 쪽에서 발생합니다. HTTP 서버가 응답 후 연결을 먼저 닫는 구조라면 TIME_WAIT는 서버 쪽에 쌓입니다. 이 경우 커널 파라미터를 아무리 조정해도 근본 해결이 안 되고, <b>클라이언트가 연결을 닫거나 Keep-Alive로 재사용하도록 구조를 바꾸는 것</b>이 우선입니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># 현재 TIME_WAIT 소켓 개수 확인
+ss -tan state time-wait | wc -l
+
+# 상태별 연결 수 요약
+ss -tan | awk '{print $1}' | sort | uniq -c | sort -rn</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 커널 파라미터로 완화하기</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;"># TIME_WAIT 소켓을 다시 사용하도록 허용 (아웃바운드 연결에 유용)
+net.ipv4.tcp_tw_reuse = 1
+
+# 로컬 포트 범위를 넓혀 가용 포트 수 확보
+net.ipv4.ip_local_port_range = 1024 65535
+
+net.ipv4.tcp_fin_timeout = 30</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>tcp_tw_recycle은 커널 4.12 이후 제거됐고</b> NAT 환경에서 연결 거부를 유발하는 부작용이 있었으므로 절대 켜지 말아야 합니다. tcp_tw_reuse는 아웃바운드 연결에 한해 비교적 안전합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>애플리케이션 레벨에서 커넥션 풀링과 Keep-Alive를 우선 검토하세요.</b> DB 클라이언트, HTTP 클라이언트 모두 연결을 재사용하도록 설정하는 것이 커널 튜닝보다 훨씬 근본적입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>Nginx 업스트림 연결도 keepalive 지시어 없이는 매 요청마다 새 연결을 맺어 TIME_WAIT를 유발할 수 있습니다.</b></p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 모니터링에 TIME_WAIT 소켓 수를 지표로 추가해야 합니다. 문제가 터진 뒤에야 netstat을 열어보는 대신, 평소 추세를 그래프로 봐두면 포트 고갈 직전에 미리 알아챌 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#TCP #TIME_WAIT #소켓 #네트워크 #리눅스</p>
+
+</body>
+</html>

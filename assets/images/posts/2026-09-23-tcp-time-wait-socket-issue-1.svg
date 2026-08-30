@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" text-anchor="middle" font-family="sans-serif" font-size="20" font-weight="bold" fill="#222">TCP 연결 종료와 TIME_WAIT</text>
+
+  <!-- lifelines -->
+  <line x1="150" y1="70" x2="150" y2="400" stroke="#999" stroke-width="1.5"/>
+  <line x1="650" y1="70" x2="650" y2="400" stroke="#999" stroke-width="1.5"/>
+  <text x="150" y="60" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#1f3d7a">능동적으로 닫는 쪽</text>
+  <text x="650" y="60" text-anchor="middle" font-family="sans-serif" font-size="15" font-weight="bold" fill="#03612f">상대방</text>
+
+  <!-- FIN -->
+  <line x1="150" y1="110" x2="650" y2="110" stroke="#3b6fd6" stroke-width="2" marker-end="url(#ah1)"/>
+  <text x="400" y="102" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1f3d7a">1. FIN</text>
+
+  <!-- ACK -->
+  <line x1="650" y1="150" x2="150" y2="150" stroke="#03a35a" stroke-width="2" marker-end="url(#ah2)"/>
+  <text x="400" y="142" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#03612f">2. ACK</text>
+
+  <!-- FIN from other side -->
+  <line x1="650" y1="190" x2="150" y2="190" stroke="#03a35a" stroke-width="2" marker-end="url(#ah2)"/>
+  <text x="400" y="182" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#03612f">3. FIN</text>
+
+  <!-- final ACK -->
+  <line x1="150" y1="230" x2="650" y2="230" stroke="#3b6fd6" stroke-width="2" marker-end="url(#ah1)"/>
+  <text x="400" y="222" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#1f3d7a">4. ACK</text>
+
+  <defs>
+    <marker id="ah1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#3b6fd6"/>
+    </marker>
+    <marker id="ah2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#03a35a"/>
+    </marker>
+  </defs>
+
+  <!-- TIME_WAIT box -->
+  <rect x="90" y="255" width="120" height="120" rx="8" fill="#fff5e9" stroke="#e08b2b" stroke-width="2"/>
+  <text x="150" y="300" text-anchor="middle" font-family="sans-serif" font-size="14" font-weight="bold" fill="#8a5314">TIME_WAIT</text>
+  <text x="150" y="322" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#8a5314">약 60초</text>
+  <text x="150" y="344" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#8a5314">(2 x MSL)</text>
+
+  <text x="150" y="395" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#555">4-튜플 점유</text>
+
+  <!-- Explanation box right -->
+  <rect x="440" y="255" width="300" height="120" rx="8" fill="#eef4ff" stroke="#3b6fd6" stroke-width="1.5"/>
+  <text x="460" y="280" font-family="sans-serif" font-size="13" fill="#1f3d7a">왜 필요한가:</text>
+  <text x="460" y="303" font-family="sans-serif" font-size="12.5" fill="#333">1. 마지막 ACK 유실 시 재전송 FIN 대응</text>
+  <text x="460" y="325" font-family="sans-serif" font-size="12.5" fill="#333">2. 지연 패킷이 새 연결로 오배달되는 것 방지</text>
+  <text x="460" y="352" font-family="sans-serif" font-size="12.5" fill="#c0392b" font-weight="bold">짧은 연결 폭주 시 포트 고갈 위험</text>
+
+  <text x="400" y="425" text-anchor="middle" font-family="sans-serif" font-size="13" fill="#777">해법: Keep-Alive/커넥션 풀링으로 연결 재사용 우선</text>
+</svg>
