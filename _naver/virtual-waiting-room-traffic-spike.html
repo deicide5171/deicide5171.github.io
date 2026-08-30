@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>대기열(Virtual Waiting Room) 설계 — 티켓팅 사이트가 트래픽 폭주를 견디는 법</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">대기열(Virtual Waiting Room) 설계 — 티켓팅 사이트가 트래픽 폭주를 견디는 법</div>
+<p style="font-size:14px; color:#999;">시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 서버 증설만으로는 순간 트래픽 폭주를 못 버팁니다. <b>가상 대기열</b>로 요청 유입 속도 자체를 앞단에서 통제해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 서버를 늘려도 뻗는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">콘서트 예매나 수강신청처럼 "정확히 오전 10시부터 선착순"인 이벤트는 평소 대비 수백 배 트래픽이 몇 초 안에 몰립니다. 웹 서버는 수평 확장이 쉽지만, 하나의 재고 값을 두고 경쟁하는 DB나 외부 결제 게이트웨이는 서버를 늘린다고 함께 확장되지 않습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-22-virtual-waiting-room-traffic-spike-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">올바른 접근: 가상 대기열</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">애플리케이션 서버 안에서 세마포어로 동시 처리 수를 제한하는 방식은 요청이 이미 서버까지 도달한 뒤에야 걸러진다는 한계가 있습니다. 가상 대기열은 사용자가 실제 서비스에 접근하기 전, 별도의 경량 게이트웨이에서 순번표를 발급하고 정해진 속도로만 흘려보냅니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; overflow-x:auto; line-height:1.6;">const enterWaitingRoom = async (userId) => {
+  const res = await fetch('/waiting-room/enter', {
+    method: 'POST',
+    body: JSON.stringify({ userId, eventId: 'concert-2026' })
+  });
+  const { queueToken, estimatedWaitSeconds } = await res.json();
+  return queueToken;
+};</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">대기열 서버는 Redis Sorted Set 같은 자료구조로 순번을 관리하며, 본 서비스보다 훨씬 가벼운 시스템으로 수십만 명의 동시 대기를 감당할 수 있습니다. "대기 순번 3,204번, 예상 대기 2분" 같은 명확한 안내는 새로고침 폭탄으로 인한 악순환도 줄여줍니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 대기열 없이 API를 직접 호출해 우회할 수 있다면 대기열 자체가 무의미해집니다. 실제 API 서버 쪽에서도 유효한 대기열 토큰을 검증하는 계층을 반드시 함께 둬야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">대기열 통과 후 발급되는 토큰에는 반드시 유효시간을 둬야 합니다. 순번이 지나 접근 권한을 얻었는데도 한참 뒤에 들어오면 그 자리를 계속 비워두는 셈이 됩니다. 본 서비스로 흘려보내는 속도는 감이 아니라 실측 부하 테스트로 정해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#대기열시스템 #VirtualWaitingRoom #트래픽폭주 #티켓팅 #레디스</p>
+
+</body>
+</html>
