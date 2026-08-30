@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>MapLibre GL JS Globe 투영 내부 동작</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">MapLibre GL JS Globe 투영 내부 동작 — 같은 타일로 평면과 구를 모두 그리는 법</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — Globe 투영은 완전히 새로운 렌더 엔진이 아니라, 기존 벡터 타일 파이프라인 위에서 <b>정점 셰이더의 투영 행렬만 바꿔치기</b>하는 방식으로 구현됐습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지구본 모드가 다시 주목받는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">전 세계 데이터를 다루는 시각화에서는 평면 머케이터 투영의 근본적인 문제가 두드러집니다. 극지방으로 갈수록 면적이 극단적으로 부풀려지고 대권 항로가 부자연스럽게 휘어 보입니다. MapLibre GL JS는 projection: 'globe' 설정 하나로 이를 활성화할 수 있게 했습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">타일 데이터는 그대로, 투영 행렬만 바뀐다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">평면 모드에서는 정점 셰이더의 투영이 단순한 2D 아핀 변환이었다면, Globe 모드에서는 정규화된 좌표를 <b>구면 좌표로 다시 매핑</b>하는 연산이 들어갑니다. 타일을 가져오고 파싱하는 앞단 파이프라인은 완전히 동일하며, 같은 스타일과 CustomLayer가 두 모드 모두에서 그대로 동작합니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-27-maplibre-globe-projection-internals-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">줌 레벨에 따른 평면-구면 보간</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">줌 레벨이 깊어지면 지구본의 곡률이 시각적으로 감지하기 어려워집니다. MapLibre는 특정 임계값 근처에서 두 투영 방식을 부드럽게 <b>보간</b>해 전환하므로, 사용자는 전환을 눈치채지 못하고 고줌에서는 평면 투영과 동일한 성능을 유지합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">평면 투영</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Globe 투영</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">타일 데이터</td>
+<td style="border:1px solid #ddd; padding:10px;">동일</td>
+<td style="border:1px solid #ddd; padding:10px;">동일(재사용)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">극지방 왜곡</td>
+<td style="border:1px solid #ddd; padding:10px;">심함</td>
+<td style="border:1px solid #ddd; padding:10px;">없음</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Globe 투영 활성화와 대권 항로 예제</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">const map = new maplibregl.Map({
+  container: 'map',
+  style: 'https://demotiles.maplibre.org/style.json',
+  center: [0, 20],
+  zoom: 1.5,
+  projection: 'globe',
+});
+
+map.on('load', () =&gt; {
+  map.addSource('flight-route', {
+    type: 'geojson',
+    data: turf.greatCircle([126.9, 37.5], [-122.4, 37.7]),
+  });
+  map.addLayer({
+    id: 'flight-route-layer',
+    type: 'line',
+    source: 'flight-route',
+    paint: { 'line-color': '#e0952b', 'line-width': 2 },
+  });
+});</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>CustomLayerInterface와의 호환성을 확인하세요.</b> 커스텀 WebGL 레이어가 좌표 변환을 하드코딩했다면 Globe 모드에서 좌표가 어긋날 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>극지방 근처 데이터 시각화에 특히 유용합니다.</b> 항로, 해류, 극궤도 위성 경로처럼 고위도 지역을 다루는 시각화에서 우선순위가 가장 높습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 구면 좌표 변환은 저사양 모바일 기기에서 프레임 드랍을 유발할 수 있으므로, 저줌 오버뷰에서만 Globe를 쓰고 콘텐츠 탐색은 평면 투영으로 유도하는 UX가 안전합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#MapLibre #GlobeProjection #3D지도 #웹지도라이브러리 #투영변환</p>
+
+</body>
+</html>
