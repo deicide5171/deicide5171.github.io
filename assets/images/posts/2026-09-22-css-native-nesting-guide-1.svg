@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif, monospace">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="32" text-anchor="middle" font-size="18" font-weight="bold" fill="#222">Sass 빌드 방식 vs 네이티브 CSS Nesting</text>
+
+  <rect x="40" y="65" width="340" height="330" rx="10" fill="#fdeeee" stroke="#e05a5a" stroke-width="2"/>
+  <text x="210" y="95" text-anchor="middle" font-size="15" font-weight="bold" fill="#8a2e2e">Sass (.scss)</text>
+
+  <rect x="70" y="115" width="280" height="70" rx="6" fill="#ffffff" stroke="#e05a5a"/>
+  <text x="90" y="138" font-size="11" font-family="monospace" fill="#333">.card {</text>
+  <text x="100" y="155" font-size="11" font-family="monospace" fill="#333">.title { ... }</text>
+  <text x="90" y="172" font-size="11" font-family="monospace" fill="#333">}</text>
+
+  <line x1="210" y1="195" x2="210" y2="220" stroke="#8a2e2e" stroke-width="3" marker-end="url(#arrowN)"/>
+  <text x="210" y="212" text-anchor="middle" font-size="11" fill="#8a2e2e">빌드 단계 (컴파일)</text>
+
+  <rect x="70" y="225" width="280" height="70" rx="6" fill="#fbe3e3" stroke="#e05a5a" stroke-width="1.5"/>
+  <text x="90" y="248" font-size="11" font-family="monospace" fill="#333">.card { ... }</text>
+  <text x="90" y="265" font-size="11" font-family="monospace" fill="#333">.card .title { ... }</text>
+  <text x="210" y="285" text-anchor="middle" font-size="11" fill="#8a2e2e">평탄화된 .css 파일</text>
+
+  <text x="210" y="345" text-anchor="middle" font-size="12" fill="#555">빌드 도구 필요</text>
+  <text x="210" y="368" text-anchor="middle" font-size="12" fill="#555">변수·믹스인·반복문 지원</text>
+
+  <rect x="420" y="65" width="340" height="330" rx="10" fill="#eef8ef" stroke="#2f9e58" stroke-width="2"/>
+  <text x="590" y="95" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f5c34">네이티브 CSS Nesting</text>
+
+  <rect x="450" y="115" width="280" height="90" rx="6" fill="#ffffff" stroke="#2f9e58"/>
+  <text x="470" y="138" font-size="11" font-family="monospace" fill="#333">.card {</text>
+  <text x="480" y="155" font-size="11" font-family="monospace" fill="#333">& .title { ... }</text>
+  <text x="480" y="172" font-size="11" font-family="monospace" fill="#333">&:hover { ... }</text>
+  <text x="470" y="189" font-size="11" font-family="monospace" fill="#333">}</text>
+
+  <line x1="590" y1="215" x2="590" y2="240" stroke="#1f5c34" stroke-width="3" marker-end="url(#arrowN)"/>
+  <text x="590" y="232" text-anchor="middle" font-size="11" fill="#1f5c34">브라우저가 직접 해석</text>
+
+  <rect x="450" y="245" width="280" height="50" rx="6" fill="#e6f7ea" stroke="#2f9e58" stroke-width="1.5"/>
+  <text x="590" y="275" text-anchor="middle" font-size="12" fill="#1f5c34">빌드 단계 없이 즉시 적용</text>
+
+  <text x="590" y="345" text-anchor="middle" font-size="12" fill="#555">빌드 도구 불필요</text>
+  <text x="590" y="368" text-anchor="middle" font-size="12" fill="#555">선택자 중첩만 지원 (변수 연산 X)</text>
+
+  <defs>
+    <marker id="arrowN" markerWidth="10" markerHeight="10" refX="4" refY="8" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,0 L4,9 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>
