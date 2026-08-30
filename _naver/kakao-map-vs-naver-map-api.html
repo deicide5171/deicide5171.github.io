@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>카카오맵 API vs 네이버 지도 API — 국내 서비스에 뭘 붙여야 할까</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">카카오맵 API vs 네이버 지도 API — 국내 서비스에 뭘 붙여야 할까</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 국내 주소 체계를 다루는 서비스라면 국제 라이브러리보다 <b>카카오맵·네이버 지도</b>의 지오코딩 정확도가 유리합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 국내 지도 API부터 검토해야 하나</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">OpenLayers, Mapbox GL JS 같은 국제 라이브러리는 훌륭하지만, 한국 주소 체계(도로명주소, 지번주소, 건물명 검색)에 대한 지오코딩 정확도는 국내 사업자가 직접 제공하는 API가 훨씬 앞섭니다. 매장 찾기, 배달 주소 입력 같은 기능을 만드는 국내 서비스라면 카카오맵과 네이버 지도 API를 먼저 검토하는 것이 합리적입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-22-kakao-map-vs-naver-map-api-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">첫 설정: SDK 로드 방식</div>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; overflow-x:auto; line-height:1.6;">// 카카오맵
+&lt;script src="//dapi.kakao.com/v2/maps/sdk.js?appkey=KEY&amp;autoload=false"&gt;&lt;/script&gt;
+&lt;script&gt;
+  kakao.maps.load(function () {
+    const map = new kakao.maps.Map(el, { center: latlng, level: 3 });
+  });
+&lt;/script&gt;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">카카오맵은 <b>autoload=false와 kakao.maps.load() 콜백</b>을 함께 써야 SDK 로딩 완료 시점을 안전하게 제어할 수 있습니다. 이 콜백 없이 바로 지도를 생성하면 오류가 날 수 있습니다. 네이버 지도는 스크립트가 로드되면 naver.maps 네임스페이스가 곧바로 사용 가능해 초기 설정이 상대적으로 단순합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 카카오는 JavaScript SDK에서 쓰는 키와 서버 사이드 REST API 키가 따로 발급됩니다. 두 키를 혼동하면 서버에서 지오코딩 API를 호출할 때 인증 실패 에러를 마주하게 됩니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">언제 무엇을 선택해야 할까</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이미 카카오 로그인, 카카오톡 공유 같은 카카오 생태계 기능을 쓰고 있다면 카카오맵으로 통일하는 편이 일관성이 있습니다. 반대로 네이버 클라우드 플랫폼(NCP)의 다른 서비스를 인프라로 쓰고 있다면 네이버 지도가 같은 콘솔에서 키를 관리할 수 있어 운영 편의성이 높습니다. API 키는 반드시 콘솔에서 도메인 제한을 걸어 무단 사용을 막으세요.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#카카오맵 #네이버지도API #국내지도API #지오코딩 #웹지도라이브러리</p>
+
+</body>
+</html>
