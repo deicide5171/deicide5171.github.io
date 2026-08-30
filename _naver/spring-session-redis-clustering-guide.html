@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>로드밸런서 뒤에서 로그인이 자꾸 풀릴 때 — Spring Session과 Redis로 세션 클러스터링하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">로드밸런서 뒤에서 로그인이 자꾸 풀릴 때 — Spring Session과 Redis로 세션 클러스터링하기</div>
+<p style="font-size:14px; color:#999;">시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 로그인이 풀리는 문제는 대부분 <b>세션이 각 서버 로컬 메모리에 갇혀 있기 때문</b>입니다. Spring Session으로 코드 변경 없이 세션을 Redis로 외부화하는 방법을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 서버를 늘리자마자 로그인이 풀릴까</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">트래픽이 늘어 서버를 여러 대로 늘렸더니 사용자들이 &quot;방금 로그인했는데 다시 로그인하라고 뜬다&quot;는 불만을 쏟아냅니다. 정확한 원인은 대부분 <b>세션이 각 서버의 로컬 메모리에만 저장돼 있기 때문</b>입니다. 요청이 로드밸런서를 거쳐 매번 다른 서버로 분산되는데, 로그인은 서버 A가 했지만 다음 요청이 서버 B로 가면 B는 이 세션을 전혀 모릅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 문제를 스티키 세션(같은 사용자를 항상 같은 서버로)으로 임시로 넘기는 팀이 많지만, 서버가 재시작되면 그 서버에 붙어 있던 모든 세션이 한 번에 날아가는 근본적 회피일 뿐입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-23-spring-session-redis-clustering-guide-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — 세션을 서버 바깥으로 꺼낸다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">근본 해법은 세션 데이터를 <b>모든 서버가 공유하는 외부 저장소</b>에 두는 것입니다. 어떤 서버가 요청을 받든 같은 세션에 접근할 수 있어 스티키 세션이 필요 없어지고, 서버가 재시작돼도 세션 저장소는 살아 있습니다. Redis가 널리 쓰이는 이유는 짧은 수명의 데이터를 매우 빠르게 처리할 수 있기 때문입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — Spring Session은 세션 구현체를 교체할 뿐이다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">HttpSession은 원래 서블릿 컨테이너가 메모리에서 관리합니다. <b>Spring Session은 이 구현체를 가로채</b> 기존 session.setAttribute() API는 그대로 두면서 실제 저장 위치만 Redis로 바꿔줍니다. 컨트롤러 코드를 거의 손대지 않고도 세션 저장소를 교체할 수 있는 것이 핵심입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — Spring Boot 적용하기</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">spring:
+  session:
+    store-type: redis
+    timeout: 30m
+  data:
+    redis:
+      host: redis-cluster.internal
+      port: 6379
+
+@RestController
+public class LoginController {
+    @PostMapping("/login")
+    public ResponseEntity&lt;Void&gt; login(HttpSession session, @RequestBody LoginRequest req) {
+        // 기존 코드와 완전히 동일 — 실제로는 Redis에 저장된다
+        session.setAttribute("userId", authenticate(req));
+        return ResponseEntity.ok().build();
+    }
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">의존성만 추가하면 Spring Boot 오토 컨피규레이션이 HttpSession 구현체를 Redis 기반으로 자동 교체해줍니다. 기존 코드는 수정할 필요가 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">흔한 함정</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">함정</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">결과</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">대응</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">세션에 큰 객체 통째로 저장</td>
+<td style="border:1px solid #ddd; padding:10px;">직렬화 비용, 메모리 압박</td>
+<td style="border:1px solid #ddd; padding:10px;">최소 식별자만 세션에</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Redis 단일 인스턴스</td>
+<td style="border:1px solid #ddd; padding:10px;">Redis 장애 시 전체 로그인 불가</td>
+<td style="border:1px solid #ddd; padding:10px;">Sentinel/Cluster로 이중화</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>세션 클러스터링을 도입한 이유가 특정 서버 장애로부터 로그인을 보호하기 위함인데, 정작 Redis 자체가 단일 장애점이 되면 본말이 전도됩니다.</b> Redis Sentinel로 자동 페일오버를 구성해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>세션에는 최소한의 데이터만 담으세요.</b> 사용자 전체 프로필 같은 큰 데이터는 별도 캐시나 DB 조회로 가져오고, 세션에는 사용자 ID나 권한 요약 정도만 두는 것이 좋습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>세션 저장소와 캐시 저장소를 같은 Redis 인스턴스로 섞지 마세요.</b> 캐시 정리 정책 때문에 세션이 갑자기 사라질 수 있습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 로그아웃 시 실제로 Redis의 해당 세션 키가 삭제되는지, 다른 탭에서도 즉시 반영되는지 반드시 테스트해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#세션클러스터링 #SpringSession #Redis #확장성 #로드밸런싱</p>
+
+</body>
+</html>
