@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="35" text-anchor="middle" font-size="18" font-weight="bold" fill="#222">B-tree 인덱스 삽입 패턴 비교</text>
+
+  <rect x="40" y="65" width="340" height="330" rx="10" fill="#eef8ef" stroke="#2f9e58" stroke-width="2"/>
+  <text x="210" y="95" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f5c34">auto-increment (순차)</text>
+
+  <rect x="70" y="120" width="280" height="36" fill="#ffffff" stroke="#2f9e58" stroke-width="1.5"/>
+  <text x="210" y="143" text-anchor="middle" font-size="12" fill="#333">1, 2, 3, 4, 5 ... 채워짐</text>
+
+  <rect x="70" y="170" width="280" height="36" fill="#ffffff" stroke="#2f9e58" stroke-width="1.5"/>
+  <text x="210" y="193" text-anchor="middle" font-size="12" fill="#333">6, 7, 8, 9, 10 ... 채워짐</text>
+
+  <rect x="70" y="220" width="280" height="36" fill="#e6f7ea" stroke="#2f9e58" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="210" y="243" text-anchor="middle" font-size="12" fill="#1f5c34">새 값 11 → 맨 끝에만 추가</text>
+
+  <text x="210" y="300" text-anchor="middle" font-size="12" fill="#555">페이지 분할 거의 없음</text>
+  <text x="210" y="322" text-anchor="middle" font-size="12" fill="#555">디스크 쓰기도 순차적</text>
+  <text x="210" y="344" text-anchor="middle" font-size="12" fill="#555">인덱스 크기 = 데이터 크기에 비례</text>
+
+  <rect x="420" y="65" width="340" height="330" rx="10" fill="#fdeeee" stroke="#e05a5a" stroke-width="2"/>
+  <text x="590" y="95" text-anchor="middle" font-size="15" font-weight="bold" fill="#8a2e2e">UUID v4 (무작위)</text>
+
+  <rect x="450" y="120" width="120" height="36" fill="#ffffff" stroke="#e05a5a" stroke-width="1.5"/>
+  <text x="510" y="143" text-anchor="middle" font-size="11" fill="#333">3f2a...</text>
+  <rect x="590" y="120" width="120" height="36" fill="#fbe3e3" stroke="#e05a5a" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="650" y="143" text-anchor="middle" font-size="11" fill="#8a2e2e">새값 끼어듦 → 분할</text>
+
+  <rect x="450" y="170" width="120" height="36" fill="#ffffff" stroke="#e05a5a" stroke-width="1.5"/>
+  <text x="510" y="193" text-anchor="middle" font-size="11" fill="#333">9c1e...</text>
+  <rect x="590" y="170" width="120" height="36" fill="#ffffff" stroke="#e05a5a" stroke-width="1.5"/>
+  <text x="650" y="193" text-anchor="middle" font-size="11" fill="#333">a01f...</text>
+
+  <rect x="450" y="220" width="120" height="36" fill="#fbe3e3" stroke="#e05a5a" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="510" y="243" text-anchor="middle" font-size="11" fill="#8a2e2e">빈 공간 (단편화)</text>
+  <rect x="590" y="220" width="120" height="36" fill="#ffffff" stroke="#e05a5a" stroke-width="1.5"/>
+  <text x="650" y="243" text-anchor="middle" font-size="11" fill="#333">55b2...</text>
+
+  <text x="590" y="300" text-anchor="middle" font-size="12" fill="#555">페이지 분할 반복</text>
+  <text x="590" y="322" text-anchor="middle" font-size="12" fill="#555">디스크 쓰기 위치 무작위</text>
+  <text x="590" y="344" text-anchor="middle" font-size="12" fill="#555">인덱스 용량 팽창(단편화)</text>
+
+  <text x="400" y="425" text-anchor="middle" font-size="13" fill="#3b6fd6" font-weight="bold">UUIDv7 / ULID → 앞부분 타임스탬프로 순차성 회복</text>
+</svg>
