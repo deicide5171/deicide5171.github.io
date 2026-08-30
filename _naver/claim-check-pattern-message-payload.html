@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Claim Check 패턴 — 메시지 브로커에 큰 페이로드를 직접 넣지 않는 법</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Claim Check 패턴 — 메시지 브로커에 큰 페이로드를 직접 넣지 않는 법</div>
+<p style="font-size:14px; color:#999;">아키텍처·시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 큰 데이터는 객체 스토리지에 두고 메시지에는 <b>참조만 실어 브로커 부하를 없애는</b> Claim Check 패턴을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 Claim Check 패턴을 다시 봐야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이벤트에 필요한 데이터를 전부 담아 보내면 편해 보이지만, 이미지 분석 결과나 대용량 리포트처럼 큰 데이터가 늘면 문제가 생깁니다. Kafka는 <b>메시지 크기 제한이 있고, 이를 억지로 늘리면 페이지 캐시 효율과 복제 지연이 나빠집니다.</b> Claim Check은 큰 데이터를 별도 저장소에 두고 참조만 메시지로 주고받는 방식으로 이를 해결합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">메시지는 가볍게, 무거운 데이터는 별도 스토리지로</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">생산자는 큰 데이터를 <b>객체 스토리지에 먼저 업로드</b>하고, 그 키와 최소 메타데이터만 담은 작은 메시지를 발행합니다. 컨슈머는 메시지의 키로 필요할 때 스토리지에서 실제 데이터를 가져옵니다. 브로커는 항상 작고 예측 가능한 크기의 메시지만 다룹니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">모든 이벤트를 이렇게 처리할 필요는 없다는 트레이드오프</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Claim Check은 컨슈머가 <b>항상 스토리지에 추가로 접근</b>해야 하므로 지연시간이 늘어납니다. 작은 페이로드까지 적용하면 과잉 설계가 되므로, 크기 임계값을 두고 넘는 경우에만 전환하는 하이브리드 설계가 실무적입니다. 스토리지 만료 정책도 반드시 함께 설계해야 합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">페이로드 직접 포함</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Claim Check</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">메시지 크기</td>
+<td style="border:1px solid #ddd; padding:10px;">데이터 크기 비례</td>
+<td style="border:1px solid #ddd; padding:10px;">항상 작고 일정</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">브로커 부하</td>
+<td style="border:1px solid #ddd; padding:10px;">데이터 클수록 증가</td>
+<td style="border:1px solid #ddd; padding:10px;">데이터 크기 무관</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">적합한 크기</td>
+<td style="border:1px solid #ddd; padding:10px;">수 KB 이하</td>
+<td style="border:1px solid #ddd; padding:10px;">수백 KB 이상</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — Claim Check 발행과 소비 (Kafka + S3)</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">def publish_large_event(topic, payload_bytes, metadata):
+    if len(payload_bytes) &gt; CLAIM_CHECK_THRESHOLD:
+        object_key = f&quot;events/{uuid4()}.bin&quot;
+        s3_client.put_object(
+            Bucket=&quot;event-payloads&quot;, Key=object_key,
+            Body=payload_bytes, Tagging=&quot;ttl=7days&quot;,
+        )
+        message = {&quot;type&quot;: &quot;claim_check&quot;, &quot;storage_key&quot;: object_key, &quot;metadata&quot;: metadata}
+    else:
+        message = {&quot;type&quot;: &quot;inline&quot;, &quot;payload&quot;: payload_bytes, &quot;metadata&quot;: metadata}
+
+    kafka_producer.send(topic, json.dumps(message).encode())
+
+
+def consume_event(message):
+    data = json.loads(message.value)
+    if data[&quot;type&quot;] == &quot;claim_check&quot;:
+        payload = s3_client.get_object(Bucket=&quot;event-payloads&quot;, Key=data[&quot;storage_key&quot;])[&quot;Body&quot;].read()
+    else:
+        payload = data[&quot;payload&quot;]
+    process(payload, data[&quot;metadata&quot;])</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>스토리지 객체의 생명주기 정책을 메시지 발행 로직과 함께 설계하세요.</b> Lifecycle Rule 없이 두면 원본 데이터만 계속 쌓이는 누수가 생깁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>컨슈머의 스토리지 접근 실패를 재시도 정책에 포함하세요.</b> 메시지가 소비돼도 스토리지 조회가 실패할 수 있습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 여러 컨슈머가 같은 참조를 반복 조회한다면 캐시를 고려하세요. 매번 원본 스토리지에서 받는 대신 로컬 캐시나 CDN을 앞단에 두면 비용과 지연시간을 함께 줄입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#ClaimCheck #메시지큐 #이벤트기반아키텍처 #Kafka #페이로드설계</p>
+
+</body>
+</html>
