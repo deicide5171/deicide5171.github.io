@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>S2 지오메트리 딥다이브 — 계층적 공간 인덱스</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">S2 지오메트리 딥다이브 — 구를 정육면체에 투영해 만드는 계층적 공간 인덱스</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 지구를 정육면체에 투영하고 각 면을 쿼드트리로 나눈 뒤 <b>힐베르트 커브</b>로 순서를 매겨, 정수 하나로 위치와 공간 지역성을 동시에 표현합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 위경도만으로 부족한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">위경도는 극지방에 가까울수록 경도 1도의 실제 거리가 극단적으로 줄어드는 왜곡과, 180도 경계에서 값이 뒤집히는 문제가 있습니다. Google의 S2 Geometry는 이를 아예 다른 방식으로 우회해, 지구를 정육면체에 투영하고 계층적으로 쪼갠 뒤 <b>하나의 64비트 정수</b>로 인코딩합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정육면체 투영과 쿼드트리 분할</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">지구를 감싸는 정육면체의 6개 면에 구의 점들을 투영하면 표면 전체가 6개의 평면 사각형으로 매핑됩니다. 각 면은 4개의 자식 셀로 재귀 분할되는 쿼드트리 구조를 가지며 최대 30레벨까지 세분화할 수 있습니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-27-s2-geometry-hierarchical-cell-indexing-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">힐베르트 커브로 위치와 지역성을 함께 담기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">각 면 안에서 쿼드트리 셀들을 <b>힐베르트 커브</b> 순서로 나열합니다. 이 곡선의 핵심 성질은 곡선 상에서 가까운 두 점이 실제 2차원 공간에서도 항상 가깝다는 것입니다. 덕분에 ID가 가까운 셀은 공간적으로도 가깝다는 성질이 그대로 보존되어, B-tree 인덱스에서도 근접 검색이 효율적으로 동작합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">S2</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">H3</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">기본 도형</td>
+<td style="border:1px solid #ddd; padding:10px;">정사각형에 가까운 셀</td>
+<td style="border:1px solid #ddd; padding:10px;">육각형</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">계층 관계</td>
+<td style="border:1px solid #ddd; padding:10px;">1:4(항상 정확)</td>
+<td style="border:1px solid #ddd; padding:10px;">1:7(근사)</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">셀 ID 근접 범위 조회 예제</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">from s2sphere import CellId, LatLng
+
+latlng = LatLng.from_degrees(37.5665, 126.9780)
+cell_id = CellId.from_lat_lng(latlng).parent(13)
+
+print(cell_id.id())
+print(cell_id.to_token())
+
+range_min = cell_id.range_min()
+range_max = cell_id.range_max()
+# WHERE cell_id BETWEEN range_min AND range_max</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>정확한 반경 검색에는 셀 커버링이 필요합니다.</b> 원형 반경은 단일 셀 범위로 표현할 수 없으므로 S2RegionCoverer로 여러 셀의 합집합으로 근사합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>레벨 선택이 성능을 좌우합니다.</b> 낮은 레벨은 후보가 너무 많고 높은 레벨은 커버링 셀 개수가 폭발적으로 늘어나므로 예상 검색 반경에 맞춰 실측으로 정해야 합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — BigQuery, MongoDB 등 주요 시스템이 채택한 검증된 라이브러리를 쓰는 것이 안전하며, 극지방·경계선 같은 엣지 케이스를 직접 구현하면 실수하기 쉽습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#S2Geometry #공간인덱싱 #힐베르트커브 #좌표계 #구글S2</p>
+
+</body>
+</html>
