@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Kubernetes Topology Spread Constraints로 가용영역 안전하게 분산 배치하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Kubernetes Topology Spread Constraints로 가용영역 안전하게 분산 배치하기</div>
+<p style="font-size:14px; color:#999;">네트워크·OS·분산처리·DevOps</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 파드가 한 가용영역에 몰려 장애 시 전체가 죽는 사고를 막는 <b>maxSkew 기반 정밀 분산 배치</b> 설정을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 Topology Spread Constraints를 다시 봐야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">클러스터를 여러 가용영역에 구성해도 파드가 자동으로 고르게 흩어지지 않습니다. 기본 스케줄러는 리소스 여유 노드를 우선하기 때문에 <b>같은 서비스의 레플리카 여러 개가 한 영역에 몰릴 수 있습니다.</b> PodAntiAffinity는 이진 조건만 표현해 세밀한 제어가 어렵습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">maxSkew: 분산의 "허용 오차"를 숫자로 정의한다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">maxSkew는 <b>토폴로지 도메인 간 파드 개수 차이의 최대 허용치</b>입니다. maxSkew: 1이고 영역이 3개면 한 영역에 2개가 있을 때 다른 영역엔 최소 1개는 있어야 합니다. topologyKey로 분산 기준을, labelSelector로 대상 그룹을 지정합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">whenUnsatisfiable: 조건을 못 지킬 때 스케줄링을 막을 것인가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">DoNotSchedule로 설정하면 조건을 만족하는 노드가 나올 때까지 파드가 Pending 상태로 남아 <b>분산 원칙을 절대 어기지 않습니다.</b> ScheduleAnyway는 조건을 최대한 만족하되 안 되면 강행합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">파라미터</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">역할</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">maxSkew</td>
+<td style="border:1px solid #ddd; padding:10px;">허용되는 최대 파드 개수 차이</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">topologyKey</td>
+<td style="border:1px solid #ddd; padding:10px;">분산 기준 단위</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">whenUnsatisfiable</td>
+<td style="border:1px solid #ddd; padding:10px;">DoNotSchedule/ScheduleAnyway</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 가용영역 간 균등 분산을 강제하는 설정</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">spec:
+  replicas: 6
+  template:
+    spec:
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: DoNotSchedule
+          labelSelector:
+            matchLabels:
+              app: payment-service
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app: payment-service</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가용영역 기준은 엄격하게, 같은 영역 안 노드 분산은 유연하게 조합하는 방식이 실무에서 자주 쓰입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>DoNotSchedule을 남용하면 배포가 무한정 Pending 상태에 머무를 수 있습니다.</b> 오토스케일러 속도와 함께 검토하세요.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>기존 PodAntiAffinity와 병행 시 상호작용을 테스트하세요.</b> 두 메커니즘이 동시에 걸리면 조건이 과도하게 엄격해질 수 있습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 클러스터의 실제 가용영역 노드 수 불균형을 함께 고려하세요. 특정 영역 노드 수 자체가 적으면 maxSkew를 엄격히 걸어도 물리적으로 배치할 수 없습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#Kubernetes #TopologySpread #가용영역 #파드스케줄링 #고가용성</p>
+
+</body>
+</html>

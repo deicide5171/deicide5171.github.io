@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Matryoshka 임베딩 — 벡터 차원을 유연하게 잘라 쓰는 법</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Matryoshka 임베딩 — 벡터 차원을 유연하게 잘라 쓰는 법</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 벡터의 앞쪽 부분만 잘라도 의미가 보존되도록 학습된 <b>Matryoshka 임베딩</b>으로 저차원 1차 필터링과 고차원 정밀 검색을 조합하는 법을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 Matryoshka 임베딩을 다시 봐야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">임베딩 차원이 클수록 정확도는 높지만 <b>저장 공간과 유사도 계산 비용이 함께 늘어납니다.</b> PCA 같은 사후 차원 축소는 품질이 눈에 띄게 떨어지는 경우가 많았습니다. MRL은 학습 단계에서부터 차원을 잘라도 의미가 보존되도록 만듭니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">러시아 인형처럼 중첩된 표현을 학습한다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">MRL은 <b>벡터의 앞쪽 부분집합만 잘라내도 유의미한 임베딩</b>이 되도록 학습합니다. 앞쪽 차원에 거친 의미 정보가, 뒤쪽으로 갈수록 세부 보정 정보가 위계적으로 배치됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정확도와 비용 사이에서 차원을 동적으로 선택할 수 있다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">1차 후보군 필터링은 <b>64~128차원으로 빠르게</b>, 최종 재순위 단계는 전체 차원으로 정밀하게 비교하는 2단계 검색이 가능합니다. 별도의 재순위 모델을 학습할 필요 없이 같은 임베딩을 다른 정밀도로 재사용합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">차원</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">검색 속도</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">적합한 용도</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">전체(1536)</td>
+<td style="border:1px solid #ddd; padding:10px;">느림</td>
+<td style="border:1px solid #ddd; padding:10px;">최종 재순위</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">중간(256)</td>
+<td style="border:1px solid #ddd; padding:10px;">중간</td>
+<td style="border:1px solid #ddd; padding:10px;">일반 벡터 검색</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">작음(64)</td>
+<td style="border:1px solid #ddd; padding:10px;">매우 빠름</td>
+<td style="border:1px solid #ddd; padding:10px;">대규모 1차 필터링</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 차원을 잘라 2단계 검색 구현하기</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">def truncate_and_normalize(embedding, dim):
+    truncated = embedding[:dim]
+    return truncated / np.linalg.norm(truncated)
+
+query_embedding_full = embed_model.encode(query)
+query_small = truncate_and_normalize(query_embedding_full, 128)
+candidates = vector_db.search(query_small, dim=128, top_k=200)
+
+query_full = truncate_and_normalize(query_embedding_full, 1536)
+reranked = []
+for doc in candidates:
+    doc_full_vec = fetch_full_embedding(doc.id)
+    score = cosine_similarity(query_full, doc_full_vec)
+    reranked.append((doc, score))
+
+final_results = sorted(reranked, key=lambda x: -x[1])[:20]</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">전체 차원 벡터는 상위 200개 후보에 대해서만 조회하면 되므로 비용을 줄이면서도 정확도를 유지할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>사용 중인 모델이 실제로 MRL로 학습됐는지 먼저 확인하세요.</b> 일반 모델을 임의로 자르면 의미가 크게 훼손됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>잘라낸 차원으로도 재정규화를 잊지 마세요.</b> 정규화하지 않으면 유사도 계산이 왜곡됩니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 차원별 정확도 손실을 실제 도메인 데이터로 벤치마크하세요. 논문 벤치마크가 모든 도메인에 그대로 적용되지는 않습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#MatryoshkaEmbedding #벡터검색 #임베딩 #차원축소 #RAG</p>
+
+</body>
+</html>

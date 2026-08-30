@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>deck.gl TripsLayer로 이동 경로 시간 애니메이션 만들기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">deck.gl TripsLayer로 이동 경로 시간 애니메이션 만들기</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 좌표를 매 프레임 재계산하지 않고 <b>GPU 셰이더에서 currentTime으로 직접 클리핑</b>하는 TripsLayer의 동작 원리를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 TripsLayer를 알아야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">시간에 따라 위치가 바뀌는 궤적을 지도 위에서 움직이게 보여주는 요구는 흔합니다. 순진하게 구현하면 <b>매 프레임 자바스크립트에서 좌표 배열을 다시 계산</b>하게 되는데, 궤적 개수가 수백 개를 넘으면 이 자체가 프레임 드롭 원인이 됩니다. TripsLayer는 좌표 재계산을 반복하지 않는 방식으로 이를 해결합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-24-deckgl-tripslayer-animated-path-rendering-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 경로와 타임스탬프를 한 번만 GPU에 올린다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">TripsLayer는 전체 좌표와 타임스탬프 배열을 <b>GPU 버퍼에 딱 한 번 업로드</b>합니다. 이후 자바스크립트는 currentTime 하나만 매 프레임 갱신하며, 실제로 어디까지 그릴지는 GPU의 정점 셰이더가 직접 판단합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">trailLength로 궤적의 "꼬리" 길이를 제어한다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">지나온 지점까지 선을 다 그리면 현재 위치를 알아보기 어렵습니다. <b>trailLength로 현재 시각에서 얼마 이전까지만 꼬리로 그릴지 지정</b>할 수 있고, 보통 현재 위치에 가까울수록 불투명하게 그라디언트를 줘 이동 방향과 속도감을 표현합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">파라미터</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">역할</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">getPath / getTimestamps</td>
+<td style="border:1px solid #ddd; padding:10px;">좌표·시각 배열 반환</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">currentTime</td>
+<td style="border:1px solid #ddd; padding:10px;">현재 재생 시각(매 프레임 갱신)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">trailLength</td>
+<td style="border:1px solid #ddd; padding:10px;">꼬리로 표시할 구간 길이</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — TripsLayer로 차량 궤적 애니메이션 구성</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">const tripsLayer = new TripsLayer({
+  id: 'vehicle-trips',
+  data: vehicleTrips,
+  getPath: (d) =&gt; d.path,
+  getTimestamps: (d) =&gt; d.timestamps,
+  getColor: [30, 144, 255],
+  widthMinPixels: 3,
+  trailLength: 60,
+  currentTime: 0,
+});
+
+let time = 0;
+function animate() {
+  time = (time + 1) % maxTimestamp;
+  deckOverlay.setProps({
+    layers: [tripsLayer.clone({ currentTime: time })],
+  });
+  requestAnimationFrame(animate);
+}
+animate();</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">currentTime만 갱신해 레이어를 다시 만들면, 좌표·타임스탬프 데이터는 매번 재전송되지 않고 GPU에 이미 올라간 버퍼를 재사용합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>타임스탬프의 시작 기준을 궤적마다 통일하세요.</b> 실제 시각 기준이어야 여러 궤적이 currentTime에서 상대적으로 올바른 위치에 놓입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>대량 궤적을 다룰 때는 접근자 함수 비용에 주의하세요.</b> 단순 필드 참조로 유지해 불필요한 변환 연산을 피해야 합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 실시간 데이터라면 currentTime을 실제 시각과 동기화할지 배속 재생할지 정책을 먼저 정하세요. 라이브 트래킹과 과거 리플레이는 시간 매핑 방식이 달라야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#deckgl #TripsLayer #경로애니메이션 #GPU셰이더 #3D웹지도</p>
+
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>PostgreSQL HOT Update — 인덱스 재작성 없이 행을 갱신하는 최적화</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">PostgreSQL HOT Update — 인덱스 재작성 없이 행을 갱신하는 최적화</div>
+<p style="font-size:14px; color:#999;">DB·데이터 모델링</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 조건을 만족하면 <b>인덱스를 전혀 건드리지 않고</b> 행을 갱신하는 HOT Update의 성립 조건과 fillfactor 설정을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 HOT Update를 다시 봐야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">PostgreSQL은 UPDATE를 새 튜플 추가 방식으로 처리하는데, 순진하게 구현되면 <b>행 하나를 갱신할 때마다 걸린 모든 인덱스에 새 엔트리를 추가</b>해야 합니다. 인덱스가 5개면 UPDATE 한 번이 5개 인덱스 모두에 쓰기를 유발합니다. HOT은 특정 조건에서 이 비용을 완전히 없앱니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">HOT이 성립하는 조건: 인덱싱된 컬럼이 바뀌지 않아야 한다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">UPDATE로 바뀌는 컬럼 중 <b>어느 것도 인덱스에 포함되지 않아야</b> 합니다. 새 튜플을 같은 페이지 안에 만들고 옛 튜플이 새 튜플을 가리키는 체인을 연결하면, 인덱스는 옛 위치만 알아도 체인을 따라가 최신 버전을 찾을 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">같은 페이지 안에 여유 공간이 있어야 한다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">새 튜플은 원래와 같은 힙 페이지 안에 만들어져야 합니다. 이 여유 공간은 <b>fillfactor 설정으로 확보</b>합니다. 기본값(100)은 페이지를 가득 채워 HOT이 거의 발동하지 못하지만, 90 정도로 낮추면 여유 공간을 의도적으로 남길 수 있습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">조건</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">충족 시</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">미충족 시</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">인덱싱 컬럼 변경</td>
+<td style="border:1px solid #ddd; padding:10px;">변경 없음 → HOT 가능</td>
+<td style="border:1px solid #ddd; padding:10px;">변경 시 모든 인덱스 갱신</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">페이지 여유 공간</td>
+<td style="border:1px solid #ddd; padding:10px;">있음 → HOT 적용</td>
+<td style="border:1px solid #ddd; padding:10px;">없음 → 다른 페이지 생성</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — HOT 업데이트 발생 여부 확인하기</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">CREATE TABLE sessions (
+    id BIGINT PRIMARY KEY,
+    email TEXT,
+    last_login_at TIMESTAMPTZ
+) WITH (fillfactor = 90);
+
+CREATE INDEX idx_sessions_email ON sessions (email);
+
+SELECT relname, n_tup_upd, n_tup_hot_upd,
+       round(100.0 * n_tup_hot_upd / NULLIF(n_tup_upd, 0), 1) AS hot_ratio
+FROM pg_stat_user_tables
+WHERE relname = 'sessions';
+
+UPDATE sessions SET last_login_at = now() WHERE id = 42;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">hot_ratio가 낮다면 인덱싱된 컬럼도 함께 갱신되고 있거나 fillfactor 여유 공간이 부족하다는 신호입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>자주 갱신되는 컬럼과 조회 조건 컬럼을 분리해서 설계하세요.</b> 자주 바뀌는 값에 실수로 인덱스를 걸면 HOT 혜택을 못 받습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>쓰기가 빈번한 테이블은 fillfactor를 낮추는 것을 고려하세요.</b> 기본값을 두면 HOT 발동 여지가 줄고 인덱스 블로트로 이어집니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — n_tup_hot_upd 비율을 모니터링 대시보드에 포함하세요. 시간이 지나며 떨어진다면 페이지 여유 공간 소진 신호이므로 fillfactor 재조정이나 잦은 VACUUM을 검토해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#HOTUpdate #PostgreSQL #MVCC #인덱스 #성능튜닝</p>
+
+</body>
+</html>

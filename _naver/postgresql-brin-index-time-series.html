@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>PostgreSQL BRIN 인덱스로 대용량 시계열 테이블 인덱스 크기 줄이기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">PostgreSQL BRIN 인덱스로 대용량 시계열 테이블 인덱스 크기 줄이기</div>
+<p style="font-size:14px; color:#999;">DB·데이터 모델링</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 물리적 저장 순서를 활용해 <b>B-tree보다 수백 배 작은 인덱스</b>를 만드는 BRIN의 동작 원리와 전제 조건을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 BRIN 인덱스를 다시 봐야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">시간 순서로 계속 쌓이는 로그 테이블이 수억 건 규모로 커지면 <b>B-tree 인덱스 크기가 테이블 크기의 상당 부분을 차지</b>합니다. 인덱스가 메모리에 다 올라가지 못해 인덱스 스캔조차 디스크 I/O를 유발합니다. BRIN은 물리적 저장 순서와 값의 순서가 일치한다는 특성을 이용해 훨씬 작은 크기로 비슷한 효과를 냅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">B-tree와 근본적으로 다른 저장 단위</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">B-tree는 개별 행마다 엔트리를 만듭니다. BRIN은 <b>블록 범위(기본 128페이지) 단위로 최솟값·최댓값 요약만 저장</b>합니다. 범위 안에 수천 행이 있어도 인덱스 엔트리는 하나뿐이라 크기가 B-tree의 몇백 분의 1 수준입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">"물리적 순서와 값의 상관관계"가 성립해야 효과가 있다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">BRIN은 쿼리 시점에 조건을 만족할 수 없는 블록 범위를 통째로 건너뜁니다. 이게 성립하려면 <b>값이 물리적 저장 순서와 상관관계를 가져야</b> 합니다. created_at처럼 계속 증가하며 append되는 컬럼은 이상적이지만, user_id처럼 뒤섞여 삽입되는 컬럼은 사실상 풀스캔과 다를 바 없어집니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">B-tree</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">BRIN</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">인덱스 단위</td>
+<td style="border:1px solid #ddd; padding:10px;">개별 행</td>
+<td style="border:1px solid #ddd; padding:10px;">블록 범위 요약값</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">인덱스 크기</td>
+<td style="border:1px solid #ddd; padding:10px;">테이블 비례 큼</td>
+<td style="border:1px solid #ddd; padding:10px;">매우 작음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">전제 조건</td>
+<td style="border:1px solid #ddd; padding:10px;">없음</td>
+<td style="border:1px solid #ddd; padding:10px;">저장 순서-값 상관관계 필요</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — BRIN 인덱스 생성과 크기 비교</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">CREATE INDEX idx_events_created_at_btree ON events (created_at);
+SELECT pg_size_pretty(pg_relation_size('idx_events_created_at_btree'));
+-- 2.1 GB (1억 건 기준)
+
+DROP INDEX idx_events_created_at_btree;
+CREATE INDEX idx_events_created_at_brin ON events USING BRIN (created_at)
+    WITH (pages_per_range = 32);
+
+SELECT pg_size_pretty(pg_relation_size('idx_events_created_at_brin'));
+-- 4.8 MB — B-tree 대비 수백 분의 1
+
+EXPLAIN ANALYZE
+SELECT * FROM events WHERE created_at BETWEEN '2026-03-01' AND '2026-03-02';</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>도입 전 실제 물리적 상관관계를 확인하세요.</b> pg_stats의 correlation 값이 1에 가까울수록 BRIN이 효과적이고, 0에 가까우면 효과가 거의 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>대량 UPDATE나 VACUUM FULL 이후에는 상관관계가 깨질 수 있습니다.</b> 재배치 작업 이후 성능을 재검증하세요.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — BRIN과 B-tree를 함께 쓰는 것도 선택지입니다. 최근 데이터에는 B-tree를, 오래된 대용량 이력에는 BRIN을 파티셔닝과 결합해 쓰는 경우도 흔합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#BRIN #PostgreSQL #시계열 #인덱스설계 #쿼리최적화</p>
+
+</body>
+</html>
