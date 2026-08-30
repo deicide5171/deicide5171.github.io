@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>AI 에이전트 Tool Use 심화 — Function Calling 스키마 설계와 병렬 도구 호출 오케스트레이션</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">AI 에이전트 Tool Use 심화 — Function Calling 스키마 설계와 병렬 도구 호출 오케스트레이션</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 도구가 늘어날수록 모델이 잘못 선택하거나 인자를 잘못 채웁니다. <b>스키마 설계 원칙과 병렬 호출 결과 매칭</b> 전략을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 Function Calling을 다시 봐야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">도구 두세 개로 프로토타입을 만들 때는 잘 되지만, <b>실제 서비스에서 도구가 수십 개로 늘어나면</b> 모델이 엉뚱한 것을 고르거나 필수 인자를 빠뜨리는 경우가 늘어납니다. 여러 도구를 동시에 호출해야 하는 상황을 순차 처리하면 지연시간도 도구 개수에 비례해 늘어납니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">도구 스키마는 API 문서이자 모델을 위한 프롬프트다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">도구 설명이 짧고 모호하면 <b>비슷한 다른 도구와 구분이 안 돼 잘못 선택</b>되기 쉽습니다. 열거형으로 제한 가능한 파라미터는 반드시 enum으로 좁히고, 언제 쓰고 쓰지 않아야 하는지를 예시와 함께 명시하는 것이 핵심 원칙입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">병렬 도구 호출과 결과 재주입의 순서 문제</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">여러 도구 호출을 병렬 실행한 뒤 <b>tool_call_id로 명시적으로 매칭</b>해 모델에 돌려줘야 합니다. 매칭이 어긋나면 결과가 뒤바뀌어 잘못된 답변이 나올 수 있습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">설계 요소</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">잘못된 예</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">개선 방향</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">도구 이름</td>
+<td style="border:1px solid #ddd; padding:10px;">get_data, fetch_info</td>
+<td style="border:1px solid #ddd; padding:10px;">목적이 명확한 이름</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">파라미터 타입</td>
+<td style="border:1px solid #ddd; padding:10px;">자유 형식 문자열</td>
+<td style="border:1px solid #ddd; padding:10px;">enum·범위로 제약</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">병렬 호출 결과</td>
+<td style="border:1px solid #ddd; padding:10px;">순서만 믿고 매칭</td>
+<td style="border:1px solid #ddd; padding:10px;">tool_call_id 명시 매칭</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 병렬 도구 호출 실행과 결과 매칭</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">async def execute_tool_calls(tool_calls, tool_registry):
+    async def run_one(call):
+        try:
+            fn = tool_registry[call.name]
+            result = await fn(**call.arguments)
+            return {&quot;tool_call_id&quot;: call.id, &quot;content&quot;: json.dumps(result)}
+        except Exception as e:
+            return {&quot;tool_call_id&quot;: call.id, &quot;content&quot;: json.dumps({&quot;error&quot;: str(e)})}
+
+    results = await asyncio.gather(*(run_one(c) for c in tool_calls))
+    return sorted(results, key=lambda r: [c.id for c in tool_calls].index(r[&quot;tool_call_id&quot;]))</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">tool_call_id를 결과에 명시적으로 포함시키면 완료 순서가 뒤바뀌어도 원래 요청과의 대응 관계가 깨지지 않습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>도구 개수가 많아지면 계층적 라우팅을 고려하세요.</b> 카테고리를 먼저 고르게 하고 세부 도구를 다음 단계에서 노출하면 선택 정확도가 올라갑니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>실패한 도구 호출의 에러 메시지를 모델이 이해할 수 있는 형태로 가공하세요.</b> 구조화된 에러를 돌려주면 모델이 다음 행동을 더 잘 판단합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 부작용이 있는 도구(결제, 삭제 등)는 병렬 실행 대상에서 명시적으로 제외하거나 별도 확인 단계를 거치게 하세요. 확인 없이 병렬 실행하면 의도하지 않은 결과가 한꺼번에 발생할 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#FunctionCalling #ToolUse #AI에이전트 #스키마설계 #병렬호출</p>
+
+</body>
+</html>

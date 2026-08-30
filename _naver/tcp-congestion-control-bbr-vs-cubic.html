@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>TCP 혼잡제어 심화 — BBR과 CUBIC은 무엇이 다른가</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">TCP 혼잡제어 심화 — BBR과 CUBIC은 무엇이 다른가</div>
+<p style="font-size:14px; color:#999;">네트워크·OS·분산처리·DevOps</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — CUBIC은 <b>패킷 손실</b>을, BBR은 <b>대역폭·RTT 추정</b>을 혼잡 신호로 씁니다. 두 알고리즘의 설계 철학 차이와 실무 선택 기준을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 혼잡제어 알고리즘을 다시 봐야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">TCP 연결의 처리량은 커널 안의 혼잡제어 알고리즘이 네트워크 혼잡도를 어떻게 추정하느냐에 따라 크게 달라집니다. 리눅스는 오랫동안 CUBIC을 기본값으로 써왔지만, <b>장거리·고대역폭 네트워크나 무선 환경에서 CUBIC의 한계</b>가 드러나면서 구글이 개발한 BBR이 대안으로 자리 잡았습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">CUBIC은 손실을 신호로 쓴다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">CUBIC은 손실 기반 혼잡제어입니다. 손실이 없으면 윈도우를 3차 함수 곡선을 따라 계속 늘리다가, 손실을 감지하면 혼잡 신호로 해석해 윈도우를 급격히 줄입니다. <b>"손실이 곧 혼잡"이라는 전제가 항상 성립하지는 않는다</b>는 것이 근본 문제입니다. 무선 네트워크에서는 혼잡과 무관한 전파 손실만으로도 불필요하게 처리량이 줄어들 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">BBR은 대역폭과 RTT를 직접 추정한다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">BBR은 ACK 도착 패턴을 관찰해 <b>병목 지점의 실제 대역폭(BtlBw)과 최소 RTT(RTprop)를 직접 추정</b>합니다. 이 둘을 곱한 BDP(Bandwidth-Delay Product) 근처로 전송 속도를 유지하려 시도하며, 손실이 있어도 즉시 혼잡 신호로 해석하지 않아 무선 구간에서 CUBIC보다 안정적인 처리량을 냅니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">CUBIC</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">BBR</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">혼잡 판단 기준</td>
+<td style="border:1px solid #ddd; padding:10px;">패킷 손실</td>
+<td style="border:1px solid #ddd; padding:10px;">대역폭·RTT 변화 추정</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">무손실 무선 환경</td>
+<td style="border:1px solid #ddd; padding:10px;">불필요하게 윈도우 축소</td>
+<td style="border:1px solid #ddd; padding:10px;">손실 무시하고 처리량 유지</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">버퍼블로트</td>
+<td style="border:1px solid #ddd; padding:10px;">버퍼가 가득 찰 때까지 채움</td>
+<td style="border:1px solid #ddd; padding:10px;">버퍼 점유 최소화 지향</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 리눅스에서 혼잡제어 알고리즘 확인·변경</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">sysctl net.ipv4.tcp_available_congestion_control
+
+sysctl net.ipv4.tcp_congestion_control
+
+modprobe tcp_bbr
+sysctl -w net.ipv4.tcp_congestion_control=bbr</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>BBR 도입 전 커널 버전과 큐잉 규율(qdisc)을 함께 확인하세요.</b> BBR은 fq(fair queueing) qdisc와 함께 쓰는 것을 권장하며, 기본 pfifo_fast와 조합하면 페이싱이 제대로 동작하지 않을 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>CDN이나 장거리 API 호출이 많은 서비스일수록 BBR의 이득이 큽니다.</b> RTT가 크고 손실이 간헐적인 장거리 구간에서 개선폭이 가장 뚜렷합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — BBR과 CUBIC 흐름이 같은 병목 링크를 공유하는 상황을 사전에 테스트하세요. 초기 BBR 버전은 공정성 논쟁이 있었으므로 실제 트래픽에서 두 알고리즘이 섞였을 때의 처리량 분배를 검증하는 것이 안전합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#TCP #혼잡제어 #BBR #CUBIC #네트워크성능</p>
+
+</body>
+</html>
