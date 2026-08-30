@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Mapbox GL JS에서 MapLibre GL JS로 마이그레이션하기 — 코드 변경 포인트와 흔한 에러</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Mapbox GL JS에서 MapLibre GL JS로 마이그레이션하기 — 코드 변경 포인트와 흔한 에러</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — MapLibre로 옮긴다는 건 API 교체보다 <b>Mapbox가 호스팅하던 스타일과 타일을 다른 소스로 바꾸는 작업</b>에 가깝습니다. 실제 코드 변경 포인트와 흔한 에러를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 MapLibre로 옮기는 팀이 많은가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Mapbox GL JS는 v2부터 독점 라이선스로 전환되며 사용량 기반 과금이 커졌고, 이 시점에 v1의 마지막 오픈소스 코드를 포크해 커뮤니티가 이어받은 것이 MapLibre GL JS입니다. API가 거의 동일하게 유지되고 있어 <b>&quot;패키지 이름만 바꾸면 되지 않을까&quot;</b> 하고 시작했다가, 곳곳에서 미묘하게 다른 부분과 마주치며 예상보다 오래 걸리는 경우가 많습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-23-mapbox-to-maplibre-migration-guide-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 1 — accessToken이 아니라 스타일 URL 자체가 문제다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 먼저 부딪히는 것은 Mapbox 전용 인증 토큰입니다. MapLibre GL JS에는 이 토큰 개념 자체가 없습니다. 문제는 이 한 줄을 지운다고 끝나지 않는다는 점입니다 — style: 'mapbox://styles/...'처럼 <b>Mapbox가 호스팅하는 스타일 URL 자체가 Mapbox 서비스에 종속</b>돼 있으므로, 결국 스타일 소스 자체를 다른 곳(OpenMapTiles, MapTiler 등)으로 바꿔야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 2 — API 표면은 거의 같지만 완전히 같지는 않다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Map, addLayer, addSource, Marker, Popup 같은 핵심 API는 거의 동일하게 동작합니다. 하지만 <b>Mapbox가 v2 이후 자체 추가한 최신 기능</b>(특정 3D 지형 확장, RTL 텍스트 플러그인 자동 로딩 등)은 MapLibre에 없거나 다른 방식으로 구현돼 있어, 패키지만 바꾸면 조용히 동작하지 않거나 알 수 없는 에러가 뜹니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 최소 마이그레이션 코드 비교</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">// Before: Mapbox GL JS
+import mapboxgl from 'mapbox-gl';
+mapboxgl.accessToken = 'pk.eyJ1...';
+const map = new mapboxgl.Map({
+  container: 'map',
+  style: 'mapbox://styles/mapbox/streets-v12',
+});
+
+// After: MapLibre GL JS
+import maplibregl from 'maplibre-gl';
+// accessToken 설정 자체가 필요 없음
+const map = new maplibregl.Map({
+  container: 'map',
+  style: 'https://api.maptiler.com/maps/streets-v2/style.json?key=YOUR_KEY',
+});</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">패키지 임포트 이름을 바꾸고, accessToken 줄을 지우고, style URL을 실제 접근 가능한 style.json 경로로 바꾸는 것이 핵심 3단계입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">마이그레이션 시 흔한 에러</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">증상</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">원인</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">해결</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Style is not done loading</td>
+<td style="border:1px solid #ddd; padding:10px;">style URL이 mapbox:// 그대로</td>
+<td style="border:1px solid #ddd; padding:10px;">실제 접근 가능한 style.json으로 교체</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">지도가 회색으로만 나옴</td>
+<td style="border:1px solid #ddd; padding:10px;">CSS 임포트 경로가 여전히 mapbox-gl</td>
+<td style="border:1px solid #ddd; padding:10px;">maplibre-gl CSS 경로로 교체</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">RTL 텍스트 깨짐</td>
+<td style="border:1px solid #ddd; padding:10px;">플러그인 자동 로딩 방식 차이</td>
+<td style="border:1px solid #ddd; padding:10px;">setRTLTextPlugin 수동 등록</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">특히 CSS 임포트를 놓치는 실수가 의외로 잦습니다. import 'mapbox-gl/dist/mapbox-gl.css'를 그대로 남겨두면 JS는 MapLibre로 바뀌었어도 컨트롤 버튼 스타일이 깨지는 등 시각적 문제가 생깁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>패키지 교체 전에 사용 중인 Mapbox 전용 기능 목록부터 뽑으세요.</b> 코드 전체에서 mapboxgl, mapbox://, Mapbox 전용 API 호출을 먼저 검색해 마이그레이션 범위를 가늠해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>타입스크립트를 쓴다면 타입 정의도 함께 정리해야 합니다.</b> MapLibre는 자체 타입을 내장하고 있습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 타일 서버나 스타일 호스팅에 CORS나 리퍼러 제한이 걸려 있는 경우, 로컬에서는 잘 되다가 운영 도메인에서만 타일이 안 뜨는 경우가 있으니 실제 배포 도메인에서 반드시 재확인해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#Mapbox #MapLibre #웹지도라이브러리 #마이그레이션 #GIS</p>
+
+</body>
+</html>
