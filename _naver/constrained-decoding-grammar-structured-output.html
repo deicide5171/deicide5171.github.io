@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>제약 디코딩 — LLM이 JSON 스키마를 100% 지키게 하는 법</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">제약 디코딩 — LLM이 JSON 스키마를 100% 지키게 만드는 원리</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 프롬프트 지시는 확률적 준수일 뿐이며, 제약 디코딩은 토큰 생성 단계에서 <b>문법 위반 토큰의 확률을 0으로 마스킹</b>해 구조를 강제합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 프롬프트만으로 부족한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">에이전트 파이프라인에서 LLM 출력을 다음 단계 코드가 그대로 파싱해야 할 때, JSON 스키마 위반 하나가 전체 파이프라인을 멈춥니다. "반드시 JSON만 출력하라"는 지시는 모델에게 <b>부탁</b>하는 것일 뿐 강제하는 것이 아니므로, 드물게 스키마를 깨는 토큰이 선택될 여지가 항상 남습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">유한 오토마타로 스키마 표현하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Outlines, xgrammar 같은 라이브러리는 JSON 스키마를 <b>유한 상태 오토마타(FSM)</b>로 컴파일합니다. 디코딩이 진행되는 매 스텝마다, 현재 오토마타 상태에서 허용되는 다음 토큰이 무엇인지 계산할 수 있습니다.</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">로짓 마스킹으로 샘플링 강제하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">모델이 다음 토큰의 로짓을 계산하면, 엔진은 현재 상태에서 문법적으로 불가능한 토큰들의 로짓을 <b>-∞로 마스킹</b>합니다. 이렇게 하면 온도나 top-p와 무관하게 그 토큰은 절대 선택되지 않습니다. xgrammar 같은 최신 구현은 이 전처리를 GPU 디코딩과 겹쳐 실행해 오버헤드를 거의 없앱니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">강제력</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">오버헤드</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">프롬프트 지시</td>
+<td style="border:1px solid #ddd; padding:10px;">없음</td>
+<td style="border:1px solid #ddd; padding:10px;">없음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">출력 후 검증·재시도</td>
+<td style="border:1px solid #ddd; padding:10px;">사후적</td>
+<td style="border:1px solid #ddd; padding:10px;">재시도 비용</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">제약 디코딩</td>
+<td style="border:1px solid #ddd; padding:10px;">100%</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Outlines로 Pydantic 스키마 강제 예제</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">import outlines
+from pydantic import BaseModel
+
+class Extraction(BaseModel):
+    name: str
+    age: int
+    is_active: bool
+
+model = outlines.models.transformers("meta-llama/Llama-3.1-8B-Instruct")
+generator = outlines.generate.json(model, Extraction)
+
+result = generator("이름은 김민준, 32세, 활성 사용자입니다.")
+print(result.name, result.age, result.is_active)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">생성된 문자열은 파싱 실패 가능성 없이 항상 스키마를 만족합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>문법이 복잡할수록 사전 컴파일 비용이 커집니다.</b> 자주 쓰는 스키마는 컴파일 결과를 캐싱해 재사용하는 것이 좋습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>문법적으로 유효해도 의미적으로 틀릴 수 있습니다.</b> 형식은 보장되지만 존재하지 않는 값을 채워 넣는 환각은 별도 검증이 필요합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — vLLM, SGLang, TGI 등 서빙 엔진마다 지원하는 문법 표현력(정규식만/전체 JSON Schema/CFG)이 다르므로, 사용할 스키마 복잡도에 맞는 엔진을 선택해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#ConstrainedDecoding #구조화출력 #로짓마스킹 #FSM #LLM서빙</p>
+
+</body>
+</html>

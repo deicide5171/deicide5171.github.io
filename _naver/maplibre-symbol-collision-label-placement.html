@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>MapLibre 심볼 충돌 감지 딥다이브</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">MapLibre 심볼 충돌 감지 딥다이브 — 수만 개 라벨이 겹치지 않는 이유</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — MapLibre는 매 프레임 <b>우선순위 정렬</b>과 <b>그리드 기반 공간 인덱스</b>로 심볼 간 충돌을 판정해 겹치는 라벨을 자동으로 숨깁니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 가장 까다로운 문제인가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">벡터 타일에는 라벨이 수만 개씩 들어있는데, 이를 다 그리면 화면이 텍스트로 뒤덮입니다. 게다가 이 계산은 사용자가 지도를 확대·축소·회전할 때마다 <b>실시간으로 다시 계산</b>돼야 하고, 라벨이 갑자기 나타났다 사라지면 거슬리므로 부드러운 전환까지 신경 써야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">우선순위 정렬과 그리드 인덱스</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">화면에 그려질 후보 심볼을 줌 레벨, symbol-sort-key, 데이터 등장 순서로 정렬한 뒤, 화면을 격자로 나눠 각 심볼의 바운딩 박스가 걸치는 셀을 공간 인덱스에 등록합니다. 이렇게 하면 새 심볼과 화면 전체를 일일이 비교하지 않아도 됩니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-27-maplibre-symbol-collision-label-placement-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">우선순위 순서대로 겹침 확정하고 숨기기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">우선순위가 높은 심볼부터 그리드에 등록을 시도하고, 이미 등록된 심볼과 겹치면 그 심볼은 숨김 처리됩니다. text-allow-overlap, icon-allow-overlap 같은 속성으로 아이콘과 텍스트를 별도 그룹으로 처리할 수 있습니다. 전환은 즉시가 아니라 opacity 트랜지션으로 부드럽게 처리됩니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">단계</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">처리 내용</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">1. 우선순위 정렬</td>
+<td style="border:1px solid #ddd; padding:10px;">줌·sort-key·등장 순서</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">2. 그리드 인덱싱</td>
+<td style="border:1px solid #ddd; padding:10px;">격자 셀에 등록</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">3. 충돌 판정</td>
+<td style="border:1px solid #ddd; padding:10px;">겹치면 숨김</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">sort-key와 충돌 허용 옵션 예제</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">map.addLayer({
+  id: 'city-labels',
+  type: 'symbol',
+  source: 'places',
+  layout: {
+    'text-field': ['get', 'name'],
+    'text-size': 14,
+    'symbol-sort-key': ['-', 0, ['get', 'population']],
+    'text-allow-overlap': false,
+    'icon-allow-overlap': true,
+    'text-optional': true,
+  },
+  paint: { 'text-color': '#222' },
+});</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>symbol-sort-key를 명시적으로 설정하세요.</b> 설정하지 않으면 데이터 순서에 의존해 중요한 지명이 밀려 숨겨질 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>text-optional: true로 정보 손실을 최소화할 수 있습니다.</b> 공간이 부족하면 아이콘만 남기고 텍스트를 숨기는 것을 허용해 완전히 사라지는 것보다 낫습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 회전·틸트된 3D 지도에서는 투영된 바운딩 박스가 매 프레임 다르게 계산되어 재계산 비용이 커지므로, 라벨 레이어를 필요 이상으로 많이 켜두지 않는 것이 성능에 도움이 됩니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#MapLibre #심볼충돌감지 #라벨배치 #지도렌더링 #웹지도라이브러리</p>
+
+</body>
+</html>

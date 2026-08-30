@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>R2DBC 내부 동작 — JDBC를 리액티브로 못 감싸는 이유</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">R2DBC 내부 동작 — JDBC를 리액티브로 감싸는 게 안 되는 이유</div>
+<p style="font-size:14px; color:#999;">백엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — JDBC는 API 자체가 블로킹을 전제하므로, R2DBC는 <b>소켓 레벨부터 논블로킹으로 새로 구현</b>해 리액티브 스택의 이점을 지킵니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 JDBC를 그냥 감싸면 안 되는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Spring WebFlux로 애플리케이션을 논블로킹으로 구성했다면, 소수의 이벤트 루프 스레드가 절대 블로킹되지 않아야 합니다. 그런데 JDBC의 Connection, Statement, ResultSet API는 애초에 <b>동기 블로킹 호출</b>을 전제로 설계됐습니다. Mono.fromCallable로 감싸도 그 순간 리액티브 스택의 핵심 이점인 "적은 스레드로 많은 동시 연결 처리"가 사라집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">SPI 자체가 리액티브 스트림 기반</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">R2DBC는 데이터베이스와 통신하는 SPI 자체를 Reactive Streams Publisher(Mono/Flux)로 정의했습니다. 드라이버 구현체는 DB와의 통신을 처음부터 <b>Netty 같은 논블로킹 네트워크 라이브러리</b> 위에 직접 구현해, 데이터를 기다리는 동안 스레드를 점유하지 않습니다.</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">커넥션 풀과 트랜잭션도 리액티브하게</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">전통적인 커넥션 풀은 블로킹 getConnection() 호출 구조라 그대로 쓸 수 없어, r2dbc-pool이라는 자체 풀 구현이 있습니다. 트랜잭션 경계도 <b>Reactive Context</b>를 통해 전파되는데, 리액티브 체인은 여러 스레드를 오갈 수 있으므로 트랜잭션 상태를 스레드가 아니라 구독 컨텍스트에 묶어야 하기 때문입니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">JDBC</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">R2DBC</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">API 모델</td>
+<td style="border:1px solid #ddd; padding:10px;">동기 블로킹</td>
+<td style="border:1px solid #ddd; padding:10px;">Reactive Streams</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">네트워크 I/O</td>
+<td style="border:1px solid #ddd; padding:10px;">블로킹 소켓</td>
+<td style="border:1px solid #ddd; padding:10px;">논블로킹(Netty)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">트랜잭션 전파</td>
+<td style="border:1px solid #ddd; padding:10px;">ThreadLocal</td>
+<td style="border:1px solid #ddd; padding:10px;">Reactive Context</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Spring Data R2DBC 예제</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">public interface OrderRepository extends ReactiveCrudRepository&lt;Order, Long&gt; {
+    Flux&lt;Order&gt; findByStatus(String status);
+}
+
+&#64;Service
+public class OrderService {
+    private final OrderRepository repository;
+    private final TransactionalOperator txOperator;
+
+    public Mono&lt;Order&gt; createOrder(Order order) {
+        return repository.save(order)
+                .flatMap(saved -&gt; updateInventory(saved))
+                .as(txOperator::transactional);
+    }
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>JPA/Hibernate와의 조합은 아직 성숙하지 않습니다.</b> 복잡한 연관관계 매핑이 많은 도메인이라면 R2DBC + Spring Data R2DBC의 단순한 매핑 모델이 한계로 작용할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>드라이버 지원 범위를 먼저 확인하세요.</b> PostgreSQL, MySQL, MariaDB, SQL Server, H2는 지원되지만 오래된 상용 DB는 드라이버 자체가 없을 수 있습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — R2DBC로 전환해도 같은 요청 경로에서 블로킹 HTTP 클라이언트나 JDBC 기반 캐시 라이브러리를 호출하면 이벤트 루프 스레드가 그 지점에서 멈춥니다. 스택 전체가 논블로킹이어야 이점이 살아납니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#R2DBC #SpringWebFlux #리액티브프로그래밍 #논블로킹IO #JDBC</p>
+
+</body>
+</html>

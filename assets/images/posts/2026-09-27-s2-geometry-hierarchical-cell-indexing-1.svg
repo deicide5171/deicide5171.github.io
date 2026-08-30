@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <marker id="arrow2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,3 L0,6 Z" fill="#555"/>
+    </marker>
+  </defs>
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="34" text-anchor="middle" font-size="20" font-weight="bold" fill="#222">S2 지오메트리 — 큐브 투영과 힐베르트 커브 셀 인덱싱</text>
+
+  <!-- Step 1: sphere to cube -->
+  <g>
+    <circle cx="130" cy="150" r="70" fill="#eaf2fb" stroke="#4a7fb5" stroke-width="2"/>
+    <text x="130" y="155" text-anchor="middle" font-size="13" fill="#2b4f73">지구(구면)</text>
+    <text x="130" y="235" text-anchor="middle" font-size="12" fill="#555">위경도 좌표계</text>
+  </g>
+
+  <line x1="215" y1="150" x2="270" y2="150" stroke="#555" stroke-width="2" marker-end="url(#arrow2)"/>
+  <text x="242" y="140" text-anchor="middle" font-size="11" fill="#555">정육면체 투영</text>
+
+  <!-- Step 2: cube 6 faces (isometric-ish flat unfold) -->
+  <g>
+    <rect x="285" y="90" width="40" height="40" fill="#fdf5f0" stroke="#c98a2e" stroke-width="1.5"/>
+    <rect x="325" y="90" width="40" height="40" fill="#fdf5f0" stroke="#c98a2e" stroke-width="1.5"/>
+    <rect x="365" y="90" width="40" height="40" fill="#fdf5f0" stroke="#c98a2e" stroke-width="1.5"/>
+    <rect x="325" y="50" width="40" height="40" fill="#fdf5f0" stroke="#c98a2e" stroke-width="1.5"/>
+    <rect x="325" y="130" width="40" height="40" fill="#fdf5f0" stroke="#c98a2e" stroke-width="1.5"/>
+    <rect x="405" y="90" width="40" height="40" fill="#fdf5f0" stroke="#c98a2e" stroke-width="1.5"/>
+    <text x="365" y="205" text-anchor="middle" font-size="12" fill="#8a5a12">6개 면(Face 0~5)</text>
+  </g>
+
+  <line x1="450" y1="150" x2="500" y2="150" stroke="#555" stroke-width="2" marker-end="url(#arrow2)"/>
+  <text x="475" y="140" text-anchor="middle" font-size="11" fill="#555">쿼드트리 분할</text>
+
+  <!-- Step 3: quadtree subdivision of one face -->
+  <g>
+    <rect x="520" y="90" width="120" height="120" fill="#ffffff" stroke="#4a7fb5" stroke-width="2"/>
+    <line x1="580" y1="90" x2="580" y2="210" stroke="#4a7fb5" stroke-width="1"/>
+    <line x1="520" y1="150" x2="640" y2="150" stroke="#4a7fb5" stroke-width="1"/>
+    <line x1="550" y1="90" x2="550" y2="150" stroke="#8fb3d9" stroke-width="0.7"/>
+    <line x1="520" y1="120" x2="580" y2="120" stroke="#8fb3d9" stroke-width="0.7"/>
+    <text x="580" y="230" text-anchor="middle" font-size="12" fill="#2b4f73">레벨이 깊어질수록 셀이 4등분</text>
+  </g>
+
+  <!-- Hilbert curve overlay -->
+  <g stroke="#e0952b" stroke-width="2.5" fill="none">
+    <path d="M535,105 L535,135 L565,135 L565,105 L595,105 L595,135 L625,135 L625,105
+             M535,165 L535,195 L565,195 L565,165 M595,165 L595,195 L625,195 L625,165
+             M565,135 L565,165 M535,135 L535,165 M625,135 L625,165 M595,135 L595,165"/>
+  </g>
+  <text x="580" y="255" text-anchor="middle" font-size="11" fill="#c98a2e">힐베르트 커브 순회 순서(공간 지역성 보존)</text>
+
+  <!-- bottom explanation -->
+  <rect x="40" y="300" width="720" height="130" rx="8" fill="#f0f7f4" stroke="#03c75a" stroke-width="1.5"/>
+  <text x="400" y="326" text-anchor="middle" font-size="14" font-weight="bold" fill="#1d5c3f">64비트 셀 ID로 위치와 정밀도를 동시에 표현</text>
+  <text x="400" y="352" text-anchor="middle" font-size="13" fill="#2b4f73">3비트(면 번호) + 최대 30레벨의 쿼드트리 위치(힐베르트 순서) + 종료 비트</text>
+  <text x="400" y="376" text-anchor="middle" font-size="13" fill="#2b4f73">같은 부모 셀은 ID 접두사가 같으므로, 상위 셀 검색은 정수 범위 비교(BETWEEN)만으로 가능</text>
+  <text x="400" y="400" text-anchor="middle" font-size="13" fill="#2b4f73">힐베르트 커브 순서 덕분에 ID가 가까우면 공간적으로도 가까워 캐시·인덱스 지역성이 좋다</text>
+  <text x="400" y="420" text-anchor="middle" font-size="12" fill="#3c7a5c">H3(육각형 셀)와 달리 셀이 정사각형에 가까워 계층 간 포함 관계가 항상 정확히 4:1이다</text>
+</svg>
