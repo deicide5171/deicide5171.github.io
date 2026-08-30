@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Hibernate 2차 캐시 딥다이브</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Hibernate 2차 캐시 딥다이브 — 영속성 컨텍스트 캐시와 무엇이 다른가</div>
+<p style="font-size:14px; color:#999;">백엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 2차 캐시는 트랜잭션 하나에 국한된 1차 캐시와 달리 애플리케이션 전체에 살아있으며, <b>동시성 전략 선택</b>이 정합성과 성능의 트레이드오프를 결정합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 완전히 다른 문제인가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">1차 캐시는 트랜잭션 하나의 생명주기 안에서만 유효한 단순한 캐시입니다. 실무에서 필요한 것은 대개 <b>여러 트랜잭션, 여러 요청, 여러 서버 인스턴스</b>에 걸쳐 자주 조회되지만 잘 바뀌지 않는 데이터를 캐싱하는 것으로, 이 역할을 하는 것이 2차 캐시입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">엔티티 캐시와 쿼리 캐시는 다르다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>엔티티 캐시</b>는 PK로 조회한 필드값을 저장하고, <b>컬렉션 캐시</b>는 연관관계의 ID 목록을, <b>쿼리 캐시</b>는 JPQL 결과의 엔티티 ID 목록을 캐싱합니다. 이 세 영역은 각각 별도 리전에 저장되고 독립적으로 무효화됩니다.</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">동시성 전략이 정합성을 결정한다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>READ_ONLY</b>는 절대 변경 안 되는 데이터에만 씁니다. <b>READ_WRITE</b>는 소프트 락으로 정합성을 맞춰 대부분의 가변 데이터에 적합합니다. <b>NONSTRICT_READ_WRITE</b>는 잠금 없이 성능을 얻는 대신 일시적 stale을 허용합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">전략</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">정합성</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">적합한 데이터</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">READ_ONLY</td>
+<td style="border:1px solid #ddd; padding:10px;">완벽</td>
+<td style="border:1px solid #ddd; padding:10px;">불변 데이터</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">READ_WRITE</td>
+<td style="border:1px solid #ddd; padding:10px;">강함</td>
+<td style="border:1px solid #ddd; padding:10px;">가끔 바뀌는 데이터</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">NONSTRICT_READ_WRITE</td>
+<td style="border:1px solid #ddd; padding:10px;">약함</td>
+<td style="border:1px solid #ddd; padding:10px;">통계성 데이터</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">엔티티/쿼리 캐시 활성화 예제</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">&#64;Entity
+&#64;Cacheable
+&#64;org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+public class ProductCategory {
+    &#64;Id
+    private Long id;
+    private String name;
+
+    &#64;OneToMany(mappedBy = "category")
+    &#64;org.hibernate.annotations.Cache(usage = CacheConcurrencyStrategy.READ_WRITE)
+    private List&lt;Product&gt; products;
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>쓰기가 잦은 엔티티에 캐시를 걸면 오히려 손해입니다.</b> 무효화 오버헤드와 소프트 락 경합이 이득보다 커질 수 있으므로 캐시 히트율을 반드시 모니터링해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>분산 환경에서는 캐시 복제 방식을 이해해야 합니다.</b> 인스턴스마다 로컬 캐시를 가지면 변경이 즉시 반영되지 않을 수 있습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 같은 영속성 컨텍스트 안에서는 1차 캐시가 항상 우선하므로, 2차 캐시의 효과는 새로운 트랜잭션에서 같은 엔티티를 조회할 때만 체감됩니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#Hibernate #JPA #2차캐시 #영속성컨텍스트 #캐시전략</p>
+
+</body>
+</html>
