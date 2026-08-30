@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>PostgreSQL 선언적 파티셔닝 전략과 파티션 프루닝</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">PostgreSQL 선언적 파티셔닝 — Range/List/Hash 전략과 파티션 프루닝의 조건</div>
+<p style="font-size:14px; color:#999;">DB·데이터 모델링</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 파티셔닝의 성능 이점은 <b>파티션 프루닝</b>이 실제로 동작할 때만 살아나며, 파티션 키가 조건절에 직접 노출돼야 프루닝이 확실히 작동합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 필요해지는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">테이블이 수억 행을 넘어가면 VACUUM 시간이 길어지고, 인덱스 B-tree 탐색 깊이가 늘어나며, 대량 삭제가 WAL을 폭발적으로 생성합니다. 선언적 파티셔닝은 논리적으로 하나의 테이블처럼 보이지만 물리적으로 여러 작은 테이블로 나눠 이 문제를 해결합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Range, List, Hash 전략 선택</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>Range</b>는 날짜 등 연속 범위로 나누며 오래된 파티션을 DETACH로 빠르게 아카이빙할 수 있습니다. <b>List</b>는 테넌트 ID처럼 이산 값으로 나눠 물리적 격리를 줍니다. <b>Hash</b>는 자연스러운 기준이 없을 때 균등 분산으로 관리 부담만 줄이고 싶을 때 선택합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">전략</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">예시</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">장점</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Range</td>
+<td style="border:1px solid #ddd; padding:10px;">생성일자</td>
+<td style="border:1px solid #ddd; padding:10px;">빠른 아카이빙</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">List</td>
+<td style="border:1px solid #ddd; padding:10px;">테넌트 ID</td>
+<td style="border:1px solid #ddd; padding:10px;">물리 격리</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Hash</td>
+<td style="border:1px solid #ddd; padding:10px;">임의 키</td>
+<td style="border:1px solid #ddd; padding:10px;">균등 분산</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">파티션 프루닝이 동작하는 조건</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">쿼리 플래너가 필요 없는 파티션을 스캔 계획에서 제외하는 것이 프루닝입니다. 파티션 키가 리터럴 값이면 계획 시점에 프루닝을 결정할 수 있지만, <b>키를 함수로 감싸거나</b> 다른 컬럼과 조합한 조건에서는 프루닝이 무력화되어 모든 파티션을 스캔하게 됩니다.</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Range 파티션 생성과 프루닝 확인 예제</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">CREATE TABLE orders (
+    id BIGINT NOT NULL,
+    created_at TIMESTAMPTZ NOT NULL,
+    amount NUMERIC NOT NULL
+) PARTITION BY RANGE (created_at);
+
+CREATE TABLE orders_2026_08 PARTITION OF orders
+    FOR VALUES FROM ('2026-08-01') TO ('2026-09-01');
+CREATE TABLE orders_2026_09 PARTITION OF orders
+    FOR VALUES FROM ('2026-09-01') TO ('2026-10-01');
+
+EXPLAIN (ANALYZE, BUFFERS)
+SELECT * FROM orders WHERE created_at &gt;= '2026-09-01' AND created_at &lt; '2026-09-15';</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">계획에 orders_2026_08이 아예 등장하지 않아야 프루닝이 성공한 것입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>파티션 키는 조건절에 직접 등장해야 합니다.</b> 함수로 감싼 조건으로만 필터링하면 프루닝이 무력화되므로 쿼리 패턴을 먼저 분석하세요.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>파티션 수가 너무 많아지면 계획 수립 비용이 커집니다.</b> 시계열이라면 월 단위로 관리하고 오래된 파티션은 정기적으로 통합·아카이빙하세요.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — PostgreSQL 파티션 테이블에서 기본키나 유니크 제약을 걸려면 그 제약이 파티션 키를 포함해야 하는 제한이 있으므로 스키마 설계 초기에 감안해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#PostgreSQL #파티셔닝 #파티션프루닝 #쿼리최적화 #테이블설계</p>
+
+</body>
+</html>
