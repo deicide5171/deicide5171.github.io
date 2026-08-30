@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="32" text-anchor="middle" font-size="18" font-weight="bold" fill="#222">temperature와 seed가 출력에 미치는 영향</text>
+
+  <text x="180" y="70" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">temperature 낮음 (0)</text>
+  <polyline points="60,180 100,175 140,90 180,175 220,178 260,180" fill="none" stroke="#2f9e58" stroke-width="3"/>
+  <text x="140" y="210" text-anchor="middle" font-size="11" fill="#555">뾰족한 분포 → 항상 최고 확률 토큰 선택</text>
+
+  <text x="540" y="70" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">temperature 높음 (1.0+)</text>
+  <polyline points="420,175 460,150 500,120 540,140 580,110 620,160" fill="none" stroke="#e05a5a" stroke-width="3"/>
+  <text x="500" y="210" text-anchor="middle" font-size="11" fill="#555">평평한 분포 → 다양한 토큰이 선택될 여지</text>
+
+  <line x1="60" y1="180" x2="260" y2="180" stroke="#ccc" stroke-width="1"/>
+  <line x1="420" y1="180" x2="620" y2="180" stroke="#ccc" stroke-width="1"/>
+
+  <rect x="60" y="250" width="680" height="160" rx="10" fill="#eef4ff" stroke="#3b6fd6" stroke-width="2"/>
+  <text x="400" y="280" text-anchor="middle" font-size="14" font-weight="bold" fill="#22345a">seed 고정 시</text>
+
+  <rect x="90" y="300" width="180" height="45" rx="6" fill="#ffffff" stroke="#3b6fd6"/>
+  <text x="180" y="327" text-anchor="middle" font-size="12" fill="#333">같은 seed + 같은 프롬프트</text>
+
+  <line x1="270" y1="322" x2="320" y2="322" stroke="#555" stroke-width="3" marker-end="url(#arrowS)"/>
+
+  <rect x="325" y="300" width="180" height="45" rx="6" fill="#ffffff" stroke="#3b6fd6"/>
+  <text x="415" y="327" text-anchor="middle" font-size="12" fill="#333">난수 생성기 시작값 동일</text>
+
+  <line x1="505" y1="322" x2="555" y2="322" stroke="#555" stroke-width="3" marker-end="url(#arrowS)"/>
+
+  <rect x="560" y="300" width="150" height="45" rx="6" fill="#e6f7ea" stroke="#2f9e58" stroke-width="1.5"/>
+  <text x="635" y="327" text-anchor="middle" font-size="12" fill="#1f5c34">결과 재현 안정</text>
+
+  <text x="400" y="380" text-anchor="middle" font-size="12" fill="#888">단, 모델 스냅샷이 바뀌면 같은 seed라도 결과가 달라질 수 있음</text>
+  <text x="400" y="398" text-anchor="middle" font-size="12" fill="#888">temperature=0도 완전한 결정론은 보장하지 않음</text>
+
+  <defs>
+    <marker id="arrowS" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>

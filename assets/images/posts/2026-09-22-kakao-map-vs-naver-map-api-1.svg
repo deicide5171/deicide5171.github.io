@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="32" text-anchor="middle" font-size="18" font-weight="bold" fill="#222">카카오맵 vs 네이버 지도 API 초기화 흐름</text>
+
+  <rect x="40" y="65" width="340" height="340" rx="10" fill="#fff9e8" stroke="#e6b800" stroke-width="2"/>
+  <text x="210" y="95" text-anchor="middle" font-size="15" font-weight="bold" fill="#7a5c00">카카오맵</text>
+
+  <rect x="70" y="115" width="280" height="40" rx="6" fill="#ffffff" stroke="#e6b800"/>
+  <text x="210" y="140" text-anchor="middle" font-size="12" fill="#333">SDK 스크립트 로드 (autoload=false)</text>
+  <line x1="210" y1="155" x2="210" y2="175" stroke="#7a5c00" stroke-width="2" marker-end="url(#arrowK)"/>
+
+  <rect x="70" y="177" width="280" height="40" rx="6" fill="#ffffff" stroke="#e6b800"/>
+  <text x="210" y="202" text-anchor="middle" font-size="12" fill="#333">kakao.maps.load(콜백)으로 대기</text>
+  <line x1="210" y1="217" x2="210" y2="237" stroke="#7a5c00" stroke-width="2" marker-end="url(#arrowK)"/>
+
+  <rect x="70" y="239" width="280" height="40" rx="6" fill="#fff3cf" stroke="#e6b800" stroke-width="1.5"/>
+  <text x="210" y="264" text-anchor="middle" font-size="12" fill="#7a5c00">지도 생성 (kakao.maps.Map)</text>
+  <line x1="210" y1="279" x2="210" y2="299" stroke="#7a5c00" stroke-width="2" marker-end="url(#arrowK)"/>
+
+  <rect x="70" y="301" width="280" height="40" rx="6" fill="#ffffff" stroke="#e6b800"/>
+  <text x="210" y="326" text-anchor="middle" font-size="12" fill="#333">JS Key(지도) / REST Key(서버 지오코딩) 분리</text>
+
+  <rect x="420" y="65" width="340" height="340" rx="10" fill="#eef8ef" stroke="#2f9e58" stroke-width="2"/>
+  <text x="590" y="95" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f5c34">네이버 지도</text>
+
+  <rect x="450" y="115" width="280" height="40" rx="6" fill="#ffffff" stroke="#2f9e58"/>
+  <text x="590" y="140" text-anchor="middle" font-size="12" fill="#333">SDK 스크립트 로드 (ncpClientId)</text>
+  <line x1="590" y1="155" x2="590" y2="175" stroke="#1f5c34" stroke-width="2" marker-end="url(#arrowK)"/>
+
+  <rect x="450" y="177" width="280" height="40" rx="6" fill="#e6f7ea" stroke="#2f9e58" stroke-width="1.5"/>
+  <text x="590" y="202" text-anchor="middle" font-size="12" fill="#1f5c34">naver.maps 네임스페이스 즉시 사용 가능</text>
+  <line x1="590" y1="217" x2="590" y2="237" stroke="#1f5c34" stroke-width="2" marker-end="url(#arrowK)"/>
+
+  <rect x="450" y="239" width="280" height="40" rx="6" fill="#ffffff" stroke="#2f9e58"/>
+  <text x="590" y="264" text-anchor="middle" font-size="12" fill="#333">지도 생성 (naver.maps.Map)</text>
+  <line x1="590" y1="279" x2="590" y2="299" stroke="#1f5c34" stroke-width="2" marker-end="url(#arrowK)"/>
+
+  <rect x="450" y="301" width="280" height="40" rx="6" fill="#ffffff" stroke="#2f9e58"/>
+  <text x="590" y="326" text-anchor="middle" font-size="12" fill="#333">NCP 콘솔에서 Client ID 통합 관리</text>
+
+  <text x="400" y="425" text-anchor="middle" font-size="13" fill="#3b6fd6" font-weight="bold">둘 다 국내 주소·POI 검색 정확도가 국제 라이브러리보다 우수</text>
+
+  <defs>
+    <marker id="arrowK" markerWidth="10" markerHeight="10" refX="4" refY="8" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,0 L4,9 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>

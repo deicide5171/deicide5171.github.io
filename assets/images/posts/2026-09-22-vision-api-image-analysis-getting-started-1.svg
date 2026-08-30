@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="35" text-anchor="middle" font-size="18" font-weight="bold" fill="#222">이미지가 API 요청 토큰으로 바뀌는 과정</text>
+
+  <rect x="30" y="70" width="150" height="110" rx="10" fill="#f6f9fc" stroke="#c8d6e5" stroke-width="2"/>
+  <text x="105" y="115" text-anchor="middle" font-size="14" fill="#22345a">원본 이미지</text>
+  <text x="105" y="135" text-anchor="middle" font-size="12" fill="#555">receipt.jpg</text>
+  <text x="105" y="152" text-anchor="middle" font-size="11" fill="#888">고해상도</text>
+
+  <line x1="185" y1="125" x2="230" y2="125" stroke="#555" stroke-width="3" marker-end="url(#arrow1)"/>
+
+  <rect x="235" y="70" width="150" height="110" rx="10" fill="#eef4ff" stroke="#3b6fd6" stroke-width="2"/>
+  <text x="310" y="105" text-anchor="middle" font-size="13" font-weight="bold" fill="#22345a">리사이즈</text>
+  <text x="310" y="128" text-anchor="middle" font-size="11" fill="#555">최대 변 1568px</text>
+  <text x="310" y="146" text-anchor="middle" font-size="11" fill="#555">media_type 확인</text>
+
+  <line x1="390" y1="125" x2="435" y2="125" stroke="#555" stroke-width="3" marker-end="url(#arrow1)"/>
+
+  <rect x="440" y="70" width="150" height="110" rx="10" fill="#eef8ef" stroke="#2f9e58" stroke-width="2"/>
+  <text x="515" y="105" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f5c34">base64 인코딩</text>
+  <text x="515" y="128" text-anchor="middle" font-size="11" fill="#555">요청 본문에 삽입</text>
+  <text x="515" y="146" text-anchor="middle" font-size="11" fill="#555">image/jpeg 등 명시</text>
+
+  <line x1="595" y1="125" x2="640" y2="125" stroke="#555" stroke-width="3" marker-end="url(#arrow1)"/>
+
+  <rect x="645" y="70" width="130" height="110" rx="10" fill="#fff7f0" stroke="#f0a04b" stroke-width="2"/>
+  <text x="710" y="105" text-anchor="middle" font-size="13" font-weight="bold" fill="#8a5a1e">토큰 환산</text>
+  <text x="710" y="128" text-anchor="middle" font-size="11" fill="#555">해상도 비례</text>
+  <text x="710" y="146" text-anchor="middle" font-size="11" fill="#555">비용 산정</text>
+
+  <rect x="30" y="230" width="745" height="170" rx="10" fill="#f9f9f9" stroke="#ddd" stroke-width="1.5"/>
+  <text x="402" y="260" text-anchor="middle" font-size="15" font-weight="bold" fill="#333">흔한 실수 세 가지</text>
+
+  <circle cx="90" cy="300" r="6" fill="#e05a5a"/>
+  <text x="110" y="305" font-size="13" fill="#333">media_type을 실제 파일 형식과 다르게 지정 → 400 에러 또는 오답</text>
+
+  <circle cx="90" cy="335" r="6" fill="#e05a5a"/>
+  <text x="110" y="340" font-size="13" fill="#333">원본 해상도를 그대로 전송 → 토큰 비용 급증, 자동 리사이즈로 화질 저하</text>
+
+  <circle cx="90" cy="370" r="6" fill="#e05a5a"/>
+  <text x="110" y="375" font-size="13" fill="#333">한 요청에 이미지 여러 장을 과다 전송 → 응답 지연, 집중도 저하</text>
+
+  <defs>
+    <marker id="arrow1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>

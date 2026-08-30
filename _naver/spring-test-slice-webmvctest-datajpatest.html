@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>@WebMvcTest vs @DataJpaTest vs @SpringBootTest — 스프링 테스트 슬라이스 제대로 고르기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">@WebMvcTest vs @DataJpaTest vs @SpringBootTest — 스프링 테스트 슬라이스 제대로 고르기</div>
+<p style="font-size:14px; color:#999;">백엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 모든 테스트에 @SpringBootTest를 습관적으로 붙이면 테스트 스위트가 느려집니다. 목적에 맞는 <b>테스트 슬라이스</b>로 로딩 범위를 줄이세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 테스트가 갈수록 느려지나</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">컨트롤러 하나의 URL 매핑만 확인하고 싶은 테스트에서까지 DB 커넥션, 시큐리티 필터, 메시지 브로커 연결 같은 애플리케이션 전체 빈을 매번 로딩하면 명백한 낭비입니다. 스프링은 목적별로 필요한 빈만 로딩하는 <b>테스트 슬라이스</b> 애노테이션을 제공합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-22-spring-test-slice-webmvctest-datajpatest-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">@WebMvcTest — 컨트롤러 레이어만</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">MVC 관련 빈만 로딩하고 Service, Repository 빈은 로딩하지 않습니다. 컨트롤러가 요청을 올바르게 매핑하고 상태 코드와 응답 형식을 올바르게 반환하는지만 검증할 때 적합합니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; overflow-x:auto; line-height:1.6;">@WebMvcTest(OrderController.class)
+class OrderControllerTest {
+    @Autowired MockMvc mockMvc;
+    @MockBean OrderService orderService;
+
+    @Test
+    void 주문_조회_성공() throws Exception {
+        given(orderService.findById(1L))
+            .willReturn(new OrderResponse(1L, "PAID"));
+        mockMvc.perform(get("/orders/1"))
+            .andExpect(status().isOk());
+    }
+}</pre>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">@DataJpaTest — 리포지토리 레이어만</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">JPA 관련 빈만 로딩하고 기본적으로 인메모리 DB(H2 등)를 자동 구성합니다. 각 테스트는 트랜잭션으로 감싸져 종료 시 롤백되어 테스트 간 데이터 오염이 없습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 인메모리 DB(H2)와 실제 운영 DB(MySQL, PostgreSQL) 사이에 SQL 문법이나 제약조건 동작 차이가 있을 수 있습니다. 이 차이가 우려된다면 Testcontainers로 실제 DB를 띄워 검증하는 편이 안전합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">단위 테스트를 가장 많이, 슬라이스 테스트를 중간 정도, @SpringBootTest 통합 테스트는 핵심 시나리오 몇 개로 최소화하는 구성이 빠르고 안정적인 테스트 스위트를 만듭니다. 시큐리티가 적용된 프로젝트라면 @WebMvcTest에도 필터가 함께 로딩되므로 @WithMockUser로 인증 컨텍스트를 채워줘야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#스프링테스트 #WebMvcTest #DataJpaTest #테스트슬라이스 #SpringBootTest</p>
+
+</body>
+</html>

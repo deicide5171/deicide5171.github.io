@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Prometheus와 Grafana로 컨테이너 모니터링 대시보드 만들기 — 첫 설정 가이드</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Prometheus와 Grafana로 컨테이너 모니터링 대시보드 만들기 — 첫 설정 가이드</div>
+<p style="font-size:14px; color:#999;">인프라</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — Prometheus가 메트릭을 수집·저장하고 <b>Grafana</b>가 대시보드로 시각화합니다. docker-compose로 손쉽게 함께 띄울 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 로그만으로는 한계가 있나</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">서버가 여러 대로 늘고 시간에 따른 추이를 추적해야 하는 순간, SSH로 접속해 top과 로그를 뒤지는 방식은 급격히 한계를 드러냅니다. "어제 오후 3시쯤 응답이 느려졌다"는 제보를 받았을 때 그 시점 상태를 즉시 확인할 방법이 필요합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-22-prometheus-grafana-getting-started-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">첫 설정: docker-compose로 한 번에</div>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; overflow-x:auto; line-height:1.6;">scrape_configs:
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets: ['node_exporter:9100']</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">docker-compose 네트워크 안에서는 <b>서비스 이름이 곧 호스트명</b>으로 동작하므로, localhost나 IP 대신 compose에서 정의한 서비스 이름을 써야 Prometheus 컨테이너가 다른 컨테이너를 찾을 수 있습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — Grafana는 Prometheus와 자동으로 연결되지 않습니다. Connections &gt; Data sources에서 Prometheus를 수동으로 등록하고 URL에 http://prometheus:9090을 입력해야 대시보드에 데이터가 표시됩니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">첫 대시보드는 가져와서 시작하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">node_exporter처럼 널리 쓰이는 익스포터는 커뮤니티가 만든 대시보드를 Grafana 공식 저장소에서 ID로 바로 가져올 수 있습니다. Dashboard ID 1860(node_exporter full)을 임포트하면 CPU, 메모리, 디스크 I/O, 네트워크 트래픽이 담긴 대시보드를 몇 분 안에 확인할 수 있습니다.</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">사용자 ID나 요청 ID처럼 값의 종류가 무한히 늘어나는 항목을 레이블로 붙이면 Prometheus 메모리 사용량이 폭발적으로 증가할 수 있으니 주의하세요. 알림(Alerting)은 정상 범위의 지표 패턴을 먼저 파악한 뒤 마지막 단계로 설정하는 것이 오탐을 줄이는 방법입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#Prometheus #Grafana #모니터링 #도커컴포즈 #관측성</p>
+
+</body>
+</html>

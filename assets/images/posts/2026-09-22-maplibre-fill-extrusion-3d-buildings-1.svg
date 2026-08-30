@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="32" text-anchor="middle" font-size="18" font-weight="bold" fill="#222">fill vs fill-extrusion 렌더링 차이</text>
+
+  <rect x="40" y="65" width="340" height="330" rx="10" fill="#f6f9fc" stroke="#c8d6e5" stroke-width="2"/>
+  <text x="210" y="95" text-anchor="middle" font-size="15" font-weight="bold" fill="#22345a">type: 'fill'</text>
+
+  <rect x="90" y="270" width="60" height="60" fill="#aab8c2" stroke="#7a8899" stroke-width="1.5"/>
+  <rect x="170" y="280" width="80" height="50" fill="#aab8c2" stroke="#7a8899" stroke-width="1.5"/>
+  <rect x="270" y="260" width="60" height="70" fill="#aab8c2" stroke="#7a8899" stroke-width="1.5"/>
+  <text x="210" y="360" text-anchor="middle" font-size="12" fill="#555">평면 도형으로만 채워짐</text>
+  <text x="210" y="382" text-anchor="middle" font-size="12" fill="#8a2e2e">높이 데이터를 넣어도 입체감 없음</text>
+
+  <rect x="420" y="65" width="340" height="330" rx="10" fill="#eef8ef" stroke="#2f9e58" stroke-width="2"/>
+  <text x="590" y="95" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f5c34">type: 'fill-extrusion'</text>
+
+  <!-- pseudo-3D building shapes -->
+  <polygon points="460,330 460,270 500,255 500,315" fill="#8fa6bd" stroke="#5a7189" stroke-width="1"/>
+  <polygon points="500,315 500,255 520,270 520,330" fill="#aab8c2" stroke="#5a7189" stroke-width="1"/>
+  <polygon points="460,270 500,255 520,270 480,285" fill="#c5d2de" stroke="#5a7189" stroke-width="1"/>
+
+  <polygon points="560,335 560,245 610,225 610,315" fill="#8fa6bd" stroke="#5a7189" stroke-width="1"/>
+  <polygon points="610,315 610,225 635,245 635,335" fill="#aab8c2" stroke="#5a7189" stroke-width="1"/>
+  <polygon points="560,245 610,225 635,245 585,265" fill="#c5d2de" stroke="#5a7189" stroke-width="1"/>
+
+  <polygon points="660,330 660,285 690,272 690,317" fill="#8fa6bd" stroke="#5a7189" stroke-width="1"/>
+  <polygon points="690,317 690,272 705,285 705,330" fill="#aab8c2" stroke="#5a7189" stroke-width="1"/>
+
+  <text x="590" y="360" text-anchor="middle" font-size="12" fill="#555">render_height 속성만큼 압출(extrude)</text>
+  <text x="590" y="382" text-anchor="middle" font-size="12" fill="#1f5c34">pitch를 기울여야 입체감이 보임</text>
+
+  <defs>
+    <marker id="arrowM" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>

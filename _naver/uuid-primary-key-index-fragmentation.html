@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>UUID를 기본키로 쓰면 안 되는 이유 — 인덱스 단편화와 정렬 가능한 대안</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">UUID를 기본키로 쓰면 안 되는 이유 — 인덱스 단편화와 정렬 가능한 대안</div>
+<p style="font-size:14px; color:#999;">데이터베이스</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — UUID v4를 기본키로 쓰면 B-tree 인덱스에 무작위로 삽입되어 <b>페이지 분할과 단편화</b>가 누적됩니다. UUIDv7 같은 정렬 가능한 대안이 해법입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 처음엔 괜찮다가 나중에 문제가 되나</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">분산 환경에서 충돌 걱정이 없다는 이유로 UUID를 기본키로 채택하는 경우가 많습니다. 데이터가 몇만 건일 때는 문제가 없다가, 테이블이 수천만 건 이상으로 커지면 INSERT 처리량이 떨어지고 인덱스 용량이 예상보다 훨씬 커지는 문제가 뒤늦게 드러납니다. 원인은 기본키 인덱스가 대부분 <b>B-tree 구조</b>라는 데 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-22-uuid-primary-key-index-fragmentation-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">auto-increment vs UUID v4</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">auto-increment는 새 값이 항상 가장 큰 값으로 생성되어 B-tree 맨 오른쪽 끝에만 순차적으로 추가됩니다. 반면 UUID v4는 값이 완전히 무작위라 인덱스 트리 전체에 흩어져 삽입되고, 이미 가득 찬 중간 페이지에 새 값이 끼어드는 <b>페이지 분할</b>이 반복됩니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; overflow-x:auto; line-height:1.6;">-- UUID v4: 완전히 무작위라 인덱스 전체에 흩어짐
+CREATE TABLE orders (
+    id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+    ...
+);</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">페이지 분할이 반복되면 빈 공간이 많이 남아 인덱스가 부풀어 오르고(단편화), 논리적으로 연속된 항목이 물리적으로 흩어지면서 범위 쿼리의 디스크 I/O도 늘어납니다.</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">더 나은 대안: UUIDv7 / ULID</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">UUIDv7이나 ULID는 값의 앞부분에 밀리초 단위 타임스탬프를 넣고 뒷부분만 무작위로 채워, 전역적으로 고유하면서도 생성 순서대로 정렬되는 식별자를 만듭니다. 새 값이 거의 항상 B-tree 오른쪽 끝 근처에 삽입되어 auto-increment에 가까운 삽입 성능을 얻을 수 있습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 이미 UUID v4로 운영 중인 테이블의 기본키 타입을 당장 바꾸는 것은 신중해야 합니다. 외래키·인덱스 전체에 영향을 주는 대규모 마이그레이션이므로, 신규 테이블부터 UUIDv7을 채택하는 편이 안전합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#UUID #기본키설계 #인덱스단편화 #Btree #UUIDv7</p>
+
+</body>
+</html>

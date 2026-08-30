@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="32" text-anchor="middle" font-size="18" font-weight="bold" fill="#222">Prometheus + Grafana 모니터링 흐름</text>
+
+  <rect x="40" y="150" width="180" height="100" rx="10" fill="#f6f9fc" stroke="#c8d6e5" stroke-width="2"/>
+  <text x="130" y="185" text-anchor="middle" font-size="13" font-weight="bold" fill="#22345a">node_exporter</text>
+  <text x="130" y="208" text-anchor="middle" font-size="11" fill="#555">CPU · 메모리 · 디스크</text>
+  <text x="130" y="226" text-anchor="middle" font-size="11" fill="#888">:9100/metrics 노출</text>
+
+  <line x1="220" y1="200" x2="280" y2="200" stroke="#555" stroke-width="3" marker-end="url(#arrowP)"/>
+  <text x="250" y="185" text-anchor="middle" font-size="10" fill="#888">15초마다 수집</text>
+
+  <rect x="285" y="150" width="200" height="100" rx="10" fill="#fdeeee" stroke="#e05a5a" stroke-width="2"/>
+  <text x="385" y="185" text-anchor="middle" font-size="13" font-weight="bold" fill="#8a2e2e">Prometheus</text>
+  <text x="385" y="208" text-anchor="middle" font-size="11" fill="#555">시계열 데이터 저장</text>
+  <text x="385" y="226" text-anchor="middle" font-size="11" fill="#888">:9090</text>
+
+  <line x1="485" y1="200" x2="545" y2="200" stroke="#555" stroke-width="3" marker-end="url(#arrowP)"/>
+  <text x="515" y="185" text-anchor="middle" font-size="10" fill="#888">PromQL 쿼리</text>
+
+  <rect x="550" y="150" width="200" height="100" rx="10" fill="#eef8ef" stroke="#2f9e58" stroke-width="2"/>
+  <text x="650" y="185" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f5c34">Grafana</text>
+  <text x="650" y="208" text-anchor="middle" font-size="11" fill="#555">대시보드 시각화</text>
+  <text x="650" y="226" text-anchor="middle" font-size="11" fill="#888">:3000</text>
+
+  <rect x="60" y="290" width="680" height="120" rx="10" fill="#fff7f0" stroke="#f0a04b" stroke-width="2"/>
+  <text x="400" y="318" text-anchor="middle" font-size="14" font-weight="bold" fill="#8a5a1e">첫 설정 체크리스트</text>
+  <text x="400" y="345" text-anchor="middle" font-size="12" fill="#5a4632">1. prometheus.yml의 targets에는 서비스 이름(node_exporter) 사용</text>
+  <text x="400" y="368" text-anchor="middle" font-size="12" fill="#5a4632">2. Grafana에서 Prometheus 데이터소스를 수동으로 등록해야 함</text>
+  <text x="400" y="391" text-anchor="middle" font-size="12" fill="#5a4632">3. Dashboard ID 1860 임포트로 검증된 대시보드 즉시 확인</text>
+
+  <defs>
+    <marker id="arrowP" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>

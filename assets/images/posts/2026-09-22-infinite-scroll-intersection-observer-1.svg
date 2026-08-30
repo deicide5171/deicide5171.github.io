@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="35" text-anchor="middle" font-size="18" font-weight="bold" fill="#222">scroll 이벤트 vs Intersection Observer</text>
+
+  <rect x="40" y="65" width="340" height="330" rx="10" fill="#fdeeee" stroke="#e05a5a" stroke-width="2"/>
+  <text x="210" y="95" text-anchor="middle" font-size="15" font-weight="bold" fill="#8a2e2e">scroll 이벤트 방식</text>
+
+  <rect x="70" y="115" width="280" height="34" rx="6" fill="#ffffff" stroke="#e05a5a"/>
+  <text x="210" y="137" text-anchor="middle" font-size="12" fill="#333">스크롤 발생 (초당 수십~수백 회)</text>
+  <line x1="210" y1="149" x2="210" y2="165" stroke="#8a2e2e" stroke-width="2" marker-end="url(#arrowI)"/>
+
+  <rect x="70" y="167" width="280" height="34" rx="6" fill="#ffffff" stroke="#e05a5a"/>
+  <text x="210" y="189" text-anchor="middle" font-size="12" fill="#333">콜백에서 scrollTop 등 직접 읽기</text>
+  <line x1="210" y1="201" x2="210" y2="217" stroke="#8a2e2e" stroke-width="2" marker-end="url(#arrowI)"/>
+
+  <rect x="70" y="219" width="280" height="34" rx="6" fill="#fbe3e3" stroke="#e05a5a" stroke-width="1.5"/>
+  <text x="210" y="241" text-anchor="middle" font-size="12" fill="#8a2e2e">강제 레이아웃 재계산 (reflow)</text>
+  <line x1="210" y1="253" x2="210" y2="269" stroke="#8a2e2e" stroke-width="2" marker-end="url(#arrowI)"/>
+
+  <rect x="70" y="271" width="280" height="34" rx="6" fill="#fbe3e3" stroke="#e05a5a" stroke-width="1.5"/>
+  <text x="210" y="293" text-anchor="middle" font-size="12" fill="#8a2e2e">메인 스레드 점유 → 스크롤 버벅임</text>
+
+  <text x="210" y="345" text-anchor="middle" font-size="12" fill="#555">매 프레임 반복되는 부담</text>
+  <text x="210" y="365" text-anchor="middle" font-size="12" fill="#555">쓰로틀링은 빈도만 줄일 뿐</text>
+
+  <rect x="420" y="65" width="340" height="330" rx="10" fill="#eef8ef" stroke="#2f9e58" stroke-width="2"/>
+  <text x="590" y="95" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f5c34">Intersection Observer 방식</text>
+
+  <rect x="450" y="115" width="280" height="34" rx="6" fill="#ffffff" stroke="#2f9e58"/>
+  <text x="590" y="137" text-anchor="middle" font-size="12" fill="#333">sentinel 요소 하나만 등록</text>
+  <line x1="590" y1="149" x2="590" y2="165" stroke="#1f5c34" stroke-width="2" marker-end="url(#arrowI)"/>
+
+  <rect x="450" y="167" width="280" height="34" rx="6" fill="#ffffff" stroke="#2f9e58"/>
+  <text x="590" y="189" text-anchor="middle" font-size="12" fill="#333">브라우저 렌더링 엔진이 비동기 감시</text>
+  <line x1="590" y1="201" x2="590" y2="217" stroke="#1f5c34" stroke-width="2" marker-end="url(#arrowI)"/>
+
+  <rect x="450" y="219" width="280" height="34" rx="6" fill="#e6f7ea" stroke="#2f9e58" stroke-width="1.5"/>
+  <text x="590" y="241" text-anchor="middle" font-size="12" fill="#1f5c34">교차 상태 바뀔 때만 콜백 호출</text>
+  <line x1="590" y1="253" x2="590" y2="269" stroke="#1f5c34" stroke-width="2" marker-end="url(#arrowI)"/>
+
+  <rect x="450" y="271" width="280" height="34" rx="6" fill="#e6f7ea" stroke="#2f9e58" stroke-width="1.5"/>
+  <text x="590" y="293" text-anchor="middle" font-size="12" fill="#1f5c34">메인 스레드 부담 최소화</text>
+
+  <text x="590" y="345" text-anchor="middle" font-size="12" fill="#555">rootMargin으로 미리 트리거</text>
+  <text x="590" y="365" text-anchor="middle" font-size="12" fill="#555">observe() 등록만으로 해결</text>
+
+  <defs>
+    <marker id="arrowI" markerWidth="10" markerHeight="10" refX="4" refY="8" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,0 L4,9 z" fill="#555"/>
+    </marker>
+  </defs>
+</svg>
