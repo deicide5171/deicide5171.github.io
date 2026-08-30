@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>MapLibre CustomLayerInterface로 WebGL 직접 그리기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">MapLibre GL JS CustomLayerInterface 딥다이브 — 지도 위에 직접 WebGL 그리기</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 표준 스타일 스펙으로 표현 안 되는 커스텀 시각화는 <b>CustomLayerInterface</b>로 MapLibre 렌더링 파이프라인에 직접 WebGL 코드를 끼워 넣어 구현합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">MapLibre GL JS는 fill, line, symbol, heatmap 같은 내장 레이어로 대부분을 커버하지만, 커스텀 셰이더 효과나 대량 포인트 실시간 애니메이션 앞에서는 한계에 부딪힙니다. deck.gl의 MapboxOverlay도 내부적으로 바로 이 인터페이스를 구현해 통합됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">렌더링 파이프라인 속 위치와 생명주기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">CustomLayerInterface를 구현한 레이어는 일반 스타일 레이어와 동일하게 레이어 순서에 참여합니다. <b>onAdd(map, gl)</b>는 추가 시 1회 호출되어 셰이더·버퍼를 초기화하고, <b>render(gl, matrix)</b>는 매 프레임 호출되어 카메라 행렬을 받아 좌표를 지도와 일치시킵니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-27-maplibre-customlayerinterface-webgl-webgpu-rendering-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">같은 GL 컨텍스트를 공유하는 함정</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 중요한 사실은, 커스텀 레이어가 <b>MapLibre 본체와 동일한 WebGL 컨텍스트를 공유</b>한다는 점입니다. render() 안에서 블렌드 모드나 depth test 상태를 바꿔놓고 복원하지 않으면, 바로 다음에 그려지는 기본 레이어가 잘못된 상태에서 렌더링되어 지도가 깨질 수 있습니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">메서드</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">호출 시점</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">주요 작업</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">onAdd</td>
+<td style="border:1px solid #ddd; padding:10px;">추가 시 1회</td>
+<td style="border:1px solid #ddd; padding:10px;">셰이더·버퍼 초기화</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">render</td>
+<td style="border:1px solid #ddd; padding:10px;">매 프레임</td>
+<td style="border:1px solid #ddd; padding:10px;">유니폼 설정, draw call</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">onRemove</td>
+<td style="border:1px solid #ddd; padding:10px;">제거 시 1회</td>
+<td style="border:1px solid #ddd; padding:10px;">리소스 해제</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">최소 구현 예제</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">const customLayer = {
+  id: 'highlight-triangle',
+  type: 'custom',
+  renderingMode: '3d',
+
+  onAdd(map, gl) {
+    this.program = createProgram(gl, vertexSrc, fragmentSrc);
+    this.buffer = gl.createBuffer();
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.buffer);
+    gl.bufferData(gl.ARRAY_BUFFER, mercatorCoords, gl.STATIC_DRAW);
+  },
+
+  render(gl, matrix) {
+    gl.useProgram(this.program);
+    gl.uniformMatrix4fv(
+      gl.getUniformLocation(this.program, 'u_matrix'), false, matrix);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+    gl.drawArrays(gl.TRIANGLES, 0, 3);
+  },
+};
+
+map.on('load', () =&gt; map.addLayer(customLayer));</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>좌표계 변환을 잊지 마세요.</b> 경위도 좌표를 직접 셰이더에 넣으면 안 되고, MercatorCoordinate.fromLngLat 같은 유틸리티로 먼저 변환해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>renderingMode: '3d'를 설정해야 depth buffer가 유지됩니다.</b> 기본값에서는 매 프레임 depth buffer가 지워지므로 3D 오브젝트가 제대로 가려지지 않습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 대량 데이터 시각화가 필요하다면 직접 WebGL을 다루기보다 deck.gl의 MapboxOverlay를 CustomLayer로 등록해 최적화된 레이어를 재사용하는 편이 효율적입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#MapLibre #CustomLayerInterface #WebGL #deckgl #지도렌더링</p>
+
+</body>
+</html>
