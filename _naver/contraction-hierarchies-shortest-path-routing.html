@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>최단경로 탐색 심화 — Contraction Hierarchies로 대규모 도로망 가속화하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">최단경로 탐색 심화 — Contraction Hierarchies로 대규모 도로망 가속화하기</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 전국 단위 도로망에서 Dijkstra는 너무 느립니다. <b>Contraction Hierarchies</b>가 전처리로 그래프를 축약해 질의 시간을 상수에 가깝게 줄이는 원리를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 Contraction Hierarchies를 알아야 하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">도시 하나 규모의 도로망이라면 Dijkstra로 충분하지만, 전국·대륙 단위로 노드 수가 수백만~수천만 개로 늘어나면 문제가 생깁니다. Dijkstra는 <b>목적지 방향과 무관하게 사방으로 탐색 범위를 넓혀가기 때문에</b> 그래프가 커질수록 거의 선형으로 느려집니다. CH는 질의 전에 미리 그래프를 가공해두는 전처리 중심 접근으로 이를 해결합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-24-contraction-hierarchies-shortest-path-routing-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">노드 축약(Contraction)과 숏컷(Shortcut)</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">CH는 모든 노드에 중요도 순서를 매긴 뒤 <b>중요도가 낮은 노드부터 그래프에서 제거</b>합니다. 노드를 제거할 때 그 노드를 거쳐야 성립하던 최단경로를 보존하기 위해 이웃 노드 사이에 우회 엣지(숏컷)를 추가합니다. 이를 반복하면 원본 그래프 위에 숏컷이 쌓인 계층 구조가 만들어집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">질의 시 양방향 탐색이 좁은 범위에서 끝나는 이유</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">질의는 출발지·목적지 양쪽에서 동시에 진행하는 양방향 다익스트라로 처리하되, <b>두 탐색 모두 더 중요도가 높은 노드로만 이동하도록 제한</b>합니다. 탐색은 자연스럽게 상위 계층으로만 좁혀 올라가다 만나며 종료됩니다. 원본 그래프 전체를 훑지 않아도 되므로 질의 시간이 그래프 규모와 거의 무관해집니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">순수 Dijkstra</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Contraction Hierarchies</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">사전 준비</td>
+<td style="border:1px solid #ddd; padding:10px;">없음</td>
+<td style="border:1px solid #ddd; padding:10px;">전처리로 숏컷 그래프 생성 필요</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">질의 시간</td>
+<td style="border:1px solid #ddd; padding:10px;">그래프 크기에 비례</td>
+<td style="border:1px solid #ddd; padding:10px;">거의 무관 (수 ms)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">적합한 사례</td>
+<td style="border:1px solid #ddd; padding:10px;">소규모·자주 변하는 그래프</td>
+<td style="border:1px solid #ddd; padding:10px;">대규모 정적 도로망</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">예제 — 축약 순서 결정 휴리스틱</div>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">def edge_difference(graph, node):
+    neighbors = graph.neighbors(node)
+    shortcuts_needed = 0
+    for u in neighbors:
+        for v in neighbors:
+            if u != v and not has_better_path_without(graph, node, u, v):
+                shortcuts_needed += 1
+    removed_edges = len(neighbors) * 2
+    return shortcuts_needed - removed_edges
+
+def build_contraction_order(graph):
+    return sorted(graph.nodes(), key=lambda n: edge_difference(graph, n))</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실제 OSRM이나 GraphHopper는 더 정교한 우선순위 함수를 쓰지만, 기본 원리는 숏컷을 적게 만드는 노드부터 먼저 없애는 것으로 동일합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>직접 CH를 구현하기보다 OSRM, GraphHopper, Valhalla 같은 검증된 엔진을 먼저 검토하세요.</b> 전처리 알고리즘 구현 난이도가 높고 미묘한 버그가 정확성을 훼손할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>도로망 데이터가 자주 바뀐다면 전처리 비용을 감안해 갱신 주기를 설계하세요.</b> 전체 재전처리 대신 증분 갱신이나 실시간 페널티를 별도 레이어로 얹는 방식을 고려해야 합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 최단 '거리'와 최단 '시간'을 별도 가중치로 계산해야 한다면 각각 별도의 전처리가 필요합니다. 하나의 축약 순서가 두 기준 모두에 최적이라는 보장은 없습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#ContractionHierarchies #라우팅 #최단경로 #Dijkstra #그래프알고리즘</p>
+
+</body>
+</html>
