@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="35" text-anchor="middle" font-size="18" font-weight="bold" fill="#222">폴리곤 단순화 전후 비교</text>
+
+  <!-- Left: original polygon with many vertices -->
+  <rect x="40" y="60" width="330" height="320" rx="10" fill="#f6f9fc" stroke="#c8d6e5" stroke-width="2"/>
+  <text x="205" y="90" text-anchor="middle" font-size="15" font-weight="bold" fill="#22345a">원본 (정점 수만 개)</text>
+  <polygon points="120,320 130,280 125,240 140,220 135,190 150,175 165,180 175,160 190,165 200,145 215,150 225,135 240,140 250,125 265,130 275,150 290,155 295,175 285,190 295,205 285,225 295,245 280,260 285,280 265,290 255,310 235,300 215,315 195,305 175,320 155,310 140,325"
+    fill="#3b6fd6" fill-opacity="0.25" stroke="#3b6fd6" stroke-width="1.5"/>
+  <text x="205" y="360" text-anchor="middle" font-size="12" fill="#555">모든 굴곡을 촘촘하게 표현</text>
+
+  <!-- Arrow -->
+  <line x1="380" y1="220" x2="420" y2="220" stroke="#555" stroke-width="3" marker-end="url(#arrowS)"/>
+  <text x="400" y="205" text-anchor="middle" font-size="12" fill="#555">ST_Simplify</text>
+
+  <!-- Right: simplified polygon -->
+  <rect x="430" y="60" width="330" height="320" rx="10" fill="#eef8ef" stroke="#2f9e58" stroke-width="2"/>
+  <text x="595" y="90" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f5c34">단순화 후 (정점 대폭 감소)</text>
+  <polygon points="510,320 520,240 545,190 580,160 620,145 660,155 675,190 665,245 650,290 620,315 580,320 540,325"
+    fill="#2f9e58" fill-opacity="0.25" stroke="#2f9e58" stroke-width="2"/>
+  <text x="595" y="360" text-anchor="middle" font-size="12" fill="#555">형태는 유지, 정점 수는 대폭 감소</text>
+
+  <defs>
+    <marker id="arrowS" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="420" text-anchor="middle" font-size="13" fill="#333" font-weight="bold">tolerance 값이 클수록 정점은 더 줄지만 원본과의 차이도 커진다</text>
+</svg>

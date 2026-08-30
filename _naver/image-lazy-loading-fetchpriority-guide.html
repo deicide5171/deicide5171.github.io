@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>이미지 lazy loading만으로 충분할까 — fetchpriority 함께 쓰기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">이미지 lazy loading만으로 충분할까 — fetchpriority 함께 쓰기</div>
+<p style="font-size:14px; color:#999;">프론트엔드</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 모든 이미지에 <b>loading="lazy"</b>를 일괄 적용하면 히어로 이미지까지 우선순위가 낮아져 <b>LCP</b>가 오히려 늦어질 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 lazy를 다 붙였는데 점수가 떨어지나</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">스크롤 하단 이미지에 loading="lazy"를 붙이면 초기 로딩 시간이 확실히 줄어듭니다. 하지만 스크롤 없이 바로 보이는 <b>히어로 이미지</b>에까지 붙이면, 브라우저가 이 이미지를 즉시 로딩은 하되 우선순위를 높게 매기지 않습니다. LCP는 대개 이 이미지가 그려지는 시점을 기준으로 측정되므로, 다른 리소스와 경쟁하느라 오히려 늦어집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">잘못된 접근 vs 올바른 접근</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"이미지는 다 늦게 불러오는 게 좋다"는 단순화로 모든 이미지에 lazy를 붙이는 것이 흔한 실수입니다. 올바른 원칙은 처음부터 보이는 이미지는 최대한 빨리, 스크롤해야 보이는 이미지는 늦게 불러오게 구분하는 것입니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; overflow-x:auto; line-height:1.6;">&#60;!-- 히어로 이미지 --&#62;
+&#60;img src="hero-banner.jpg" fetchpriority="high" loading="eager" alt="..."&#62;
+
+&#60;!-- 스크롤 하단 이미지 --&#62;
+&#60;img src="product-1.jpg" loading="lazy" alt="..."&#62;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>fetchpriority="high"</b>는 브라우저의 리소스 우선순위 큐에서 이 이미지를 앞자리로 올려, 같은 시점에 요청되는 다른 리소스보다 먼저 다운로드되게 합니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">속성</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">역할</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">히어로 이미지</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">loading</td>
+<td style="border:1px solid #ddd; padding:10px;">로딩 시점</td>
+<td style="border:1px solid #ddd; padding:10px;">eager</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">fetchpriority</td>
+<td style="border:1px solid #ddd; padding:10px;">동시 요청 중 우선순위</td>
+<td style="border:1px solid #ddd; padding:10px;">high</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">두 속성은 다른 축을 조정합니다. loading은 "언제 요청을 시작할지", fetchpriority는 "동시에 여러 요청이 있을 때 뭘 먼저 처리할지"를 결정하므로, 히어로 이미지에 lazy가 실수로 남아있으면 high를 줘도 소용없습니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — fetchpriority를 모든 이미지에 붙이면 우선순위 큐 자체가 무의미해집니다. 진짜 LCP 후보 이미지 1~2개에만 적용하세요. CSS background-image로 넣은 이미지는 이 속성들의 혜택을 받지 못합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">LCP 후보 이미지는 link rel="preload"로 HTML 파싱 초기 단계에 미리 알려주는 방법도 함께 검토하세요. 실제 개선 여부는 반드시 Lighthouse나 CrUX 데이터로 검증해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#lazyloading #fetchpriority #웹성능 #CoreWebVitals #LCP최적화</p>
+
+</body>
+</html>

@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="35" text-anchor="middle" font-size="18" font-weight="bold" fill="#222">두 좌표계, 같은 지점 다른 숫자</text>
+
+  <!-- Left: EPSG:4326 globe representation -->
+  <rect x="40" y="60" width="330" height="330" rx="10" fill="#eef6ff" stroke="#3b6fd6" stroke-width="2"/>
+  <text x="205" y="90" text-anchor="middle" font-size="16" font-weight="bold" fill="#22345a">EPSG:4326 (WGS84)</text>
+  <circle cx="205" cy="220" r="110" fill="none" stroke="#3b6fd6" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <line x1="95" y1="220" x2="315" y2="220" stroke="#3b6fd6" stroke-width="1"/>
+  <line x1="205" y1="110" x2="205" y2="330" stroke="#3b6fd6" stroke-width="1"/>
+  <circle cx="245" cy="185" r="6" fill="#d64550"/>
+  <text x="245" y="170" text-anchor="middle" font-size="12" fill="#7a1f2b">서울시청</text>
+  <text x="205" y="360" text-anchor="middle" font-size="13" fill="#22345a">경도 126.978, 위도 37.566</text>
+  <text x="205" y="378" text-anchor="middle" font-size="12" fill="#555">단위: 도(degree), 구면 좌표</text>
+
+  <!-- Arrow -->
+  <line x1="380" y1="220" x2="420" y2="220" stroke="#555" stroke-width="3" marker-end="url(#arrow2)"/>
+  <text x="400" y="205" text-anchor="middle" font-size="12" fill="#555">투영</text>
+
+  <!-- Right: EPSG:3857 flat plane -->
+  <rect x="430" y="60" width="330" height="330" rx="10" fill="#fff4e8" stroke="#d98a2b" stroke-width="2"/>
+  <text x="595" y="90" text-anchor="middle" font-size="16" font-weight="bold" fill="#7a4a10">EPSG:3857 (Web Mercator)</text>
+  <rect x="460" y="110" width="270" height="220" fill="none" stroke="#d98a2b" stroke-width="1.5"/>
+  <line x1="460" y1="220" x2="730" y2="220" stroke="#d98a2b" stroke-width="1"/>
+  <line x1="595" y1="110" x2="595" y2="330" stroke="#d98a2b" stroke-width="1"/>
+  <circle cx="635" cy="185" r="6" fill="#d64550"/>
+  <text x="635" y="170" text-anchor="middle" font-size="12" fill="#7a1f2b">서울시청</text>
+  <text x="595" y="360" text-anchor="middle" font-size="13" fill="#7a4a10">X 14135099, Y 4518234</text>
+  <text x="595" y="378" text-anchor="middle" font-size="12" fill="#555">단위: 미터, 평면 좌표</text>
+
+  <defs>
+    <marker id="arrow2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="420" text-anchor="middle" font-size="13" fill="#333" font-weight="bold">같은 위치라도 자릿수·단위가 완전히 달라 혼동하면 좌표가 어긋난다</text>
+</svg>
