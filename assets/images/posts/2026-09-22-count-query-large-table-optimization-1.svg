@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="32" text-anchor="middle" font-size="18" font-weight="bold" fill="#222">정확한 COUNT vs 통계 기반 추정치</text>
+
+  <rect x="40" y="65" width="340" height="330" rx="10" fill="#fdeeee" stroke="#e05a5a" stroke-width="2"/>
+  <text x="210" y="95" text-anchor="middle" font-size="15" font-weight="bold" fill="#8a2e2e">SELECT COUNT(*)</text>
+
+  <rect x="70" y="115" width="280" height="200" fill="#ffffff" stroke="#e05a5a" stroke-width="1.5"/>
+  <text x="210" y="140" text-anchor="middle" font-size="12" fill="#333">테이블/인덱스 전체 스캔</text>
+  <line x1="80" y1="155" x2="340" y2="155" stroke="#f5c6c6" stroke-width="10"/>
+  <line x1="80" y1="175" x2="340" y2="175" stroke="#f5c6c6" stroke-width="10"/>
+  <line x1="80" y1="195" x2="340" y2="195" stroke="#f5c6c6" stroke-width="10"/>
+  <line x1="80" y1="215" x2="340" y2="215" stroke="#f5c6c6" stroke-width="10"/>
+  <line x1="80" y1="235" x2="340" y2="235" stroke="#f5c6c6" stroke-width="10"/>
+  <line x1="80" y1="255" x2="340" y2="255" stroke="#f5c6c6" stroke-width="10"/>
+  <line x1="80" y1="275" x2="340" y2="275" stroke="#f5c6c6" stroke-width="10"/>
+  <text x="210" y="300" text-anchor="middle" font-size="11" fill="#8a2e2e">수천만 건 → 페이지 접근 비례해 느려짐</text>
+
+  <text x="210" y="345" text-anchor="middle" font-size="12" fill="#555">정확하지만 느림</text>
+  <text x="210" y="368" text-anchor="middle" font-size="12" fill="#555">테이블 크기에 선형 비례</text>
+
+  <rect x="420" y="65" width="340" height="330" rx="10" fill="#eef8ef" stroke="#2f9e58" stroke-width="2"/>
+  <text x="590" y="95" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f5c34">pg_class.reltuples</text>
+
+  <rect x="450" y="115" width="280" height="80" rx="6" fill="#ffffff" stroke="#2f9e58"/>
+  <text x="590" y="150" text-anchor="middle" font-size="12" fill="#333">시스템 카탈로그 조회</text>
+  <text x="590" y="172" text-anchor="middle" font-size="11" fill="#888">ANALYZE 시점 통계값</text>
+
+  <line x1="590" y1="195" x2="590" y2="225" stroke="#1f5c34" stroke-width="3" marker-end="url(#arrowCT)"/>
+
+  <rect x="450" y="230" width="280" height="60" rx="6" fill="#e6f7ea" stroke="#2f9e58" stroke-width="1.5"/>
+  <text x="590" y="265" text-anchor="middle" font-size="12" fill="#1f5c34">즉시 반환 (근사치)</text>
+
+  <text x="590" y="345" text-anchor="middle" font-size="12" fill="#555">빠르지만 약간의 오차</text>
+  <text x="590" y="368" text-anchor="middle" font-size="12" fill="#555">대시보드·통계 화면에 적합</text>
+
+  <defs>
+    <marker id="arrowCT" markerWidth="10" markerHeight="10" refX="4" refY="8" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L8,0 L4,9 z" fill="#1f5c34"/>
+    </marker>
+  </defs>
+</svg>
