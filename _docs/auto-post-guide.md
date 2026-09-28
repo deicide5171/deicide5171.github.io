@@ -27,7 +27,10 @@
 - 각 편은 두 가지 형식으로 생성한다.
   1. 깃헙 블로그용 마크다운 → `_posts/YYYY-MM-DD-<slug>-post.md`
   2. 네이버 블로그용 HTML → `_naver/YYYY-MM-DD-<slug>.html`
-- **날짜 기준**: `TZ=Asia/Kolkata date +%F` — 파일명·브랜치·"오늘" 판정 모두 이 값 사용.
+- **날짜 기준: 한국시간(KST)** — `TZ=Asia/Seoul date +%F` 를 파일명·브랜치·"오늘" 판정에 모두 사용한다.
+  저자가 한국에 있으므로 모든 날짜·시각 계산과 보고는 KST 기준으로 한다.
+  (실행 시각 01:30 UTC = KST 10:30 = 머신 로컬 Kolkata 07:00 — 셋 다 같은 날짜라 안전하다.
+  만약 실행 시각을 저녁으로 옮기면 KST가 먼저 날짜를 넘기므로, 그때는 이 기준을 다시 점검할 것.)
 - **전달 방식**: 하루 1개 브랜치 `auto-post/YYYY-MM-DD` + master 대상 PR 1개, 생성 직후 자동 merge.
 - `_naver/`, `_docs/` 폴더는 Jekyll 빌드에서 제외된다(블로그에 노출 안 됨).
 - 2026-09-28에 네이버 대기열(미게시 290편)은 폐기했다. 그 글들은 깃헙 블로그에만 남아 있으며
@@ -86,7 +89,7 @@
 
 ## 중복 방지 & 이어쓰기 (배치 재개)
 
-1. `TODAY=$(TZ=Asia/Kolkata date +%F)`
+1. `TODAY=$(TZ=Asia/Seoul date +%F)`
 2. `git fetch origin` 후 `refs/heads/auto-post/${TODAY}` 존재 확인
    - 있으면: 해당 브랜치를 checkout하고 **이어쓰기 모드** — `_posts/${TODAY}-*.md`들의 `categories`를 세어 부족한 슬롯만 생성
    - 없으면: master에서 새 브랜치 생성
