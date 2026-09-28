@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="Apple SD Gothic Neo, Malgun Gothic, Noto Sans KR, sans-serif">
+  <defs>
+    <marker id="a2" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#2b6cb0"/>
+    </marker>
+    <marker id="a3" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#888"/>
+    </marker>
+  </defs>
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="18" font-weight="bold" fill="#222">Overture 데이터가 지도에 뜨기까지</text>
+
+  <text x="20" y="52" font-size="11" font-weight="bold" fill="#888">① 빌드 — 주기 배치</text>
+
+  <rect x="20"  y="62" width="170" height="58" rx="8" fill="#eef3f8" stroke="#2b6cb0" stroke-width="1.5"/>
+  <text x="105" y="87"  text-anchor="middle" font-size="13" font-weight="bold" fill="#222">Overture GeoParquet</text>
+  <text x="105" y="106" text-anchor="middle" font-size="11" fill="#2b6cb0">S3 · 릴리스 버전 고정</text>
+
+  <rect x="216" y="62" width="170" height="58" rx="8" fill="#eef3f8" stroke="#2b6cb0" stroke-width="1.5"/>
+  <text x="301" y="87"  text-anchor="middle" font-size="13" font-weight="bold" fill="#222">DuckDB</text>
+  <text x="301" y="106" text-anchor="middle" font-size="11" fill="#2b6cb0">bbox · 타입 필터</text>
+
+  <rect x="412" y="62" width="170" height="58" rx="8" fill="#eef3f8" stroke="#2b6cb0" stroke-width="1.5"/>
+  <text x="497" y="87"  text-anchor="middle" font-size="13" font-weight="bold" fill="#222">GeoJSONSeq</text>
+  <text x="497" y="106" text-anchor="middle" font-size="11" fill="#2b6cb0">필요한 영역만</text>
+
+  <rect x="608" y="62" width="170" height="58" rx="8" fill="#eef3f8" stroke="#2b6cb0" stroke-width="1.5"/>
+  <text x="693" y="87"  text-anchor="middle" font-size="13" font-weight="bold" fill="#222">tippecanoe</text>
+  <text x="693" y="106" text-anchor="middle" font-size="11" fill="#2b6cb0">줌별 일반화</text>
+
+  <line x1="192" y1="91" x2="212" y2="91" stroke="#2b6cb0" stroke-width="1.8" marker-end="url(#a2)"/>
+  <line x1="388" y1="91" x2="408" y2="91" stroke="#2b6cb0" stroke-width="1.8" marker-end="url(#a2)"/>
+  <line x1="584" y1="91" x2="604" y2="91" stroke="#2b6cb0" stroke-width="1.8" marker-end="url(#a2)"/>
+
+  <path d="M693,122 L693,182 L155,182 L155,234" fill="none" stroke="#2b6cb0" stroke-width="1.8" marker-end="url(#a2)"/>
+  <text x="424" y="175" text-anchor="middle" font-size="11" fill="#2b6cb0">구운 타일을 서빙 체계로</text>
+
+  <text x="60" y="228" font-size="11" font-weight="bold" fill="#888">② 서빙 — 런타임</text>
+
+  <rect x="60"  y="238" width="190" height="58" rx="8" fill="#e8f5ee" stroke="#03a65a" stroke-width="2"/>
+  <text x="155" y="263" text-anchor="middle" font-size="13" font-weight="bold" fill="#222">PMTiles 단일 파일</text>
+  <text x="155" y="282" text-anchor="middle" font-size="11" fill="#2e7d54">타일 서버 없음</text>
+
+  <rect x="300" y="238" width="200" height="58" rx="8" fill="#e8f5ee" stroke="#03a65a" stroke-width="2"/>
+  <text x="400" y="263" text-anchor="middle" font-size="13" font-weight="bold" fill="#222">오브젝트 스토리지 · CDN</text>
+  <text x="400" y="282" text-anchor="middle" font-size="11" fill="#2e7d54">HTTP Range 요청</text>
+
+  <rect x="550" y="238" width="190" height="58" rx="8" fill="#e8f5ee" stroke="#03a65a" stroke-width="2"/>
+  <text x="645" y="263" text-anchor="middle" font-size="13" font-weight="bold" fill="#222">MapLibre 클라이언트</text>
+  <text x="645" y="282" text-anchor="middle" font-size="11" fill="#2e7d54">스타일 · 인터랙션</text>
+
+  <line x1="252" y1="267" x2="296" y2="267" stroke="#03a65a" stroke-width="1.8" marker-end="url(#a2)"/>
+  <line x1="502" y1="267" x2="546" y2="267" stroke="#03a65a" stroke-width="1.8" marker-end="url(#a2)"/>
+
+  <rect x="545" y="332" width="200" height="54" rx="8" fill="#f5f5f5" stroke="#999" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="645" y="355" text-anchor="middle" font-size="13" font-weight="bold" fill="#444">자체 DB</text>
+  <text x="645" y="374" text-anchor="middle" font-size="11" fill="#666">매장 · 주문 · 리뷰</text>
+  <line x1="645" y1="330" x2="645" y2="300" stroke="#999" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#a3)"/>
+  <text x="530" y="320" text-anchor="end" font-size="11" fill="#666">GERS ID로 내 데이터 붙이기</text>
+
+  <text x="270" y="356" text-anchor="middle" font-size="12" font-weight="bold" fill="#c05621">원본 GeoParquet을 그대로 지도에 붙이지 않는다</text>
+  <text x="270" y="376" text-anchor="middle" font-size="11" fill="#888">분석용 저장 포맷 ≠ 렌더링용 포맷</text>
+
+  <text x="400" y="424" text-anchor="middle" font-size="11" fill="#888">릴리스는 latest가 아니라 버전으로 고정하고, 갱신 배치에 스키마 검증을 함께 넣는다</text>
+</svg>
