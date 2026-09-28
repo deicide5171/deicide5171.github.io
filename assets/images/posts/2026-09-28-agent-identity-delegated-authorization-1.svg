@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="Apple SD Gothic Neo, Malgun Gothic, Noto Sans KR, sans-serif">
+  <defs>
+    <marker id="ar" markerWidth="9" markerHeight="9" refX="8" refY="3" orient="auto">
+      <path d="M0,0 L8,3 L0,6 z" fill="#5b6b7c"/>
+    </marker>
+  </defs>
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#222">에이전트 위임 권한이 놓이는 자리</text>
+
+  <!-- top row -->
+  <rect x="25"  y="72" width="135" height="58" rx="8" fill="#eef3f8" stroke="#5b6b7c" stroke-width="1.5"/>
+  <text x="92"  y="97"  text-anchor="middle" font-size="14" font-weight="bold" fill="#222">사용자</text>
+  <text x="92"  y="116" text-anchor="middle" font-size="11" fill="#5b6b7c">권한의 원천</text>
+
+  <rect x="228" y="72" width="145" height="58" rx="8" fill="#eef3f8" stroke="#5b6b7c" stroke-width="1.5"/>
+  <text x="300" y="97"  text-anchor="middle" font-size="14" font-weight="bold" fill="#222">인가 서버</text>
+  <text x="300" y="116" text-anchor="middle" font-size="11" fill="#5b6b7c">동의 · 토큰 발급</text>
+
+  <rect x="440" y="72" width="155" height="58" rx="8" fill="#e8f5ee" stroke="#03a65a" stroke-width="2"/>
+  <text x="517" y="97"  text-anchor="middle" font-size="14" font-weight="bold" fill="#222">에이전트 런타임</text>
+  <text x="517" y="116" text-anchor="middle" font-size="11" fill="#2e7d54">모델 · 도구 선택</text>
+
+  <rect x="660" y="72" width="115" height="58" rx="8" fill="#eef3f8" stroke="#5b6b7c" stroke-width="1.5"/>
+  <text x="717" y="97"  text-anchor="middle" font-size="14" font-weight="bold" fill="#222">툴 · MCP</text>
+  <text x="717" y="116" text-anchor="middle" font-size="11" fill="#5b6b7c">토큰 검증</text>
+
+  <!-- arrows top row -->
+  <line x1="162" y1="101" x2="224" y2="101" stroke="#5b6b7c" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text x="193" y="63" text-anchor="middle" font-size="11" fill="#5b6b7c">① 로그인·동의</text>
+
+  <line x1="375" y1="101" x2="436" y2="101" stroke="#5b6b7c" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text x="405" y="63" text-anchor="middle" font-size="11" fill="#5b6b7c">② 사용자 토큰</text>
+
+  <line x1="597" y1="101" x2="656" y2="101" stroke="#03a65a" stroke-width="2" marker-end="url(#ar)"/>
+  <text x="627" y="63" text-anchor="middle" font-size="11" font-weight="bold" fill="#2e7d54">④ 좁은 토큰</text>
+
+  <!-- token exchange box -->
+  <rect x="228" y="182" width="367" height="86" rx="8" fill="#fff7f0" stroke="#f0a04b" stroke-width="2"/>
+  <text x="411" y="207" text-anchor="middle" font-size="14" font-weight="bold" fill="#8a5a22">③ 토큰 교환 (RFC 8693)</text>
+  <text x="411" y="229" text-anchor="middle" font-size="12" fill="#5a4632">subject_token = 사용자   +   actor_token = 에이전트</text>
+  <text x="411" y="251" text-anchor="middle" font-size="12" fill="#5a4632">→ scope 축소 · 수명 단축 · act 클레임 부착</text>
+
+  <path d="M500,132 L500,160 L420,160 L420,178" fill="none" stroke="#f0a04b" stroke-width="1.8" marker-end="url(#ar)"/>
+  <path d="M300,132 L300,160 L395,160 L395,178" fill="none" stroke="#f0a04b" stroke-width="1.8" marker-end="url(#ar)"/>
+
+  <!-- external api -->
+  <rect x="660" y="182" width="115" height="58" rx="8" fill="#eef3f8" stroke="#5b6b7c" stroke-width="1.5"/>
+  <text x="717" y="207" text-anchor="middle" font-size="14" font-weight="bold" fill="#222">외부 API</text>
+  <text x="717" y="226" text-anchor="middle" font-size="11" fill="#5b6b7c">캘린더 · 메일</text>
+  <line x1="717" y1="132" x2="717" y2="178" stroke="#5b6b7c" stroke-width="1.6" marker-end="url(#ar)"/>
+
+  <!-- audit log -->
+  <rect x="25" y="308" width="750" height="62" rx="8" fill="#f5f5f5" stroke="#bbb" stroke-width="1.5" stroke-dasharray="5 4"/>
+  <text x="400" y="333" text-anchor="middle" font-size="13" font-weight="bold" fill="#444">감사 로그 — 모든 단계가 한 줄로 이어진다</text>
+  <text x="400" y="355" text-anchor="middle" font-size="12" fill="#666">sub: user-8213  ·  act.sub: agent://scheduler-bot/v3  ·  scope: calendar.events.write</text>
+
+  <text x="400" y="404" text-anchor="middle" font-size="13" font-weight="bold" fill="#2e7d54">최종 권한 = 사용자 권한 ∩ 에이전트 권한 ∩ 이번 작업 권한</text>
+  <text x="400" y="426" text-anchor="middle" font-size="11" fill="#888">교집합을 인가 서버에서 계산해 토큰에 박아두면, 도구 코드는 권한 판단을 하지 않아도 된다</text>
+</svg>
