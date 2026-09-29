@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="26" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f2937">"새벽에 장애 나면 사람 안 깨워도 자동으로 조치되게 해주세요"</text>
+
+  <!-- Stage boxes -->
+  <rect x="20" y="55" width="130" height="70" rx="8" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
+  <text x="85" y="82" text-anchor="middle" font-size="12" font-weight="bold" fill="#374151">알림 감지</text>
+  <text x="85" y="100" text-anchor="middle" font-size="10" fill="#4b5563">메트릭·로그 이상</text>
+
+  <rect x="175" y="55" width="150" height="70" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+  <text x="250" y="78" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e1b4b">진단 에이전트</text>
+  <text x="250" y="96" text-anchor="middle" font-size="10" fill="#4338ca">로그·메트릭 조회</text>
+  <text x="250" y="112" text-anchor="middle" font-size="10" fill="#4338ca">(읽기 전용)</text>
+
+  <rect x="350" y="55" width="150" height="70" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+  <text x="425" y="78" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e1b4b">슈퍼바이저</text>
+  <text x="425" y="96" text-anchor="middle" font-size="10" fill="#4338ca">가설 수립·판단</text>
+  <text x="425" y="112" text-anchor="middle" font-size="10" fill="#4338ca">신뢰도 점수 산출</text>
+
+  <rect x="525" y="55" width="130" height="70" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+  <text x="590" y="82" text-anchor="middle" font-size="12" font-weight="bold" fill="#78350f">승인 게이트</text>
+  <text x="590" y="100" text-anchor="middle" font-size="10" fill="#92400e">신뢰도 기준 분기</text>
+
+  <rect x="680" y="55" width="100" height="70" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="730" y="82" text-anchor="middle" font-size="11" font-weight="bold" fill="#7f1d1d">사람</text>
+  <text x="730" y="100" text-anchor="middle" font-size="10" fill="#991b1b">에스컬레이션</text>
+
+  <!-- arrows top row -->
+  <line x1="150" y1="90" x2="175" y2="90" stroke="#6b7280" stroke-width="2" marker-end="url(#a1)"/>
+  <line x1="325" y1="90" x2="350" y2="90" stroke="#6b7280" stroke-width="2" marker-end="url(#a1)"/>
+  <line x1="500" y1="90" x2="525" y2="90" stroke="#6b7280" stroke-width="2" marker-end="url(#a1)"/>
+  <line x1="655" y1="90" x2="680" y2="90" stroke="#dc2626" stroke-width="2" marker-end="url(#a2)"/>
+  <text x="667" y="80" text-anchor="middle" font-size="9" fill="#7f1d1d">저신뢰</text>
+
+  <!-- down arrow to bounded actuator -->
+  <line x1="590" y1="125" x2="590" y2="170" stroke="#059669" stroke-width="2" marker-end="url(#a3)"/>
+  <text x="620" y="150" font-size="9" fill="#065f46">고신뢰 + 정책 매치</text>
+
+  <rect x="330" y="170" width="520" height="80" rx="8" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+  <text x="590" y="196" text-anchor="middle" font-size="13" font-weight="bold" fill="#064e3b">범위 제한 실행기(Bounded Actuator)</text>
+  <text x="590" y="216" text-anchor="middle" font-size="11" fill="#065f46">화이트리스트 액션만: pod 재시작 · 배포 롤백 · 수평 스케일</text>
+  <text x="590" y="234" text-anchor="middle" font-size="11" fill="#065f46">지정된 namespace 안에서만, 루트 권한 없음</text>
+
+  <line x1="590" y1="250" x2="590" y2="295" stroke="#059669" stroke-width="2" marker-end="url(#a3)"/>
+
+  <rect x="330" y="295" width="250" height="70" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="455" y="320" text-anchor="middle" font-size="12" font-weight="bold" fill="#14532d">감사 로그 + 롤백 경로</text>
+  <text x="455" y="340" text-anchor="middle" font-size="10" fill="#166534">모든 액션 기록, 실패 시 자동 되돌리기</text>
+
+  <rect x="600" y="295" width="250" height="70" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="1.5"/>
+  <text x="600" y="0" opacity="0"/>
+  <text x="725" y="320" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a8a">포스트모템 → 플레이북 갱신</text>
+  <text x="725" y="340" text-anchor="middle" font-size="10" fill="#1e40af">다음 신뢰도 산정에 재사용</text>
+
+  <line x1="580" y1="330" x2="600" y2="330" stroke="#2563eb" stroke-width="2" marker-end="url(#a4)"/>
+
+  <defs>
+    <marker id="a1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#6b7280"/></marker>
+    <marker id="a2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#dc2626"/></marker>
+    <marker id="a3" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#059669"/></marker>
+    <marker id="a4" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L0,6 L9,3 z" fill="#2563eb"/></marker>
+  </defs>
+</svg>
