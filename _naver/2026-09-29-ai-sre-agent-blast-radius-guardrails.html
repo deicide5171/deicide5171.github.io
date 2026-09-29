@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>자동 장애 대응, 어디까지 맡길 것인가 — AI SRE 에이전트의 권한 경계 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">자동 장애 대응, 어디까지 맡길 것인가 — AI SRE 에이전트의 권한 경계 설계</div>
+<p style="font-size:14px; color:#999;">시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 자동 장애 대응 설계의 핵심은 "얼마나 똑똑한가"가 아니라 <b>실행 권한을 어디까지 유계(bounded)로 제한하는가</b>입니다. 2026년 AI SRE 에이전트들이 공통으로 채택한 범위 제한·승인 게이트·롤백 구조를 정리합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">"새벽에 장애 나면 사람 안 깨워도 자동으로 조치되게 해주세요"</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">온콜을 서 본 사람이라면 한 번쯤 들어본 요구입니다. 표면적으로는 알림·자동화 문제처럼 보이지만, 실제로는 훨씬 무거운 질문으로 번역됩니다. <b>이 시스템이 프로덕션에 쓰기 작업을 실행하도록 얼마나 허용할 것인가.</b> 읽기 전용 진단이야 위험이 적지만, 파드를 재시작하거나 배포를 롤백하는 실행 권한을 에이전트에게 준다는 것은 장애 하나가 두 개로 늘어날 가능성을 시스템에 들이는 일입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">2026년은 이 질문에 실제 프로덕션 답이 나온 해입니다. Microsoft의 Azure SRE Agent가 2026년 3월 정식 출시돼 마이크로소프트 내부에서만 1,300개 이상 에이전트가 3만 5천 건 넘는 인시던트를 완화했고, 여러 벤더가 유사한 AI SRE 제품을 내놓았습니다. 이들이 공통으로 수렴한 설계는 "완전 자율"이 아니라 <b>경계가 명확한 자율</b>입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">파이프라인에서 에이전트가 들어갈 자리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">자동 장애 대응은 하나의 시스템이 아니라 다섯 단계로 이뤄진 파이프라인입니다. 알림 감지 → 진단(로그·메트릭 조회) → 판단(원인 가설과 조치안 수립) → 실행 → 감사·학습. 흔한 설계 실수는 "에이전트"를 이 파이프라인 전체를 관장하는 하나의 블랙박스로 만드는 것입니다. 실제 검증된 구조는 역할을 분리합니다 — 로그·메트릭을 읽는 진단 에이전트, 가설을 세우고 신뢰도를 매기는 슈퍼바이저, 그리고 <b>실행은 별도의 범위 제한된 실행기(bounded actuator)</b>가 맡습니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-29-ai-sre-agent-blast-radius-guardrails-1.svg" alt="알림 감지부터 진단 에이전트, 슈퍼바이저의 판단, 신뢰도에 따라 사람에게 에스컬레이션하거나 범위 제한 실행기로 보내는 승인 게이트, 화이트리스트 액션만 지정된 namespace 안에서 실행하는 실행기, 감사 로그와 롤백 경로, 포스트모템을 통한 플레이북 갱신까지 이어지는 AI SRE 파이프라인 구조도" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이렇게 나누는 이유는 명확합니다. 진단과 판단은 아무리 틀려도 프로덕션에 직접 영향을 주지 않습니다. 실제 영향은 실행 단계에서만 발생하므로, <b>권한 경계를 그어야 할 지점은 오직 실행기 하나뿐</b>이라는 것을 시스템 설계 단계에서 명시적으로 정해두면 나머지 단계는 비교적 자유롭게 설계할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">자율성의 수준 — 무엇을 기준으로 고를까</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">수준</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">실행 권한</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">위험</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">읽기 전용 진단</td>
+<td style="border:1px solid #ddd; padding:10px;">없음, 조회만</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f0f7f4;"><b>화이트리스트 실행</b></td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f0f7f4;">사전 정의된 액션만</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f0f7f4;">중간(원천 차단됨)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">승인 후 자유 실행</td>
+<td style="border:1px solid #ddd; padding:10px;">사람이 승인한 임의 명령</td>
+<td style="border:1px solid #ddd; padding:10px;">중간(병목=사람)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">완전 자율 실행</td>
+<td style="border:1px solid #ddd; padding:10px;">제한 없음</td>
+<td style="border:1px solid #ddd; padding:10px;">높음(반경 예측 불가)</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실무에서 통용되는 원칙은 "Act 단계는 반드시 유계(bounded)여야 한다"는 것입니다. 에이전트에게 클러스터 루트 권한을 주지 않고, 미리 정의된 네임스페이스 안에서 미리 정의된 동작(재시작·스케일·롤백)만 하도록 제한합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">진행 순서 — 신뢰는 단계적으로 확장한다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>1단계</b>: 읽기 전용 진단 에이전트부터 붙입니다. 실행 권한 없이도 대응 시간을 단축하는 효과를 곧바로 확인할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>2단계</b>: 되돌리기 쉬운(reversible) 조치부터 화이트리스트에 올립니다. 파드 재시작이나 최근 배포 롤백이 첫 후보입니다. 데이터 삭제나 스키마 변경은 절대 넣지 않습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>3단계</b>: 신뢰도 임계값과 승인 게이트를 설계합니다. 기준을 넘으면 바로 실행하고, 못 미치면 사람에게 넘깁니다.</p>
+
+<pre style="background-color:#f4f4f4; border:1px solid #ddd; padding:14px; font-family:Consolas,Monaco,monospace; font-size:14px; line-height:1.6; color:#222; white-space:pre-wrap;">apiVersion: sre-agent/v1
+kind: ActionPolicy
+metadata:
+  name: payment-service-remediation
+spec:
+  namespace: payment-prod
+  allowedActions:
+    - restartPod
+    - rollbackDeployment
+    - scaleReplicas
+  requiresApprovalIfConfidenceBelow: 0.85
+  forbiddenActions:
+    - deleteResource
+    - modifySecret
+    - scaleToZero</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>4단계</b>: 모든 실행에 감사 로그와 자동 롤백 경로를 붙이고, 인시던트가 끝나면 포스트모템에서 판단이 옳았는지 검증해 플레이북을 갱신합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>"되돌릴 수 있는가"가 화이트리스트의 첫 기준입니다.</b> 가역성을 분류해두지 않으면 화이트리스트가 편의성 기준으로 넓어지다 되돌릴 수 없는 조치까지 포함되는 사고가 납니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>"판단했다"와 "실행했다"를 코드 레벨에서 분리합니다.</b> 슈퍼바이저와 실행기를 같은 프로세스·같은 권한으로 묶으면, 판단 로직의 버그가 곧바로 실행 권한 남용으로 이어집니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 감사 로그는 사후 검증용이 아니라 승인 게이트의 입력값입니다. 과거 실행 이력이 신뢰도 산출에 직접 반영되도록 설계해야 임계값 조정이 실제 데이터 기반으로 이뤄집니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">자동 장애 대응 설계의 핵심 질문은 "얼마나 똑똑한가"가 아니라 "실행 권한을 어디까지 유계로 제한하는가"입니다. 진단·판단·실행을 역할별로 분리하고, 권한 경계는 실행기 한 곳에만 명시적으로 긋습니다. 되돌리기 쉬운 액션부터 화이트리스트에 올리고, 신뢰도 임계값과 감사 로그·포스트모템 학습 루프를 함께 설계해야 자율성을 안전하게 넓혀갈 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#SRE #AI에이전트 #장애대응 #시스템설계 #거버넌스 #DevOps</p>
+
+</body>
+</html>
