@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>AI 에이전트를 프로덕션에 내보내기 전 무엇을 검증하는가 — Trajectory Eval 도입 전략</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">AI 에이전트를 프로덕션에 내보내기 전 무엇을 검증하는가 — Trajectory Eval 도입 전략</div>
+<p style="font-size:14px; color:#999;">개발 전략</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 에이전트 평가는 <b>최종 답이 아니라 도구 호출 순서·루프·복구 행동까지 채점하는 트레일젝토리(trajectory) 평가</b>여야 합니다. 배포 전 CI 게이트와 배포 후 실패 사례 되먹임 루프를 어떤 순서로 넣을지 정리합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">"이 에이전트, 이제 배포해도 될까요?"</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">팀 안에서 이 질문이 나오는 순간 대부분 말문이 막힙니다. 기존 소프트웨어라면 단위·통합 테스트가 초록불이면 충분했지만, 에이전트는 같은 입력에도 매번 다른 경로로 답에 도달하고, 가끔은 완전히 틀린 이유로 우연히 맞는 답을 냅니다. <b>"최종 답이 맞았다"는 사실만으로는 이 시스템을 신뢰해도 되는지 판단할 근거가 되지 않습니다.</b></p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">2026년 에이전트 평가 논의에서 반복 등장하는 지적이 바로 이 지점입니다. 에이전트는 답 하나가 아니라 추론·도구 호출·중간 상태로 이어지는 <b>트레일젝토리</b>를 만들어내는데, 대부분의 평가는 최종 답 정오만 채점해 도구 호출 정확성, 루프, 복구 행동을 놓칩니다. 이 평가 방식을 팀 프로세스에 언제 끼워 넣을지는 이제 아키텍처가 아니라 개발 전략의 문제입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">요구사항을 기술 문제로 번역하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"에이전트를 안전하게 배포하고 싶다"는 말은 세 가지 질문으로 쪼개집니다. 이 변경이 기존 시나리오를 망가뜨리지 않았는가(회귀), 예상 밖 입력에 어떻게 반응하는가(강건성), 실패를 얼마나 빨리 감지하는가(관측가능성). 기존 단위 테스트는 첫 질문에도 답하지 못합니다. 프롬프트나 모델 버전이 조금만 바뀌어도 에이전트의 경로가 달라지기 때문입니다. 그래서 팀은 "정답 판정기"가 아니라 <b>"경로 채점기"</b>를 만들어야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">개발 프로세스에서의 위치</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">트레일젝토리 평가는 한 번 돌리고 끝나는 테스트가 아니라, 개발 파이프라인 전체를 도는 피드백 루프로 설계해야 합니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-09-30-ai-agent-trajectory-eval-strategy-1.svg" alt="에이전트 코드 변경이 오프라인 eval CI 게이트를 통과해야 프로덕션에 배포되고, 배포 후 온라인 트레이스 모니터링에서 발견된 실패 사례가 사람 검수를 거쳐 다시 골든 데이터셋으로 되먹임되는 순환 구조도" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">핵심은 두 지점입니다. 배포 전에는 골든 데이터셋을 CI 게이트로 재실행해 회귀를 막고, 배포 후에는 실사용 트레이스를 샘플링해 벤치마크가 놓친 실제 실패 패턴을 잡아냅니다. 이 실패 사례는 사람이 검수해 재현 가능한 형태로 골든 데이터셋에 되먹입니다. 이 루프가 없으면 벤치마크는 시간이 지날수록 실제 프로덕션 분포와 멀어집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">장점</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">단점</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">자체 구축 harness</td>
+<td style="border:1px solid #ddd; padding:10px;">도메인 특화 채점 반영</td>
+<td style="border:1px solid #ddd; padding:10px;">초기 구축·유지보수 부담</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">상용 프레임워크</td>
+<td style="border:1px solid #ddd; padding:10px;">트레이스·시각화 즉시 제공</td>
+<td style="border:1px solid #ddd; padding:10px;">벤더 종속, 커스터마이징 한계</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">오픈 벤치마크 차용</td>
+<td style="border:1px solid #ddd; padding:10px;">업계 비교 가능</td>
+<td style="border:1px solid #ddd; padding:10px;">우리 도메인과 괴리</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 흔한 실수는 오픈 벤치마크 점수를 그대로 "우리 에이전트의 품질"로 착각하는 것입니다. 실전에서는 상용 프레임워크로 트레이스 수집과 기본 채점을 빠르게 세팅하고, 우리 도메인에 특화된 채점 기준만 커스텀 채점기로 얹는 절충이 가장 잘 작동합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>1단계</b>: "맞았지만 위험한 경로", "무한 루프", "권한 밖 도구 호출" 등 치명적인 실패 카테고리를 먼저 정의합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>2단계</b>: 대표 시나리오 20~30개로 작은 골든 데이터셋을 만들어 바로 CI에 연결합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>3단계</b>: 도구 호출·중간 추론·상태 전이를 구조화된 형태로 남기는 트레이스 로깅을 먼저 계측합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>4단계</b>: 코드·프롬프트 변경 시마다 골든 데이터셋을 자동 재실행하는 CI 게이트를 연결합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>5단계</b>: 프로덕션 트레이스 샘플링과 사람 검수 기반 실패 큐레이션 루프를 붙입니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 데이터셋이 비어 있는 상태로 개발을 계속하는 것보다 작더라도 도는 게이트가 낫습니다. 완벽한 harness를 처음부터 만들려다 몇 달을 쓰는 것도 흔한 함정입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">트레일젝토리 평가는 최종 답이 아니라 도구 호출 순서·루프·복구 행동까지 채점 대상으로 삼습니다. 오픈 벤치마크는 비교 지표일 뿐 우리 서비스 품질의 대리 지표가 아니며, 상용 프레임워크 위에 도메인 특화 채점기를 얹는 절충이 실전에서 잘 작동합니다. 배포 전 CI 게이트와 배포 후 온라인 모니터링을 실패 사례 되먹임 루프로 연결해야 벤치마크가 프로덕션 분포를 계속 따라갑니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#AI에이전트 #eval #trajectory평가 #테스트전략 #품질보증 #개발전략</p>
+
+</body>
+</html>
