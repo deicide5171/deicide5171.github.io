@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#fafafa"/>
+
+  <rect x="20" y="60" width="140" height="55" rx="8" fill="#334155"/>
+  <text x="90" y="92" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">에이전트 코드 변경</text>
+
+  <line x1="160" y1="87" x2="210" y2="87" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="210" y="30" width="180" height="115" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+  <text x="300" y="52" text-anchor="middle" font-size="13" font-weight="bold" fill="#3730a3">오프라인 Eval (CI 게이트)</text>
+  <text x="300" y="72" text-anchor="middle" font-size="11" fill="#333">골든 데이터셋 재실행</text>
+  <text x="300" y="90" text-anchor="middle" font-size="11" fill="#333">최종 답 + 트레일젝토리 채점</text>
+  <text x="300" y="108" text-anchor="middle" font-size="10" fill="#666">툴호출순서·루프·복구행동</text>
+  <text x="300" y="125" text-anchor="middle" font-size="10" fill="#b91c1c" font-weight="bold">기준 미달 시 배포 차단</text>
+
+  <line x1="390" y1="87" x2="440" y2="87" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="440" y="60" width="140" height="55" rx="8" fill="#059669"/>
+  <text x="510" y="92" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">프로덕션 배포</text>
+
+  <line x1="510" y1="115" x2="510" y2="160" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="380" y="165" width="260" height="75" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="510" y="188" text-anchor="middle" font-size="12" font-weight="bold" fill="#92400e">온라인 트레이스 모니터링</text>
+  <text x="510" y="207" text-anchor="middle" font-size="10" fill="#78350f">실사용 궤적 샘플링</text>
+  <text x="510" y="223" text-anchor="middle" font-size="10" fill="#78350f">이상 패턴·루프·저신뢰 응답 탐지</text>
+
+  <line x1="380" y1="205" x2="220" y2="205" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="20" y="165" width="200" height="75" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="1.5"/>
+  <text x="120" y="190" text-anchor="middle" font-size="12" font-weight="bold" fill="#991b1b">실패 사례 큐레이션</text>
+  <text x="120" y="210" text-anchor="middle" font-size="10" fill="#7f1d1d">사람 검수로 원인 분류</text>
+  <text x="120" y="226" text-anchor="middle" font-size="10" fill="#7f1d1d">재현 가능한 케이스 확정</text>
+
+  <path d="M120,165 L120,60 L210,60" fill="none" stroke="#dc2626" stroke-width="2" stroke-dasharray="5,4" marker-end="url(#arrowred)"/>
+  <text x="130" y="45" font-size="10" fill="#991b1b">골든 데이터셋에 회귀 케이스로 추가</text>
+
+  <rect x="150" y="330" width="500" height="90" rx="8" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="400" y="355" text-anchor="middle" font-size="13" font-weight="bold" fill="#334155">핵심 원칙</text>
+  <text x="400" y="378" text-anchor="middle" font-size="12" fill="#334155">최종 답이 맞아도 경로가 잘못됐으면 실패로 채점한다</text>
+  <text x="400" y="398" text-anchor="middle" font-size="12" fill="#334155">실패는 버리지 않고 반드시 골든 데이터셋으로 되먹임한다</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#333"/>
+    </marker>
+    <marker id="arrowred" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#dc2626"/>
+    </marker>
+  </defs>
+</svg>
