@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>호출 주체가 사람에서 에이전트로 바뀔 때 — API Rate Limiting을 다시 설계해야 하는 이유</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">호출 주체가 사람에서 에이전트로 바뀔 때 — API Rate Limiting을 다시 설계해야 하는 이유</div>
+<p style="font-size:14px; color:#999;">시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — AI 에이전트는 재시도 루프 하나로 분당 요청수 제한을 안 건드리면서도 자원을 끝없이 소모할 수 있습니다. <b>요청 수가 아니라 토큰·비용 기준</b>으로 계층화된 한도를 설계해야 하는 이유와 순서를 정리합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 문제가 불거지는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"우리 API를 이제 사람 개발자가 아니라 AI 에이전트가 직접 호출하게 해주세요." 얼마 전까지 이런 요구사항은 "API 키 발급하고 기존 레이트 리밋 그대로 적용하면 끝"으로 처리됐습니다. 분당 100회 같은 숫자는 사람이 호출하는 트래픽 패턴을 전제로 튜닝된 것이었고, 그 전제는 꽤 오래 잘 작동했습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">문제는 <b>에이전트가 사람과 전혀 다른 속도로 API를 두드린다</b>는 데 있습니다. 에이전트는 작업 하나를 끝내려고 같은 엔드포인트를 몇 초 안에 수십 번 호출할 수 있고, 재시도 루프에 빠지면 요청 수 임계값을 넘기지 않으면서도 리소스를 계속 소모합니다. 요청 하나하나는 제한 안에 있지만, 전체 소비 자원은 통제 불능으로 치솟습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">요구사항을 기술 문제로 번역하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"에이전트가 API를 쓰게 해주세요"라는 말은 세 가지 질문을 숨기고 있습니다. <b>무엇을 세야 하는가</b>(요청 횟수인가, 실제 소비 자원인가), <b>누구 단위로 제한해야 하는가</b>(애플리케이션, 에이전트 인스턴스, 최종 사용자), <b>한도를 넘으면 무엇을 하는가</b>(차단·재시도 예산·서킷 브레이커). 기존 설계는 첫 번째 질문에 "요청 횟수"라고 단정했는데, 에이전트 트래픽에서는 같은 "요청 1건"도 소비 자원이 수십 배 차이 날 수 있어 이 단정 자체가 틀린 전제가 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-01-agent-traffic-api-rate-limiting-redesign-1.svg" alt="에이전트 요청이 게이트웨이의 계층적 한도 검사(조직-에이전트-최종사용자)를 거치고, 비용 계측기가 실제 자원 소비를 기록하며, 초과 시 재시도 예산과 서킷 브레이커로 이어지는 구조도" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">요청은 게이트웨이에서 조직 단위, 에이전트 식별자 단위, 최종 사용자 단위로 겹겹이 쌓인 한도를 통과해야 합니다. 처리되는 동안 <b>비용 계측기</b>가 토큰 수·컴퓨팅 시간·외부 API 비용을 실시간 기록하고, 한도에 가까워지면 조절이 들어갑니다. 재시도가 반복되면 별도의 <b>재시도 예산</b>이 누적 소비 총량에 상한을 두고, 넘기면 <b>서킷 브레이커</b>가 해당 에이전트 호출을 일정 시간 차단합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">기준</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">요청 수 기반 (기존)</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">비용·토큰 기반 (에이전트 대응)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">재시도 루프 방어</td>
+<td style="border:1px solid #ddd; padding:10px;">못 막음 — 요청 수만 안 넘으면 통과</td>
+<td style="border:1px solid #ddd; padding:10px;">재시도 예산으로 누적 소비 제한</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">구현 복잡도</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음 — 카운터 하나로 충분</td>
+<td style="border:1px solid #ddd; padding:10px;">높음 — 요청별 자원 소비 계측 필요</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">적합한 경우</td>
+<td style="border:1px solid #ddd; padding:10px;">사람이 직접 호출하는 공개 API</td>
+<td style="border:1px solid #ddd; padding:10px;">에이전트·자동화 클라이언트가 섞인 API</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">함정은 두 방식 중 하나만 택하는 것입니다. 실무에서는 사람 사용자에게는 기존 방식을 유지하고, 호출 주체가 에이전트로 식별된 경로에만 비용 기반 계층을 추가로 얹는 조합이 가장 잘 작동합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>1단계</b>: API 키·OAuth 클라이언트 등록 단계에서 "이 클라이언트는 에이전트다"라는 표식을 남깁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>2단계</b>: 요청당 토큰 수·처리 시간을 응답 메타데이터로 계측합니다. 이 없이는 비용 기반 한도를 설계할 수 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>3단계</b>: 조직-에이전트-최종사용자 단위의 계층적 한도 구조를 트래픽을 관찰하며 설계합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>4단계</b>: 재시도 예산과 서킷 브레이커를 에이전트 트래픽이 집중되는 엔드포인트 한두 곳에 먼저 붙여 검증합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>5단계</b>: 임계값을 고정하지 말고 피크·한산 시간대에 따라 조절되는 적응형 구조로 마무리합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 모든 트래픽에 비용 계측을 욱여넣으면 계측 자체가 지연과 운영 부담을 키웁니다. 에이전트로 식별된 경로에만 추가하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">에이전트는 사람과 다른 속도·패턴으로 API를 호출하므로, 요청 횟수만 세는 기존 레이트 리밋은 재시도 루프 앞에서 무력화됩니다. 토큰·컴퓨팅·비용을 직접 계측해 조직-에이전트-사용자 단위로 계층화한 한도와, 재시도 예산·서킷 브레이커 조합이 에이전트 트래픽에 필요한 대응입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#레이트리밋 #에이전트트래픽 #토큰버킷 #API설계 #비용제어 #시스템설계</p>
+
+</body>
+</html>
