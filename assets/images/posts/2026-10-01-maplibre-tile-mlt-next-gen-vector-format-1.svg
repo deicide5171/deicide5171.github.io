@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#fafafa"/>
+
+  <rect x="20" y="40" width="160" height="60" rx="8" fill="#0ea5e9"/>
+  <text x="100" y="65" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">원본 공간 데이터</text>
+  <text x="100" y="85" text-anchor="middle" fill="#e0f2fe" font-size="10">PostGIS · GeoParquet · OSM</text>
+
+  <line x1="180" y1="70" x2="230" y2="70" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="230" y="40" width="150" height="60" rx="8" fill="#64748b"/>
+  <text x="305" y="65" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">타일 생성 도구</text>
+  <text x="305" y="85" text-anchor="middle" fill="#e2e8f0" font-size="10">tippecanoe · Planetiler</text>
+
+  <line x1="305" y1="100" x2="305" y2="140" stroke="#333" stroke-width="2"/>
+  <line x1="305" y1="120" x2="200" y2="155" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="305" y1="120" x2="410" y2="155" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="90" y="160" width="220" height="80" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>
+  <text x="200" y="185" text-anchor="middle" font-size="13" font-weight="bold" fill="#334155">MVT (기존)</text>
+  <text x="200" y="204" text-anchor="middle" font-size="10" fill="#475569">행(row) 지향 저장</text>
+  <text x="200" y="220" text-anchor="middle" font-size="10" fill="#475569">전 생태계 호환</text>
+
+  <rect x="340" y="160" width="220" height="80" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="450" y="185" text-anchor="middle" font-size="13" font-weight="bold" fill="#5b21b6">MLT (신규)</text>
+  <text x="450" y="204" text-anchor="middle" font-size="10" fill="#5b21b6">열(column) 지향 저장</text>
+  <text x="450" y="220" text-anchor="middle" font-size="10" fill="#5b21b6">압축 3~6배 · 디코딩 3배</text>
+
+  <line x1="200" y1="240" x2="200" y2="280" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="450" y1="240" x2="450" y2="280" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="90" y="285" width="470" height="50" rx="8" fill="#059669"/>
+  <text x="325" y="315" text-anchor="middle" fill="#fff" font-size="13" font-weight="bold">CDN / PMTiles 정적 서빙</text>
+
+  <line x1="200" y1="335" x2="200" y2="370" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="450" y1="335" x2="450" y2="370" stroke="#333" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="90" y="375" width="220" height="60" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="1.5"/>
+  <text x="200" y="400" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">모든 렌더러</text>
+  <text x="200" y="418" text-anchor="middle" font-size="10" fill="#475569">MapLibre·Mapbox·OL·QGIS</text>
+
+  <rect x="340" y="375" width="220" height="60" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="1.5"/>
+  <text x="450" y="400" text-anchor="middle" font-size="12" font-weight="bold" fill="#92400e">MapLibre 최신 버전만</text>
+  <text x="450" y="418" text-anchor="middle" font-size="10" fill="#78350f">서드파티 지원 초기 단계</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#333"/>
+    </marker>
+  </defs>
+</svg>
