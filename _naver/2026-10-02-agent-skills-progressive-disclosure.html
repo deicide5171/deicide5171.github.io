@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>도구를 늘릴수록 에이전트가 둔해지는 딜레마 — Agent Skills의 Progressive Disclosure 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">도구를 늘릴수록 에이전트가 둔해지는 딜레마 — Agent Skills의 Progressive Disclosure 설계</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — "체크리스트대로 알아서 해줘"는 외부 API 연결이 아니라 <b>절차적 노하우 주입</b> 문제입니다. MCP 도구를 늘릴수록 시스템 프롬프트가 무거워지는 문제를, 필요할 때만 본문을 읽어 들이는 Agent Skills의 3단계 구조로 풀 수 있는지 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"우리 팀은 PR을 만들 때마다 같은 체크리스트를 돕니다. 커밋 메시지 컨벤션, 테스트 커버리지 확인, 변경 범위 설명 작성 순서까지 — 이걸 에이전트가 알아서 했으면 좋겠어요." 이런 요구사항을 받으면 많은 빌더가 반사적으로 <b>MCP 도구</b>를 하나 더 만듭니다. 하지만 이 요구는 외부 시스템 접근이 아니라 <b>"어떻게 하는지"를 아는 절차적 노하우</b>를 전달하는 문제입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 구분이 중요해진 이유는 MCP 도구가 쌓일수록 생기는 부작용 때문입니다. 도구를 여러 개 연결하면 각 도구의 이름·설명·파라미터 스키마가 전부 시스템 프롬프트에 상주합니다. 도구가 많아질수록 매 요청마다 소비되는 기본 토큰이 늘고, 비슷한 도구 중 무엇을 골라야 할지 모델이 헷갈리는 사례도 늘어납니다. 2025년 10월 처음 등장해 2025년 12월 오픈 표준으로 공개된 <b>Agent Skills</b>는 바로 이 딜레마를 겨냥합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">요구사항을 기술 문제로 번역하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"체크리스트대로 해줘"라는 한 줄은 세 가지 구현 선택지로 갈립니다. 체크리스트 전문을 시스템 프롬프트에 항상 넣거나, 그 텍스트를 반환하는 MCP 도구를 만들거나, <b>이름과 설명만 상시 로드하고 실제 작업이 들어왔을 때만 본문을 읽어 들이는 방식</b>입니다. 세 번째가 바로 3단계 점진적 공개(Progressive Disclosure)입니다. 등록된 스킬이 몇십 개가 되어도 실제 컨텍스트 비용은 지금 쓰는 것에만 비례합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-02-agent-skills-progressive-disclosure-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Skill은 MCP나 서브에이전트를 대체하지 않습니다. MCP는 에이전트와 <b>외부 시스템</b> 사이의 연결 표준이고, 서브에이전트는 <b>독립된 컨텍스트</b>에서 작업을 위임받는 단위이며, Skill은 에이전트 <b>자신의 행동 절차</b>에 관한 지식입니다. 실제로는 하나의 요청 안에서 Skill이 절차를 로드하면 그 안에서 MCP로 깃헙 API를 호출하고, 변경량이 크면 서브에이전트에게 분석을 위임하는 식으로 셋이 함께 동작합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">기준</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">MCP 도구</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">Agent Skill</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">서브에이전트</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">담당 영역</td>
+<td style="border:1px solid #ddd; padding:10px;">외부 시스템·데이터 연결</td>
+<td style="border:1px solid #ddd; padding:10px;">절차적 노하우 주입</td>
+<td style="border:1px solid #ddd; padding:10px;">독립 조사·작업 위임</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">상시 비용</td>
+<td style="border:1px solid #ddd; padding:10px;">도구 스키마 전체 상주</td>
+<td style="border:1px solid #ddd; padding:10px;">메타데이터(~100토큰)만</td>
+<td style="border:1px solid #ddd; padding:10px;">부모 컨텍스트엔 0</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">적합한 경우</td>
+<td style="border:1px solid #ddd; padding:10px;">데이터를 가져오거나 반영할 때</td>
+<td style="border:1px solid #ddd; padding:10px;">작업 순서·기준을 따를 때</td>
+<td style="border:1px solid #ddd; padding:10px;">조사를 따로 깊게 팔 때</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 흔한 실수는 모든 걸 MCP 도구로 해결하려는 것입니다. 체크리스트처럼 반환값이 고정된 지식은 도구 호출 왕복 비용과 목록 부담만 늘릴 뿐입니다. 반대로 실시간 데이터가 필요한 작업까지 Skill 본문에 하드코딩하면 데이터가 바뀔 때마다 고쳐야 하는 유지보수 부담이 생깁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>1단계</b>: 팀 안에서 매번 똑같이 설명해야 하는 작업 순서를 찾습니다. PR 체크리스트, 장애 대응 런북이 전형적인 후보입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>2단계</b>: SKILL.md의 description을 가장 신중하게 씁니다. 이 한 줄이 언제 스킬을 불러올지 결정하는 유일한 신호입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>3단계</b>: 본문은 5,000토큰 이하로 절차 위주로 쓰고, 코드·템플릿은 별도 파일로 분리합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>4단계</b>: 의도한 요청에서 로드되는지, 무관한 요청에서는 로드되지 않는지 여러 문구로 트리거를 반복 테스트합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>5단계</b>: 스킬이 수십 개를 넘으면 메타데이터 총량도 관리 대상이 되므로 쓰이지 않는 스킬은 정리합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — Skill은 권한 경계가 아닙니다. 스크립트 실행이 포함된 Skill을 쓸 때는 그 스크립트가 어떤 권한으로 도는지 별도로 설계해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">절차·컨벤션을 따라달라는 요구는 MCP가 아니라 Agent Skills의 영역입니다. Progressive Disclosure는 메타데이터(상시)·본문(매칭 시)·리소스(실행 시)의 3단계로 컨텍스트 비용을 지금 쓰는 만큼만 지불하게 만듭니다. description 작성과 트리거 테스트가 성패를 가릅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#AgentSkills #MCP #컨텍스트엔지니어링 #에이전트아키텍처 #AI #프로그레시브디스클로저</p>
+
+</body>
+</html>
