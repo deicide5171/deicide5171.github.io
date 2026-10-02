@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>AI 에이전트를 레거시 시스템 어디에 끼워넣을 것인가 — Agent-Oriented Architecture 도입 전략</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">AI 에이전트를 레거시 시스템 어디에 끼워넣을 것인가 — Agent-Oriented Architecture 도입 전략</div>
+<p style="font-size:14px; color:#999;">개발전략</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — "기존 CRM에 AI 에이전트를 붙여달라"는 요청은 레거시 시스템의 어디에, 얼마만큼의 자율성을 가진 에이전트를 끼워넣을지 묻는 <b>아키텍처 결정</b>입니다. 점진적 레이어 통합과 에이전틱 메시, 전면 재설계의 트레이드오프와 자율성을 단계적으로 늘리는 도입 순서를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 불거지는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"우리 CRM에 AI 에이전트를 붙여서 고객 문의 1차 처리를 자동화해주세요." 이런 요청을 받은 빌더가 실제로 맞닥뜨리는 건 모델 선택 문제가 아닙니다. <b>10년 넘게 운영된 CRM, 그 위에 쌓인 배치 작업, 다른 팀이 소유한 주문 시스템</b> — 이 레거시 지형 어디에 에이전트를 세우고, 얼마만큼의 권한을 줄 것인가라는 아키텍처 결정입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">2026년 업계 논의가 "Agent-Oriented Architecture(AOA)"라는 이름으로 수렴하는 지점이 여기입니다. 독립적인 AI 에이전트가 각자의 도메인을 맡고 MCP·A2A 같은 표준 프로토콜로 서로 통신하며 작업을 완수하는 구조로 기업 시스템을 재편하자는 것입니다. 다만 이것은 "에이전트를 어떻게 만드는가"가 아니라 <b>"기존 자산과 어떻게 공존시키는가"</b>의 문제입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">요구사항을 기술 문제로 번역하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"에이전트를 붙여달라"는 한 줄은 세 가지 통합 전략으로 갈립니다. 기존 시스템을 건드리지 않고 그 위에 얇은 레이어로 얹는 <b>점진적 통합</b>, 여러 도메인 에이전트를 오케스트레이션 레이어가 조율하는 <b>에이전틱 메시</b>, 시스템 자체를 에이전트 중심으로 바꾸는 <b>전면 재설계</b>입니다. 세 선택지의 차이는 레거시 시스템의 통제권을 얼마나 에이전트에게 넘기는가에 있습니다. "문의 분류"처럼 읽기 위주이고 틀려도 쉽게 고치는 작업과, "환불 승인"처럼 쓰기를 동반하고 되돌리기 어려운 작업을 먼저 나눠야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-02-agent-oriented-architecture-integration-strategy-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 구조에서 레거시 시스템은 직접 바뀌지 않습니다. 대신 그 앞에 <b>MCP 어댑터 레이어</b>가 생기고, 에이전트는 이 어댑터를 통해서만 CRM이나 주문 시스템에 접근합니다. 읽기 질의는 바로 통과하지만, 쓰기 작업은 승인 게이트를 거치고 그 결과가 감사 로그에 남습니다. 레거시 시스템의 데이터 모델이나 트랜잭션 경계는 바뀔 필요가 없다는 것이 이 접근의 핵심입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">기준</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">점진적 레이어 통합</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">에이전틱 메시</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">전면 재설계</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">레거시 변경</td>
+<td style="border:1px solid #ddd; padding:10px;">없음 — 어댑터만 추가</td>
+<td style="border:1px solid #ddd; padding:10px;">어댑터+조율 레이어 신규</td>
+<td style="border:1px solid #ddd; padding:10px;">시스템 자체 교체</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">초기 리스크</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음</td>
+<td style="border:1px solid #ddd; padding:10px;">중간</td>
+<td style="border:1px solid #ddd; padding:10px;">높음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">적합한 규모</td>
+<td style="border:1px solid #ddd; padding:10px;">단일 도메인, 소규모</td>
+<td style="border:1px solid #ddd; padding:10px;">여러 도메인 엔터프라이즈</td>
+<td style="border:1px solid #ddd; padding:10px;">레거시가 구조적으로 막을 때</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>거의 모든 팀은 점진적 레이어 통합으로 시작해야 합니다.</b> 도메인이 하나뿐인데 오케스트레이션 레이어부터 설계하면 프로토콜과 권한 모델 논의에만 몇 주가 날아갑니다. 에이전틱 메시는 도메인 에이전트가 실제로 여러 개 생기고 위임이 반복적으로 필요해진 다음에 도입해도 늦지 않습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>1단계</b>: 가장 규칙 기반이고 되돌리기 쉬운 도메인부터 고릅니다. 환불 승인보다 문의 분류가 적합합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>2단계</b>: 읽기 전용 MCP 어댑터부터 만들어 쓰기 권한 없이 정확도를 먼저 검증합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>3단계</b>: 자율성을 관찰 → 승인 후 실행 → 조건부 자동 실행 순서로 단계적으로 올립니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>4단계</b>: 감사 로그와 롤백 경로를 쓰기 권한보다 먼저 설계합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>5단계</b>: 도메인 에이전트가 두 개 이상으로 늘어나 서로 위임이 필요해지는 시점에만 오케스트레이션 레이어를 추가합니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 레거시 시스템의 멱등성부터 확인하세요. 재시도가 중복 처리로 이어지지 않는지 어댑터를 만들기 전에 점검해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"에이전트를 붙여달라"는 요청은 모델 선택이 아니라 레거시 시스템의 통제권을 얼마나 넘길지 정하는 아키텍처 결정입니다. 대부분의 팀은 점진적 레이어 통합으로 시작해야 하며, 자율성은 관찰에서 완전 자동까지 단계적으로 올리고 감사 로그와 롤백 경로를 먼저 설계해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#에이전트아키텍처 #레거시통합 #MCP #A2A #시스템설계 #개발전략</p>
+
+</body>
+</html>
