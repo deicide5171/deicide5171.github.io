@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="16" font-weight="bold" fill="#1f2937">Agent Skills — 3단계 Progressive Disclosure</text>
+
+  <!-- Level 1 -->
+  <rect x="30" y="55" width="740" height="90" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+  <text x="55" y="80" font-size="13" font-weight="bold" fill="#312e81">1단계 · 세션 시작 시 상시 로드</text>
+  <rect x="55" y="92" width="150" height="40" rx="6" fill="#ffffff" stroke="#6366f1" stroke-width="1.2"/>
+  <text x="130" y="112" text-anchor="middle" font-size="10" fill="#4338ca">pr-checklist</text>
+  <text x="130" y="126" text-anchor="middle" font-size="9" fill="#6366f1">name+desc ~100tok</text>
+  <rect x="220" y="92" width="150" height="40" rx="6" fill="#ffffff" stroke="#6366f1" stroke-width="1.2"/>
+  <text x="295" y="112" text-anchor="middle" font-size="10" fill="#4338ca">incident-runbook</text>
+  <text x="295" y="126" text-anchor="middle" font-size="9" fill="#6366f1">name+desc ~100tok</text>
+  <rect x="385" y="92" width="150" height="40" rx="6" fill="#ffffff" stroke="#6366f1" stroke-width="1.2"/>
+  <text x="460" y="112" text-anchor="middle" font-size="10" fill="#4338ca">commit-convention</text>
+  <text x="460" y="126" text-anchor="middle" font-size="9" fill="#6366f1">name+desc ~100tok</text>
+  <rect x="550" y="92" width="200" height="40" rx="6" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1.2" stroke-dasharray="3,3"/>
+  <text x="650" y="112" text-anchor="middle" font-size="10" fill="#6b7280">… 등록된 스킬 수십 개</text>
+  <text x="650" y="126" text-anchor="middle" font-size="9" fill="#6b7280">메타데이터만 계속 누적</text>
+
+  <line x1="130" y1="145" x2="130" y2="180" stroke="#4f46e5" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="160" y="168" font-size="10" fill="#4f46e5">요청 매칭됨</text>
+
+  <!-- Level 2 -->
+  <rect x="30" y="185" width="740" height="95" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+  <text x="55" y="208" font-size="13" font-weight="bold" fill="#064e3b">2단계 · 요청과 매칭될 때만 본문 로드</text>
+  <rect x="55" y="220" width="300" height="48" rx="6" fill="#ffffff" stroke="#059669" stroke-width="1.5"/>
+  <text x="205" y="240" text-anchor="middle" font-size="11" font-weight="bold" fill="#065f46">pr-checklist/SKILL.md 본문</text>
+  <text x="205" y="257" text-anchor="middle" font-size="10" fill="#047857">검토 순서·기준 (&lt; 5,000 토큰)</text>
+  <text x="420" y="248" font-size="11" fill="#065f46">다른 스킬 본문은 로드되지 않음 → 컨텍스트 비용 그대로 0</text>
+
+  <line x1="205" y1="268" x2="205" y2="303" stroke="#059669" stroke-width="2" marker-end="url(#arrow2)"/>
+  <text x="235" y="291" font-size="10" fill="#059669">스크립트 참조 시</text>
+
+  <!-- Level 3 -->
+  <rect x="30" y="308" width="740" height="95" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="55" y="331" font-size="13" font-weight="bold" fill="#7c2d12">3단계 · 실행·조회 시점에만 읽힘</text>
+  <rect x="55" y="343" width="200" height="48" rx="6" fill="#ffffff" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="155" y="363" text-anchor="middle" font-size="11" fill="#7c2d12">check_coverage.sh</text>
+  <text x="155" y="380" text-anchor="middle" font-size="9" fill="#9a3412">필요할 때만 실행</text>
+  <rect x="275" y="343" width="200" height="48" rx="6" fill="#ffffff" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="375" y="363" text-anchor="middle" font-size="11" fill="#7c2d12">pr-template.md</text>
+  <text x="375" y="380" text-anchor="middle" font-size="9" fill="#9a3412">필요할 때만 읽음</text>
+  <text x="530" y="368" font-size="11" fill="#7c2d12">크기 제한 없음 — 쓰일 때까지 토큰 0</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#4f46e5"/>
+    </marker>
+    <marker id="arrow2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#059669"/>
+    </marker>
+  </defs>
+</svg>
