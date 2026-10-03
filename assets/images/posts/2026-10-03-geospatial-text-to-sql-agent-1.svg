@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="26" text-anchor="middle" font-size="16" font-weight="bold" fill="#1f2937">자연어 공간 질의 — 개념 기반 도구 + 검증 파이프라인</text>
+
+  <!-- NL input -->
+  <rect x="30" y="50" width="160" height="60" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+  <text x="110" y="75" text-anchor="middle" font-size="11" font-weight="bold" fill="#312e81">자연어 질의</text>
+  <text x="110" y="92" text-anchor="middle" font-size="9" fill="#4338ca">"반경 500m 경쟁사"</text>
+
+  <line x1="190" y1="80" x2="230" y2="80" stroke="#6b7280" stroke-width="2" marker-end="url(#a1)"/>
+
+  <!-- Intent extraction -->
+  <rect x="230" y="50" width="160" height="60" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+  <text x="310" y="75" text-anchor="middle" font-size="11" font-weight="bold" fill="#312e81">의도·개체 추출</text>
+  <text x="310" y="92" text-anchor="middle" font-size="9" fill="#4338ca">기준점/거리/카테고리</text>
+
+  <line x1="390" y1="80" x2="430" y2="80" stroke="#6b7280" stroke-width="2" marker-end="url(#a1)"/>
+
+  <!-- Tool catalog -->
+  <rect x="430" y="40" width="340" height="110" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+  <text x="600" y="60" text-anchor="middle" font-size="12" font-weight="bold" fill="#064e3b">개념 기반 공간 도구 카탈로그</text>
+  <rect x="445" y="70" width="95" height="36" rx="6" fill="#ffffff" stroke="#059669" stroke-width="1.2"/>
+  <text x="492" y="92" text-anchor="middle" font-size="9" fill="#047857">반경 검색</text>
+  <rect x="550" y="70" width="95" height="36" rx="6" fill="#ffffff" stroke="#059669" stroke-width="1.2"/>
+  <text x="597" y="92" text-anchor="middle" font-size="9" fill="#047857">폴리곤 포함</text>
+  <rect x="655" y="70" width="100" height="36" rx="6" fill="#ffffff" stroke="#059669" stroke-width="1.2"/>
+  <text x="705" y="92" text-anchor="middle" font-size="9" fill="#047857">경로 거리</text>
+  <text x="600" y="130" text-anchor="middle" font-size="9" fill="#059669">※ 모델은 도구 선택만, raw SQL 작성 금지</text>
+
+  <line x1="600" y1="150" x2="600" y2="180" stroke="#6b7280" stroke-width="2" marker-end="url(#a1)"/>
+
+  <!-- Normalization -->
+  <rect x="450" y="185" width="300" height="55" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="600" y="208" text-anchor="middle" font-size="11" font-weight="bold" fill="#7c2d12">좌표계(SRID)·단위 정규화 레이어</text>
+  <text x="600" y="225" text-anchor="middle" font-size="9" fill="#9a3412">"500m" → geography 캐스팅, 4326 통일</text>
+
+  <line x1="600" y1="240" x2="600" y2="270" stroke="#6b7280" stroke-width="2" marker-end="url(#a1)"/>
+
+  <!-- PostGIS exec -->
+  <rect x="450" y="275" width="300" height="50" rx="8" fill="#f3f4f6" stroke="#4b5563" stroke-width="2"/>
+  <text x="600" y="296" text-anchor="middle" font-size="11" font-weight="bold" fill="#1f2937">PostGIS 실행</text>
+  <text x="600" y="313" text-anchor="middle" font-size="9" fill="#374151">ST_DWithin(geography, geography, 500)</text>
+
+  <line x1="600" y1="325" x2="600" y2="355" stroke="#6b7280" stroke-width="2" marker-end="url(#a1)"/>
+
+  <!-- Validation agent -->
+  <rect x="430" y="360" width="340" height="55" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+  <text x="600" y="382" text-anchor="middle" font-size="11" font-weight="bold" fill="#78350f">검증 에이전트</text>
+  <text x="600" y="399" text-anchor="middle" font-size="9" fill="#92400e">결과 건수·바운딩박스 이상치 점검</text>
+
+  <line x1="430" y1="387" x2="230" y2="387" stroke="#6b7280" stroke-width="2"/>
+  <line x1="230" y1="387" x2="230" y2="130" stroke="#6b7280" stroke-width="2" marker-end="url(#a2)"/>
+  <text x="235" y="260" font-size="9" fill="#6b7280" transform="rotate(-90 235 260)">이상 감지 시 재질의</text>
+
+  <!-- Map render -->
+  <rect x="30" y="360" width="160" height="55" rx="8" fill="#dbeafe" stroke="#2563eb" stroke-width="2"/>
+  <text x="110" y="382" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e3a8a">지도 렌더링</text>
+  <text x="110" y="399" text-anchor="middle" font-size="9" fill="#1d4ed8">사람이 즉시 육안 검증</text>
+
+  <line x1="430" y1="387" x2="190" y2="387" stroke="#2563eb" stroke-width="2" marker-end="url(#a3)"/>
+
+  <defs>
+    <marker id="a1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#6b7280"/>
+    </marker>
+    <marker id="a2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#6b7280"/>
+    </marker>
+    <marker id="a3" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#2563eb"/>
+    </marker>
+  </defs>
+</svg>
