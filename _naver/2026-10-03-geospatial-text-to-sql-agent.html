@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"반경 500m 안 경쟁사 보여줘" — Text-to-SQL 에이전트가 공간 질의에서 유독 더 깨지는 이유</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"반경 500m 안 경쟁사 보여줘" — Text-to-SQL 에이전트가 공간 질의에서 유독 더 깨지는 이유</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — "지도에서 반경 안 경쟁사를 자연어로 검색하게 해주세요"는 일반 Text-to-SQL이 아니라 <b>좌표계·단위·공간 함수 선택</b>이 뒤엉킨 별도 문제입니다. 모델을 SQL 작성자가 아닌 개념 기반 도구 선택자로 제한하는 구조로 어떻게 막을 수 있는지 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 문제가 불거지는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"지도 화면에 검색창 하나만 놓고, '우리 강남점 반경 500m 안에 있는 경쟁사 카페 보여줘'라고 치면 바로 지도에 마커가 찍혔으면 좋겠어요." 기획자 입장에서는 이미 사내에 돌아다니는 Text-to-SQL 챗봇에 지도 좌표 테이블 하나만 연결하면 되는 요청처럼 보입니다. 하지만 이 한 줄에는 <b>"500m"를 올바른 좌표계로 환산</b>해야 하고, <b>"안에 있는"을 올바른 공간 함수로 번역</b>해야 하며, 결과가 틀렸는지는 숫자가 아니라 지도를 봐야 알 수 있다는 함정이 숨어 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">에이전트에게 사내 DB 쿼리를 맡기는 사례가 늘면서, 공간 컬럼이 섞인 DB에서 일반 Text-to-SQL 파이프라인이 눈에 띄게 더 자주 실패한다는 보고가 쌓이고 있습니다. 2026년 공개된 Geo-ReAct, SpatialSQL 같은 연구는 바로 이 지점을 정면으로 다룹니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">요구사항을 기술 문제로 번역하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"반경 500m 안 경쟁사"라는 말은 네 단계 번역을 거쳐야 합니다. 거리를 미터 단위 버퍼로 다룰지 geography 타입으로 다룰지, 매장과 경쟁사 좌표가 같은 SRID(좌표계)로 저장돼 있는지, "안에 있는"을 <b>ST_DWithin</b>(근접)으로 쓸지 <b>ST_Contains</b>(포함)로 쓸지, 그리고 생성된 쿼리가 문법적으로는 유효하지만 의미적으로 틀릴 수 있다는 점까지 확인해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Geo-ReAct와 SpatialSQL류 접근은 공통적으로 "모델이 raw SQL을 직접 쓰게 하지 않는다"는 원칙에서 출발합니다. 반경 검색, 포함 판정 같은 패턴을 <b>개념 기반 도구(concept-grounded tool)</b>로 미리 정의해, 모델은 어떤 도구를 어떤 파라미터로 호출할지만 결정하게 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-03-geospatial-text-to-sql-agent-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 구조에서 LLM은 SQL 작성자가 아니라 <b>도구 선택자</b>로 역할이 축소됩니다. 자연어 질의가 들어오면 의도·개체 추출 단계에서 기준점·거리·카테고리를 뽑고, 미리 검증된 공간 도구 카탈로그 중 하나에 매핑합니다. 선택된 도구는 단위·좌표계 정규화 레이어를 거쳐 안전한 PostGIS 쿼리 템플릿으로 실행됩니다. 결과는 검증 에이전트가 건수·바운딩박스를 점검한 뒤에야 지도 렌더링으로 넘어갑니다 — 숫자만으로는 못 잡는 좌표 오류를 지도가 마지막으로 걸러냅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">기준</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">일반 Text-to-SQL</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">고정 쿼리 템플릿</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">개념 기반 도구 호출</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">유연성</td>
+<td style="border:1px solid #ddd; padding:10px;">높음</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음</td>
+<td style="border:1px solid #ddd; padding:10px;">중간(카탈로그 범위)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">좌표계·단위 안전성</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음</td>
+<td style="border:1px solid #ddd; padding:10px;">높음</td>
+<td style="border:1px solid #ddd; padding:10px;">높음</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">적합 상황</td>
+<td style="border:1px solid #ddd; padding:10px;">비공간 일반 질의</td>
+<td style="border:1px solid #ddd; padding:10px;">질의 패턴 한정적</td>
+<td style="border:1px solid #ddd; padding:10px;">반복되는 핵심 공간 질의</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">일반 Text-to-SQL은 비공간 테이블에는 충분하지만, 공간 컬럼이 섞인 순간 좌표계·단위 오류를 모델의 "그럴듯한 추측"에 맡기게 되므로 프로덕션 반경 검색 같은 기능에는 권하기 어렵습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>1단계</b>: 지원할 공간 질의 패턴을 좁은 카탈로그로 확정합니다. 반경 검색, 포함 여부, 경로 거리 정도로 시작합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>2단계</b>: 각 패턴을 파라미터화된 안전 도구로 구현합니다. 좌표계 캐스팅과 단위 변환은 도구 내부에 고정합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>3단계</b>: 자연어 거리·단위 표현의 정규화 레이어를 추가합니다. "500m", "도보 10분" 같은 표현을 단일 단위로 변환합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>4단계</b>: 결과를 반드시 지도로 먼저 확인할 수 있게 합니다. 개발 단계부터 지도 렌더링을 1차 디버깅 도구로 씁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>5단계</b>: 검증 에이전트로 건수·바운딩박스 이상치를 걸러냅니다. 이상 신호가 보이면 재질의하거나 사람에게 넘깁니다.</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 공간 SQL은 문법적으로 완전히 유효하면서 의미적으로는 완전히 틀린 결과를 조용히 반환하는 경우가 많습니다. 실행 성공 여부만으로 품질을 판단하면 안 됩니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">공간 질의를 자연어로 받겠다는 요구는 일반 Text-to-SQL이 아니라 좌표계·단위·공간 함수 선택이라는 별도 문제로 번역해야 합니다. 모델을 개념 기반 도구 선택자로 제한하고, 단위·좌표계 정규화를 도구 내부에 고정하는 것이 안전한 설계 원칙입니다. 결과 검증은 지도 렌더링과 바운딩박스 점검이 마지막 안전망 역할을 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#GIS #PostGIS #텍스트투에스큐엘 #공간질의 #에이전트</p>
+
+</body>
+</html>

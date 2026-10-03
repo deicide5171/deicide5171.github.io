@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="16" font-weight="bold" fill="#1f2937">ACE — Generator / Reflector / Curator 순환 구조</text>
+
+  <!-- Generator -->
+  <rect x="40" y="60" width="200" height="90" rx="10" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+  <text x="140" y="85" text-anchor="middle" font-size="13" font-weight="bold" fill="#312e81">Generator</text>
+  <text x="140" y="105" text-anchor="middle" font-size="10" fill="#4338ca">현재 플레이북으로</text>
+  <text x="140" y="120" text-anchor="middle" font-size="10" fill="#4338ca">실제 작업 실행</text>
+  <text x="140" y="137" text-anchor="middle" font-size="9" fill="#6366f1">(API 호출, 응답, 코드 수정)</text>
+
+  <!-- Feedback -->
+  <rect x="300" y="60" width="200" height="90" rx="10" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="400" y="85" text-anchor="middle" font-size="13" font-weight="bold" fill="#7c2d12">자연 실행 피드백</text>
+  <text x="400" y="105" text-anchor="middle" font-size="10" fill="#9a3412">테스트 통과 여부</text>
+  <text x="400" y="120" text-anchor="middle" font-size="10" fill="#9a3412">에러 코드·재시도 횟수</text>
+  <text x="400" y="137" text-anchor="middle" font-size="9" fill="#c2410c">※ 사람 라벨 불필요</text>
+
+  <!-- Reflector -->
+  <rect x="560" y="60" width="200" height="90" rx="10" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+  <text x="660" y="85" text-anchor="middle" font-size="13" font-weight="bold" fill="#064e3b">Reflector</text>
+  <text x="660" y="105" text-anchor="middle" font-size="10" fill="#047857">실패 원인 분석 →</text>
+  <text x="660" y="120" text-anchor="middle" font-size="10" fill="#047857">전략 단위 추출</text>
+  <text x="660" y="137" text-anchor="middle" font-size="9" fill="#059669">(조건+권장행동+근거)</text>
+
+  <!-- arrows top row -->
+  <line x1="240" y1="105" x2="295" y2="105" stroke="#6b7280" stroke-width="2" marker-end="url(#a1)"/>
+  <line x1="500" y1="105" x2="555" y2="105" stroke="#6b7280" stroke-width="2" marker-end="url(#a1)"/>
+
+  <!-- Curator -->
+  <rect x="300" y="200" width="200" height="90" rx="10" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+  <text x="400" y="225" text-anchor="middle" font-size="13" font-weight="bold" fill="#78350f">Curator</text>
+  <text x="400" y="245" text-anchor="middle" font-size="10" fill="#92400e">증분 델타로 병합</text>
+  <text x="400" y="260" text-anchor="middle" font-size="10" fill="#92400e">(추가 / 보강 / 폐기)</text>
+  <text x="400" y="277" text-anchor="middle" font-size="9" fill="#b45309">전체 재작성 아님</text>
+
+  <line x1="660" y1="150" x2="660" y2="245" stroke="#6b7280" stroke-width="2"/>
+  <line x1="660" y1="245" x2="505" y2="245" stroke="#6b7280" stroke-width="2" marker-end="url(#a1)"/>
+
+  <!-- Playbook store -->
+  <rect x="300" y="330" width="200" height="80" rx="10" fill="#f3f4f6" stroke="#4b5563" stroke-width="2" stroke-dasharray="4,3"/>
+  <text x="400" y="355" text-anchor="middle" font-size="13" font-weight="bold" fill="#1f2937">구조화된 플레이북</text>
+  <text x="400" y="375" text-anchor="middle" font-size="10" fill="#374151">전략 단위(불릿) 집합</text>
+  <text x="400" y="392" text-anchor="middle" font-size="9" fill="#6b7280">요약이 아니라 누적</text>
+
+  <line x1="400" y1="290" x2="400" y2="325" stroke="#6b7280" stroke-width="2" marker-end="url(#a1)"/>
+
+  <!-- feedback loop back to generator -->
+  <path d="M 300 370 L 140 370 L 140 155" fill="none" stroke="#4f46e5" stroke-width="2" stroke-dasharray="5,3" marker-end="url(#a2)"/>
+  <text x="210" y="363" font-size="10" fill="#4f46e5">다음 실행의 컨텍스트로 되먹임</text>
+
+  <defs>
+    <marker id="a1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#6b7280"/>
+    </marker>
+    <marker id="a2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#4f46e5"/>
+    </marker>
+  </defs>
+</svg>

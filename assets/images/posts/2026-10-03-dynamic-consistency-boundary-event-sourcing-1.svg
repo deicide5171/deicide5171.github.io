@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="26" text-anchor="middle" font-size="16" font-weight="bold" fill="#1f2937">DCB — 태그 조합으로 동적 일관성 경계 구성하기</text>
+
+  <!-- Command handler -->
+  <rect x="30" y="55" width="180" height="70" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+  <text x="120" y="80" text-anchor="middle" font-size="12" font-weight="bold" fill="#312e81">커맨드 핸들러</text>
+  <text x="120" y="98" text-anchor="middle" font-size="9" fill="#4338ca">"쿠폰 XYZ 사용"</text>
+  <text x="120" y="113" text-anchor="middle" font-size="9" fill="#4338ca">user=42, coupon=XYZ</text>
+
+  <line x1="210" y1="90" x2="250" y2="90" stroke="#6b7280" stroke-width="2" marker-end="url(#a1)"/>
+
+  <!-- Tag query -->
+  <rect x="250" y="55" width="220" height="70" rx="8" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+  <text x="360" y="78" text-anchor="middle" font-size="12" font-weight="bold" fill="#064e3b">태그 쿼리</text>
+  <text x="360" y="96" text-anchor="middle" font-size="9" fill="#047857">tag:user=42 AND tag:coupon=XYZ</text>
+  <text x="360" y="111" text-anchor="middle" font-size="9" fill="#047857">관련 이벤트만 조회</text>
+
+  <line x1="470" y1="90" x2="510" y2="90" stroke="#6b7280" stroke-width="2" marker-end="url(#a1)"/>
+
+  <!-- Event store -->
+  <rect x="510" y="45" width="260" height="90" rx="8" fill="#f3f4f6" stroke="#4b5563" stroke-width="2"/>
+  <text x="640" y="68" text-anchor="middle" font-size="12" font-weight="bold" fill="#1f2937">이벤트 스토어</text>
+  <rect x="525" y="78" width="70" height="30" rx="4" fill="#ffffff" stroke="#9ca3af"/>
+  <text x="560" y="97" text-anchor="middle" font-size="8" fill="#4b5563">e1 [user=42]</text>
+  <rect x="600" y="78" width="80" height="30" rx="4" fill="#ffffff" stroke="#9ca3af"/>
+  <text x="640" y="97" text-anchor="middle" font-size="8" fill="#4b5563">e2 [coupon=XYZ]</text>
+  <rect x="685" y="78" width="70" height="30" rx="4" fill="#ffffff" stroke="#9ca3af"/>
+  <text x="720" y="97" text-anchor="middle" font-size="8" fill="#4b5563">e3 [user=42,XYZ]</text>
+
+  <line x1="640" y1="135" x2="640" y2="170" stroke="#6b7280" stroke-width="2" marker-end="url(#a1)"/>
+
+  <!-- State reconstruction + decision -->
+  <rect x="470" y="175" width="300" height="60" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="620" y="198" text-anchor="middle" font-size="11" font-weight="bold" fill="#7c2d12">상태 재구성 → 결정</text>
+  <text x="620" y="216" text-anchor="middle" font-size="9" fill="#9a3412">"아직 이 쿠폰 안 썼다" → 사용 허용</text>
+
+  <line x1="620" y1="235" x2="620" y2="265" stroke="#6b7280" stroke-width="2" marker-end="url(#a1)"/>
+
+  <!-- Conditional append -->
+  <rect x="460" y="270" width="320" height="65" rx="8" fill="#fef3c7" stroke="#d97706" stroke-width="2"/>
+  <text x="620" y="293" text-anchor="middle" font-size="11" font-weight="bold" fill="#78350f">조건부 append</text>
+  <text x="620" y="311" text-anchor="middle" font-size="9" fill="#92400e">읽은 버전 이후 변경 없을 때만 쓰기 성공</text>
+  <text x="620" y="325" text-anchor="middle" font-size="8" fill="#b45309">변경 있었으면 거부 → 재조회 후 재시도</text>
+
+  <!-- Competing request -->
+  <rect x="30" y="270" width="180" height="65" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="2" stroke-dasharray="4,3"/>
+  <text x="120" y="293" text-anchor="middle" font-size="11" font-weight="bold" fill="#7f1d1d">동시 요청(경쟁)</text>
+  <text x="120" y="311" text-anchor="middle" font-size="9" fill="#991b1b">같은 user=42, coupon=XYZ</text>
+  <text x="120" y="325" text-anchor="middle" font-size="8" fill="#b91c1c">먼저 쓰면 뒤는 거부됨</text>
+
+  <line x1="210" y1="302" x2="460" y2="302" stroke="#dc2626" stroke-width="2" stroke-dasharray="4,3" marker-end="url(#a2)"/>
+
+  <defs>
+    <marker id="a1" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#6b7280"/>
+    </marker>
+    <marker id="a2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+</svg>
