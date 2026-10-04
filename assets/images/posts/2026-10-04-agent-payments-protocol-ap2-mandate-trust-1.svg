@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="26" text-anchor="middle" font-size="16" font-weight="bold" fill="#1f2937">AP2 Mandate 체인 — 의도에서 결제까지</text>
+
+  <!-- User -->
+  <rect x="40" y="48" width="160" height="42" rx="8" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
+  <text x="120" y="74" text-anchor="middle" font-size="12" fill="#374151">사용자 (서명 주체)</text>
+
+  <line x1="120" y1="90" x2="120" y2="118" stroke="#6b7280" stroke-width="2" marker-end="url(#arrowg)"/>
+
+  <!-- Intent Mandate -->
+  <rect x="40" y="118" width="160" height="48" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+  <text x="120" y="140" text-anchor="middle" font-size="11" font-weight="bold" fill="#312e81">Intent Mandate</text>
+  <text x="120" y="156" text-anchor="middle" font-size="10" fill="#312e81">가격·조건·기간 제약 서명</text>
+
+  <line x1="200" y1="142" x2="300" y2="142" stroke="#4f46e5" stroke-width="2" marker-end="url(#arrowi)"/>
+
+  <!-- Shopping agent -->
+  <rect x="300" y="118" width="200" height="48" rx="8" fill="#fefce8" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="400" y="140" text-anchor="middle" font-size="11" font-weight="bold" fill="#713f12">쇼핑 에이전트</text>
+  <text x="400" y="156" text-anchor="middle" font-size="10" fill="#713f12">Intent 들고 조건 탐색</text>
+
+  <line x1="500" y1="142" x2="600" y2="142" stroke="#ca8a04" stroke-width="2" marker-end="url(#arrowy)"/>
+
+  <!-- Merchant agent -->
+  <rect x="600" y="118" width="160" height="48" rx="8" fill="#f3f4f6" stroke="#6b7280" stroke-width="1.5"/>
+  <text x="680" y="140" text-anchor="middle" font-size="11" font-weight="bold" fill="#374151">가맹점 에이전트</text>
+  <text x="680" y="156" text-anchor="middle" font-size="10" fill="#374151">SKU·가격 확정</text>
+
+  <line x1="680" y1="166" x2="680" y2="198" stroke="#6b7280" stroke-width="2" marker-end="url(#arrowg)"/>
+
+  <!-- Cart Mandate -->
+  <rect x="580" y="198" width="200" height="48" rx="8" fill="#ecfdf5" stroke="#059669" stroke-width="2"/>
+  <text x="680" y="220" text-anchor="middle" font-size="11" font-weight="bold" fill="#064e3b">Cart Mandate</text>
+  <text x="680" y="236" text-anchor="middle" font-size="10" fill="#064e3b">SKU·총액·배송비 서명</text>
+
+  <line x1="580" y1="222" x2="420" y2="222" stroke="#059669" stroke-width="2" marker-end="url(#arrowgr)"/>
+
+  <!-- Verification gate -->
+  <rect x="220" y="198" width="200" height="48" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="320" y="220" text-anchor="middle" font-size="11" font-weight="bold" fill="#7c2d12">Intent ↔ Cart 대조</text>
+  <text x="320" y="236" text-anchor="middle" font-size="10" fill="#7c2d12">범위 이탈 시 즉시 거부</text>
+
+  <line x1="320" y1="246" x2="320" y2="278" stroke="#ea580c" stroke-width="2" marker-end="url(#arrowr)"/>
+
+  <!-- Payment Mandate -->
+  <rect x="220" y="278" width="200" height="54" rx="8" fill="#fdf2f8" stroke="#db2777" stroke-width="2"/>
+  <text x="320" y="300" text-anchor="middle" font-size="11" font-weight="bold" fill="#831843">Payment Mandate</text>
+  <text x="320" y="316" text-anchor="middle" font-size="10" fill="#831843">토큰화된 결제 수단 참조</text>
+  <text x="320" y="328" text-anchor="middle" font-size="9" fill="#831843">(카드 원본 정보 미포함)</text>
+
+  <line x1="420" y1="305" x2="540" y2="305" stroke="#db2777" stroke-width="2" marker-end="url(#arrowp)"/>
+
+  <!-- Payment network -->
+  <rect x="540" y="278" width="220" height="54" rx="8" fill="#f9fafb" stroke="#9ca3af" stroke-width="1.5"/>
+  <text x="650" y="300" text-anchor="middle" font-size="11" font-weight="bold" fill="#374151">결제 네트워크 / 카드사</text>
+  <text x="650" y="316" text-anchor="middle" font-size="10" fill="#374151">분쟁 시 서명 증거로 책임 판정</text>
+
+  <rect x="40" y="380" width="720" height="44" rx="8" fill="#f3f4f6" stroke="#9ca3af" stroke-width="1"/>
+  <text x="400" y="406" text-anchor="middle" font-size="11" fill="#374151">발견(UCP) · 위임(MCP/A2A)은 AP2 바깥의 상위 계층 — AP2는 결제 구간의 신뢰 증거만 담당</text>
+
+  <defs>
+    <marker id="arrowg" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#6b7280"/>
+    </marker>
+    <marker id="arrowi" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#4f46e5"/>
+    </marker>
+    <marker id="arrowy" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#ca8a04"/>
+    </marker>
+    <marker id="arrowgr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#059669"/>
+    </marker>
+    <marker id="arrowr" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#ea580c"/>
+    </marker>
+    <marker id="arrowp" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#db2777"/>
+    </marker>
+  </defs>
+</svg>
