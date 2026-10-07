@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>GPS 점이 도로를 벗어나 찍힐 때 — Hidden Markov Model 맵매칭으로 궤적을 도로망에 붙이기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">GPS 점이 도로를 벗어나 찍힐 때 — Hidden Markov Model 맵매칭으로 궤적을 도로망에 붙이기</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 배달 기사·차량의 GPS 좌표를 지도에 그대로 찍으면 건물 안이나 강 위로 벗어납니다. 단순 최근접 스냅으로는 교차로에서 엉뚱한 도로에 붙는 문제를, Hidden Markov Model이 시간 순서와 도로망 연결성을 함께 고려해 푸는 맵매칭 원리와 실무 설계를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 불거지는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"배달 기사가 지나온 경로를 지도에 선으로 그려서 보여주세요." 단순해 보이는 이 요구를 그대로 구현하면 결과물이 지저분해집니다. GPS 수신기는 도심에서 수 미터, 고층 빌딩 사이나 터널 근처에서는 수십 미터까지 오차가 납니다. 그 원시 좌표를 순서대로 이어 그으면 경로가 건물 안으로 들어갔다 나오고, 강을 가로지르고, 분명 직진 중인데 선이 옆 차선으로 들쭉날쭉 튑니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">흔한 임시방편은 각 GPS 점을 가장 가까운 도로에 그냥 스냅하는 것입니다. 하지만 이 방식은 교차로 근처에서 치명적인 실수를 저지릅니다. GPS 오차 때문에 점 하나가 실제로는 지나지 않은 옆 도로에 더 가깝게 찍히면, 최근접 스냅은 주저 없이 그 옆 도로로 경로를 꺾어버립니다. <b>"점 하나하나를 독립적으로 보지 말고, 전체 궤적을 도로망이라는 그래프 위에서 가장 그럴듯한 하나의 경로로 복원해야 한다"</b>는 문제의식으로 이어지는 지점입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">요구사항을 기술 문제로 번역하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"경로를 깔끔하게 그려주세요"는 두 가지 확률을 동시에 고려하는 문제로 번역됩니다. <b>①방출 확률</b> — 특정 GPS 관측점이 실제로 어느 도로 세그먼트 위에 있었을 가능성. GPS 오차를 가우시안 분포로 모델링해 거리가 가까울수록 확률이 높아집니다. <b>②전이 확률</b> — 연속된 두 관측점 사이에서 한 도로에서 다음 도로로 실제로 이동했을 가능성. 두 후보 도로 사이 네트워크 거리가 직선거리와 비슷할수록 그럴듯한 이동으로 봅니다. 이 둘을 결합해 Viterbi 알고리즘으로 가장 그럴듯한 도로 세그먼트의 연속을 찾습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-07-gps-trajectory-map-matching-hmm-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">맵매칭은 파이프라인의 중간, 정확히는 원시 GPS 스트림과 라우팅 엔진 사이에 위치하는 전처리 계층입니다. 맵매칭 엔진은 GPS 스트림을 받아 도로망 그래프(OpenStreetMap·Overture Maps)에서 후보 도로 세그먼트들을 추출하고, HMM으로 가장 그럴듯한 경로를 복원합니다. 뒷단에서는 이 깨끗해진 경로가 라우팅 엔진의 ETA 보정과 지도 렌더링의 폴리라인 표시, 두 곳에 쓰입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">정확도</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">지연시간</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">적합한 사용처</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">최근접 도로 스냅</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음</td>
+<td style="border:1px solid #ddd; padding:10px;">매우 낮음</td>
+<td style="border:1px solid #ddd; padding:10px;">프로토타입</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">HMM 오프라인(Viterbi)</td>
+<td style="border:1px solid #ddd; padding:10px;">높음</td>
+<td style="border:1px solid #ddd; padding:10px;">일괄 처리</td>
+<td style="border:1px solid #ddd; padding:10px;">사후 정산·분석</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">HMM 온라인(슬라이딩 윈도우)</td>
+<td style="border:1px solid #ddd; padding:10px;">중~높음</td>
+<td style="border:1px solid #ddd; padding:10px;">수 초 내</td>
+<td style="border:1px solid #ddd; padding:10px;">실시간 위치추적·ETA</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">딥러닝 시퀀스 모델</td>
+<td style="border:1px solid #ddd; padding:10px;">높음(데이터 의존)</td>
+<td style="border:1px solid #ddd; padding:10px;">모델에 따라 다름</td>
+<td style="border:1px solid #ddd; padding:10px;">대규모 궤적 데이터 보유 시</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실무에서 가장 많이 선택하는 지점은 오프라인과 온라인 사이입니다. 완료된 배달 건을 정산용으로 다시 그릴 때는 전체 궤적을 한 번에 보는 오프라인 Viterbi가 유리하지만, 실시간으로 기사 위치를 보여줘야 한다면 최근 N개 관측점만 보는 슬라이딩 윈도우로 타협해야 합니다. 이 선택은 <b>"지연시간을 얼마나 허용할 수 있는가"</b>라는 제품 요구사항에서 역산해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>1단계</b>: OpenStreetMap이나 Overture Maps 도로 데이터로 세그먼트 단위 그래프를 구축합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>2단계</b>: R-tree 같은 공간 인덱스로 각 관측점 주변 반경 안의 후보 세그먼트만 빠르게 추려냅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>3단계</b>: GPS 오차 표준편차(도심 기준 10~20m)를 방출 확률 파라미터로, 도로망 거리 대 직선거리 비율을 전이 확률 감쇠 함수로 설정합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>4단계</b>: Viterbi로 최적 경로를 복원하고 실제 주행 로그와 대조해 매칭 정확도를 검증합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>5단계</b>: 실시간 요구가 있다면 지연 허용 범위와 교차로 모호성 해소 사이에서 윈도우 크기를 정합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>6단계</b>: GPS 전송 주기가 너무 길면 전이 확률 추정 자체가 불안정해지므로, 품질 문제를 알고리즘이 아니라 수집 주기에서 먼저 의심합니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:13px; overflow-x:auto; line-height:1.6;">import math
+
+def emission_probability(gps_point, candidate_segment, gps_error_std=15.0):
+    d = distance_to_segment(gps_point, candidate_segment)
+    exponent = -0.5 * (d / gps_error_std) ** 2
+    return math.exp(exponent) / (gps_error_std * math.sqrt(2 * math.pi))
+
+def transition_probability(prev_c, curr_c, straight_dist, beta=5.0):
+    network_dist = shortest_path_distance(prev_c, curr_c)
+    diff = abs(network_dist - straight_dist)
+    return (1 / beta) * math.exp(-diff / beta)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 도로망 데이터 품질이 결과의 상한선을 정합니다. 교차로 연결이 빠져 있거나 일방통행 정보가 틀리면 아무리 파라미터를 잘 튜닝해도 소용없습니다. 고가도로·지하차도처럼 같은 위경도에 다른 층의 도로가 겹치는 구간은 층(level) 속성을 방출 확률에 함께 반영해야 혼동을 피할 수 있습니다. 실시간 온라인 매칭 결과는 "확정"이 아니라 "잠정 결론"이므로, 새 관측점이 들어와 직전 구간이 수정될 수 있다는 점을 UI에도 반영하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">HMM 기반 맵매칭은 방출 확률과 전이 확률을 함께 고려해 Viterbi로 가장 그럴듯한 경로를 복원하며, 원시 GPS 스트림과 라우팅 엔진 사이의 전처리 계층에 위치합니다. 사후 정산은 오프라인 배치, 실시간 추적은 온라인 슬라이딩 윈도우로 나눠 설계하고, 도로망 데이터 품질과 층 구분 처리가 전체 정확도를 좌우한다는 점을 기억해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#맵매칭 #GPS #HMM #라우팅엔진 #궤적데이터</p>
+
+</body>
+</html>

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>요청을 어디서 처리할 것인가 — 엣지 컴퓨팅과 중앙 집중 배치의 설계 경계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">요청을 어디서 처리할 것인가 — 엣지 컴퓨팅과 중앙 집중 배치의 설계 경계</div>
+<p style="font-size:14px; color:#999;">시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 체감 지연이 곧 이탈률로 이어지는 기능일수록 '어디서 계산할 것인가'가 설계의 첫 질문이 됩니다. 엣지 AI 추론이 수십 ms까지 내려오면서 다시 떠오른 엣지 vs 중앙 집중 배치의 경계를, 어떤 로직을 엣지로 내릴 수 있고 무엇은 절대 안 되는지 기준으로 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 불거지는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"결제 직전에 사기 거래인지 체감 지연 없이 판단해주세요." "사용자가 입력하는 즉시 개인화 추천이 바뀌어야 합니다." 이런 요구를 받으면 흔히 "모델을 더 가볍게 만들자"로 접근하기 쉽지만, 더 근본적인 해법이 실용적인 선택지로 올라왔습니다. 바로 계산 자체를 사용자와 물리적으로 가까운 곳에서 수행하는 엣지 배치입니다. 중앙집중형 클라우드의 왕복 지연이 100~250ms인 데 비해, 엣지 네트워크에서는 네트워크 지연이 2~15ms, 경량 모델 추론도 약 50ms 수준으로 내려왔습니다. 실제 사례로 AI API 호출 지연을 850ms에서 150ms로 줄인 경우까지 보고됐습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이게 빌더에게 중요한 이유는, "성능이 부족하면 서버를 늘린다"는 익숙한 해법만으로는 물리적 거리에서 오는 지연을 줄일 수 없기 때문입니다. 서울 사용자의 요청이 먼 리전까지 왕복하는 시간은 서버를 늘려도 광속의 한계 안에서 고정돼 있습니다. <b>엣지 컴퓨팅은 이 문제를 "더 빠른 서버"가 아니라 "더 가까운 서버"로 접근</b>합니다. 하지만 모든 로직을 엣지로 밀어 넣을 수는 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">요구사항을 기술 문제로 번역하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"체감 지연 없이 처리해주세요"라는 요구는 그 로직이 필요로 하는 <b>데이터의 범위와 신선도</b>를 먼저 따지는 문제로 번역됩니다. 사기 탐지가 "이 거래 하나의 금액·시간·디바이스 정보"만으로 판단 가능하다면 엣지에서 처리할 수 있습니다. 하지만 "최근 30일 거래 패턴 전체와 대조해야 한다"면 그 데이터가 중앙 DB에만 있으므로 결국 중앙 왕복 조회가 발생해 엣지의 이점이 사라집니다. 핵심 질문은 <b>"요청 자체의 정보만으로 충분한가, 공유된 중앙 상태를 참조해야 하는가"</b>입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-07-edge-vs-central-compute-placement-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">엣지 배치를 도입한 시스템에서 요청은 더 이상 곧장 중앙 리전으로 가지 않습니다. 가장 가까운 엣지 PoP가 1차 관문이 되어, 요청 자체 정보만으로 완결되는 로직은 origin까지 왕복하지 않고 그 자리에서 끝납니다. 반면 트랜잭션 일관성이 필요한 쓰기나 공유 상태를 다뤄야 하는 로직은 여전히 중앙 서버와 DB로 전달됩니다. 엣지는 중앙 인프라를 대체하는 게 아니라, 앞단에 놓인 "빠른 필터이자 1차 처리 계층"으로 자리 잡습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">기준</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">완전 중앙 집중</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">완전 엣지 배치</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">하이브리드</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">체감 지연</td>
+<td style="border:1px solid #ddd; padding:10px;">거리에 비례해 증가</td>
+<td style="border:1px solid #ddd; padding:10px;">매우 낮음</td>
+<td style="border:1px solid #ddd; padding:10px;">로직별로 다름</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">모델/로직 크기</td>
+<td style="border:1px solid #ddd; padding:10px;">제약 거의 없음</td>
+<td style="border:1px solid #ddd; padding:10px;">메모리·시간 제한 엄격</td>
+<td style="border:1px solid #ddd; padding:10px;">엣지는 경량, 중앙은 자유</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">데이터 일관성</td>
+<td style="border:1px solid #ddd; padding:10px;">강함</td>
+<td style="border:1px solid #ddd; padding:10px;">공유 상태 접근 시 취약</td>
+<td style="border:1px solid #ddd; padding:10px;">상태 필요 로직은 중앙 유지</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">운영·디버깅</td>
+<td style="border:1px solid #ddd; padding:10px;">낮은 복잡도</td>
+<td style="border:1px solid #ddd; padding:10px;">분산 거점 로그 수집 어려움</td>
+<td style="border:1px solid #ddd; padding:10px;">관측성 설계가 핵심</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 자주 오판하는 줄은 "모델/로직 크기"입니다. 엣지 런타임은 메모리와 실행 시간에 엄격한 제한을 두기 때문에, 중앙에서 잘 돌아가던 로직을 그대로 옮기는 건 거의 항상 불가능합니다. 엣지로 내릴 로직은 애초에 그 제약에 맞게 다시 설계해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>1단계</b>: 체감 지연이 이탈률·전환율에 직접 영향을 주는 요청 경로부터 식별합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>2단계</b>: 그 경로가 요청 자체 정보만으로 완결되는지, 중앙 공유 상태가 필요한지 확인합니다. 후자면 엣지 후보에서 제외합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>3단계</b>: 엣지 런타임의 메모리·실행시간·라이브러리 제약에 맞게 로직을 다시 설계합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>4단계</b>: 엣지 판단이 애매하거나 실패하면 중앙 origin으로 즉시 넘기는 폴백 경로를 설계합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>5단계</b>: 트래픽을 옮기기 전에 분산 거점의 로그·트레이스를 중앙에서 수집하는 관측성 파이프라인부터 갖춥니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>6단계</b>: 퍼센트 기반 트래픽 분할로 지연 개선과 오류율을 비교하며 점진적으로 범위를 넓힙니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:13px; overflow-x:auto; line-height:1.6;">// Cloudflare Workers 스타일 — 요청 자체 정보로 완결되는 1차 필터
+export default {
+  async fetch(request, env) {
+    const body = await request.json();
+    const risk = quickRiskScore(body.amount, body.deviceFingerprint);
+
+    if (risk &lt; env.EDGE_THRESHOLD) {
+      return Response.json({ decision: "approve", processedAt: "edge" });
+    }
+    // 애매하거나 고위험이면 중앙 origin으로 폴백
+    return fetch(env.ORIGIN_URL + "/fraud-check", { method: "POST", body: JSON.stringify(body) });
+  }
+};</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 콜드 스타트가 없다고 "상태를 유지할 수 있다"로 착각하지 마세요. 엣지 런타임은 매 요청을 거의 독립적으로 처리합니다. 또한 지연을 줄이려는 마음에 공유 상태가 필요한 로직까지 억지로 엣지로 내리면, 결국 중앙으로 왕복 조회가 발생해 복잡도만 늘어납니다. 특정 거점에서만 재현되는 장애는 중앙 집중 구조보다 분석 시간이 더 걸릴 수 있다는 점도 미리 각오하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">엣지 컴퓨팅은 "더 빠른 서버"가 아니라 "더 가까운 서버"로 지연 문제에 접근합니다. 핵심 판단 기준은 "요청 자체 정보만으로 완결되는가, 공유된 중앙 상태를 참조해야 하는가"이며, 후자는 아키텍처를 바꿔도 해결되지 않습니다. 지연에 민감한 경로를 먼저 식별하고, 폴백 경로와 관측성을 먼저 갖춘 뒤 점진적으로 트래픽을 옮기는 순서가 안전합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#엣지컴퓨팅 #레이턴시 #아키텍처설계 #엣지AI추론 #컴퓨팅배치</p>
+
+</body>
+</html>
