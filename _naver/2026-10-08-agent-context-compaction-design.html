@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>컨텍스트가 꽉 찼을 때 에이전트는 무엇을 잊어도 되는가 — 세션 압축(Compaction) 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">컨텍스트가 꽉 찼을 때 에이전트는 무엇을 잊어도 되는가 — 세션 압축(Compaction) 설계</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 긴 코딩 에이전트 세션에서 컨텍스트 윈도우가 차오르면 무언가는 버려야 합니다. Claude Code의 auto-compact와 Codex CLI의 /compact가 택한 임계값 기반 요약 압축, 그리고 시맨틱 타이밍·verbatim 삭제·observation masking 같은 대안의 트레이드오프를 설계 관점에서 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 불거지는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"에이전트가 하루 종일 한 작업을 붙잡고 있어도 중간에 맥락을 잃지 않게 해주세요." 이 요구는 모델의 컨텍스트 윈도우가 아무리 커져도 사라지지 않습니다. 긴 리팩터링, 반복되는 테스트-수정 루프, 수십 번의 도구 호출이 쌓이는 에이전틱 코딩 세션에서는 결국 어느 시점에 컨텍스트가 한계에 닿습니다. 문제는 "윈도우를 늘리면 해결되는가"가 아니라 <b>"한계에 닿았을 때 무엇을 버리고 무엇을 남길 것인가"</b>입니다. 이건 용량의 문제가 아니라 설계의 문제입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">2026년 들어 주요 코딩 에이전트들이 이 문제에 각자 답을 내놓았습니다. Claude Code는 세션이 한계치 근처(보통 사용 가능 토큰의 95% 수준)에 닿으면 자동으로 대화 이력을 LLM으로 다시 써서 압축하는 auto-compact를 기본으로 켜 둡니다. OpenAI의 Codex CLI도 설정된 토큰 한도를 넘으면 자동으로, 또는 /compact 명령으로 수동으로 이력을 요약하고 원본 턴을 버립니다. 두 구현 모두 같은 전략을 쓰지만, 정확히 언제·무엇을 압축하느냐를 둘러싼 설계 논쟁이 뜨겁습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">요구사항을 기술 문제로 번역하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"세션이 끊기지 않게 해주세요"는 실제로는 "컨텍스트 윈도우가 한계에 가까워질 때, 어떤 정보를 어떤 형태로 보존할 것인가"라는 질문으로 번역됩니다. 여기엔 두 가지 결정이 숨어 있습니다. <b>①타이밍</b> — 토큰 사용량이 고정 임계값을 넘는 순간 기계적으로 트리거할지, 작업의 의미 단위가 끝나는 시점을 모델이 스스로 판단해 트리거할지. <b>②방법</b> — 과거 대화를 LLM에게 요약하게 할지, 요약 없이 불필요한 토큰만 결정적으로 삭제할지. 이 두 축의 조합이 실제 압축 전략을 결정합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-08-agent-context-compaction-design-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">압축 계층은 에이전트 루프 안에서 "모델 호출"과 "다음 턴의 입력" 사이에 끼어드는 전처리 단계입니다. 앞단에는 누적되는 대화 턴과 도구 호출 결과가 쌓이는 컨텍스트 버퍼가 있습니다. 이 버퍼가 한도에 가까워지면 압축 계층이 개입해 쌓인 이력을 더 작은 표현으로 바꿉니다. 뒷단에는 압축된 컨텍스트를 받아 다음 모델 호출의 입력으로 쓰는 에이전트 루프가 있고, 이 루프는 압축 결과가 사용자 의도·설계 결정·파일 상태·남은 작업을 제대로 보존했는지에 전적으로 의존합니다. <b>압축이 망가지면 에이전트는 이미 끝낸 작업을 반복하거나 바뀐 요구사항을 잊어버립니다.</b></p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">전략</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">트리거</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">정보 손실</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">적합한 상황</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">임계값 기반 LLM 요약</td>
+<td style="border:1px solid #ddd; padding:10px;">토큰 사용량 고정 %</td>
+<td style="border:1px solid #ddd; padding:10px;">중간(환각 가능)</td>
+<td style="border:1px solid #ddd; padding:10px;">범용 코딩 에이전트</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Verbatim/토큰 삭제</td>
+<td style="border:1px solid #ddd; padding:10px;">임계값/수동</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음</td>
+<td style="border:1px solid #ddd; padding:10px;">중복 출력 많은 세션</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Observation Masking</td>
+<td style="border:1px solid #ddd; padding:10px;">오래된 도구 출력 시점</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음</td>
+<td style="border:1px solid #ddd; padding:10px;">반복적인 파일 읽기·테스트</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">시맨틱 타이밍(모델 자율)</td>
+<td style="border:1px solid #ddd; padding:10px;">작업 단위 완료 시점</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음</td>
+<td style="border:1px solid #ddd; padding:10px;">긴 멀티스텝 작업</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">서브에이전트 격리</td>
+<td style="border:1px solid #ddd; padding:10px;">하위 작업마다 신규</td>
+<td style="border:1px solid #ddd; padding:10px;">거의 없음</td>
+<td style="border:1px solid #ddd; padding:10px;">독립적인 하위 작업 多</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">실무에서 가장 흔한 선택은 임계값 기반 LLM 요약이지만, "이미 품질이 떨어진 뒤에 압축한다"는 근본적 한계가 남습니다. 서브에이전트 격리는 정보 손실이 거의 없지만 조정 비용이 커서, 작업이 서로 독립적이지 않다면 오히려 맥락이 쪼개져 불리합니다. 반복되는 도구 출력에는 observation masking을, 전체 흐름 요약에는 LLM 요약을 함께 쓰는 계층적 조합이 실무에서는 더 흔합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>1단계</b>: 압축이 실제로 필요한지부터 확인합니다. 평균 세션 길이와 턴당 토큰 증가율을 먼저 측정합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>2단계</b>: "반드시 보존해야 하는 정보"를 명시적으로 정의합니다 — 원래 요구사항, 설계 결정, 수정 파일, 남은 작업.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>3단계</b>: 가장 비용이 낮은 전략부터 적용합니다. LLM 요약보다 observation masking·중복 제거를 먼저 시도합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>4단계</b>: 압축 직후 이전 결정을 잊는 실패 사례를 모아 트리거 시점과 보존 필드를 조정합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>5단계</b>: 압축 전후 같은 질문("지금까지 뭘 했지?")에 답이 일치하는지 검증하는 회귀 테스트를 자동화합니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:13px; overflow-x:auto; line-height:1.6;">COMPACTION_PROMPT = """
+[사용자 요구사항] - 원래 요청 유지
+[확정된 설계 결정] - 이미 내린 결정과 이유
+[수정된 파일과 상태] - 경로: 무엇을 왜 바꿨는지
+[남은 작업] - 끝나지 않은 단계만 나열
+이 네 섹션 외 내용은 포함하지 말 것.
+"""
+
+def should_compact(token_count, max_tokens, threshold=0.95):
+    return token_count &gt;= max_tokens * threshold</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 압축 품질을 측정하지 않으면 회귀를 알아챌 방법이 없습니다. 도구 호출 결과처럼 구조가 뻔한 데이터는 요약보다 결정적 마스킹이 더 안전하고 저렴합니다. 압축이 일어난 세션에서 에이전트가 이전 맥락을 일부 놓치는 건 구조적으로 피할 수 없으므로, 이걸 숨기기보다 압축이 일어났다는 신호를 남겨 사용자가 중요한 결정을 다시 확인하도록 유도하는 편이 낫습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">컨텍스트 윈도우는 아무리 커져도 긴 에이전틱 세션에서는 결국 한계에 닿으며, 핵심 질문은 "늘릴 것인가"가 아니라 "한계에 닿았을 때 무엇을 보존할 것인가"입니다. 임계값 기반 LLM 요약, verbatim 삭제, observation masking, 시맨틱 타이밍, 서브에이전트 격리는 각각 트레이드오프가 다르며, 실무에서는 계층적으로 조합하는 경우가 많습니다. 보존해야 할 필드를 명시적으로 정의하고 압축 품질을 자동 검증하지 않으면, 압축은 눈에 보이지 않는 실패를 만드는 계층이 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#컨텍스트압축 #에이전트메모리 #컴팩션 #컨텍스트엔지니어링 #장기세션</p>
+
+</body>
+</html>
