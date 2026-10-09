@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"지도 기능을 에이전트가 직접 쓰게 해주세요" — ArcGIS MCP와 자체 공간 도구 서버, 무엇을 고를 것인가</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"지도 기능을 에이전트가 직접 쓰게 해주세요" — ArcGIS MCP와 자체 공간 도구 서버, 무엇을 고를 것인가</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — AI 에이전트가 지오코딩·라우팅·공간 질의 같은 지도 기능을 직접 호출하게 해달라는 요구는, Esri가 2026년 User Conference에서 공개한 ArcGIS의 Model Context Protocol 지원을 그대로 쓸지, 자체 PostGIS 위에 공간 연산 MCP 서버를 짤지의 선택 문제로 번역됩니다. 각 접근의 커버리지·비용·데이터 주권 트레이드오프를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 불거지는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"우리 서비스에 붙인 AI 비서가 '여기서 제일 가까운 지점 찾아줘', '이 주소로 길찾기 해줘' 같은 요청도 바로 처리하게 해주세요." 챗봇에 에이전트 프레임워크를 얹기 시작한 팀이라면 자연스럽게 마주치는 요구입니다. 예전 같으면 지오코딩 API 붙이고, 라우팅 엔진 붙이고, 각각 결과를 프롬프트에 요약해서 넣는 정도로 끝났겠지만, 에이전트가 스스로 도구를 고르고 호출하는 지금은 <b>어떤 공간 연산을, 어떤 입출력 스키마의 도구로 노출할 것인가</b>라는 설계 질문이 먼저 옵니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">2026년 7월 Esri User Conference에서 이 질문에 대한 벤더 쪽 답이 나왔습니다. Esri는 ArcGIS Enterprise·ArcGIS Online·ArcGIS Location Platform에 걸쳐 Model Context Protocol(MCP) 지원을 단계적으로 공개했고, 지오코딩·라우팅·공간 질의·지오프로세싱·콘텐츠 검색·지도 내보내기·지오인리치먼트·고도 조회 같은 연산을 MCP 호환 에이전트라면 GIS 전문 지식 없이 바로 호출할 수 있게 열었습니다. 동시에 Google Earth AI, CARTO 같은 AI 네이티브 경쟁자들도 비슷한 에이전틱 레이어를 빠르게 쫓아오고 있습니다. 벤더가 호스팅하는 공간 도구 계층에 올라탈지, 이미 운영 중인 PostGIS·라우팅 엔진 위에 직접 MCP 서버를 얹을지를 지금 판단해야 하는 이유입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">요구사항을 기술 문제로 번역하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"지도 기능을 에이전트가 쓰게 해주세요"는 "자연어 요청 하나를 지도 API 호출 하나로 바꿔주세요"가 아닙니다. 실제로는 <b>에이전트가 호출할 수 있는 이산적(discrete) 공간 연산 도구 세트를 정의하고, 각 도구의 입출력 스키마·좌표계·단위를 모호함 없이 고정하는 문제</b>로 번역됩니다. 자연어를 SQL로 직접 생성하면서 좌표계·단위 실수를 저지르는 접근과 달리, 도구화 접근은 "반경 검색", "최단 경로", "주소→좌표 변환" 같은 연산을 미리 검증된 도구로 고정해 두고 에이전트는 어떤 도구를, 어떤 인자로 부를지만 판단하게 만듭니다. 여기에 더해 "이 도구를 누가 운영하는가"라는 두 번째 질문이 붙습니다. Esri의 호스팅 MCP 엔드포인트를 그대로 쓸지, 자체 데이터와 라우팅 엔진 위에 같은 역할을 하는 MCP 서버를 직접 짤지 결정해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-09-arcgis-mcp-geospatial-agent-tool-calling-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 구조에서 MCP 서버는 LLM의 자연어 판단과 실제 공간 연산 엔진 사이의 도구화 계층에 위치합니다. 앞단에는 사용자의 자연어 요청을 받아 어떤 공간 연산이 필요한지 판단하는 에이전트가 있습니다. 에이전트는 등록된 도구 목록만 보고 호출할 도구와 인자를 고릅니다. 뒷단에는 두 갈래 선택지가 있습니다. 하나는 Esri가 호스팅하는 MCP 서버로, ArcGIS의 전 세계 기준 데이터와 지오프로세싱 엔진을 그대로 빌려 씁니다. 다른 하나는 자체 PostGIS 데이터베이스와 라우팅 엔진 위에 직접 짠 MCP 서버로, 자체 매장·배달 구역 같은 서비스 특화 데이터를 반영합니다. <b>실무에서는 둘을 혼용하는 경우가 많습니다.</b> 전 세계 범용 연산은 벤더 쪽에, 자체 데이터가 필요한 연산은 자체 서버에 맡기는 식입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">접근</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">커버리지</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">데이터 주권</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">적합한 상황</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">ArcGIS 호스팅 MCP</td>
+<td style="border:1px solid #ddd; padding:10px;">전 세계, 범용 데이터</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음(외부 호출)</td>
+<td style="border:1px solid #ddd; padding:10px;">범용 지오코딩·라우팅이 핵심</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">자체 PostGIS 기반 MCP 서버</td>
+<td style="border:1px solid #ddd; padding:10px;">자체 데이터 범위 한정</td>
+<td style="border:1px solid #ddd; padding:10px;">높음(완전 내재화)</td>
+<td style="border:1px solid #ddd; padding:10px;">자체 매장·배달권 등 고유 데이터</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">서드파티 라우팅엔진 MCP 래퍼</td>
+<td style="border:1px solid #ddd; padding:10px;">도로망 데이터 범위</td>
+<td style="border:1px solid #ddd; padding:10px;">중간</td>
+<td style="border:1px solid #ddd; padding:10px;">경로 탐색 비중이 크고 비용 민감</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">벤더+자체 혼합 구성</td>
+<td style="border:1px solid #ddd; padding:10px;">넓음(연산별 분기)</td>
+<td style="border:1px solid #ddd; padding:10px;">연산별로 다름</td>
+<td style="border:1px solid #ddd; padding:10px;">범용 연산과 고유 데이터가 함께 필요</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">ArcGIS MCP를 그대로 쓰면 지오코딩·라우팅 같은 범용 연산을 직접 운영하지 않아도 되지만, 지원 연산 범위가 아직 단계적으로 확장되는 중이라 필요한 연산이 특정 티어에서만 열려 있을 수 있고, 벤더 쪽 요금·쿼터에 종속됩니다. 반대로 자체 MCP 서버는 완전한 통제권을 주지만, 전 세계 지오코딩 품질을 Esri 수준으로 맞추려는 시도는 대부분 비효율적입니다. 그래서 "범용 연산은 빌려 쓰고, 자체 데이터가 들어가는 연산만 직접 짠다"는 혼합 구성이 많은 서비스에서 현실적인 기본값이 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>1단계</b>: 에이전트가 실제로 필요로 하는 공간 연산을 구체적인 동사 단위로 목록화합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>2단계</b>: 각 연산이 ArcGIS MCP로 이미 열려 있는지 공식 아키텍처 문서로 확인합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>3단계</b>: 자체 데이터가 필요한 연산만 골라 기존 PostGIS 쿼리를 도구 함수로 래핑합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>4단계</b>: 도구 스키마에 좌표계(EPSG 코드)와 단위를 명시적으로 고정합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>5단계</b>: 벤더 연산과 자체 연산을 섞어 쓸 분기 로직을 오케스트레이션 레이어에 설계합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>6단계</b>: 다양한 자연어 표현이 올바른 도구와 단위로 매핑되는지 실제 질의 샘플로 검증합니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:13px; overflow-x:auto; line-height:1.6;">&#123;
+  "name": "search_nearby_stores",
+  "description": "주어진 좌표(WGS84, EPSG:4326)에서 반경(미터 단위) 안의 자체 매장을 조회한다.",
+  "input_schema": &#123;
+    "type": "object",
+    "properties": &#123;
+      "lat": &#123; "type": "number", "description": "위도, EPSG:4326" &#125;,
+      "lon": &#123; "type": "number", "description": "경도, EPSG:4326" &#125;,
+      "radius_m": &#123; "type": "integer", "description": "검색 반경, 단위는 반드시 미터" &#125;
+    &#125;,
+    "required": ["lat", "lon", "radius_m"]
+  &#125;
+&#125;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 좌표계와 단위 모호성이 가장 흔한 실패 지점입니다. "반경 500m"를 숫자형으로만 받으면 LLM이 가끔 킬로미터로 착각해 그대로 넘깁니다. 단위를 필드명과 설명 양쪽에 중복 명시하세요. 벤더 지원 범위도 계속 확장 중이니 분기마다 재확인하고, 자체 서버와 벤더 서버를 혼용할 때는 도구 호출 로그에 어느 서버를 거쳤는지 반드시 남겨 장애를 분리해 모니터링하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"지도 기능을 에이전트가 쓰게 해주세요"는 이산적 공간 연산을 도구로 고정하고, 각 도구의 좌표계·단위를 명확히 하는 문제로 번역됩니다. MCP 서버는 LLM의 자연어 판단과 실제 공간 연산 엔진 사이의 도구화 계층에 위치하며, ArcGIS 호스팅 MCP와 자체 PostGIS 기반 MCP 서버를 연산 성격에 따라 혼용하는 구성이 많은 서비스의 현실적인 출발점입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#ArcGIS #MCP #에이전틱GIS #공간도구화 #지오코딩</p>
+
+</body>
+</html>
