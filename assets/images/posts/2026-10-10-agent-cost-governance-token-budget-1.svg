@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="26" text-anchor="middle" font-size="16" font-weight="bold" fill="#1f2937">AI 에이전트 비용 거버넌스 파이프라인</text>
+
+  <rect x="20" y="54" width="140" height="54" rx="8" fill="#eef2ff" stroke="#4338ca" stroke-width="1.6"/>
+  <text x="90" y="76" text-anchor="middle" font-size="9" font-weight="bold" fill="#312e81">에이전트 실행</text>
+  <text x="90" y="92" text-anchor="middle" font-size="7.5" fill="#312e81">(팀/작업 단위)</text>
+
+  <line x1="160" y1="81" x2="198" y2="81" stroke="#6b7280" stroke-width="1.4" marker-end="url(#arrowL)"/>
+
+  <rect x="198" y="54" width="150" height="54" rx="8" fill="#ecfeff" stroke="#0891b2" stroke-width="1.4"/>
+  <text x="273" y="76" text-anchor="middle" font-size="9" font-weight="bold" fill="#164e63">비용 귀속(Attribution)</text>
+  <text x="273" y="92" text-anchor="middle" font-size="7.2" fill="#164e63">팀·작업·모델별 집계</text>
+
+  <line x1="348" y1="81" x2="386" y2="81" stroke="#6b7280" stroke-width="1.4" marker-end="url(#arrowL)"/>
+
+  <rect x="386" y="54" width="150" height="54" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.4"/>
+  <text x="461" y="76" text-anchor="middle" font-size="9" font-weight="bold" fill="#7c2d12">임계값 알림</text>
+  <text x="461" y="92" text-anchor="middle" font-size="7.2" fill="#7c2d12">50% / 75% / 90%</text>
+
+  <line x1="536" y1="81" x2="574" y2="81" stroke="#6b7280" stroke-width="1.4" marker-end="url(#arrowL)"/>
+
+  <rect x="574" y="54" width="150" height="54" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.4"/>
+  <text x="649" y="76" text-anchor="middle" font-size="9" font-weight="bold" fill="#7f1d1d">하드 컷오프</text>
+  <text x="649" y="92" text-anchor="middle" font-size="7.2" fill="#7f1d1d">최후 수단</text>
+
+  <line x1="273" y1="108" x2="273" y2="150" stroke="#6b7280" stroke-width="1.4" marker-end="url(#arrowL)"/>
+
+  <rect x="150" y="150" width="250" height="60" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="275" y="174" text-anchor="middle" font-size="9" font-weight="bold" fill="#14532d">비용 절감 레버</text>
+  <text x="275" y="192" text-anchor="middle" font-size="7.5" fill="#14532d">모델 라우팅 · 캐싱 · 추론 예산 조절</text>
+
+  <line x1="275" y1="210" x2="275" y2="240" stroke="#6b7280" stroke-width="1.4" marker-end="url(#arrowL)"/>
+
+  <rect x="150" y="240" width="250" height="56" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="275" y="262" text-anchor="middle" font-size="9" font-weight="bold" fill="#4c1d95">소유권·차지백</text>
+  <text x="275" y="278" text-anchor="middle" font-size="7.5" fill="#4c1d95">팀별 예산 오너 지정</text>
+
+  <text x="600" y="150" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#1e293b">없을 때</text>
+  <rect x="460" y="160" width="280" height="90" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="4,3"/>
+  <text x="600" y="184" text-anchor="middle" font-size="8.5" fill="#475569">누가 얼마나 썼는지 아무도 모름</text>
+  <text x="600" y="202" text-anchor="middle" font-size="8.5" fill="#475569">청구서가 나온 뒤에야 발견</text>
+  <text x="600" y="220" text-anchor="middle" font-size="8.5" fill="#475569">예산 전체를 조기 소진</text>
+  <text x="600" y="238" text-anchor="middle" font-size="8.5" fill="#475569">(예: Uber 2026년 사례)</text>
+
+  <defs>
+    <marker id="arrowL" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#6b7280"/>
+    </marker>
+  </defs>
+</svg>
