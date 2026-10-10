@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>에이전트가 토큰을 얼마나 쓰는지 아무도 모를 때 — AI 에이전트 비용 거버넌스 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">에이전트가 토큰을 얼마나 쓰는지 아무도 모를 때 — AI 에이전트 비용 거버넌스 설계</div>
+<p style="font-size:14px; color:#999;">개발 전략</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — '팀마다 에이전트 맘껏 쓰게 해주되 비용은 통제해주세요'라는 요구는 단일 API 키 공유로는 풀리지 않습니다. 에이전틱 작업 하나가 일반 대화 턴보다 수십 배 많은 토큰을 태우는 지금, 비용을 누구에게 귀속시키고 어느 지점에서 제동을 걸지 설계하는 기준과, 실제로 전체 예산을 조기 소진한 Uber 사례가 남긴 교훈을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 불거지는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"각 팀이 에이전트를 자유롭게 쓰게 해주세요. 대신 월말에 비용이 터지는 일은 없게 해주세요." 에이전트 코딩 도구와 자동화 워크플로를 사내에 풀어준 조직이라면 거의 예외 없이 듣는 요구입니다. 문제는 에이전틱 작업의 토큰 소비 패턴이 기존 챗봇과 완전히 다르다는 점입니다. 사람이 채팅창에 질문 하나를 입력하면 모델 호출 한 번으로 끝나지만, 에이전트는 계획 수립, 도구 호출, 결과 확인, 재시도를 반복하며 작업 하나당 5~20번의 모델 호출을 만들어내고, 토큰 소비량은 대화 한 턴의 10~50배에 달한다는 보고도 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 격차가 실제로 사고로 번진 사례도 있습니다. Uber는 한 해치 책정한 AI 코딩 예산을 약 넉 달 만에 전부 소진해, 결국 엔지니어 1인당 월 1,500달러 한도를 새로 도입했다고 알려졌습니다. GitHub Copilot이 토큰 기반 과금으로 전환하면서 에이전틱 사용자의 청구액이 10배에서 50배까지 뛰었다는 보도도 나왔습니다. 공유 API 키 하나로 여러 팀이 에이전트를 쓰게 해준 상태에서는 이런 급증이 청구서가 나오기 전까지 보이지 않는다는 것이 핵심 문제입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">요구사항을 기술 문제로 번역하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"비용 좀 통제해주세요"는 사실 하나의 스위치가 아니라 <b>지출이 발생하는 지점부터 그것을 막는 지점까지 이어지는 파이프라인</b>을 설계하는 문제입니다. 이 파이프라인은 최소 세 단계로 나뉩니다. 첫째는 <b>귀속(attribution)</b> — 어떤 팀, 어떤 작업, 어떤 모델이 얼마를 썼는지 호출 단위로 집계하는 일입니다. 둘째는 <b>신호(signal)</b> — 그 집계치가 예산을 넘어서기 전에 단계적으로 경고하는 일입니다. 셋째는 <b>개입(intervention)</b> — 경고로 멈추지 않을 때 실제로 지출을 줄이거나 차단하는 일입니다. 이 세 단계를 거치지 않고 "한도를 넘으면 바로 차단"하는 식으로 설계하면, 급한 배포 작업 중에 에이전트가 갑자기 멈추는 등 통제가 업무를 방해하는 쪽으로 작동하기 쉽습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-10-agent-cost-governance-token-budget-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 구조에서 거버넌스 레이어는 에이전트 실행과 실제 모델 호출 사이, 그리고 그 호출 뒤의 조직 프로세스 사이에 걸쳐 있습니다. 각 실행은 먼저 팀·작업·모델 단위로 비용이 귀속되고, 그 누적치가 50%·75%·90% 같은 단계적 임계값을 지날 때마다 알림이 나갑니다. 임계값을 넘겨도 멈추지 않으면 최후 수단으로 하드 컷오프가 걸립니다. 이 파이프라인을 받쳐주는 두 축이 비용 절감 레버(모델 라우팅, 캐싱, 추론 예산 조절)와 조직적 소유권(팀별 예산 오너 지정, 차지백)입니다. <b>이 레이어 전체가 빠진 상태, 즉 공유 키 하나로 모든 팀이 호출하는 구조에서는 누가 얼마나 썼는지 아무도 모르다가 청구서가 나온 뒤에야 문제를 발견하게 됩니다.</b></p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">통제 방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">반응 속도</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">업무 방해 가능성</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">적합한 상황</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">사후 리포팅만</td>
+<td style="border:1px solid #ddd; padding:10px;">느림(한 달 지연)</td>
+<td style="border:1px solid #ddd; padding:10px;">없음</td>
+<td style="border:1px solid #ddd; padding:10px;">도입 초기, 지출 규모가 작을 때</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">단계적 알림(50/75/90%)</td>
+<td style="border:1px solid #ddd; padding:10px;">중간</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음</td>
+<td style="border:1px solid #ddd; padding:10px;">지출이 늘기 시작했지만 패턴이 불안정할 때</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">팀별 하드 예산 상한</td>
+<td style="border:1px solid #ddd; padding:10px;">빠름</td>
+<td style="border:1px solid #ddd; padding:10px;">높음</td>
+<td style="border:1px solid #ddd; padding:10px;">과거 예산 폭주를 겪은 조직</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">라우팅/캐싱 자동 절감</td>
+<td style="border:1px solid #ddd; padding:10px;">상시 작동</td>
+<td style="border:1px solid #ddd; padding:10px;">없음(품질 저하 위험)</td>
+<td style="border:1px solid #ddd; padding:10px;">지출 규모가 커서 구조적 절감이 필요한 단계</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">사후 리포팅만으로는 Uber 사례처럼 예산이 소진된 뒤에야 알게 되는 구조를 벗어날 수 없습니다. 반대로 하드 상한을 처음부터 걸면 중요한 작업이 월말에 멈추는 사고가 날 수 있습니다. 라우팅·캐싱은 품질 저하 없이 비용을 줄이는 가장 안전한 레버지만, 구현과 검증에 가장 많은 선행 투자가 필요합니다. 초기에는 알림 중심으로 시작해 지출 패턴을 파악한 뒤, 패턴이 안정되면 팀별 상한과 자동 절감 레버를 순서대로 얹는 편이 안전합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>1단계</b>: 공유 API 키를 팀·프로젝트별로 분리해 호출 단위 귀속부터 만듭니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>2단계</b>: 50%, 75%, 90% 지점에서 담당자에게 알림이 가도록 설정하고, 차단 로직은 아직 넣지 않습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>3단계</b>: 예산 초과 알림이 누구에게 가야 하는지, 초과분을 어느 팀 예산으로 돌릴지 조직적으로 합의합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>4단계</b>: 하드 컷오프보다 먼저 모델 라우팅과 캐싱으로 지출 자체를 줄일 수 있는지 검토합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>5단계</b>: 하드 컷오프는 알림·소유권·절감 레버가 자리 잡은 뒤, 팀별로 다른 상한으로 마지막에 도입합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>6단계</b>: 실제 지출과 비교해 상한·알림 임계값을 분기 단위로 재조정합니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:13px; overflow-x:auto; line-height:1.6;">def log_agent_call(team_id, task_id, model, input_tokens, output_tokens):
+    cost = estimate_cost(model, input_tokens, output_tokens)
+    metrics.record(
+        team=team_id, task=task_id, model=model, cost=cost
+    )
+    monthly_spend = get_monthly_spend(team_id)
+    budget = get_team_budget(team_id)
+    for threshold in (0.5, 0.75, 0.9):
+        if monthly_spend / budget &gt;= threshold and not already_alerted(team_id, threshold):
+            notify_owner(team_id, threshold, monthly_spend, budget)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 공유 API 키는 그 자체로 거버넌스 공백입니다. 벤더가 제시하는 절감률 수치는 대개 자체 측정치이므로 실제 트래픽으로 직접 검증하세요. 하드 컷오프는 가장 늦게, 가장 세밀하게 적용해야 중요한 작업이 덜 중요한 작업과 같은 선에서 멈추는 일을 피할 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"비용 좀 통제해주세요"는 귀속 → 신호 → 개입으로 이어지는 파이프라인을 설계하는 문제로 번역되며, 이 순서를 건너뛰고 차단부터 걸면 업무를 방해하는 쪽으로 작동하기 쉽습니다. 공유 API 키로는 귀속이 불가능해 Uber 사례처럼 예산이 소진된 뒤에야 문제를 발견하게 되므로, 거버넌스의 첫걸음은 언제나 호출 단위 식별자 분리입니다. 도입은 귀속 → 단계적 알림 → 소유권/차지백 → 라우팅·캐싱 절감 → 하드 컷오프 순으로, 지출 패턴이 안정될 때마다 한 단계씩 더하는 것이 안전합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#FinOps #토큰비용 #에이전트거버넌스 #비용귀속 #모델라우팅</p>
+
+</body>
+</html>
