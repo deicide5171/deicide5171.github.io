@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="26" text-anchor="middle" font-size="16" font-weight="bold" fill="#1f2937">Agent Plugins 1.0 — 하나의 패키지, 여러 런타임</text>
+
+  <rect x="300" y="48" width="200" height="86" rx="10" fill="#f8fafc" stroke="#475569" stroke-width="1.6"/>
+  <text x="400" y="66" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#1e293b">plugin/ (단일 폴더)</text>
+
+  <rect x="314" y="74" width="80" height="24" rx="5" fill="#eef2ff" stroke="#4338ca" stroke-width="1.2"/>
+  <text x="354" y="90" text-anchor="middle" font-size="7.5" fill="#312e81">plugin.json</text>
+
+  <rect x="314" y="102" width="80" height="24" rx="5" fill="#ecfeff" stroke="#0891b2" stroke-width="1.2"/>
+  <text x="354" y="118" text-anchor="middle" font-size="7.5" fill="#164e63">skills/</text>
+
+  <rect x="406" y="74" width="80" height="24" rx="5" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.2"/>
+  <text x="446" y="90" text-anchor="middle" font-size="7.5" fill="#14532d">mcp.json</text>
+
+  <rect x="406" y="102" width="80" height="24" rx="5" fill="#fff7ed" stroke="#ea580c" stroke-width="1.2"/>
+  <text x="446" y="118" text-anchor="middle" font-size="7" fill="#7c2d12">com.github.copilot/</text>
+
+  <line x1="330" y1="134" x2="150" y2="200" stroke="#9ca3af" stroke-width="1.3" marker-end="url(#arrowL)"/>
+  <line x1="370" y1="134" x2="310" y2="200" stroke="#9ca3af" stroke-width="1.3" marker-end="url(#arrowL)"/>
+  <line x1="430" y1="134" x2="490" y2="200" stroke="#9ca3af" stroke-width="1.3" marker-end="url(#arrowL)"/>
+  <line x1="470" y1="134" x2="650" y2="200" stroke="#9ca3af" stroke-width="1.3" marker-end="url(#arrowL)"/>
+
+  <rect x="60" y="200" width="180" height="50" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="150" y="229" text-anchor="middle" font-size="9" font-weight="bold" fill="#4c1d95">Claude Code</text>
+
+  <rect x="260" y="200" width="100" height="50" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="310" y="229" text-anchor="middle" font-size="9" font-weight="bold" fill="#4c1d95">Cursor</text>
+
+  <rect x="400" y="200" width="180" height="50" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="490" y="222" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#4c1d95">VS Code /</text>
+  <text x="490" y="236" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#4c1d95">Copilot CLI</text>
+
+  <rect x="610" y="200" width="130" height="50" rx="8" fill="#ede9fe" stroke="#7c3aed" stroke-width="1.5"/>
+  <text x="675" y="222" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#4c1d95">Codex /</text>
+  <text x="675" y="236" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#4c1d95">Kiro</text>
+
+  <text x="400" y="275" text-anchor="middle" font-size="8" fill="#64748b">각 클라이언트가 설치·정책·UX는 자체 결정 — 벤더 전용 확장은 com.github.copilot/ 같은 네임스페이스 폴더로 격리</text>
+
+  <line x1="400" y1="290" x2="400" y2="316" stroke="#6b7280" stroke-width="1.4" marker-end="url(#arrowL)"/>
+
+  <rect x="140" y="316" width="240" height="56" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.4"/>
+  <text x="260" y="338" text-anchor="middle" font-size="9" font-weight="bold" fill="#7f1d1d">기존: MCP 서버 + Skills</text>
+  <text x="260" y="356" text-anchor="middle" font-size="7.5" fill="#7f1d1d">런타임마다 각자 등록·설정 반복</text>
+
+  <rect x="420" y="316" width="240" height="56" rx="8" fill="#ecfdf5" stroke="#047857" stroke-width="1.4"/>
+  <text x="540" y="338" text-anchor="middle" font-size="9" font-weight="bold" fill="#064e3b">Agent Plugins 1.0</text>
+  <text x="540" y="356" text-anchor="middle" font-size="7.5" fill="#064e3b">패키지 하나 배포 → 여러 런타임 호환</text>
+
+  <text x="400" y="408" text-anchor="middle" font-size="8" fill="#94a3b8">GitHub·AWS·Anysphere·Microsoft·OpenAI·Vercel·Google 공동 발표 (2026-08-06)</text>
+
+  <defs>
+    <marker id="arrowL" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#6b7280"/>
+    </marker>
+  </defs>
+</svg>
