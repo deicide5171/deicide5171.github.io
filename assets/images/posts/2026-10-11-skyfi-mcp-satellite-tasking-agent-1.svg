@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="26" text-anchor="middle" font-size="16" font-weight="bold" fill="#1f2937">SkyFi MCP — 아카이브 검색과 신규 촬영 주문의 경로 분리</text>
+
+  <rect x="30" y="56" width="180" height="56" rx="8" fill="#eef2ff" stroke="#4338ca" stroke-width="1.8"/>
+  <text x="120" y="80" text-anchor="middle" font-size="10" font-weight="bold" fill="#312e81">에이전트 워크플로우</text>
+  <text x="120" y="96" text-anchor="middle" font-size="8" fill="#3730a3">"매장 혼잡도 확인해주세요"</text>
+
+  <line x1="210" y1="84" x2="300" y2="84" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowA)"/>
+
+  <rect x="300" y="56" width="200" height="56" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.8"/>
+  <text x="400" y="78" text-anchor="middle" font-size="10" font-weight="bold" fill="#14532d">SkyFi MCP 서버</text>
+  <text x="400" y="96" text-anchor="middle" font-size="8" fill="#15803d">검색 · feasibility · 주문</text>
+
+  <line x1="360" y1="112" x2="200" y2="170" stroke="#059669" stroke-width="1.5" marker-end="url(#arrowB)"/>
+  <rect x="80" y="170" width="240" height="60" rx="8" fill="#ecfdf5" stroke="#047857" stroke-width="1.8"/>
+  <text x="200" y="193" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#064e3b">① 아카이브 검색 (읽기)</text>
+  <text x="200" y="208" text-anchor="middle" font-size="7.5" fill="#065f46">300여 개 소스, 비용↓ 속도↑</text>
+  <text x="200" y="221" text-anchor="middle" font-size="7.5" fill="#065f46">과금 없음 · 즉시~24시간</text>
+
+  <line x1="440" y1="112" x2="600" y2="170" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrowC)"/>
+  <rect x="480" y="170" width="240" height="60" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.8"/>
+  <text x="600" y="193" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#7f1d1d">② feasibility 체크</text>
+  <text x="600" y="208" text-anchor="middle" font-size="7.5" fill="#991b1b">패스 가능 여부 · 구름 확률</text>
+  <text x="600" y="221" text-anchor="middle" font-size="7.5" fill="#991b1b">아직 과금 전 단계</text>
+
+  <line x1="600" y1="230" x2="600" y2="265" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrowC)"/>
+  <rect x="450" y="265" width="300" height="62" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="600" y="288" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#7c2d12">③ 승인 게이트 (사람/정책)</text>
+  <text x="600" y="304" text-anchor="middle" font-size="7.5" fill="#9a3412">max_price_usd 상한 · 명시적 승인</text>
+  <text x="600" y="317" text-anchor="middle" font-size="7.5" fill="#9a3412">없으면 tasking 호출 자체를 막음</text>
+
+  <line x1="600" y1="327" x2="600" y2="362" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrowC)"/>
+  <rect x="450" y="362" width="300" height="52" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.8"/>
+  <text x="600" y="384" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#7f1d1d">④ 신규 촬영 주문 (쓰기·과금)</text>
+  <text x="600" y="400" text-anchor="middle" font-size="7.5" fill="#991b1b">위성 재방문 주기에 종속 · 3~14일</text>
+
+  <line x1="200" y1="230" x2="200" y2="265" stroke="#059669" stroke-width="1.5" marker-end="url(#arrowB)"/>
+  <rect x="80" y="265" width="240" height="52" rx="8" fill="#ecfdf5" stroke="#047857" stroke-width="1.8"/>
+  <text x="200" y="287" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#064e3b">분석 파이프라인으로 즉시 전달</text>
+  <text x="200" y="302" text-anchor="middle" font-size="7.5" fill="#065f46">GeoTIFF → PostGIS·객체탐지</text>
+
+  <defs>
+    <marker id="arrowA" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#6b7280"/>
+    </marker>
+    <marker id="arrowB" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#059669"/>
+    </marker>
+    <marker id="arrowC" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#dc2626"/>
+    </marker>
+  </defs>
+</svg>
