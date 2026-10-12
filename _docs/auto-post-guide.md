@@ -170,7 +170,19 @@ excerpt: "글 요약 한 문장"
 3.5. **merge 전 필수 게이트**: 위 "중복 절대 금지" 섹션의 최종 감사를 이번 PR에 포함된 모든 글에 대해 수행하고, 중복으로 판단된 글은 교체까지 마친다. 이 단계를 통과하기 전에는 다음 단계(merge)로 넘어가지 않는다.
 4. **PR 자동 merge**: 위 게이트를 통과한 뒤에만 GitHub MCP 도구나 GitHub API로 즉시 merge한다(merge commit 방식).
    merge하면 GitHub Pages가 자동으로 게시한다. merge 실패 시 PR을 열어둔 채 실패 사유를 보고한다.
-   merge 후 원격 브랜치 삭제는 토큰 권한상 불가하므로 그대로 남겨둔다(무해 — 다음 실행의 이어쓰기 판단에도 지장 없음).
+   merge 후에는 아래 4.5를 수행한다.
+4.5. **머지된 브랜치 정리**: merge 직후 `git push origin --delete auto-post/${TODAY}`를 시도한다.
+   루틴 토큰에 삭제 권한이 없으면 실패하는데, **실패해도 무시하고 다음 단계로 간다**(게시에는 영향 없음).
+   삭제에 실패하면 브랜치가 하루 1개씩 계속 쌓이므로, 이 저장소를 만지는 세션은
+   **머지된 브랜치가 10개 넘게 남아 있으면 한 번 정리한다**. 절차는 아래를 그대로 따른다:
+   - `git fetch origin --prune` 후 `git branch -r --merged origin/master`로 **머지된 것만** 추린다
+   - 목록에서 `origin/master`와 `HEAD`를 반드시 제외한다
+   - 삭제 전 `git ls-remote --heads origin`으로 tip SHA를 파일에 기록한다
+     (되살릴 때: `git push origin <SHA>:refs/heads/<브랜치명>`)
+   - `git branch -r --no-merged origin/master`로 나오는 **미머지 브랜치는 절대 자동 삭제하지 않는다.**
+     그 브랜치만 보유한 파일이 있는지 확인해 사용자에게 보고하고 판단을 받는다.
+     (판정에 `git rev-parse origin/master:<경로>`를 쓸 때 주의: 파일이 없어도 경로를 stdout에 찍으므로
+     존재 여부는 `git cat-file -e origin/master:<경로>`의 종료 코드로 확인할 것)
 5. rate limit·오류로 중단 시: 마지막 완성 편까지 push를 확인하고, **완성분만이라도 PR·merge까지 마친 뒤** 생성 편수/남은 필러를 보고
 6. **금지**: master 직접 커밋/push(게시는 반드시 PR merge 경유), 기존 파일 수정·삭제, force push, `_config.yml` 변경
 7. 완료 보고 후 가능하면 PushNotification으로 "N편 생성·게시 완료 + 링크" 알림
