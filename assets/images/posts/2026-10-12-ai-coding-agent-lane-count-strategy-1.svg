@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="26" text-anchor="middle" font-size="16" font-weight="bold" fill="#1f2937">레인을 늘려도 리뷰 게이트는 늘지 않는다</text>
+
+  <rect x="20" y="60" width="140" height="56" rx="8" fill="#eef2ff" stroke="#4338ca" stroke-width="1.8"/>
+  <text x="90" y="82" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#312e81">작업 백로그</text>
+  <text x="90" y="98" text-anchor="middle" font-size="7.5" fill="#3730a3">(쪼개진 작업 단위)</text>
+
+  <line x1="160" y1="75" x2="230" y2="55" stroke="#6b7280" stroke-width="1.3" marker-end="url(#arrowA)"/>
+  <line x1="160" y1="88" x2="230" y2="88" stroke="#6b7280" stroke-width="1.3" marker-end="url(#arrowA)"/>
+  <line x1="160" y1="100" x2="230" y2="120" stroke="#6b7280" stroke-width="1.3" marker-end="url(#arrowA)"/>
+
+  <rect x="230" y="36" width="130" height="40" rx="6" fill="#ecfdf5" stroke="#047857" stroke-width="1.5"/>
+  <text x="295" y="60" text-anchor="middle" font-size="9" font-weight="bold" fill="#064e3b">레인 1</text>
+
+  <rect x="230" y="68" width="130" height="40" rx="6" fill="#ecfdf5" stroke="#047857" stroke-width="1.5"/>
+  <text x="295" y="92" text-anchor="middle" font-size="9" font-weight="bold" fill="#064e3b">레인 2</text>
+
+  <rect x="230" y="100" width="130" height="40" rx="6" fill="#ecfdf5" stroke="#047857" stroke-width="1.5"/>
+  <text x="295" y="124" text-anchor="middle" font-size="9" font-weight="bold" fill="#064e3b">레인 N</text>
+
+  <text x="295" y="156" text-anchor="middle" font-size="8" fill="#047857">(코드 작성 단계 — 레인 수만큼 선형 확장)</text>
+
+  <line x1="360" y1="58" x2="440" y2="95" stroke="#6b7280" stroke-width="1.3" marker-end="url(#arrowA)"/>
+  <line x1="360" y1="88" x2="440" y2="100" stroke="#6b7280" stroke-width="1.3" marker-end="url(#arrowA)"/>
+  <line x1="360" y1="120" x2="440" y2="105" stroke="#6b7280" stroke-width="1.3" marker-end="url(#arrowA)"/>
+
+  <rect x="440" y="60" width="180" height="80" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="530" y="90" text-anchor="middle" font-size="10" font-weight="bold" fill="#7f1d1d">리뷰·머지 게이트</text>
+  <text x="530" y="108" text-anchor="middle" font-size="8" fill="#991b1b">처리량 고정</text>
+  <text x="530" y="122" text-anchor="middle" font-size="8" fill="#991b1b">(사람 또는 리뷰 자동화)</text>
+
+  <line x1="620" y1="100" x2="680" y2="100" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowA)"/>
+
+  <rect x="680" y="70" width="100" height="60" rx="8" fill="#f0f7f4" stroke="#047857" stroke-width="1.5"/>
+  <text x="730" y="96" text-anchor="middle" font-size="9" font-weight="bold" fill="#064e3b">머지</text>
+  <text x="730" y="112" text-anchor="middle" font-size="7.5" fill="#065f46">완료</text>
+
+  <rect x="230" y="190" width="390" height="90" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="425" y="214" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#7c2d12">레인 수 &gt; 리뷰 처리량 일 때</text>
+  <rect x="250" y="226" width="60" height="18" fill="#fecaca"/>
+  <rect x="315" y="226" width="60" height="18" fill="#fecaca"/>
+  <rect x="380" y="226" width="60" height="18" fill="#fecaca"/>
+  <rect x="445" y="226" width="60" height="18" fill="#fecaca"/>
+  <rect x="510" y="226" width="60" height="18" fill="#fecaca"/>
+  <text x="425" y="240" text-anchor="middle" font-size="7.5" fill="#7f1d1d">머지 대기 PR이 쌓임 →</text>
+  <text x="425" y="262" text-anchor="middle" font-size="8" fill="#7c2d12">작성 속도는 빨라졌지만 리드타임(요청→배포)은 그대로이거나 악화</text>
+
+  <rect x="150" y="360" width="500" height="70" rx="8" fill="#eef2ff" stroke="#4338ca" stroke-width="1.5"/>
+  <text x="400" y="382" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#312e81">핵심: 레인 수는 리뷰 역량이 늘어날 때만 늘린다</text>
+  <text x="400" y="400" text-anchor="middle" font-size="8" fill="#3730a3">시스템 전체 처리량은 가장 느린 단계(리뷰 게이트)가 결정한다</text>
+  <text x="400" y="415" text-anchor="middle" font-size="8" fill="#3730a3">(병목 이론 — Theory of Constraints)</text>
+
+  <defs>
+    <marker id="arrowA" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#6b7280"/>
+    </marker>
+  </defs>
+</svg>
