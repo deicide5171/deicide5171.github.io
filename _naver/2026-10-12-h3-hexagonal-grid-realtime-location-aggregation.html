@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"지역별 방문 밀집도를 실시간 지도로 보여주세요" — H3 격자 인덱스로 집계 레이어 설계하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"지역별 방문 밀집도를 실시간 지도로 보여주세요" — H3 격자 인덱스로 집계 레이어 설계하기</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — GPS 핑이 초당 수천 건씩 쏟아지는데 지역별 밀집도를 실시간 지도로 보여달라는 요구는, 점 데이터를 폴리곤과 조인하는 공간 질의로는 그 속도를 감당하지 못합니다. 위도·경도를 정수 하나로 뭉쳐 집계 가능하게 만드는 H3 육각 격자 인덱스를, Geohash·S2 대비 언제 고르고 어느 해상도로 쓸지 판단 기준과 함께 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 불거지는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"배달 앱 주문 위치를 실시간 지도에 동별 밀집도로 보여주세요." 이 요구를 받으면 처음에는 "PostGIS에 폴리곤 테이블 두고 ST_Within으로 조인하면 되지 않나"라고 생각하기 쉽습니다. 실제로 배치 리포트라면 그걸로 충분합니다. 그런데 "실시간"이 붙는 순간 상황이 달라집니다. 초당 수천 건씩 들어오는 GPS 핑마다 폴리곤 테이블과 공간 조인을 돌리면, 트랜잭션 DB는 순식간에 쓰기 경합과 조인 비용에 깔립니다. 대시보드가 요구하는 것은 "이 점이 정확히 어느 행정동에 속하는가"가 아니라 "비슷한 위치의 점들을 빠르게 묶어서 세기"입니다. 이 둘은 비슷해 보이지만 요구하는 자료구조가 완전히 다릅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 문제를 푸는 표준적인 방법은 좌표를 <b>격자 셀 하나의 정수 인덱스로 미리 뭉개 놓는 것</b>입니다. Geohash, S2, H3 모두 이 발상을 공유하지만 격자 모양이 다릅니다. 최근 ClickHouse·Apache Pinot 같은 실시간 분석 엔진들이 H3 함수를 네이티브로 흡수하면서, "폴리곤 조인 대신 격자 인덱스로 미리 뭉개고 group by만 돌린다"는 패턴이 실시간 위치 대시보드의 사실상 표준으로 굳어지고 있습니다. 다만 어떤 격자를 쓰느냐, 어느 해상도로 뭉개느냐는 매번 다시 판단해야 하는 문제입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">요구사항을 기술 문제로 번역하기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"지역별 밀집도를 실시간으로 보여주세요"는 사실 세 가지 하위 결정으로 쪼개집니다. 첫째, <b>점을 언제 격자 셀로 변환할 것인가</b> — 수집(ingest) 시점에 미리 인코딩해 저장할지, 조회(query) 시점에 즉석으로 계산할지. 둘째, <b>어떤 격자 체계를 쓸 것인가</b> — 정사각형(Geohash), 구면 사각형(S2), 육각형(H3) 중 무엇이 집계 결과의 시각적 왜곡을 최소화하는가. 셋째, <b>어느 해상도로 뭉갤 것인가</b> — 너무 거칠면 밀집도가 뭉개지고, 너무 세밀하면 셀 수가 폭발해 집계 비용이 다시 커집니다. 이 세 가지를 명확히 하지 않은 채 "격자 인덱스 쓰면 됩니다"로 끝내면, 나중에 해상도를 바꿀 때마다 과거 데이터를 전부 재인코딩해야 하는 상황을 만나게 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-12-h3-hexagonal-grid-realtime-location-aggregation-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 구조에서 H3 인덱스는 <b>원시 GPS 스트림과 집계 질의 엔진 사이에 놓인 사전 압축 계층</b>입니다. 앞단에는 모바일 앱이나 IoT 디바이스에서 쏟아지는 원시 (위도, 경도, 타임스탬프) 스트림이 있고, 이 스트림이 수집 파이프라인(Kafka, Kinesis 등)을 통과하는 동안 각 지점이 원하는 해상도의 H3 셀 ID로 변환돼 정수 컬럼 하나로 저장됩니다. 뒷단의 OLAP 스토어는 더 이상 좌표 두 개를 비교하는 공간 연산을 할 필요 없이, 정수 컬럼 하나로 GROUP BY만 돌리면 셀별 집계가 끝납니다. 이 변환이 수집 단계에 있지 않고 조회 시점으로 밀려나면, 대시보드를 새로고침할 때마다 수백만 행을 다시 인코딩해야 해서 실시간성이 무너집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">격자 체계</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">셀 모양</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">이웃 거리 균일성</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">적합한 상황</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">Geohash</td>
+<td style="border:1px solid #ddd; padding:10px;">사각형(위도 왜곡 있음)</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음(극지방에서 더 왜곡)</td>
+<td style="border:1px solid #ddd; padding:10px;">단순 문자열 prefix 검색이 필요한 레거시 시스템</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">S2 지오메트리</td>
+<td style="border:1px solid #ddd; padding:10px;">구면 사각형</td>
+<td style="border:1px solid #ddd; padding:10px;">중간(구 투영으로 왜곡 적음)</td>
+<td style="border:1px solid #ddd; padding:10px;">전 지구 규모의 계층적 포함 관계 질의</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">H3</td>
+<td style="border:1px solid #ddd; padding:10px;">정육각형</td>
+<td style="border:1px solid #ddd; padding:10px;">높음(모든 이웃까지 거리 동일)</td>
+<td style="border:1px solid #ddd; padding:10px;">밀집도 시각화·실시간 집계·근접 분석</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Geohash는 가장 오래되고 어디서나 지원하지만, 사각형 셀이라 대각선 이웃과 상하좌우 이웃의 거리가 다르고 셀 경계에서 인접한 두 점의 해시 값이 완전히 달라지는 "경계 문제"가 자주 발생합니다. S2는 구면 투영 덕분에 왜곡이 적고 계층적 포함 관계가 깔끔해 전 지구 규모 공간 인덱스에 강하지만, 육각형이 아니라 밀집도를 시각적으로 비교할 때 사각형 특유의 "격자 느낌"이 남습니다. H3는 모든 이웃 셀까지의 중심 거리가 동일해 "가까운 정도"를 직관적으로 비교할 수 있고, 최근 실시간 분석 엔진들이 네이티브 함수로 흡수하면서 실시간 밀집도 대시보드 용도로는 사실상 기본값이 되고 있습니다. 다만 H3는 정확한 계층 포함 관계가 S2만큼 깨끗하지 않다는 점은 감안해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>1단계</b>: 먼저 해상도별 셀 개수와 평균 변 길이를 계산해봅니다. H3는 해상도 0~15까지 있고, 동네 단위 분석이면 보통 해상도 7~9(변 길이 수백 m~1km대)에서 시작합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>2단계</b>: 인코딩 위치를 수집 파이프라인으로 확정합니다. 스트림 프로세서(Kafka Streams, Flink 등)에서 원시 좌표가 들어오는 즉시 H3 셀 ID를 추가 컬럼으로 붙이고, 원본 좌표도 함께 보관해 나중에 해상도를 바꿀 수 있게 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>3단계</b>: 집계 쿼리 성능을 실측합니다. 셀 단위 GROUP BY가 기대만큼 빠른지, 해상도를 한 단계 낮췄을 때 얼마나 빨라지는지 직접 벤치마크합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>4단계</b>: 시각화 레이어를 붙입니다. deck.gl의 H3HexagonLayer 같은 라이브러리는 H3 셀 ID를 바로 육각형 폴리곤으로 렌더링해주므로, 별도 폴리곤 변환 로직을 직접 짤 필요가 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>5단계</b>: 행정구역 같은 정확한 경계가 필요한 질의는 분리해둡니다. "이 동 안에 몇 명 있는가"처럼 법적·행정적으로 정확한 경계가 필요한 질의는 격자 근사 대신 여전히 폴리곤 조인을 써야 합니다. 격자 인덱스는 밀집도 시각화용이지 행정 경계 대체재가 아닙니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:13px; overflow-x:auto; line-height:1.6;">import h3
+
+lat, lng = 37.5665, 126.9780
+resolution = 8
+cell = h3.latlng_to_cell(lat, lng, resolution)
+print(cell)  # 예: '8830e1d8a9fffff'
+
+-- ClickHouse: 수집 시점에 저장해둔 h3_cell 컬럼으로 바로 집계
+SELECT h3_cell, count() AS visits
+FROM location_pings
+WHERE event_time &gt;= now() - INTERVAL 5 MINUTE
+GROUP BY h3_cell
+ORDER BY visits DESC
+LIMIT 100;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 해상도를 한 번 정했다고 영구히 고정하지 마세요. 서비스 지역이 넓어지거나 분석 단위가 바뀌면 해상도도 바뀝니다. 원본 좌표를 함께 저장해두지 않으면 과거 데이터는 더 거친 해상도로 영영 묶인 채 남습니다. 또한 실제 밀집 중심이 셀 경계에 걸쳐 있으면 두 셀로 쪼개져 각각은 덜 두드러져 보일 수 있다는 점도 알아두세요. 그리고 모든 공간 질의를 격자로 바꾸려 하지 마세요. 정확한 포함 관계나 법적 경계가 필요한 질의는 여전히 폴리곤 기반으로 남겨야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"실시간으로 지역별 밀집도를 보여주세요"는 점과 폴리곤의 실시간 공간 조인이 아니라, 좌표를 격자 셀 정수로 미리 압축해 GROUP BY로 바꾸는 문제로 번역됩니다. Geohash·S2·H3는 같은 아이디어를 다른 셀 모양으로 구현하며, 실시간 밀집도 시각화에는 이웃 거리가 균일한 H3가 실용적인 기본값으로 자리잡고 있습니다. 인코딩은 조회 시점이 아니라 수집 시점에 하고, 원본 좌표를 함께 보관해 해상도 변경에 대비하며, 법적 경계가 필요한 질의는 격자와 분리해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#H3 #공간인덱스 #실시간분석 #지오펜싱 #OLAP</p>
+
+</body>
+</html>
