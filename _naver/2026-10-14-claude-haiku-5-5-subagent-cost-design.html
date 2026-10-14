@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>서브에이전트를 Haiku로 내리면 정말 싸질까 — Claude Haiku 5.5 멀티에이전트 비용 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">서브에이전트를 Haiku로 내리면 정말 싸질까 — Claude Haiku 5.5 멀티에이전트 비용 설계</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — "반복 작업은 싼 모델로 내려서 비용을 줄여주세요"라는 요구는 단순 치환이 아닙니다. 2026년 10월 7일 나온 Claude Haiku 5.5를 서브에이전트로 내려도 오케스트레이터 왕복 비용이 작업 자체보다 커지는 구조와, 10만 토큰 절벽 가격 함정을 피하는 설계 기준을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"에이전트가 PR 하나 리뷰하는 데 너무 많이 나와요. 파일 요약이나 린트 체크 같은 건 싼 모델로 내려서 비용 좀 줄여주세요." 이 요구를 받으면 바로 떠오르는 해법은 단순합니다 — 오케스트레이터는 그대로 두고, 반복적인 하위 작업만 작은 모델에 맡기는 서브에이전트 구조로 바꾸면 됩니다. 2026년 10월 7일 출시된 <b>Claude Haiku 5.5</b>는 정확히 이 자리를 노리고 나온 모델입니다. 요약, 분류, DB 조회, 브라우저 조작처럼 범위가 좁고 반복적인 작업을 위한 고속·저가 모델로, Opus 5.5나 Sonnet 5.5 아래에서 서브에이전트로 돌리는 구성이 공식 포지셔닝입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">문제는 "작은 모델로 내렸으니 비용이 그만큼 줄어든다"는 가정이 멀티에이전트 구조에서는 틀리기 쉽다는 점입니다. 서브에이전트 하나를 호출하는 데는 모델 추론 비용만 드는 게 아닙니다. 오케스트레이터가 작업을 쪼개 지시를 내리고, 서브에이전트의 결과를 다시 받아 자신의 컨텍스트에 통합하는 왕복 전체가 비용에 들어갑니다. "모델을 바꾼다"는 결정이 사실은 <b>"오케스트레이션 구조를 다시 설계한다"</b>는 문제로 번역되는 지점이 여기입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 — 가격은 계단이 아니라 절벽이다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Haiku 5.5의 가격 구조부터 짚어야 합니다. 입력 토큰 기준 10만 토큰을 경계로 단가 자체가 바뀝니다.</p>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">구간</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">입력 단가(백만 토큰당)</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">출력 단가(백만 토큰당)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">프롬프트 ≤ 100,000 토큰</td>
+<td style="border:1px solid #ddd; padding:10px;">$0.10</td>
+<td style="border:1px solid #ddd; padding:10px;">$0.50</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">프롬프트 &gt; 100,000 토큰</td>
+<td style="border:1px solid #ddd; padding:10px;">$0.50</td>
+<td style="border:1px solid #ddd; padding:10px;">$2.50</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">직전 세대인 Haiku 4.5 대비 10만 토큰 이하 구간은 최대 90%까지 싸지고, 평균 절감폭은 약 75% 수준입니다. 그런데 이 가격표는 완만한 할인 구간이 아니라 <b>절벽</b>입니다. 서브에이전트에 넘기는 컨텍스트가 99,999토큰일 때와 100,001토큰일 때, 바로 그 요청의 출력 단가가 $0.50에서 $2.50으로 5배 뜁니다. "컨텍스트를 조금 더 넉넉히 넘겨주자"는 안이한 판단이 이 경계를 넘기면, 모델을 싸게 바꾼 효과가 그 한 번의 호출에서 통째로 사라집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치 — 오케스트레이터가 비용의 대부분을 먹는다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">더 근본적인 문제는 절벽이 아니라 왕복 구조 자체에 있습니다. Opus 5.5가 오케스트레이터를 맡고 Haiku 5.5 서브에이전트 20개를 병렬로 돌리는 전형적인 구성을 비용 기준으로 분해하면, 서브에이전트들이 전체 청구액에서 차지하는 비중은 7% 남짓이고 나머지 93%는 오케스트레이터의 추론과 서브에이전트 호출·응답 통합 과정에서 나간다는 분석이 있습니다. 서브에이전트에 작업을 넘겼다가 결과를 돌려받는 왕복 한 번의 비용이, 그 작업 자체를 Haiku가 처리하는 비용의 약 4.8배에 달한다는 수치도 함께 보고됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-14-claude-haiku-5-5-subagent-cost-design-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">즉 "서브에이전트를 싼 모델로 내린다"는 결정이 실제로 비용을 줄이는지는 <b>오케스트레이터가 무엇을 하고 있는가</b>에 달려 있습니다. 오케스트레이터가 각 서브에이전트의 전체 출력을 자신의 컨텍스트에 그대로 쌓아 올리고, 매번 그걸 다시 읽고 다음 지시를 만드는 구조라면, 서브에이전트 숫자를 늘릴수록 오케스트레이터 쪽 토큰 소모가 오히려 커집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>Haiku로 내려도 되는 경우</b>: 서브에이전트 작업이 짧고 결과도 짧은 분류·단일 필드 추출입니다. 왕복 자체가 가볍고 오케스트레이터 통합 비용도 작습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>신중히 판단해야 하는 경우</b>: 서브에이전트 출력이 길고 오케스트레이터가 그걸 그대로 재인용하는 구조, 또는 서브에이전트를 20개 이상 병렬 팬아웃하는 설계입니다. 이때는 오케스트레이터의 분배·수합 로직 자체가 비용의 대부분을 차지할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>쓰면 안 되는 경우</b>: 작업 자체가 이미 Opus·Sonnet 한 번 호출로 끝나는 규모인데 굳이 서브에이전트 구조로 쪼개는 경우입니다. 쪼갤수록 왕복 오버헤드만 추가됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 흔한 함정은 "Haiku가 싸니까 서브에이전트를 더 많이 만들자"는 방향으로 설계를 키우는 것입니다. 서브에이전트 숫자가 늘어날수록 오케스트레이터가 처리해야 할 분배·통합 작업도 함께 늘어납니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 설정 예제</div>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:13px; overflow-x:auto; line-height:1.6;"># 오케스트레이터(Sonnet 5.5)가 Haiku 5.5 서브에이전트에
+# 요약 결과만 받고, 원본 텍스트는 컨텍스트에 쌓지 않는 패턴
+def summarize_file_with_subagent(file_text: str) -&gt; str:
+    if estimate_tokens(file_text) &gt; 95_000:
+        file_text = truncate_to_budget(file_text, max_tokens=90_000)  # 절벽 회피
+
+    result = call_model(
+        model="claude-haiku-5-5",
+        messages=[{"role": "user", "content": f"다음 파일을 3줄로 요약: {file_text}"}],
+        max_tokens=200,  # 오케스트레이터가 재인용할 양을 애초에 제한
+    )
+    return result.text  # 전체 file_text는 오케스트레이터 컨텍스트에 남기지 않음</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>1단계</b>: 먼저 단일 모델로 측정합니다. 서브에이전트 구조로 쪼개기 전에, 지금 구조에서 어느 단계가 토큰을 가장 많이 쓰는지부터 실측합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>2단계</b>: 서브에이전트 출력 크기를 설계 변수로 둡니다. `max_tokens`를 좁게 제한해 서브에이전트가 긴 텍스트를 돌려주지 않게 하고, 오케스트레이터는 요약된 결과만 재인용하게 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>3단계</b>: 10만 토큰 경계를 운영 임계값으로 모니터링합니다. 서브에이전트에 넘기는 컨텍스트 길이를 로깅해 경계를 넘나드는 호출이 있는지 주기적으로 확인합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>4단계</b>: 청구서는 모델별이 아니라 역할별로 분해해 봅니다. 오케스트레이터 몫과 서브에이전트 몫을 나눠서 보지 않으면, 어느 쪽을 최적화해야 하는지 판단할 수 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 모델 단가표만 보고 "Haiku로 내렸으니 비용이 N분의 1로 줄 것"이라고 예측하면 실제 청구서와 크게 어긋날 수 있습니다. 반드시 오케스트레이터 몫까지 포함한 전체 비용을 실측한 뒤 모델 교체 효과를 판단하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Claude Haiku 5.5는 10만 토큰 이하에서 최대 90% 싸지지만, 그 경계를 넘는 순간 출력 단가가 5배 뛰는 절벽형 가격 구조를 가집니다. 멀티에이전트 구조에서 비용은 서브에이전트 모델이 아니라 오케스트레이터의 분배·통합 과정에서 대부분 발생하며, 서브에이전트를 싼 모델로 내리기 전에 오케스트레이터가 무엇을 반복해서 읽고 있는지부터 측정하는 것이 진짜 비용 절감의 출발점입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#ClaudeHaiku #멀티에이전트 #비용설계 #서브에이전트 #모델라우팅</p>
+
+</body>
+</html>
