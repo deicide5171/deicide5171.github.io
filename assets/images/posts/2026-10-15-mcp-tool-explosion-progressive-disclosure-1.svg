@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <marker id="arrowT" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#6b7280"/>
+    </marker>
+  </defs>
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="26" text-anchor="middle" font-size="16" font-weight="bold" fill="#1f2937">선적재 vs 지연 로딩 — 턴마다 모델에 들어가는 토큰 구조 비교</text>
+
+  <text x="200" y="52" text-anchor="middle" font-size="12" font-weight="bold" fill="#dc2626">① 선적재 (모든 MCP 서버 접속 시 전체 스키마 포함)</text>
+
+  <rect x="50" y="66" width="140" height="46" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.8"/>
+  <text x="120" y="86" text-anchor="middle" font-size="9" font-weight="bold" fill="#7f1d1d">서버 10개 접속</text>
+  <text x="120" y="100" text-anchor="middle" font-size="8" fill="#991b1b">GitHub·Notion·Figma…</text>
+
+  <line x1="190" y1="89" x2="225" y2="89" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowT)"/>
+
+  <rect x="225" y="66" width="150" height="46" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.8"/>
+  <text x="300" y="86" text-anchor="middle" font-size="9" font-weight="bold" fill="#7f1d1d">130개 툴 스키마</text>
+  <text x="300" y="100" text-anchor="middle" font-size="8" fill="#991b1b">이름+설명+파라미터 전부</text>
+
+  <line x1="300" y1="112" x2="300" y2="145" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowT)"/>
+
+  <rect x="200" y="145" width="200" height="46" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+  <text x="300" y="165" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#7f1d1d">시스템 프롬프트에 매 턴 삽입</text>
+  <text x="300" y="180" text-anchor="middle" font-size="8" fill="#991b1b">7만~14만 토큰 세금</text>
+
+  <line x1="300" y1="191" x2="300" y2="222" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowT)"/>
+
+  <rect x="190" y="222" width="220" height="40" rx="8" fill="#fecaca" stroke="#dc2626" stroke-width="2"/>
+  <text x="300" y="246" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#7f1d1d">툴 선택 정확도 하락 (43%→14%대)</text>
+
+  <line x1="400" y1="120" x2="400" y2="330" stroke="#d1d5db" stroke-width="1.2" stroke-dasharray="4,4"/>
+
+  <text x="600" y="52" text-anchor="middle" font-size="12" font-weight="bold" fill="#047857">② 지연 로딩 (Tool Search / 프로그레시브 디스클로저)</text>
+
+  <rect x="470" y="66" width="140" height="46" rx="8" fill="#ecfdf5" stroke="#047857" stroke-width="1.8"/>
+  <text x="540" y="86" text-anchor="middle" font-size="9" font-weight="bold" fill="#064e3b">서버 10개 접속</text>
+  <text x="540" y="100" text-anchor="middle" font-size="8" fill="#065f46">GitHub·Notion·Figma…</text>
+
+  <line x1="610" y1="89" x2="645" y2="89" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowT)"/>
+
+  <rect x="645" y="66" width="130" height="46" rx="8" fill="#ecfdf5" stroke="#047857" stroke-width="1.8"/>
+  <text x="710" y="86" text-anchor="middle" font-size="9" font-weight="bold" fill="#064e3b">이름 목록만 상시</text>
+  <text x="710" y="100" text-anchor="middle" font-size="8" fill="#065f46">스키마는 아직 안 실림</text>
+
+  <line x1="710" y1="112" x2="710" y2="145" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowT)"/>
+  <text x="735" y="130" font-size="7.5" fill="#4b5563">호출 필요 시점</text>
+
+  <rect x="630" y="145" width="160" height="46" rx="8" fill="#d1fae5" stroke="#047857" stroke-width="1.8"/>
+  <text x="710" y="165" text-anchor="middle" font-size="9" font-weight="bold" fill="#064e3b">해당 툴만 검색·로딩</text>
+  <text x="710" y="180" text-anchor="middle" font-size="8" fill="#065f46">ToolSearch 1회 호출</text>
+
+  <line x1="710" y1="191" x2="710" y2="222" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowT)"/>
+
+  <rect x="640" y="222" width="140" height="40" rx="8" fill="#a7f3d0" stroke="#047857" stroke-width="2"/>
+  <text x="710" y="246" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#064e3b">토큰 ~85% 절감</text>
+
+  <text x="400" y="310" text-anchor="middle" font-size="9" fill="#4b5563">공통 전제: 두 방식 모두 전체 툴 카탈로그에 접근 가능 — 차이는 "그 스키마를 언제 모델에 보여주는가"</text>
+  <text x="400" y="328" text-anchor="middle" font-size="9" fill="#4b5563">핫패스 툴(자주 호출)은 allow-list로 ①에 가깝게, 나머지는 ②로 설계하는 것이 기본값</text>
+</svg>
