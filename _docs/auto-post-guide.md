@@ -41,10 +41,32 @@
 
 | 슬롯 | 필러 | categories 값 | 내용 |
 |---|---|---|---|
-| 1 | **AI** | `ai` | AI 시대 빌더에게 필요한 최신·핵심 주제 |
+| 1 | **AI** | `ai` | AI 최신 트렌드 + **Claude·Claude Code 실무 활용** (두 갈래를 번갈아) |
 | 2 | **GIS** | `gis` | 공간 기술 — 아래 "GIS 중점 영역"을 우선으로 |
-| 3 | **시스템 설계 ↔ 개발 전략** (하루씩 교대) | `system-design` / `dev-strategy` | 홀수일 `system-design`, 짝수일 `dev-strategy` |
+| 3 | **설계 ↔ 전략 ↔ 실무 스택** (3일 주기 순환) | `system-design` / `dev-strategy` / `stack` | 아래 순환 규칙 참조 |
 
+#### 슬롯 3 순환 규칙 (2026-10-15 도입)
+
+날짜를 3으로 나눈 나머지로 정한다. 월·연 경계에서도 끊기지 않도록 **서수일(ordinal) 기준**을 쓴다.
+
+```bash
+TODAY=$(TZ=Asia/Seoul date +%F)
+SLOT3=$(python3 -c "import datetime;d=datetime.date.fromisoformat('$TODAY');print({0:'system-design',1:'dev-strategy',2:'stack'}[d.toordinal()%3])")
+```
+
+| 나머지 | categories |
+|---|---|
+| 0 | `system-design` |
+| 1 | `dev-strategy` |
+| 2 | `stack` |
+
+(예: 2026-10-16 `system-design` → 10-17 `dev-strategy` → 10-18 `stack` → 10-19 `system-design` …)
+
+- **`stack`은 2026-10-15에 신설한 카테고리다**: 저자가 실제로 쓰는 기술 스택의 실무 지식을 다룬다.
+  **Java·Spring 웹 백엔드**(Spring Boot, JPA/Hibernate, 트랜잭션, 인증, 배치, 테스트),
+  **JavaScript/프론트엔드**(모던 JS, 번들러, 브라우저 API, 프레임워크 실무).
+  여기도 얕은 입문글은 금지이며, "왜 이렇게 쓰는가 / 언제 깨지는가"의 실무 밀도를 지킨다.
+  GIS 라이브러리(Cesium·OpenLayers·three.js)는 `stack`이 아니라 `gis` 슬롯에서 다룬다.
 - `dev-strategy`는 2026-09-28에 신설한 카테고리다: 기술 선택과 아키텍처 의사결정, 트레이드오프 판단,
   프로젝트 구성·진행 프로세스, 팀·협업 구조, 마이그레이션·리팩터링 전략 등
   **"무엇을 어떻게 지을 것인가"의 판단 영역**을 다룬다.
@@ -69,7 +91,7 @@
 - 한 축을 한 번 다뤘다고 끝내지 않는다. 같은 축 안에서 난이도와 범위를 넓혀 가며 연재하듯 쌓는다.
 
 - 기존 카테고리(`infra`, `database`, `frontend`, `backend`, `it-trend`, `web-dev`, `dev-insight`)는
-  과거 글 전용이며, 새 글에는 위 4개(`ai`, `gis`, `system-design`, `dev-strategy`)만 쓴다.
+  과거 글 전용이며, 새 글에는 위 5개(`ai`, `gis`, `system-design`, `dev-strategy`, `stack`)만 쓴다.
   단, 내용상 인프라·DB·프론트·백엔드 지식이 필요하면 위 4개 카테고리 글 안에서 자유롭게 다룬다.
 
 ### 주제 선정 기준 — "요즘 핫하고, 빌더에게 중요한 것"만
@@ -114,7 +136,8 @@
 2. `git fetch origin` 후 `refs/heads/auto-post/${TODAY}` 존재 확인
    - 있으면: 해당 브랜치를 checkout하고 **이어쓰기 모드** — `_posts/${TODAY}-*.md`들의 `categories`를 세어 부족한 슬롯만 생성
    - 없으면: master에서 새 브랜치 생성
-3. 하루 3편(ai 1, gis 1, system-design 또는 dev-strategy 1)이 다 있으면 "오늘 배치 완료됨"만 보고하고 종료
+3. 하루 3편(ai 1, gis 1, 슬롯3 1 — 순환 규칙으로 정해진 `system-design`/`dev-strategy`/`stack` 중 하나)이
+   다 있으면 "오늘 배치 완료됨"만 보고하고 종료
 
 ## 형식 1: 깃헙 블로그용 마크다운
 
@@ -133,7 +156,7 @@ excerpt: "글 요약 한 문장"
 ---
 ```
 
-- `date`의 시각 (하루 3편): ai 12:50 / gis 12:45 / system-design 또는 dev-strategy 12:40
+- `date`의 시각 (하루 3편): ai 12:50 / gis 12:45 / 슬롯3(`system-design`·`dev-strategy`·`stack`) 12:40
 - 본문 구조: 도입(왜 지금, 2~3문단) → 핵심 개념(## 섹션 2~4개, 표·비교 활용) → 코드/설정 예제 1~2개(언어 명시) → 실무 포인트/주의사항 → 마무리 요약(3줄 불릿) → 참고 자료(공식 문서 위주)
 - **분량: 한국어 2,000~3,500자 (코드블록 제외 본문 기준) — 하한선 2,000자는 예외 없는 필수 조건**
   (학습용으로 목적이 바뀌었으므로 기존 1,500자에서 상향했다.)
