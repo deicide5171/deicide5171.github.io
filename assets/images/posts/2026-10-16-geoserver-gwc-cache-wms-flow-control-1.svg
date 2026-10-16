@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <marker id="arrowG" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#6b7280"/>
+    </marker>
+  </defs>
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="26" text-anchor="middle" font-size="16" font-weight="bold" fill="#1f2937">요청 처리 흐름 — Control Flow → GWC 캐시 → GeoServer 렌더링 → PostGIS</text>
+
+  <rect x="40" y="52" width="130" height="46" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.8"/>
+  <text x="105" y="72" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#1e3a8a">클라이언트</text>
+  <text x="105" y="86" text-anchor="middle" font-size="8" fill="#1e40af">WMS/WFS 요청</text>
+
+  <line x1="170" y1="75" x2="206" y2="75" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowG)"/>
+
+  <rect x="206" y="52" width="150" height="46" rx="8" fill="#fef3c7" stroke="#b45309" stroke-width="1.8"/>
+  <text x="281" y="72" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#78350f">Control Flow</text>
+  <text x="281" y="86" text-anchor="middle" font-size="8" fill="#92400e">동시 처리 한도 체크</text>
+
+  <line x1="356" y1="75" x2="392" y2="75" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowG)"/>
+  <text x="374" y="65" text-anchor="middle" font-size="7.5" fill="#9ca3af">통과</text>
+
+  <rect x="392" y="52" width="150" height="46" rx="8" fill="#ecfdf5" stroke="#047857" stroke-width="1.8"/>
+  <text x="467" y="72" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#064e3b">GWC 캐시 조회</text>
+  <text x="467" y="86" text-anchor="middle" font-size="8" fill="#065f46">gridset 타일 확인</text>
+
+  <text x="110" y="112" font-size="8" fill="#b45309">한도 초과 → 대기열 또는 거절</text>
+
+  <line x1="467" y1="98" x2="200" y2="150" stroke="#047857" stroke-width="1.5" marker-end="url(#arrowG)"/>
+  <text x="280" y="135" text-anchor="middle" font-size="8" fill="#047857" font-weight="bold">캐시 적중(hit)</text>
+
+  <line x1="467" y1="98" x2="620" y2="150" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrowG)"/>
+  <text x="590" y="135" text-anchor="middle" font-size="8" fill="#dc2626" font-weight="bold">캐시 미스/불가</text>
+
+  <rect x="90" y="150" width="200" height="50" rx="8" fill="#d1fae5" stroke="#047857" stroke-width="2"/>
+  <text x="190" y="170" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#064e3b">디스크 타일 즉시 반환</text>
+  <text x="190" y="186" text-anchor="middle" font-size="8" fill="#065f46">DB 조회 없음</text>
+
+  <rect x="520" y="150" width="220" height="50" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+  <text x="630" y="170" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#7f1d1d">GeoServer 렌더링 엔진</text>
+  <text x="630" y="186" text-anchor="middle" font-size="8" fill="#991b1b">필터·시간차원 등 동적 처리</text>
+
+  <line x1="630" y1="200" x2="630" y2="240" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowG)"/>
+
+  <rect x="530" y="240" width="200" height="46" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="1.8"/>
+  <text x="630" y="260" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#7f1d1d">PostGIS</text>
+  <text x="630" y="274" text-anchor="middle" font-size="8" fill="#991b1b">공간 질의·렌더링</text>
+
+  <line x1="530" y1="255" x2="300" y2="300" stroke="#6b7280" stroke-width="1.3" stroke-dasharray="4,4" marker-end="url(#arrowG)"/>
+  <text x="420" y="305" text-anchor="middle" font-size="7.5" fill="#6b7280">캐시 가능 조합이면 결과를 GWC에 저장</text>
+
+  <rect x="90" y="300" width="200" height="40" rx="8" fill="#ecfdf5" stroke="#047857" stroke-width="1.5" stroke-dasharray="3,3"/>
+  <text x="190" y="325" text-anchor="middle" font-size="9" fill="#064e3b">GWC 디스크 캐시 갱신</text>
+
+  <text x="400" y="380" text-anchor="middle" font-size="9" fill="#4b5563">캐시 적합: 갱신 드묾·파라미터 적음(베이스맵, 행정구역)</text>
+  <text x="400" y="398" text-anchor="middle" font-size="9" fill="#4b5563">캐시 부적합: CQL 필터·다중 스타일·TIME 차원 — Control Flow로 동시 처리만 제한</text>
+  <text x="400" y="420" text-anchor="middle" font-size="9" fill="#4b5563">Direct WMS Integration은 Disk Quota(LFU/LRU 만료)와 반드시 함께 켠다</text>
+</svg>
