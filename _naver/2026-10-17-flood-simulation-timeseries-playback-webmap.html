@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"침수 시뮬레이션 결과를 지도에서 재생해서 보여주세요" — 시간축 시나리오 데이터를 웹 지도에 올리는 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"침수 시뮬레이션 결과를 지도에서 재생해서 보여주세요" — 시간축 시나리오 데이터를 웹 지도에 올리는 설계</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 홍수·확산·대피 시나리오 연산 결과를 지도에서 타임라인으로 재생해달라는 요구는, 시뮬레이션 엔진의 출력 포맷을 웹 지도가 소비할 수 있는 시간축 레이어 시퀀스로 바꾸는 파이프라인 설계 문제입니다. 사전 렌더링·클라이언트 셰이더 연산·벡터 타임슬라이스 세 방식의 트레이드오프와 진행 순서를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">어떤 요구에서 출발하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"하천 범람 시뮬레이션을 돌렸으니, 결과를 지도 위에서 시간대별로 재생해 보여주세요. 침수가 어디서 시작해서 어떻게 번지는지 슬라이더로 넘겨가며 볼 수 있게요." 재난 대응 부서나 보험사 쪽에서 흔히 나오는 이 요구는, 겉으로는 지도에 애니메이션 하나 붙이는 일처럼 들리지만 실제로는 전혀 다른 성격의 문제입니다. 시뮬레이션 엔진이 뱉어내는 산출물은 지도가 바로 소비할 수 있는 형태가 아닙니다. HEC-RAS 2D나 TELEMAC 같은 수치 모델은 보통 수백 개 타임스텝의 격자 배열(수심·유속)을 NetCDF나 자체 바이너리 포맷으로 뱉고, 이를 줌 레벨을 바꿔도 끊기지 않고 타임라인을 드래그해도 버벅이지 않는 웹 지도 레이어로 바꾸는 작업이 요구의 실체입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 축은 GIS 영역에서도 유독 레퍼런스가 적습니다. 타일 최적화나 좌표계 변환 같은 정적 데이터 서빙 노하우는 많이 쌓여 있지만, <b>시간이라는 축이 추가된 연산 결과</b>를 어떻게 레이어화할지는 프로젝트마다 다시 설계하는 경우가 많습니다. 침수뿐 아니라 대기 확산, 대피 경로 혼잡도, 가시권 변화처럼 시간에 따라 값이 바뀌는 모든 시뮬레이션이 같은 구조의 문제를 공유합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 문제를 네 단계로 나눠보면 설계가 명확해집니다. 시뮬레이션 엔진이 격자 또는 비정형 메시 위에서 타임스텝마다 수치를 계산하고, 후처리 단계가 이 원본 배열을 지도가 읽을 수 있는 포맷(Cloud Optimized GeoTIFF, 벡터 타일, CZML)으로 재투영·인코딩하며, 변환된 산출물이 오브젝트 스토리지나 타일 서버에 타임스탬프 메타데이터와 함께 적재되고, 프론트엔드의 타임라인 플레이어가 현재 재생 시점에 맞는 프레임을 요청해 지도 위 레이어를 교체합니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-17-flood-simulation-timeseries-playback-webmap-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">시뮬레이션 엔진 쪽의 연산 비용과, 프론트엔드 쪽의 프레임 전환 지연은 완전히 다른 병목이며 같은 팀이 같이 설계하지 않으면 중간 단계인 후처리 파이프라인이 통째로 비게 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프 — 프레임을 어디서 만들 것인가</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">장점</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">한계</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">서버 사전 렌더링</td>
+<td style="border:1px solid #ddd; padding:10px;">프레임 전환 즉각적, 클라이언트 부담 거의 없음</td>
+<td style="border:1px solid #ddd; padding:10px;">줌×타임스텝만큼 저장공간 폭증, 전량 재생성 필요</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">클라이언트 셰이더 연산</td>
+<td style="border:1px solid #ddd; padding:10px;">저장공간 작음, 임의 줌에서도 선명</td>
+<td style="border:1px solid #ddd; padding:10px;">정형 격자 데이터 한정, 저사양 기기 프레임 드랍</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">벡터 타임슬라이스</td>
+<td style="border:1px solid #ddd; padding:10px;">전송량 가장 작음, 스타일링 자유도 높음</td>
+<td style="border:1px solid #ddd; padding:10px;">연속값 표현이 등고선 개수에 묶여 거칠어짐</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">서버 사전 렌더링은 재생 경험이 가장 매끄럽지만 타임스텝이 많고 줌 레벨 범위가 넓을수록 저장공간과 사전 계산 시간이 기하급수로 늘어나므로, 시나리오를 자주 바꿔 돌리는 의사결정 지원 도구에는 맞지 않습니다. <b>실시간성이 중요한 재난 대응 대시보드라면 사전 렌더링은 애초에 후보에서 제외해야 합니다</b> — 새 시나리오가 들어올 때마다 전체 파이프라인을 다시 돌릴 시간이 없기 때문입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 코드 — 타임스텝 산출물을 COG로 정리하기</div>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:13px; overflow-x:auto; line-height:1.6;">for ts in sim_output/depth_t*.tif; do
+  name=$(basename "$ts" .tif)
+  gdalwarp -t_srs EPSG:3857 -r bilinear "$ts" "reproj_${name}.tif"
+  gdal_translate "reproj_${name}.tif" "cog_${name}.tif" \
+    -of COG -co COMPRESS=DEFLATE -co OVERVIEWS=AUTO
+done</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">재투영은 타임스텝마다 반복하면 비용이 크므로, 시뮬레이션 격자가 고정이라면 재투영 변환행렬을 한 번만 계산해 모든 프레임에 재사용하는 식으로 최적화합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 포인트 — 시간 해상도와 좌표계</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">타임스텝을 몇 초 간격으로 저장할지는 보기에 매끄러운 수준과 저장공간의 줄다리기입니다. 10분 간격 시뮬레이션 결과를 그대로 재생하면 화면이 뚝뚝 끊겨 보이므로, 프론트엔드에서 인접 프레임을 보간하거나 출력 간격을 좁히는 선택을 해야 합니다. 좌표계 변환은 반드시 파이프라인 앞단에서 한 번만 처리하고, 재생 중에 좌표 변환을 섞으면 프레임마다 지연이 들쭉날쭉해집니다. 시나리오 파라미터(강우량, 제방 붕괴 지점 등)가 바뀌면 캐시 전체가 무효화된다는 점도 운영 설계에 반드시 반영해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>1단계</b>: 시뮬레이션 엔진의 원본 출력 포맷과 타임스텝 수, 격자인지 비정형 메시인지부터 확인합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>2단계</b>: 재생 방식을 데이터 성격과 갱신 빈도 기준으로 정합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>3단계</b>: 재투영·인코딩 후처리 파이프라인을 스크립트로 먼저 구축하고, 작은 시나리오로 검증합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>4단계</b>: 타임라인 슬라이더 프로토타입을 붙여 프레임 전환 지연을 실측하고, 프로덕션 규모로 확장하며 스토리지·CDN 비용을 재산정합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 캐시 키에 시나리오 해시를 포함시켜 두지 않으면 오래된 결과가 새 시나리오로 착각돼 재생되는 사고가 날 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">시뮬레이션 결과를 지도에서 재생하는 문제의 본질은 애니메이션이 아니라 시간축이 추가된 공간 데이터를 레이어 시퀀스로 바꾸는 파이프라인 설계입니다. 사전 렌더링·클라이언트 셰이더·벡터 타임슬라이스는 저장공간과 갱신 빈도 기준으로 갈리며, 좌표계 변환은 파이프라인 앞단에서 한 번만, 캐시 키에는 반드시 시나리오 식별자를 포함시켜야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#GIS #시뮬레이션시각화 #시계열데이터 #CesiumJS #타일파이프라인</p>
+
+</body>
+</html>

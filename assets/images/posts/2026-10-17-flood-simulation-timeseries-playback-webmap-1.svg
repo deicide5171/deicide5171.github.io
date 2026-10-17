@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#fafafa"/>
+
+  <!-- Stage 1: Simulation engine -->
+  <rect x="30" y="170" width="150" height="110" rx="8" fill="#e8f0fe" stroke="#4a6fd4" stroke-width="1.5"/>
+  <text x="105" y="200" font-size="13" text-anchor="middle" fill="#2c4a9e" font-weight="bold">시뮬레이션 엔진</text>
+  <text x="105" y="222" font-size="11" text-anchor="middle" fill="#555">HEC-RAS / TELEMAC</text>
+  <text x="105" y="240" font-size="11" text-anchor="middle" fill="#555">타임스텝별 격자 수치</text>
+  <text x="105" y="258" font-size="11" text-anchor="middle" fill="#999">(NetCDF / 바이너리)</text>
+
+  <!-- Stage 2: Post-processing -->
+  <rect x="235" y="170" width="150" height="110" rx="8" fill="#fdf3e0" stroke="#d4a24a" stroke-width="1.5"/>
+  <text x="310" y="200" font-size="13" text-anchor="middle" fill="#8a6418" font-weight="bold">후처리 파이프라인</text>
+  <text x="310" y="222" font-size="11" text-anchor="middle" fill="#555">재투영 + COG/벡터</text>
+  <text x="310" y="240" font-size="11" text-anchor="middle" fill="#555">타임스텝 인코딩</text>
+  <text x="310" y="258" font-size="11" text-anchor="middle" fill="#999">(gdalwarp / gdal_translate)</text>
+
+  <!-- Stage 3: Storage / tile server -->
+  <rect x="440" y="170" width="150" height="110" rx="8" fill="#eaf7ee" stroke="#4aa26f" stroke-width="1.5"/>
+  <text x="515" y="200" font-size="13" text-anchor="middle" fill="#276b43" font-weight="bold">타일 스토리지</text>
+  <text x="515" y="222" font-size="11" text-anchor="middle" fill="#555">COG / 벡터 타일셋</text>
+  <text x="515" y="240" font-size="11" text-anchor="middle" fill="#555">타임스탬프 메타데이터</text>
+  <text x="515" y="258" font-size="11" text-anchor="middle" fill="#999">(오브젝트 스토리지 + CDN)</text>
+
+  <!-- Stage 4: Frontend timeline player -->
+  <rect x="620" y="170" width="150" height="110" rx="8" fill="#fdeee8" stroke="#d4714a" stroke-width="1.5"/>
+  <text x="695" y="200" font-size="13" text-anchor="middle" fill="#9e3f2c" font-weight="bold">타임라인 플레이어</text>
+  <text x="695" y="222" font-size="11" text-anchor="middle" fill="#555">현재 시점 프레임 요청</text>
+  <text x="695" y="240" font-size="11" text-anchor="middle" fill="#555">레이어 교체 / 보간</text>
+  <text x="695" y="258" font-size="11" text-anchor="middle" fill="#999">(CesiumJS / OpenLayers)</text>
+
+  <!-- Arrows -->
+  <path d="M 180 225 L 230 225" fill="none" stroke="#666" stroke-width="2" marker-end="url(#arrow2)"/>
+  <path d="M 385 225 L 435 225" fill="none" stroke="#666" stroke-width="2" marker-end="url(#arrow2)"/>
+  <path d="M 590 225 L 615 225" fill="none" stroke="#666" stroke-width="2" marker-end="url(#arrow2)"/>
+
+  <!-- Bottleneck labels -->
+  <text x="105" y="305" font-size="11" text-anchor="middle" fill="#b23" font-weight="bold">병목: 연산 비용</text>
+  <text x="695" y="305" font-size="11" text-anchor="middle" fill="#b23" font-weight="bold">병목: 프레임 전환 지연</text>
+
+  <!-- Title -->
+  <text x="400" y="60" font-size="18" text-anchor="middle" fill="#222" font-weight="bold">침수 시뮬레이션 → 웹 지도 타임라인 재생 데이터 흐름</text>
+  <text x="400" y="85" font-size="12" text-anchor="middle" fill="#777">시간축이 추가된 연산 결과를 레이어 시퀀스로 변환하는 파이프라인</text>
+
+  <!-- Timeline illustration at bottom -->
+  <line x1="60" y1="380" x2="740" y2="380" stroke="#999" stroke-width="2"/>
+  <circle cx="100" cy="380" r="5" fill="#4a6fd4"/>
+  <circle cx="260" cy="380" r="5" fill="#4a6fd4"/>
+  <circle cx="420" cy="380" r="5" fill="#4a6fd4"/>
+  <circle cx="580" cy="380" r="5" fill="#4a6fd4"/>
+  <circle cx="700" cy="380" r="7" fill="#d4714a"/>
+  <text x="700" y="405" font-size="11" text-anchor="middle" fill="#9e3f2c">재생 중(t)</text>
+  <text x="100" y="405" font-size="11" text-anchor="middle" fill="#555">t0</text>
+  <text x="260" y="405" font-size="11" text-anchor="middle" fill="#555">t1</text>
+  <text x="420" y="405" font-size="11" text-anchor="middle" fill="#555">t2</text>
+  <text x="580" y="405" font-size="11" text-anchor="middle" fill="#555">t3</text>
+
+  <defs>
+    <marker id="arrow2" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#666"/>
+    </marker>
+  </defs>
+</svg>
