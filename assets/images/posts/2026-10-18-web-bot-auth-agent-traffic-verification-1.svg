@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <defs>
+    <marker id="arrowW" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 z" fill="#6b7280"/>
+    </marker>
+  </defs>
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="24" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f2937">Web Bot Auth 검증 흐름 — 서명부터 접근 정책 적용까지</text>
+
+  <rect x="30" y="56" width="140" height="48" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.6"/>
+  <text x="100" y="76" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e3a8a">AI 에이전트</text>
+  <text x="100" y="92" text-anchor="middle" font-size="7.5" fill="#1e40af">개인키로 요청 서명</text>
+
+  <line x1="170" y1="80" x2="210" y2="80" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowW)"/>
+
+  <rect x="210" y="56" width="160" height="48" rx="8" fill="#fef3c7" stroke="#b45309" stroke-width="1.8"/>
+  <text x="290" y="76" text-anchor="middle" font-size="9" font-weight="bold" fill="#78350f">CDN / 프록시</text>
+  <text x="290" y="92" text-anchor="middle" font-size="7.5" fill="#92400e">서명 헤더 수신</text>
+
+  <line x1="290" y1="104" x2="290" y2="140" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowW)"/>
+
+  <rect x="190" y="140" width="220" height="48" rx="8" fill="#f3f4f6" stroke="#4b5563" stroke-width="1.5"/>
+  <text x="300" y="160" text-anchor="middle" font-size="9" font-weight="bold" fill="#374151">.well-known 공개키 조회</text>
+  <text x="300" y="176" text-anchor="middle" font-size="7.5" fill="#4b5563">RFC 9421 서명 검증</text>
+
+  <line x1="300" y1="188" x2="200" y2="225" stroke="#047857" stroke-width="1.5" marker-end="url(#arrowW)"/>
+  <text x="180" y="212" text-anchor="middle" font-size="7.5" fill="#047857" font-weight="bold">검증 성공</text>
+
+  <line x1="300" y1="188" x2="620" y2="225" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrowW)"/>
+  <text x="560" y="212" text-anchor="middle" font-size="7.5" fill="#dc2626" font-weight="bold">서명 없음/검증 실패</text>
+
+  <rect x="80" y="225" width="240" height="46" rx="8" fill="#ecfdf5" stroke="#047857" stroke-width="2"/>
+  <text x="200" y="245" text-anchor="middle" font-size="9" font-weight="bold" fill="#064e3b">신원 확보: Direct vs Intermediary</text>
+  <text x="200" y="260" text-anchor="middle" font-size="7.5" fill="#065f46">신원별 접근 정책 적용</text>
+
+  <rect x="470" y="225" width="260" height="46" rx="8" fill="#fee2e2" stroke="#dc2626" stroke-width="2"/>
+  <text x="600" y="245" text-anchor="middle" font-size="9" font-weight="bold" fill="#7f1d1d">기존 휴리스틱으로 보조 판정</text>
+  <text x="600" y="260" text-anchor="middle" font-size="7.5" fill="#991b1b">User-Agent·IP 평판 기반</text>
+
+  <line x1="200" y1="271" x2="300" y2="310" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowW)"/>
+  <line x1="600" y1="271" x2="400" y2="310" stroke="#6b7280" stroke-width="1.5" marker-end="url(#arrowW)"/>
+
+  <rect x="250" y="310" width="300" height="46" rx="8" fill="#eff6ff" stroke="#1d4ed8" stroke-width="1.6"/>
+  <text x="400" y="330" text-anchor="middle" font-size="9" font-weight="bold" fill="#1e3a8a">오리진 서버</text>
+  <text x="400" y="346" text-anchor="middle" font-size="7.5" fill="#1e40af">정책에 따라 속도 제한·접근 범위 차등 적용</text>
+
+  <rect x="60" y="380" width="680" height="34" rx="6" fill="#fff7ed" stroke="#f0a04b" stroke-width="1.3"/>
+  <text x="400" y="402" text-anchor="middle" font-size="9.5" fill="#92400e">신원 검증 ≠ 접근 허가 — 검증된 신원도 접근 범위·속도 제한은 별도 정책으로 설계</text>
+</svg>
