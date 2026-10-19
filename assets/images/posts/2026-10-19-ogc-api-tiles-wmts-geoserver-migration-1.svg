@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Pretendard','Apple SD Gothic Neo',sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+  </defs>
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#1a1a1a">같은 레이어, 두 개의 경로로 동시 노출</text>
+
+  <!-- legacy client -->
+  <rect x="20" y="60" width="220" height="80" rx="8" fill="#fdf2e9" stroke="#d98a3d" stroke-width="1.5"/>
+  <text x="130" y="92" text-anchor="middle" font-size="14" fill="#7a4a12">레거시 지도 클라이언트</text>
+  <text x="130" y="112" text-anchor="middle" font-size="12" fill="#7a4a12">QGIS 구버전 · 데스크톱 GIS</text>
+
+  <!-- legacy protocol -->
+  <rect x="20" y="210" width="220" height="80" rx="8" fill="#fdf2e9" stroke="#d98a3d" stroke-width="1.5"/>
+  <text x="130" y="242" text-anchor="middle" font-size="14" fill="#7a4a12">WMTS</text>
+  <text x="130" y="262" text-anchor="middle" font-size="12" fill="#7a4a12">GetCapabilities XML</text>
+
+  <!-- center store -->
+  <rect x="300" y="135" width="200" height="120" rx="10" fill="#eaf3fb" stroke="#2f6fa8" stroke-width="2"/>
+  <text x="400" y="185" text-anchor="middle" font-size="16" font-weight="bold" fill="#17426b">GWC 타일 캐시</text>
+  <text x="400" y="207" text-anchor="middle" font-size="13" fill="#17426b">(GeoServer)</text>
+  <text x="400" y="227" text-anchor="middle" font-size="12" fill="#17426b">캐시는 하나, 경로는 둘</text>
+
+  <!-- new protocol -->
+  <rect x="560" y="210" width="220" height="80" rx="8" fill="#eafaf0" stroke="#2f9e5c" stroke-width="1.5"/>
+  <text x="670" y="242" text-anchor="middle" font-size="14" fill="#14532d">OGC API - Tiles</text>
+  <text x="670" y="262" text-anchor="middle" font-size="12" fill="#14532d">REST · JSON, MVT 콘텐츠 협상</text>
+
+  <!-- new client -->
+  <rect x="560" y="60" width="220" height="80" rx="8" fill="#eafaf0" stroke="#2f9e5c" stroke-width="1.5"/>
+  <text x="670" y="92" text-anchor="middle" font-size="14" fill="#14532d">신규 클라이언트</text>
+  <text x="670" y="112" text-anchor="middle" font-size="12" fill="#14532d">웹앱 · 에이전트 도구</text>
+
+  <!-- arrows -->
+  <path d="M130,140 L130,210" fill="none" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M240,250 L300,220" fill="none" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M670,140 L670,210" fill="none" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <path d="M560,250 L500,220" fill="none" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="150" y="340" width="500" height="70" rx="8" fill="#f6f6f6" stroke="#bbbbbb"/>
+  <text x="400" y="368" text-anchor="middle" font-size="13" fill="#444444">WMTS를 끌 이유가 없다 → 전면 교체가 아니라</text>
+  <text x="400" y="388" text-anchor="middle" font-size="13" fill="#444444">같은 GWC 캐시 위에 OGC API - Tiles 경로를 추가로 켜는 공존 설계</text>
+</svg>
