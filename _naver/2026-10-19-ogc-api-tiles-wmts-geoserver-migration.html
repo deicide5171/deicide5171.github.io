@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"타일 캐시도 에이전트가 바로 쓰게 해주세요" — WMTS에서 OGC API - Tiles로 넘어가야 하는가</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"타일 캐시도 에이전트가 바로 쓰게 해주세요" — WMTS에서 OGC API - Tiles로 넘어가야 하는가</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — GWC로 운영 중인 WMTS 타일 캐시를 신규 웹앱·에이전트 도구가 바로 소비할 수 있게 해달라는 요구가 오면, XML 기반 WMTS를 OGC API - Tiles로 바꿔야 하는지 판단하는 기준과 GeoServer에서의 공존 전략을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"지도 타일 캐시는 이미 잘 돌아가는데, 신규 웹앱이랑 에이전트 도구에서 바로 가져다 쓸 수 있게 좀 해주세요." GWC(GeoWebCache)로 WMTS 타일을 몇 년째 안정적으로 서빙해온 팀이 자주 듣는 요구입니다. 문제는 WMTS의 GetCapabilities 응답이 수백 줄짜리 XML이고, 타일 URL을 조립하려면 TileMatrixSet 구조를 먼저 파싱해야 한다는 점입니다. 사람이 짠 지도 클라이언트는 이미 그 파싱 로직을 라이브러리 안에 갖고 있지만, 빠르게 프로토타입을 만드는 웹앱이나 좌표·줌레벨만 알고 바로 타일을 요청하고 싶은 에이전트 도구 입장에서는 이 XML 협상 과정 자체가 장벽입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 간극을 메우는 것이 OGC API - Tiles입니다. WMTS가 하던 일(타일 매트릭스 집합 정의, 타일 URL 템플릿 제공)을 그대로 수행하면서도, 메타데이터를 JSON으로, API 설명을 OpenAPI로 내놓습니다. GeoServer·MapServer 같은 주요 서버 구현체는 이미 GWC 캐시 하나를 WMTS와 OGC API - Tiles 양쪽으로 동시에 노출할 수 있다는 점은 의사결정의 부담을 크게 줄여줍니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">핵심 개념 — 같은 타일, 두 가지 설명서</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">항목</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">WMTS</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">OGC API - Tiles</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">메타데이터 포맷</td>
+<td style="border:1px solid #ddd; padding:10px;">GetCapabilities XML</td>
+<td style="border:1px solid #ddd; padding:10px;">JSON tileMatrixSets, tiles.json</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">타일 URL 구조</td>
+<td style="border:1px solid #ddd; padding:10px;">매트릭스마다 다른 템플릿을 XML에서 역산</td>
+<td style="border:1px solid #ddd; padding:10px;">고정 REST 패턴 {z}/{y}/{x}</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">벡터 타일 지원</td>
+<td style="border:1px solid #ddd; padding:10px;">확장 스펙, 구현마다 제각각</td>
+<td style="border:1px solid #ddd; padding:10px;">MVT·GeoJSON 콘텐츠 협상 표준 지원</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">캐시 계층과의 관계</td>
+<td style="border:1px solid #ddd; padding:10px;">GWC가 직접 캐싱</td>
+<td style="border:1px solid #ddd; padding:10px;">같은 GWC 캐시를 REST 경로로 재노출</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">발견 가능성</td>
+<td style="border:1px solid #ddd; padding:10px;">XML 스펙을 미리 알아야 함</td>
+<td style="border:1px solid #ddd; padding:10px;">OpenAPI 문서를 /api에서 바로 제공</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">중요한 건 이게 "더 빠른 캐시"가 아니라 "같은 캐시를 더 쉽게 찾아가는 길"이라는 점입니다. 타일 생성·보관 성능은 GWC 설정(캐시 영역, 포맷, 만료 정책)이 결정하고, OGC API - Tiles는 그 위에 얹는 발견·요청 레이어일 뿐입니다. 그래서 "타일이 느려요"라는 요구에는 이 전환이 답이 되지 않습니다 — 그건 GWC 캐시 전략과 Control Flow 설정의 영역입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-19-ogc-api-tiles-wmts-geoserver-migration-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">상황</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">권장</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">신규 웹앱이 JS로 지도를 직접 그림</td>
+<td style="border:1px solid #ddd; padding:10px;">OGC API - Tiles 추가 — XML 파싱 불필요</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">에이전트·MCP 도구가 타일을 분석에 씀</td>
+<td style="border:1px solid #ddd; padding:10px;">OGC API - Tiles 유리 — OpenAPI 문서로 스스로 요청 구성</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">기존 데스크톱 GIS 연동 유지</td>
+<td style="border:1px solid #ddd; padding:10px;">WMTS 유지 — 구형 클라이언트는 WMTS 플러그인만 지원</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">타일 응답 속도 자체가 느림</td>
+<td style="border:1px solid #ddd; padding:10px;">전환과 무관 — GWC 설정·Control Flow 튜닝이 먼저</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">전면 교체가 아니라 "GWC 설정은 그대로 두고 OGC API - Tiles 엔드포인트만 추가로 켠다"가 리스크가 가장 낮은 선택입니다. WMTS를 꺼야 할 이유가 아직 없고, 반대로 신규 클라이언트·에이전트를 위해 OGC API - Tiles를 켜지 않을 이유도 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>1단계</b>: GWC가 OGC API - Tiles를 지원하는 버전인지 확인합니다. 별도 캐시를 새로 만드는 게 아니라 기존 캐시 설정을 재사용하는지부터 봅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>2단계</b>: TileMatrixSet 정의를 점검합니다. WMTS 격자 체계가 OGC API - Tiles JSON 정의와 1:1로 매핑되는지 확인하지 않으면 줌레벨별로 다른 영역을 가리키는 버그가 납니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>3단계</b>: 벡터 타일 포맷을 결정합니다. 콘텐츠 협상으로 같은 엔드포인트에서 래스터·MVT를 나눠 받을 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>4단계</b>: 신규 소비자부터 전환합니다. 내부 웹앱, 에이전트 도구 연동 건부터 OGC API - Tiles 경로를 쓰게 하고 기존 WMTS 연동은 건드리지 않습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>5단계</b>: OpenAPI 문서를 사내 포털에 연결해, GWC 설정을 몰라도 새 팀이 타일 요청 방법을 스스로 찾게 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">요청 예제</div>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:13px; overflow-x:auto; line-height:1.6;">GET /geoserver/ogc/tiles/v1/collections/topp:states/tiles
+
+{
+  "tileMatrixSetLinks": [
+    { "tileMatrixSet": "WebMercatorQuad" }
+  ],
+  "links": [
+    { "rel": "item", "href": ".../tiles/WebMercatorQuad/{z}/{y}/{x}?f=mvt" }
+  ]
+}
+
+GET /geoserver/ogc/tiles/v1/collections/topp:states/tiles/WebMercatorQuad/8/103/221?f=mvt</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 캐시는 하나지만 노출 경로가 둘이 되면, 캐시 무효화(purge) 작업이 두 경로 모두에 반영되는지 반드시 확인해야 합니다. GWC REST API로 purge했는데 OGC API - Tiles 쪽 응답은 그대로인 경우가 실제로 보고됩니다. 벡터 타일로 처음 전환할 때는 스타일링 책임이 서버에서 클라이언트로 넘어간다는 점도 팀에 미리 공유하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">OGC API - Tiles는 WMTS 캐시 자체를 더 빠르게 만드는 게 아니라, 같은 캐시를 더 쉽게 찾고 요청하게 해주는 발견·요청 레이어입니다. 타일 성능 문제는 GWC 캐시 전략의 영역이고, 클라이언트·에이전트 접근성 문제는 OGC API - Tiles의 영역입니다. WMTS를 끄지 않고 같은 GWC 캐시 위에 OGC API - Tiles 경로를 추가로 켜는 것이 가장 리스크가 낮은 도입 순서입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#GeoServer #OGCAPI #WMTS #타일캐싱 #공간데이터</p>
+
+</body>
+</html>
