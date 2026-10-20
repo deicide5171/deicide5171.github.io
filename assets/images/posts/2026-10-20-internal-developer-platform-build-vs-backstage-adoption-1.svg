@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#fafafa"/>
+
+  <defs>
+    <marker id="arrow6" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#666"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="32" font-size="16" text-anchor="middle" fill="#222" font-weight="bold">내부 개발자 플랫폼(IDP)이 기존 인프라 위에 얹는 두 층</text>
+
+  <!-- Layer 1: Developer -->
+  <rect x="300" y="55" width="200" height="60" rx="8" fill="#e8f0fe" stroke="#4a6fd4" stroke-width="1.5"/>
+  <text x="400" y="80" font-size="13" text-anchor="middle" fill="#2c4a9e" font-weight="bold">개발자</text>
+  <text x="400" y="98" font-size="11" text-anchor="middle" fill="#555">"새 서비스 만들고 싶다"</text>
+
+  <path d="M 400 115 L 400 140" fill="none" stroke="#666" stroke-width="2" marker-end="url(#arrow6)"/>
+
+  <!-- Layer 2: Catalog + Golden path -->
+  <rect x="150" y="145" width="220" height="90" rx="8" fill="#fdeee8" stroke="#d4714a" stroke-width="1.5"/>
+  <text x="260" y="170" font-size="13" text-anchor="middle" fill="#9e3f2c" font-weight="bold">서비스 카탈로그</text>
+  <text x="260" y="190" font-size="11" text-anchor="middle" fill="#555">소유 팀 · API · 의존관계</text>
+  <text x="260" y="208" font-size="11" text-anchor="middle" fill="#999">탐색 가능성 제공</text>
+
+  <rect x="430" y="145" width="220" height="90" rx="8" fill="#fdf3e0" stroke="#d4a24a" stroke-width="1.5"/>
+  <text x="540" y="170" font-size="13" text-anchor="middle" fill="#8a6418" font-weight="bold">골든 패스(템플릿)</text>
+  <text x="540" y="190" font-size="11" text-anchor="middle" fill="#555">스캐폴더 · 정답 경로</text>
+  <text x="540" y="208" font-size="11" text-anchor="middle" fill="#999">일관된 생성 경로 제공</text>
+
+  <path d="M 260 235 L 260 260" fill="none" stroke="#666" stroke-width="2" marker-end="url(#arrow6)"/>
+  <path d="M 540 235 L 540 260" fill="none" stroke="#666" stroke-width="2" marker-end="url(#arrow6)"/>
+
+  <!-- Layer 3: existing infra -->
+  <rect x="100" y="265" width="600" height="80" rx="8" fill="#eaf7ee" stroke="#4aa26f" stroke-width="1.5"/>
+  <text x="400" y="292" font-size="13" text-anchor="middle" fill="#276b43" font-weight="bold">기존 CI/CD 파이프라인 · 쿠버네티스/클라우드 인프라</text>
+  <text x="400" y="312" font-size="11" text-anchor="middle" fill="#555">IDP가 대체하는 게 아니라 그대로 감싸서 재사용</text>
+  <text x="400" y="330" font-size="10" text-anchor="middle" fill="#999">(배포 파이프라인, 모니터링, 시크릿 관리는 그대로)</text>
+
+  <!-- Bottom: three tool choices -->
+  <text x="400" y="390" font-size="12" text-anchor="middle" fill="#444" font-weight="bold">도구 선택: 직접 구축 (10개 미만) · Backstage (200명+, 전담 팀) · Port/Cortex SaaS (50~200명, 빠른 ROI)</text>
+</svg>
