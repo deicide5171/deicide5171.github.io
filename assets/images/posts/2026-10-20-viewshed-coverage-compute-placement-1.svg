@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#fafafa"/>
+
+  <defs>
+    <marker id="arrow4" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#666"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="32" font-size="16" text-anchor="middle" fill="#222" font-weight="bold">가시권 연산 파이프라인과 배치 위치 세 가지</text>
+
+  <!-- Stage 1: DEM source -->
+  <rect x="25" y="70" width="150" height="90" rx="8" fill="#e8f0fe" stroke="#4a6fd4" stroke-width="1.5"/>
+  <text x="100" y="98" font-size="13" text-anchor="middle" fill="#2c4a9e" font-weight="bold">DEM 소스</text>
+  <text x="100" y="118" font-size="11" text-anchor="middle" fill="#555">SRTM / 국토지리정보원</text>
+  <text x="100" y="136" font-size="11" text-anchor="middle" fill="#999">타일 캐시 · 재투영</text>
+
+  <!-- Stage 2: Viewshed compute (center, with 3 placements below) -->
+  <rect x="225" y="70" width="150" height="90" rx="8" fill="#fdeee8" stroke="#d4714a" stroke-width="1.5"/>
+  <text x="300" y="98" font-size="13" text-anchor="middle" fill="#9e3f2c" font-weight="bold">가시권 연산</text>
+  <text x="300" y="118" font-size="11" text-anchor="middle" fill="#555">관측점 → 가시/비가시</text>
+  <text x="300" y="136" font-size="11" text-anchor="middle" fill="#999">셀 분류 (곡률 보정 포함)</text>
+
+  <!-- Stage 3: Result cache/tile -->
+  <rect x="425" y="70" width="150" height="90" rx="8" fill="#eaf7ee" stroke="#4aa26f" stroke-width="1.5"/>
+  <text x="500" y="98" font-size="13" text-anchor="middle" fill="#276b43" font-weight="bold">결과 타일 서버</text>
+  <text x="500" y="118" font-size="11" text-anchor="middle" fill="#555">래스터/벡터 타일 변환</text>
+  <text x="500" y="136" font-size="11" text-anchor="middle" fill="#999">캐시 저장</text>
+
+  <!-- Stage 4: Map client -->
+  <rect x="625" y="70" width="150" height="90" rx="8" fill="#fdf3e0" stroke="#d4a24a" stroke-width="1.5"/>
+  <text x="700" y="98" font-size="13" text-anchor="middle" fill="#8a6418" font-weight="bold">지도 클라이언트</text>
+  <text x="700" y="118" font-size="11" text-anchor="middle" fill="#555">커버리지 레이어 렌더링</text>
+  <text x="700" y="136" font-size="11" text-anchor="middle" fill="#999">OpenLayers / Cesium</text>
+
+  <!-- Arrows top row -->
+  <path d="M 175 115 L 220 115" fill="none" stroke="#666" stroke-width="2" marker-end="url(#arrow4)"/>
+  <path d="M 375 115 L 420 115" fill="none" stroke="#666" stroke-width="2" marker-end="url(#arrow4)"/>
+  <path d="M 575 115 L 620 115" fill="none" stroke="#666" stroke-width="2" marker-end="url(#arrow4)"/>
+
+  <!-- Three placement options -->
+  <text x="400" y="200" font-size="13" text-anchor="middle" fill="#444" font-weight="bold">가시권 연산을 "어디서" 돌릴 것인가</text>
+
+  <rect x="40" y="225" width="220" height="190" rx="8" fill="#ffffff" stroke="#999" stroke-width="1.2"/>
+  <text x="150" y="250" font-size="13" text-anchor="middle" fill="#222" font-weight="bold">① 서버 사전계산</text>
+  <text x="150" y="272" font-size="11" text-anchor="middle" fill="#555">그리드 캐시에 저장</text>
+  <text x="150" y="294" font-size="11" text-anchor="middle" fill="#2a7" font-weight="bold">응답: 매우 빠름</text>
+  <text x="150" y="314" font-size="11" text-anchor="middle" fill="#b23" font-weight="bold">최신성: 낮음</text>
+  <text x="150" y="340" font-size="10" text-anchor="middle" fill="#777">후보지 고정</text>
+  <text x="150" y="356" font-size="10" text-anchor="middle" fill="#777">(기존 기지국 전수조사)</text>
+
+  <rect x="290" y="225" width="220" height="190" rx="8" fill="#ffffff" stroke="#999" stroke-width="1.2"/>
+  <text x="400" y="250" font-size="13" text-anchor="middle" fill="#222" font-weight="bold">② 서버 온디맨드</text>
+  <text x="400" y="272" font-size="11" text-anchor="middle" fill="#555">r.viewshed 즉시 실행</text>
+  <text x="400" y="294" font-size="11" text-anchor="middle" fill="#c80" font-weight="bold">응답: 수백ms~수초</text>
+  <text x="400" y="314" font-size="11" text-anchor="middle" fill="#2a7" font-weight="bold">최신성: 높음</text>
+  <text x="400" y="340" font-size="10" text-anchor="middle" fill="#777">자유 탐색 UX</text>
+  <text x="400" y="356" font-size="10" text-anchor="middle" fill="#777">(계획 수립 도구)</text>
+
+  <rect x="540" y="225" width="220" height="190" rx="8" fill="#ffffff" stroke="#999" stroke-width="1.2"/>
+  <text x="650" y="250" font-size="13" text-anchor="middle" fill="#222" font-weight="bold">③ 클라이언트 GPU</text>
+  <text x="650" y="272" font-size="11" text-anchor="middle" fill="#555">WebGPU 컴퓨트 셰이더</text>
+  <text x="650" y="294" font-size="11" text-anchor="middle" fill="#2a7" font-weight="bold">응답: 수십~수백ms</text>
+  <text x="650" y="314" font-size="11" text-anchor="middle" fill="#2a7" font-weight="bold">최신성: 매우 높음</text>
+  <text x="650" y="340" font-size="10" text-anchor="middle" fill="#777">좁은 반경, 현장 앱</text>
+  <text x="650" y="356" font-size="10" text-anchor="middle" fill="#777">(저사양 폴백 필요)</text>
+
+  <path d="M 300 160 L 150 220" fill="none" stroke="#999" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <path d="M 300 160 L 400 220" fill="none" stroke="#999" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <path d="M 300 160 L 650 220" fill="none" stroke="#999" stroke-width="1.5" stroke-dasharray="4,3"/>
+</svg>

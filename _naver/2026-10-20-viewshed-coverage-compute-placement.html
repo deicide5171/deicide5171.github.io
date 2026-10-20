@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"이 위치에서 어디까지 보이는지 지도에서 바로 확인해주세요" — 가시권 연산을 어디서 돌릴지 정하는 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"이 위치에서 어디까지 보이는지 지도에서 바로 확인해주세요" — 가시권 연산을 어디서 돌릴지 정하는 설계</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 통신 기지국이나 CCTV 설치 위치를 지도 위에서 클릭하면 가시권이 즉시 보여야 한다는 요구는, 지형 연산을 서버 사전계산·서버 온디맨드·클라이언트 GPU 중 어디서 돌릴지를 응답 시간과 데이터 최신성 사이에서 고르는 아키텍처 문제입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">어떤 요구에서 출발하는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"이번 중계기 설치 후보지를 지도에서 클릭하면, 거기서 전파가 어디까지 닿는지 바로 색칠해서 보여주세요." 통신사나 재난 대응 조직에서 흔히 나오는 요구입니다. CCTV 배치, 드론 비행 경로의 통신 음영 구간 확인, 산불 감시탑 위치 선정도 같은 질문의 변형입니다 — "이 지점에서 저 지점이 보이는가"를 지형 전체에 대해 한 번에 계산하는 가시권(viewshed) 분석입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">겉으로는 지도에 레이어 하나 색칠하는 일처럼 들리지만, 실제로는 후보 지점을 바꿀 때마다 수십만~수백만 개 셀에 대해 시선과 지형 표면의 교차 여부를 다시 계산해야 하는 연산 집약 작업입니다. <b>"바로 보여주세요"라는 말에는 이미 지연 시간 요구사항이 숨어 있고</b>, 그 요구사항이 연산을 어디서 돌릴지를 결정합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가시권 분석은 지도 레이어 하나가 아니라 DEM(수치표고모델)부터 화면 픽셀까지 이어지는 파이프라인의 중간 연산 단계입니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-20-viewshed-coverage-compute-placement-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">DEM은 국토지리정보원이나 SRTM 같은 공개 지형 데이터에서 타일 단위로 들어오고, 이 지형 격자 위에서 관측점의 고도·관측 반경·지구 곡률 보정을 적용해 가시/비가시 셀을 분류하는 것이 연산의 핵심입니다. 결과는 보통 이진 래스터나 다중 관측점을 합산한 커버리지 그리드로 나오고, 이것이 다시 지도 레이어로 렌더링됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">응답 시간</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">데이터 최신성</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">적합한 상황</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">서버 사전계산 + 캐시</td>
+<td style="border:1px solid #ddd; padding:10px;">매우 빠름</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음</td>
+<td style="border:1px solid #ddd; padding:10px;">후보지 고정 커버리지 맵</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">서버 온디맨드(CPU)</td>
+<td style="border:1px solid #ddd; padding:10px;">수백ms~수초</td>
+<td style="border:1px solid #ddd; padding:10px;">높음</td>
+<td style="border:1px solid #ddd; padding:10px;">자유 탐색 계획 도구</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">클라이언트 GPU(WebGPU)</td>
+<td style="border:1px solid #ddd; padding:10px;">수십~수백ms</td>
+<td style="border:1px solid #ddd; padding:10px;">매우 높음</td>
+<td style="border:1px solid #ddd; padding:10px;">좁은 반경 현장 앱</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">사전계산 캐시는 후보지가 몇 개로 정해져 있을 때는 최선이지만, 아무 데나 클릭해 탐색하는 UX에는 맞지 않습니다. 서버 온디맨드는 범용적이지만 동시 요청이 몰리면 연산 서버가 병목이 됩니다. WebGPU 컴퓨트 셰이더는 주요 브라우저에 폭넓게 탑재되면서 현실적인 선택지가 됐지만, 구형 디바이스에서는 폴백이 필요합니다. "넓은 반경은 서버, 좁은 반경 탐색은 WebGPU"처럼 역할을 나누는 하이브리드 구성도 실무에서 흔합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">1. "바로"가 1초인지 5초인지 지연 시간 목표를 숫자로 못 박습니다.<br>2. 격자 해상도와 관심 반경을 정해 연산 비용을 줄입니다.<br>3. GRASS GIS의 r.viewshed 등으로 서버 온디맨드 프로토타입을 먼저 돌려 실제 소요 시간을 측정합니다.<br>4. 연속 클릭 같은 동시 요청 패턴을 가정해 부하를 검증합니다.<br>5. 필요하면 좁은 반경 빠른 미리보기는 WebGPU, 정밀 결과는 서버 재계산으로 나누는 2단계 UX를 추가합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">예제(의사코드, 서버 온디맨드 가시권 호출):</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; line-height:1.6; overflow-x:auto;">import subprocess
+
+def compute_viewshed(dem_path, obs_lon, obs_lat, obs_height_m, max_radius_m):
+    result = subprocess.run([
+        "grass", "--exec", "r.viewshed",
+        f"input={dem_path}",
+        f"coordinates={obs_lon},{obs_lat}",
+        f"observer_elevation={obs_height_m}",
+        f"max_distance={max_radius_m}",
+        "output=viewshed_result",
+        "--overwrite",
+    ], capture_output=True, timeout=10)
+    return result.returncode == 0</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 지구 곡률과 대기 굴절 보정을 빼먹으면 장거리(10km 이상) 가시권에서 오차가 커집니다. DTM인지 DSM(건물 포함)인지에 따라 도심 결과가 크게 달라지니 건물 차폐가 중요한지부터 확인하세요. 다중 관측점 합산 커버리지는 단일 계산을 N번 반복하지 말고 total viewshed 전용 알고리즘을 쓰세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">바로 보여주세요라는 요구는 가시권 연산을 서버 사전계산·서버 온디맨드·클라이언트 GPU 중 어디에 둘지 정하는 설계 문제로 번역됩니다. 선택 기준은 지연 시간 목표와 후보지가 고정인지 자유 탐색인지로 압축됩니다. 지연 목표 확정 → 격자·반경 결정 → 서버 프로토타입 측정 → 부하 검증 → 필요시 GPU 경로 추가 순으로 진행하면 과설계를 피할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#가시권분석 #viewshed #WebGPU #GeoServer #공간연산</p>
+
+</body>
+</html>
