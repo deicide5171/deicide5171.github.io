@@ -1,0 +1,62 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#fafafa"/>
+
+  <defs>
+    <marker id="arrows" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#666"/>
+    </marker>
+    <marker id="arrows-red" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#c0392b"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="35" font-size="16" text-anchor="middle" fill="#222" font-weight="bold">MCP Sampling 폐기 — 추론 위치의 이동</text>
+
+  <!-- Before: sampling delegation -->
+  <text x="195" y="68" font-size="13" text-anchor="middle" fill="#9e3f2c" font-weight="bold">전환 전 (sampling)</text>
+  <rect x="35" y="85" width="120" height="70" rx="8" fill="#eef1fb" stroke="#5b6fd4" stroke-width="1.5"/>
+  <text x="95" y="113" font-size="12" text-anchor="middle" fill="#2c3a9e" font-weight="bold">클라이언트</text>
+  <text x="95" y="130" font-size="10" text-anchor="middle" fill="#555">자체 모델 보유</text>
+
+  <rect x="195" y="85" width="120" height="70" rx="8" fill="#fdeee8" stroke="#d4714a" stroke-width="1.5"/>
+  <text x="255" y="108" font-size="12" text-anchor="middle" fill="#9e3f2c" font-weight="bold">MCP 서버</text>
+  <text x="255" y="124" font-size="10" text-anchor="middle" fill="#555">API 키 없음</text>
+  <text x="255" y="138" font-size="10" text-anchor="middle" fill="#555">모델 선택권 없음</text>
+
+  <path d="M 160 110 L 190 110" fill="none" stroke="#666" stroke-width="1.5" marker-end="url(#arrows)"/>
+  <text x="175" y="102" font-size="9" text-anchor="middle" fill="#888">①요청</text>
+  <path d="M 190 135 L 160 135" fill="none" stroke="#666" stroke-width="1.5" marker-end="url(#arrows)"/>
+  <text x="175" y="150" font-size="9" text-anchor="middle" fill="#888">②createMessage</text>
+
+  <text x="195" y="182" font-size="10" text-anchor="middle" fill="#999">누가 응답했는지</text>
+  <text x="195" y="196" font-size="10" text-anchor="middle" fill="#999">서버는 알 수 없음</text>
+
+  <!-- Divider -->
+  <line x1="400" y1="60" x2="400" y2="400" stroke="#ccc" stroke-width="1" stroke-dasharray="4,4"/>
+
+  <!-- After: direct provider call -->
+  <text x="605" y="68" font-size="13" text-anchor="middle" fill="#2c4a9e" font-weight="bold">전환 후 (직접 호출)</text>
+  <rect x="445" y="85" width="120" height="70" rx="8" fill="#eef1fb" stroke="#5b6fd4" stroke-width="1.5"/>
+  <text x="505" y="113" font-size="12" text-anchor="middle" fill="#2c3a9e" font-weight="bold">클라이언트</text>
+  <text x="505" y="130" font-size="10" text-anchor="middle" fill="#555">왕복에서 제외</text>
+
+  <rect x="605" y="85" width="140" height="70" rx="8" fill="#e8f0fe" stroke="#4a6fd4" stroke-width="2"/>
+  <text x="675" y="108" font-size="12" text-anchor="middle" fill="#2c4a9e" font-weight="bold">MCP 서버</text>
+  <text x="675" y="124" font-size="10" text-anchor="middle" fill="#555">API 키 직접 보유</text>
+  <text x="675" y="138" font-size="10" text-anchor="middle" fill="#555">모델 선택 + 비용 책임</text>
+
+  <path d="M 675 165 L 675 210" fill="none" stroke="#c0392b" stroke-width="2" marker-end="url(#arrows-red)"/>
+  <rect x="595" y="215" width="160" height="55" rx="8" fill="#fdecea" stroke="#c0392b" stroke-width="1.5"/>
+  <text x="675" y="240" font-size="12" text-anchor="middle" fill="#8e2a1e" font-weight="bold">LLM 제공자 API</text>
+  <text x="675" y="256" font-size="10" text-anchor="middle" fill="#8e2a1e">Anthropic / OpenAI</text>
+
+  <!-- MRTR note -->
+  <rect x="445" y="300" width="300" height="100" rx="8" fill="#fff7f0" stroke="#f0a04b" stroke-width="1.5"/>
+  <text x="595" y="322" font-size="12" text-anchor="middle" fill="#8a5a1e" font-weight="bold">서버 주도 되묻기가 필요하면</text>
+  <text x="595" y="342" font-size="11" text-anchor="middle" fill="#5a4632">MRTR (SEP-2322) 패턴</text>
+  <text x="595" y="360" font-size="10" text-anchor="middle" fill="#5a4632">input_required → inputResponses로</text>
+  <text x="595" y="376" font-size="10" text-anchor="middle" fill="#5a4632">같은 호출을 재시도</text>
+
+  <!-- Caption -->
+  <text x="400" y="430" font-size="12" text-anchor="middle" fill="#444">12개월 유예 기간 — 와이어 프로토콜은 아직 그대로, 설계 전제만 바뀐다</text>
+</svg>
