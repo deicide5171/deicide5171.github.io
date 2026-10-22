@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>MCP Sampling이 폐기된다 — 서버가 직접 LLM을 호출하는 설계로 전환하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">MCP Sampling이 폐기된다 — 서버가 직접 LLM을 호출하는 설계로 전환하기</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — '도구가 가져온 데이터를 요약까지 해서 돌려주세요'라는 요구를 MCP 서버는 그동안 sampling으로 클라이언트의 모델에 떠넘겨 풀었습니다. MCP 스펙 개정(SEP-2577)이 이 sampling을 폐기 경로에 올리면서, 서버가 직접 LLM 제공자 API를 호출하는 쪽으로 설계를 옮겨야 하는 이유와 전환 기준을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"검색 도구가 찾아온 문서 10개를 그냥 다 돌려주지 말고, 핵심만 요약해서 보여주세요." MCP 서버를 만들어본 사람이라면 한 번쯤 받아봤을 요구사항입니다. 요약은 LLM이 해야 하는 일인데, 서버 안에 또 다른 모델 호출 로직을 넣는 건 과한 책임처럼 느껴집니다. 그래서 MCP는 처음부터 <b>sampling/createMessage</b>라는 기능을 뒀습니다. 서버가 "이 텍스트를 요약해줘"라는 요청을 클라이언트로 역으로 보내면, 클라이언트가 자신이 이미 쓰고 있는 모델로 추론해 결과만 서버에 돌려주는 구조입니다. 서버는 API 키도, 모델 선택권도 가질 필요가 없었습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 전제가 2026-07-28 스펙 개정으로 흔들렸습니다. <b>SEP-2577이 Roots·Sampling·Logging 세 기능을 나란히 폐기 경로에 올렸습니다.</b> 와이어 레벨 동작은 이 리비전에서 아직 바뀌지 않고, 폐기 선언 이후 최소 12개월간은 기존 버전들이 그대로 지원됩니다. 내일 당장 깨지는 건 아니지만, 공식 스펙 문서가 "새 구현체는 이 기능을 채택하지 말라"고 명시한 이상 지금 서버를 새로 짜는 팀이라면 설계 전제를 다시 세워야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">sampling이 있을 때와 없을 때, 추론이 일어나는 위치 자체가 달라집니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-22-mcp-sampling-deprecated-server-llm-call-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>기존 sampling 구조</b>는 MCP 서버가 createMessage 요청을 클라이언트로 보내고, 클라이언트가 자신이 연결한 모델로 추론해 결과만 돌려주는 방식입니다. 서버는 어떤 모델이 응답했는지조차 알 필요가 없습니다. <b>전환 후 구조</b>는 서버가 자체적으로 Anthropic·OpenAI 같은 제공자 API를 직접 호출합니다. API 키, 비용, 모델 버전 관리는 전부 서버 쪽 책임이 됩니다. 서버 주도 다중 왕복이 필요한 다른 경우는 같은 개정에서 논의 중인 <b>MRTR(SEP-2322)</b> 패턴이 참고가 됩니다. 서버가 input_required 결과 타입을 돌려주면 클라이언트가 같은 호출을 inputResponses와 함께 재시도하는 구조입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">접근</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">장점</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">단점</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">sampling 계속 사용</td>
+<td style="border:1px solid #ddd; padding:10px;">지금 당장 변경 없음</td>
+<td style="border:1px solid #ddd; padding:10px;">신규 구현 금지 권고</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">서버 직접 LLM 호출</td>
+<td style="border:1px solid #ddd; padding:10px;">모델 선택권 확보, 응답 일관성</td>
+<td style="border:1px solid #ddd; padding:10px;">API 키·비용 책임 전가</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">MRTR 패턴 전환</td>
+<td style="border:1px solid #ddd; padding:10px;">표준 메커니즘 위에서 왕복 유지</td>
+<td style="border:1px solid #ddd; padding:10px;">아직 확정 전 단계</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">하이브리드(직접 호출+sampling 폴백)</td>
+<td style="border:1px solid #ddd; padding:10px;">전환 리스크 분산</td>
+<td style="border:1px solid #ddd; padding:10px;">두 경로 동시 유지보수</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">판단 기준은 "이 도구가 모델 호출 결과의 품질에 얼마나 민감한가"입니다. 요약·추출처럼 결과 품질이 곧 도구의 가치인 기능이라면, 클라이언트가 어떤 모델을 쓰는지 모르는 sampling 위임 자체가 리스크였습니다. 반대로 단순 텍스트 변환 수준이라면 유예기간 동안은 서두를 필요가 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">1. sampling 의존 지점부터 전수 조사합니다. createMessage 호출을 모두 찾아 목록화합니다.<br>2. 도구별로 전환 우선순위를 정합니다. 결과 품질이 핵심 가치인 도구를 먼저 옮깁니다.<br>3. 키·시크릿 관리 설계를 먼저 끝냅니다. 비밀 관리, 레이트 리밋, 비용 모니터링이 서버 운영 범위로 들어옵니다.<br>4. 제공자 락인을 피할 추상화 계층을 둡니다.<br>5. 서버 주도 되묻기가 필요한 도구는 MRTR을 검토하되, 급하지 않으면 기존 구조로 버텨도 됩니다.<br>6. 12개월 유예기간을 역산해 일정을 잡습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">예제 코드:</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; line-height:1.6; overflow-x:auto;">// 전환 전: 클라이언트에게 추론을 위임
+async function summarizeDocs(docs, ctx) {
+  const result = await ctx.sample({
+    messages: [{ role: "user", content: `요약: ${docs.join("\n")}` }],
+    maxTokens: 500,
+  });
+  return result.content;
+}
+
+// 전환 후: 서버가 직접 제공자 API를 호출
+async function summarizeDocs(docs) {
+  const response = await anthropic.messages.create({
+    model: "claude-sonnet-5-5",
+    max_tokens: 500,
+    messages: [{ role: "user", content: `요약: ${docs.join("\n")}` }],
+  });
+  return response.content;
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — Sampling만 바뀌는 게 아니라 Roots·Logging도 같은 폐기 경로에 올랐습니다. 와이어 프로토콜은 아직 바뀌지 않았으니 "폐기 예고"와 "제거"를 혼동해 성급하게 전체 코드를 갈아엎지 마세요. 사용 중인 SDK의 마이그레이션 노트를 직접 확인하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">MCP 스펙(SEP-2577)이 Sampling·Roots·Logging을 폐기 경로에 올리며, 서버가 클라이언트 모델에 추론을 위임하던 전제가 바뀌고 있습니다. 와이어 레벨은 아직 그대로지만 12개월 유예 안에, 결과 품질이 도구 가치를 좌우하는 기능부터 서버 직접 LLM 호출로 옮기는 게 안전합니다. 전환의 실제 비용은 모델 호출 코드가 아니라 API 키·비용·레이트 리밋을 서버 책임으로 끌어오는 운영 설계에 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#MCP #ModelContextProtocol #AI에이전트 #LLM통합 #SEP2577</p>
+
+</body>
+</html>

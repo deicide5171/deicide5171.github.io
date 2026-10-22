@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#fafafa"/>
+
+  <defs>
+    <marker id="arrows" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#666"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="35" font-size="16" text-anchor="middle" fill="#222" font-weight="bold">Potree 경로 vs COPC 경로</text>
+
+  <!-- Source -->
+  <rect x="320" y="55" width="160" height="55" rx="8" fill="#eef1fb" stroke="#5b6fd4" stroke-width="1.5"/>
+  <text x="400" y="78" font-size="12" text-anchor="middle" fill="#2c3a9e" font-weight="bold">LiDAR 원본 LAS/LAZ</text>
+  <text x="400" y="95" font-size="10" text-anchor="middle" fill="#555">수억~수십억 점</text>
+
+  <path d="M 370 110 L 220 150" fill="none" stroke="#666" stroke-width="1.5" marker-end="url(#arrows)"/>
+  <path d="M 430 110 L 580 150" fill="none" stroke="#666" stroke-width="1.5" marker-end="url(#arrows)"/>
+
+  <!-- Potree path -->
+  <text x="160" y="140" font-size="12" text-anchor="middle" fill="#9e3f2c" font-weight="bold">Potree 경로</text>
+  <rect x="60" y="150" width="200" height="60" rx="8" fill="#fdeee8" stroke="#d4714a" stroke-width="1.5"/>
+  <text x="160" y="173" font-size="11" text-anchor="middle" fill="#9e3f2c" font-weight="bold">PotreeConverter</text>
+  <text x="160" y="190" font-size="10" text-anchor="middle" fill="#555">전용 옥트리 포맷으로 변환</text>
+  <text x="160" y="203" font-size="9" text-anchor="middle" fill="#999">전처리 서버 상시 필요</text>
+
+  <path d="M 160 210 L 160 250" fill="none" stroke="#666" stroke-width="1.5" marker-end="url(#arrows)"/>
+  <rect x="60" y="255" width="200" height="55" rx="8" fill="#fff" stroke="#d4714a" stroke-width="1"/>
+  <text x="160" y="278" font-size="11" text-anchor="middle" fill="#9e3f2c" font-weight="bold">Potree 전용 뷰어</text>
+  <text x="160" y="295" font-size="9" text-anchor="middle" fill="#999">다른 도구와 비호환</text>
+
+  <!-- COPC path -->
+  <text x="640" y="140" font-size="12" text-anchor="middle" fill="#2c4a9e" font-weight="bold">COPC 경로</text>
+  <rect x="540" y="150" width="200" height="60" rx="8" fill="#e8f0fe" stroke="#4a6fd4" stroke-width="2"/>
+  <text x="640" y="173" font-size="11" text-anchor="middle" fill="#2c4a9e" font-weight="bold">PDAL / untwine</text>
+  <text x="640" y="190" font-size="10" text-anchor="middle" fill="#555">표준 LAZ 내부를 옥트리로 재배치</text>
+  <text x="640" y="203" font-size="9" text-anchor="middle" fill="#999">1회 변환, 서버 불필요</text>
+
+  <path d="M 640 210 L 640 250" fill="none" stroke="#666" stroke-width="1.5" marker-end="url(#arrows)"/>
+  <rect x="540" y="255" width="200" height="55" rx="8" fill="#eaf7ee" stroke="#4aa26f" stroke-width="1.5"/>
+  <text x="640" y="275" font-size="11" text-anchor="middle" fill="#276b43" font-weight="bold">S3 / R2 정적 스토리지</text>
+  <text x="640" y="292" font-size="9" text-anchor="middle" fill="#276b43">HTTP Range Request</text>
+
+  <path d="M 640 310 L 640 350" fill="none" stroke="#666" stroke-width="1.5" marker-end="url(#arrows)"/>
+  <rect x="540" y="355" width="200" height="55" rx="8" fill="#fff" stroke="#4aa26f" stroke-width="1"/>
+  <text x="640" y="378" font-size="11" text-anchor="middle" fill="#276b43" font-weight="bold">Cesium / GeoLibre / copc.js</text>
+  <text x="640" y="395" font-size="9" text-anchor="middle" fill="#999">필요한 노드만 선택 로딩</text>
+
+  <!-- Caption -->
+  <text x="400" y="430" font-size="12" text-anchor="middle" fill="#444">확장자는 그대로 .laz — 일반 LAZ 리더로도 깨지지 않는다</text>
+</svg>
