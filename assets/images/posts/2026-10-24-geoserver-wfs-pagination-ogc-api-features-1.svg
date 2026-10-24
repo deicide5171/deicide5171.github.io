@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#222">"필지 데이터 수십만 건 내려주세요" 요청이 거치는 경로</text>
+
+  <!-- Client -->
+  <rect x="30" y="70" width="140" height="60" rx="8" fill="#e8f4fd" stroke="#2b7fd1" stroke-width="2"/>
+  <text x="100" y="95" text-anchor="middle" font-size="14" font-weight="bold" fill="#1a4d7a">클라이언트</text>
+  <text x="100" y="114" text-anchor="middle" font-size="12" fill="#1a4d7a">(분석도구/에이전트)</text>
+
+  <!-- GeoServer box -->
+  <rect x="240" y="55" width="320" height="200" rx="8" fill="#f5f5f5" stroke="#888" stroke-width="2"/>
+  <text x="400" y="78" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">GeoServer 서비스 계층</text>
+
+  <rect x="260" y="95" width="130" height="70" rx="6" fill="#fff" stroke="#c0392b" stroke-width="2"/>
+  <text x="325" y="118" text-anchor="middle" font-size="13" font-weight="bold" fill="#c0392b">WFS 1.0/1.1/2.0</text>
+  <text x="325" y="136" text-anchor="middle" font-size="11" fill="#555">startIndex +</text>
+  <text x="325" y="150" text-anchor="middle" font-size="11" fill="#555">maxFeatures</text>
+
+  <rect x="410" y="95" width="130" height="70" rx="6" fill="#fff" stroke="#03c75a" stroke-width="2"/>
+  <text x="475" y="118" text-anchor="middle" font-size="13" font-weight="bold" fill="#03825a">OGC API Features</text>
+  <text x="475" y="136" text-anchor="middle" font-size="11" fill="#555">limit + next</text>
+  <text x="475" y="150" text-anchor="middle" font-size="11" fill="#555">(cursor-ish)</text>
+
+  <text x="400" y="190" text-anchor="middle" font-size="12" fill="#777">※ GWC 벡터타일 캐시는 이 원시 피처 응답 경로에 적용되지 않음</text>
+  <text x="400" y="210" text-anchor="middle" font-size="12" fill="#777">(렌더링된 타일만 캐시, GetFeature 출력은 매번 스토어 조회)</text>
+
+  <!-- Store box -->
+  <rect x="630" y="55" width="150" height="200" rx="8" fill="#eef7ee" stroke="#2e7d32" stroke-width="2"/>
+  <text x="705" y="78" text-anchor="middle" font-size="14" font-weight="bold" fill="#1b5e20">데이터 스토어</text>
+
+  <rect x="645" y="95" width="120" height="55" rx="6" fill="#fff" stroke="#2e7d32" stroke-width="1.5"/>
+  <text x="705" y="116" text-anchor="middle" font-size="12" font-weight="bold" fill="#1b5e20">PostGIS/GeoPackage</text>
+  <text x="705" y="134" text-anchor="middle" font-size="11" fill="#444">공간 인덱스 O</text>
+
+  <rect x="645" y="160" width="120" height="55" rx="6" fill="#fff" stroke="#c0392b" stroke-width="1.5"/>
+  <text x="705" y="181" text-anchor="middle" font-size="12" font-weight="bold" fill="#c0392b">CSV/Shapefile</text>
+  <text x="705" y="199" text-anchor="middle" font-size="11" fill="#444">공간 인덱스 X</text>
+
+  <!-- Arrows -->
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#555"/>
+    </marker>
+  </defs>
+  <line x1="170" y1="100" x2="238" y2="100" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="565" y1="130" x2="628" y2="130" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Bottom note: deep offset -->
+  <rect x="30" y="290" width="740" height="130" rx="8" fill="#fff7f0" stroke="#f0a04b" stroke-width="2"/>
+  <text x="400" y="315" text-anchor="middle" font-size="14" font-weight="bold" fill="#8a5a1c">페이지가 깊어질수록(offset이 커질수록)</text>
+  <text x="400" y="340" text-anchor="middle" font-size="13" fill="#5a4632">· 네이티브 정렬 지원 스토어(PostGIS) → 인덱스로 OFFSET 처리, 비용 완만히 증가</text>
+  <text x="400" y="364" text-anchor="middle" font-size="13" fill="#5a4632">· 정렬 미지원 스토어(CSV/Shapefile) → 메모리 1000건 유지 + 디스크 스필 병합정렬, 비용 급증</text>
+  <text x="400" y="388" text-anchor="middle" font-size="13" fill="#5a4632">→ 같은 WFS 설정이라도 스토어 선택이 타임아웃 여부를 가른다</text>
+  <text x="400" y="410" text-anchor="middle" font-size="12" fill="#8a5a1c">(GeoServer 2.28.x 포럼 사례: CSV 레이어만 대용량 WFS에서 타임아웃)</text>
+</svg>
