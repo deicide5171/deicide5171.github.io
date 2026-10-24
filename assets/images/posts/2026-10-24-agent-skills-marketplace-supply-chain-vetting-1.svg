@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="30" text-anchor="middle" font-size="17" font-weight="bold" fill="#222">Skill 설치 전 검증 게이트</text>
+
+  <!-- marketplace -->
+  <rect x="30" y="80" width="140" height="70" rx="8" fill="#fdeceb" stroke="#d9534f" stroke-width="1.5"/>
+  <text x="100" y="108" text-anchor="middle" font-size="13" font-weight="bold" fill="#7a2420">마켓플레이스</text>
+  <text x="100" y="126" text-anchor="middle" font-size="11" fill="#7a2420">ClawHub · skills.sh</text>
+  <text x="100" y="141" text-anchor="middle" font-size="10" fill="#7a2420">(신뢰 미검증)</text>
+
+  <line x1="170" y1="115" x2="230" y2="115" stroke="#999" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- gate 1 -->
+  <rect x="230" y="80" width="150" height="70" rx="8" fill="#fff4e5" stroke="#d98c2b" stroke-width="1.5"/>
+  <text x="305" y="105" text-anchor="middle" font-size="13" font-weight="bold" fill="#7a4e14">① 정적 스캔</text>
+  <text x="305" y="123" text-anchor="middle" font-size="11" fill="#7a4e14">인젝션 패턴·시크릿</text>
+  <text x="305" y="138" text-anchor="middle" font-size="11" fill="#7a4e14">참조 탐지</text>
+
+  <line x1="380" y1="115" x2="440" y2="115" stroke="#999" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- gate 2 -->
+  <rect x="440" y="80" width="150" height="70" rx="8" fill="#fff4e5" stroke="#d98c2b" stroke-width="1.5"/>
+  <text x="515" y="105" text-anchor="middle" font-size="13" font-weight="bold" fill="#7a4e14">② 샌드박스 실행</text>
+  <text x="515" y="123" text-anchor="middle" font-size="11" fill="#7a4e14">시크릿 없음</text>
+  <text x="515" y="138" text-anchor="middle" font-size="11" fill="#7a4e14">네트워크 제한</text>
+
+  <line x1="590" y1="115" x2="650" y2="115" stroke="#999" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- gate 3 -->
+  <rect x="650" y="80" width="120" height="70" rx="8" fill="#fff4e5" stroke="#d98c2b" stroke-width="1.5"/>
+  <text x="710" y="105" text-anchor="middle" font-size="13" font-weight="bold" fill="#7a4e14">③ 사람 리뷰</text>
+  <text x="710" y="123" text-anchor="middle" font-size="11" fill="#7a4e14">SKILL.md +</text>
+  <text x="710" y="138" text-anchor="middle" font-size="11" fill="#7a4e14">번들 스크립트</text>
+
+  <line x1="710" y1="150" x2="710" y2="200" stroke="#999" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="305" y1="150" x2="500" y2="200" stroke="#2f9e44" stroke-width="2" stroke-dasharray="0" marker-end="url(#arrowgreen)"/>
+
+  <!-- pass box -->
+  <rect x="280" y="210" width="260" height="70" rx="10" fill="#e6f4ea" stroke="#2f9e44" stroke-width="2"/>
+  <text x="410" y="238" text-anchor="middle" font-size="14" font-weight="bold" fill="#1d6b30">통과한 Skill만</text>
+  <text x="410" y="258" text-anchor="middle" font-size="12" fill="#1d6b30">커밋 해시로 버전 고정해 저장소에 반영</text>
+  <text x="410" y="273" text-anchor="middle" font-size="10" fill="#1d6b30">(latest 자동 추종 금지)</text>
+
+  <line x1="410" y1="280" x2="410" y2="320" stroke="#999" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <!-- active env -->
+  <rect x="230" y="330" width="360" height="90" rx="10" fill="#eef6ff" stroke="#4a90d9" stroke-width="2"/>
+  <text x="410" y="358" text-anchor="middle" font-size="14" font-weight="bold" fill="#1b4f7a">.claude/skills/ (활성 환경)</text>
+  <text x="410" y="378" text-anchor="middle" font-size="11" fill="#1b4f7a">Progressive Disclosure로 로드돼</text>
+  <text x="410" y="394" text-anchor="middle" font-size="11" fill="#1b4f7a">에이전트 컨텍스트·도구 호출에 반영</text>
+  <text x="410" y="410" text-anchor="middle" font-size="10" fill="#1b4f7a">분기별 재스캔 대상</text>
+
+  <!-- blocked path -->
+  <rect x="620" y="200" width="150" height="55" rx="8" fill="#fdeceb" stroke="#d9534f" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="695" y="223" text-anchor="middle" font-size="12" font-weight="bold" fill="#7a2420">게이트 미통과</text>
+  <text x="695" y="240" text-anchor="middle" font-size="11" fill="#7a2420">설치 차단</text>
+  <line x1="710" y1="150" x2="700" y2="200" stroke="#d9534f" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrowred)"/>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#999"/>
+    </marker>
+    <marker id="arrowgreen" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#2f9e44"/>
+    </marker>
+    <marker id="arrowred" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#d9534f"/>
+    </marker>
+  </defs>
+</svg>
