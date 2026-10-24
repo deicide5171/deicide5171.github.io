@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"지도에서 사용자가 직접 검색 조건을 걸게 해주세요" — GeoServer CQL 필터가 뚫렸을 때의 신뢰 경계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"지도에서 사용자가 직접 검색 조건을 걸게 해주세요" — GeoServer CQL 필터가 뚫렸을 때의 신뢰 경계</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 지도 화면에 사용자 정의 검색 조건을 걸어달라는 요구는 GeoServer의 CQL 필터를 그대로 사용자 입력에 노출하는 설계로 이어지기 쉽습니다. 2026년 8월 공개된 jsonArrayContains SQL 인젝션(CVSS 9.8)은 2023년에 이미 패치했던 구멍이 되살아난 사례입니다. 패치만으로 끝낼 문제가 아니라 CQL 필터를 외부에 얼마나 노출할지 자체를 다시 설계해야 하는 이유를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"매물 지도에서 사용자가 직접 '가격 3억 이하이면서 옵션에 발코니 포함' 같은 조건으로 검색하게 해주세요." 이런 요구를 GeoServer 기반 WMS/WFS 서비스에서 가장 빠르게 구현하는 방법은 GeoServer의 CQL 필터 파라미터(CQL_FILTER)를 프런트엔드 쿼리 파라미터와 거의 그대로 연결하는 것입니다. GeoTools가 CQL을 내부적으로 SQL로 번역해 데이터소스에 넘겨주기 때문에, 별도 쿼리 빌더 없이 사용자 입력을 바로 지도 레이어 필터링에 쓸 수 있다는 유혹이 큽니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">2026년 8월 12일 공개된 <b>jsonArrayContains SQL 인젝션(CVSS 9.8)</b>은 바로 이 지점을 찌릅니다. PostGIS 데이터소스에서 JSON/JSONB 컬럼을 다루는 jsonArrayContains CQL 함수가 사용자 입력을 이스케이프 없이 PostgreSQL의 jsonb_path_exists() 표현식에 그대로 끼워 넣는다는 사실이 드러났고, 인증 없이 WMS·WFS 엔드포인트를 통해 임의 SQL을 실행할 수 있는 경로가 공개 직후부터 실제 공격 시도로 이어졌습니다. 더 뼈아픈 건 이것이 <b>2023년 CVE-2023-25158로 이미 한 번 막았던 CQL-to-SQL 인젝션 계열의 회귀</b>라는 점입니다. 중요한 질문은 "이번 버전만 패치하면 끝나는가"가 아니라 "사용자 입력이 CQL 필터를 거쳐 SQL까지 도달하는 구조 자체를 계속 유지해도 되는가"입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">CQL 필터는 설계상 SQL에 가깝다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">GeoServer의 CQL은 OGC 표준 필터를 사람이 읽기 쉬운 문법으로 감싼 것이고, 내부적으로 GeoTools가 이를 각 데이터소스의 네이티브 쿼리로 번역합니다. 문제는 이 번역 계층이 "필터 문법"과 "쿼리 문자열 조립"의 경계에서 흔들린다는 점입니다. jsonArrayContains처럼 특정 함수가 사용자 제공 값을 매개변수 바인딩 없이 문자열로 직접 삽입하면, CQL 필터는 사실상 SQL 인젝션의 입력창이 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">GeoServer 메인테이너는 3.0.1·2.28.5·2.27.6(GeoTools 35.1·34.5·33.6)에서 이 문제를 수정했습니다. 그런데 같은 유형의 취약점이 3년 만에 재발했다는 사실 자체가 "CQL 필터를 외부 사용자 입력에 직접 연결하는 패턴"이 구조적으로 반복 위험을 안고 있다는 신호입니다. 패치를 적용해도, 아직 발견되지 않은 다른 CQL 함수가 같은 실수를 반복하고 있을 가능성을 배제할 수 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-24-geoserver-cql-filter-sql-injection-trust-boundary-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">사용자가 지도 화면에서 입력한 검색 조건은 프런트엔드에서 CQL_FILTER 쿼리 파라미터로 조립돼 GeoServer WMS/WFS 엔드포인트로 전송되고, GeoTools의 CQL 파서가 이를 PostGIS SQL로 번역해 DB에 직접 질의합니다. 이 경로 전체가 <b>인증 없이 외부에 열려 있는 WMS/WFS 레이어</b>라면, 신뢰 경계는 사실상 존재하지 않는 것과 같습니다. 안전한 구조는 사용자 입력을 CQL 문자열로 바로 전달하지 않고, 애플리케이션 서버가 허용된 필드·연산자 화이트리스트 안에서만 CQL을 조립하거나, 아예 CQL을 거치지 않는 파라미터화된 WFS 요청으로 제한하는 것입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">선택지</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">장점</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">단점</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">패치만 적용, 구조 유지</td>
+<td style="border:1px solid #ddd; padding:10px;">작업량 최소, 빠른 대응</td>
+<td style="border:1px solid #ddd; padding:10px;">다음 CQL 함수 취약점에 동일하게 노출</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">CQL 필드·연산자 화이트리스트</td>
+<td style="border:1px solid #ddd; padding:10px;">유연성 유지하며 공격면 축소</td>
+<td style="border:1px solid #ddd; padding:10px;">화이트리스트 유지보수 필요</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">CQL 미노출, 사전 정의 파라미터만 허용</td>
+<td style="border:1px solid #ddd; padding:10px;">공격면 대부분 제거</td>
+<td style="border:1px solid #ddd; padding:10px;">자유도 낮은 검색 UX</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">DB 계정 최소 권한 분리</td>
+<td style="border:1px solid #ddd; padding:10px;">RCE로의 확산 차단</td>
+<td style="border:1px solid #ddd; padding:10px;">SQL 인젝션 자체는 막지 못함 (병행용)</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">공개 인터넷에 WMS/WFS를 열어 사용자 정의 검색을 제공하는 서비스라면 패치만으로 끝내서는 안 됩니다. 화이트리스트 또는 CQL 미노출 중 하나로 구조를 바꾸는 작업을 패치와 함께 로드맵에 올려야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">1. 버전부터 확인합니다. GeoServer 3.0.1/2.28.5/2.27.6 미만이고 PostGIS 데이터소스를 쓰고 있다면 최우선 긴급 패치 대상입니다.<br>2. 패치 적용 전까지는 DB 계정 권한을 최소화합니다. GeoServer가 쓰는 PostGIS 계정에서 DDL·슈퍼유저 권한을 제거합니다.<br>3. CQL_FILTER를 외부에서 직접 받는 엔드포인트를 전수 조사하고, 리버스 프록시 단에서 일시적으로 제한합니다.<br>4. 패치 적용 후, CQL을 사용자 입력에서 분리하는 리팩터링을 계획합니다.<br>5. PostGIS·GeoServer 접근 로그에서 의심스러운 CQL 패턴이 있었는지 소급 점검합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">예제 코드:</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; line-height:1.6; overflow-x:auto;">-- 취약했던 패턴 예: 사용자 입력이 JSON 경로 표현식에 그대로 삽입됨
+-- CQL: jsonArrayContains(properties, '${userInput}')
+-- 번역된 SQL (단순화):
+SELECT * FROM parcels
+WHERE jsonb_path_exists(properties, '${userInput}');  -- userInput 이스케이프 없음
+
+-- 안전한 대안: 허용된 키만 화이트리스트로 받아 파라미터 바인딩으로 조립
+SELECT * FROM parcels
+WHERE properties @> jsonb_build_object($1::text, $2::text);</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 패치 버전과 CVE/GHSA 식별자는 출처마다 조금씩 엇갈립니다. 실제 적용 전에는 반드시 GeoServer 공식 Security Advisory 페이지에서 현재 운영 버전에 해당하는 패치 내역을 직접 확인하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">jsonArrayContains SQL 인젝션(2026-08, CVSS 9.8)은 GeoServer CQL 필터가 사용자 입력을 PostGIS SQL로 이스케이프 없이 번역하면서 발생했고, 2023년에 패치했던 취약점의 회귀입니다. 패치(3.0.1·2.28.5·2.27.6)는 필수지만, 같은 패턴이 반복됐다는 사실 자체가 "CQL을 사용자 입력에 직접 연결하는 구조"를 다시 설계해야 한다는 신호입니다. 화이트리스트 기반 CQL 조립이나 CQL 미노출 WFS 파라미터로 전환하는 것이 장기적으로 더 안전합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#GeoServer #PostGIS #SQL인젝션 #CQL필터 #GIS보안</p>
+
+</body>
+</html>
