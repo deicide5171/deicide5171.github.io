@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="26" text-anchor="middle" font-size="16" font-weight="bold" fill="#222">모놀리식 GeoServer vs GeoServer Cloud</text>
+
+  <!-- Monolith -->
+  <text x="40" y="52" font-size="13" font-weight="bold" fill="#c0392b">① 모놀리식 — 전체가 함께 늘어남</text>
+  <rect x="40" y="62" width="150" height="40" rx="6" fill="#fdf0e8" stroke="#c0392b" stroke-width="2"/>
+  <text x="115" y="86" text-anchor="middle" font-size="11" font-weight="bold" fill="#8a2d1c">GeoServer #1</text>
+  <rect x="210" y="62" width="150" height="40" rx="6" fill="#fdf0e8" stroke="#c0392b" stroke-width="2"/>
+  <text x="285" y="78" text-anchor="middle" font-size="10" fill="#8a2d1c">WMS·WFS·WPS</text>
+  <text x="285" y="92" text-anchor="middle" font-size="10" fill="#8a2d1c">GWC·관리UI (한 프로세스)</text>
+  <rect x="380" y="62" width="150" height="40" rx="6" fill="#fdf0e8" stroke="#c0392b" stroke-width="2"/>
+  <text x="455" y="86" text-anchor="middle" font-size="11" font-weight="bold" fill="#8a2d1c">GeoServer #2 (동일 복제)</text>
+  <text x="600" y="86" font-size="11" fill="#8a2d1c">→ 타일만 몰려도 전부 n배</text>
+
+  <!-- GeoServer Cloud -->
+  <text x="40" y="150" font-size="13" font-weight="bold" fill="#1b5e20">② GeoServer Cloud — 서비스별 독립 스케일</text>
+
+  <rect x="40" y="165" width="90" height="40" rx="6" fill="#e8f4fd" stroke="#2b7fd1" stroke-width="2"/>
+  <text x="85" y="189" text-anchor="middle" font-size="11" font-weight="bold" fill="#1a4d7a">게이트웨이</text>
+
+  <rect x="160" y="160" width="100" height="130" rx="6" fill="#eef7ee" stroke="#2e7d32" stroke-width="2"/>
+  <text x="210" y="178" text-anchor="middle" font-size="11" font-weight="bold" fill="#1b5e20">WMS</text>
+  <rect x="170" y="186" width="80" height="18" rx="3" fill="#fff" stroke="#2e7d32"/>
+  <rect x="170" y="208" width="80" height="18" rx="3" fill="#fff" stroke="#2e7d32"/>
+  <rect x="170" y="230" width="80" height="18" rx="3" fill="#fff" stroke="#2e7d32"/>
+  <rect x="170" y="252" width="80" height="18" rx="3" fill="#fff" stroke="#2e7d32"/>
+  <text x="210" y="282" text-anchor="middle" font-size="9" fill="#1b5e20">파드 ×4 (트래픽 多)</text>
+
+  <rect x="280" y="160" width="90" height="70" rx="6" fill="#eef7ee" stroke="#2e7d32" stroke-width="2"/>
+  <text x="325" y="178" text-anchor="middle" font-size="11" font-weight="bold" fill="#1b5e20">GWC</text>
+  <rect x="290" y="186" width="70" height="18" rx="3" fill="#fff" stroke="#2e7d32"/>
+  <rect x="290" y="208" width="70" height="18" rx="3" fill="#fff" stroke="#2e7d32"/>
+  <text x="325" y="242" text-anchor="middle" font-size="9" fill="#1b5e20">파드 ×2</text>
+
+  <rect x="390" y="160" width="90" height="55" rx="6" fill="#eef7ee" stroke="#2e7d32" stroke-width="2"/>
+  <text x="435" y="178" text-anchor="middle" font-size="11" font-weight="bold" fill="#1b5e20">WFS</text>
+  <rect x="400" y="186" width="70" height="18" rx="3" fill="#fff" stroke="#2e7d32"/>
+  <text x="435" y="227" text-anchor="middle" font-size="9" fill="#1b5e20">파드 ×1</text>
+
+  <rect x="500" y="160" width="90" height="55" rx="6" fill="#eef7ee" stroke="#2e7d32" stroke-width="2"/>
+  <text x="545" y="178" text-anchor="middle" font-size="11" font-weight="bold" fill="#1b5e20">WPS</text>
+  <rect x="510" y="186" width="70" height="18" rx="3" fill="#fff" stroke="#2e7d32"/>
+  <text x="545" y="227" text-anchor="middle" font-size="9" fill="#1b5e20">파드 ×1</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#2e7d32"/>
+    </marker>
+  </defs>
+  <line x1="130" y1="200" x2="158" y2="200" stroke="#2e7d32" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Shared catalog -->
+  <rect x="160" y="305" width="430" height="55" rx="6" fill="#f5f5f5" stroke="#888" stroke-width="2"/>
+  <text x="375" y="325" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">공유 카탈로그 백엔드 (pgconfig) + 메시지 버스(RabbitMQ)</text>
+  <text x="375" y="345" text-anchor="middle" font-size="10" fill="#555">레이어·스타일 설정 공유, 변경 알림으로 캐시 무효화 전파</text>
+
+  <line x1="210" y1="290" x2="210" y2="305" stroke="#555" stroke-width="1.5"/>
+  <line x1="325" y1="230" x2="325" y2="305" stroke="#555" stroke-width="1.5"/>
+  <line x1="435" y1="215" x2="435" y2="305" stroke="#555" stroke-width="1.5"/>
+  <line x1="545" y1="215" x2="545" y2="305" stroke="#555" stroke-width="1.5"/>
+
+  <!-- Bottom note -->
+  <rect x="30" y="375" width="740" height="60" rx="8" fill="#fff7f0" stroke="#f0a04b" stroke-width="2"/>
+  <text x="400" y="398" text-anchor="middle" font-size="12" font-weight="bold" fill="#8a5a1c">판단 기준: 부하 편차가 서비스 종류를 따라 생기는가</text>
+  <text x="400" y="418" text-anchor="middle" font-size="11" fill="#5a4632">편차가 뚜렷하면 GeoServer Cloud, 균일하면 모놀리식 단순 복제가 더 합리적</text>
+</svg>

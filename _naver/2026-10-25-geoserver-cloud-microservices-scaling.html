@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>지도 서버 하나를 통째로 늘리지 말아주세요 — GeoServer Cloud로 WMS·WFS·GWC 쪼개 스케일하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">지도 서버 하나를 통째로 늘리지 말아주세요 — GeoServer Cloud로 WMS·WFS·GWC 쪼개 스케일하기</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 타일 요청만 몰려도 지도 데이터 조회까지 같이 느려지는 건, 모놀리식 GeoServer가 모든 OGC 서비스를 한 프로세스에 묶어 두기 때문입니다. GeoServer Cloud가 WMS·WFS·GWC를 독립 서비스로 쪼개 필요한 부분만 스케일하는 구조와, 모놀리식 운영에서 언제 이 전환을 해야 하는지 판단 기준을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"지도 타일 요청이 몰릴 때마다 데이터 다운로드(WFS)까지 같이 느려져요. 지도 서버를 더 늘려주세요." 트래픽이 늘어난 GeoServer 운영팀이 흔히 던지는 요구입니다. 그런데 "서버를 늘려달라"는 말을 그대로 받아 인스턴스를 수평으로 복제하면, WMS든 WFS든 GWC든 똑같이 전부 복제됩니다. 정작 트래픽이 몰리는 건 타일 렌더링(WMS)뿐인데, 거의 쓰이지 않는 WPS나 관리 UI까지 함께 n배로 늘어나는 것입니다. 모놀리식 GeoServer는 OGC 서비스 전부와 관리 콘솔, 카탈로그를 한 JVM 프로세스 안에 묶어 두기 때문에 <b>"일부만 늘린다"는 선택지 자체가 없습니다.</b></p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 한계를 겨냥한 것이 GeoServer Cloud입니다. WMS, WFS, WCS, WPS, GWC, REST API, 웹 관리 UI, 게이트웨이를 각각 독립된 마이크로서비스로 쪼개고, 카탈로그(레이어·스타일 설정)는 공유 백엔드로, 설정 변경 알림은 메시지 버스로 동기화합니다. 2026년 기준 camptocamp의 공식 Helm 차트로 쿠버네티스 배포가 안정화되면서, "타일만 몰린다"는 요구를 "WMS 파드만 늘린다"로 그대로 번역할 수 있게 됐습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">모놀리식 GeoServer에서는 리버스 프록시 뒤에 동일한 인스턴스 여러 대가 떠 있고, 각 인스턴스가 WMS·WFS·GWC·관리 기능을 전부 처리합니다. GeoServer Cloud는 이 앞단에 게이트웨이를 두고, 요청 경로에 따라 서로 다른 서비스로 라우팅합니다. 각 서비스는 같은 카탈로그 백엔드를 읽고, 설정이 바뀌면 메시지 버스(RabbitMQ)로 변경 사실을 전파받아 캐시를 무효화합니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-25-geoserver-cloud-microservices-scaling-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">캐시 계층(GWC)도 독립 서비스가 되므로, "타일 캐시 히트율 튜닝"과 "원본 WMS 렌더링 스케일"을 완전히 분리된 축으로 다룰 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">전략</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">장점</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">단점</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">모놀리식 + 단순 복제</td>
+<td style="border:1px solid #ddd; padding:10px;">운영 단순</td>
+<td style="border:1px solid #ddd; padding:10px;">부하 편차 무시, 전체가 n배로 늘어남</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">GeoServer Cloud</td>
+<td style="border:1px solid #ddd; padding:10px;">서비스별 독립 스케일, 장애 격리</td>
+<td style="border:1px solid #ddd; padding:10px;">공유 카탈로그·메시지 버스 운영 부담</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">GWC만 분리</td>
+<td style="border:1px solid #ddd; padding:10px;">가장 흔한 병목만 선제 격리</td>
+<td style="border:1px solid #ddd; padding:10px;">WFS·WPS는 함께 스케일됨</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">레이어별 수동 분리</td>
+<td style="border:1px solid #ddd; padding:10px;">추가 플랫폼 불필요</td>
+<td style="border:1px solid #ddd; padding:10px;">레이어 늘수록 운영 복잡도 증가</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">판단 기준은 <b>"부하 편차가 서비스 종류를 따라 생기는가, 아니면 균일한가"</b>입니다. 타일 요청만 폭증하고 WFS·WPS는 거의 호출되지 않는 패턴이 뚜렷하다면 GeoServer Cloud의 서비스별 분리가 투자 대비 효과가 큽니다. 반대로 전체 트래픽이 완만하게 늘어나는 패턴이라면 모놀리식을 단순 복제하는 쪽이 운영 복잡도 대비 이득이 큽니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">1. 서비스별 부하(WMS/WFS/WPS/GWC)를 먼저 분리해 측정합니다.<br>2. 카탈로그 백엔드를 정합니다. 공유 데이터 디렉터리보다 pgconfig가 멀티 인스턴스에 안전합니다.<br>3. 스테이징에서 서비스 분리본을 먼저 띄우고 기존 모놀리식과 응답을 diff합니다.<br>4. 메시지 버스(RabbitMQ) 장애 시 설정 전파 지연을 허용할 수 있는지 검증합니다.<br>5. 측정에서 병목으로 드러난 서비스부터 순차 분리 전환합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">예제 코드:</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; line-height:1.6; overflow-x:auto;">&#35; Helm values.yaml 예시 - WMS만 더 많은 레플리카로 스케일
+wms:
+  replicaCount: 6
+wfs:
+  replicaCount: 2
+wps:
+  replicaCount: 1
+catalog:
+  backend: pgconfig
+  pgconfig:
+    host: geoserver-catalog-db</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — GWC를 분리해도 캐시 미스가 잦은 레이어라면 WMS 서비스 스케일이 함께 필요합니다. 공유 카탈로그 백엔드(pgconfig)는 그 자체가 단일 장애점이 되므로 이 DB의 가용성 설계가 전체 시스템의 가용성 상한이 됩니다. 소규모 트래픽에서 먼저 도입하면 분산 시스템 운영 비용이 이득보다 커질 수 있으니, 병목이 실제로 측정된 뒤 전환하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">GeoServer Cloud는 모놀리식이 강제하던 "전체 서비스 동시 복제"를 깨고, WMS·WFS·GWC를 독립적으로 스케일할 수 있게 합니다. 전환 판단 기준은 서비스별 부하 편차이며, 균일한 트래픽이라면 모놀리식 단순 복제가 더 합리적입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#GeoServer #GeoServerCloud #마이크로서비스 #쿠버네티스 #GWC</p>
+
+</body>
+</html>
