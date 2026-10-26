@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"기능 하나 고치는데 에이전트가 서비스 다섯 개를 다 뒤져요" — 모놀리스·마이크로서비스 판단 기준이 바뀌었다</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"기능 하나 고치는데 에이전트가 서비스 다섯 개를 다 뒤져요" — 모놀리스·마이크로서비스 판단 기준이 바뀌었다</div>
+<p style="font-size:14px; color:#999;">개발전략</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — AI 코딩 에이전트가 기능 하나를 고치려고 서비스 다섯 개를 가로질러 읽고도 엉뚱한 곳을 건드리는 일이 늘고 있습니다. 배포 독립성과 팀 경계로만 정하던 모놀리스·마이크로서비스 판단에, '에이전트가 한 번에 읽어야 하는 범위'라는 새 기준이 더해졌습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"이 할인 로직 하나만 고쳐달라고 했는데, 에이전트가 주문 서비스·가격 서비스·쿠폰 서비스·알림 서비스를 다 뒤지다가 엉뚱한 서비스의 API 응답 형식을 바꿔놨어요." 마이크로서비스로 쪼갠 조직에서 AI 코딩 에이전트를 붙이기 시작하면 이런 보고가 나오기 시작합니다. 사람 개발자는 "이 기능은 가격 서비스 담당"이라는 암묵지를 갖고 바로 그 레포로 가지만, 에이전트는 그 암묵지가 없어 기능이 흩어진 서비스 수만큼 네트워크 경계를 넘어 코드를 탐색합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">마이크로서비스를 쪼갠 이유는 원래 배포 독립성과 팀 자율성이었고 이 기준은 여전히 유효합니다. 다만 2026년 들어 여기에 새 변수가 하나 추가됐습니다 — <b>에이전트가 한 번에 읽을 수 있는 코드 범위</b>입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">기존 판단 기준은 조직 구조(콘웨이의 법칙), 독립 배포 주기, 독립 스케일링 필요성이었습니다. 여기에 에이전트가 끼어들면 "기능 요청 → 코드 탐색 → 수정"이라는 작업 루프 자체의 비용 구조가 달라집니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-26-ai-agent-context-monolith-microservices-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">모듈러 모놀리스는 기능이 하나의 바운디드 컨텍스트 안에 모여 있어 에이전트가 모듈 하나만 컨텍스트에 올려 작업을 끝낼 수 있습니다. IDP 없는 마이크로서비스는 분산 시스템이 사실상 "에이전트가 딸린 분산 모놀리스"가 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">아키텍처</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">에이전트 작업 효율</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">적합한 상황</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">단일 모놀리스(구조 없음)</td>
+<td style="border:1px solid #ddd; padding:10px;">초기엔 높음, 코드가 커지면 급락</td>
+<td style="border:1px solid #ddd; padding:10px;">팀 1~2개, 초기 단계</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">모듈러 모놀리스</td>
+<td style="border:1px solid #ddd; padding:10px;">높음 — 모듈이 곧 컨텍스트 범위</td>
+<td style="border:1px solid #ddd; padding:10px;">독립 배포가 꼭 필요하진 않은 조직</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">마이크로서비스(IDP 성숙)</td>
+<td style="border:1px solid #ddd; padding:10px;">중간 — 계약은 보이나 경계 비용 존재</td>
+<td style="border:1px solid #ddd; padding:10px;">플랫폼팀이 카탈로그를 유지하는 조직</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">마이크로서비스(IDP 없음)</td>
+<td style="border:1px solid #ddd; padding:10px;">낮음 — 매번 전체를 탐색</td>
+<td style="border:1px solid #ddd; padding:10px;">분리 비용만 지불하는 상태</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">판단 기준은 단순해졌습니다. <b>독립 배포·독립 스케일링이 실제로 필요한 서비스인가</b>를 먼저 묻고, 그렇지 않다면 모듈러 모놀리스로 통합하는 쪽이 에이전트 작업 효율과 팀 운영 부담을 동시에 줄입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">1. 에이전트 작업 로그에서 "기능 하나당 건드린 레포·서비스 수"를 측정합니다.<br>2. 도메인 모델 기준으로 바운디드 컨텍스트를 다시 그립니다.<br>3. 각 서비스의 독립 배포·스케일링 필요성을 재검증합니다.<br>4. 통합이 어려운 서비스는 서비스 카탈로그를 에이전트가 참조할 수 있게 정리합니다.<br>5. 통합은 스트랭글러 피그 패턴으로 점진적으로 진행합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">체크리스트 예시:</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; line-height:1.6; overflow-x:auto;">&#35; 바운디드 컨텍스트 재정의 체크리스트
+1. 최근 3개월 PR에서 함께 수정된 파일/서비스 쌍을 집계한다.
+2. 같은 PR에서 90% 이상 함께 바뀌는 서비스 쌍을 모듈 후보로 묶는다.
+3. 묶인 모듈이 독립 배포·스케일링 요구가 없는지 확인한다.
+4. 요구가 없으면 모듈러 모놀리스로 통합, 있으면 서비스로 유지하고 카탈로그에 등록한다.</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — "모놀리스로 돌아가자"는 일반 해법이 아닙니다. 결제·인증처럼 독립 배포가 실제로 필요한 서비스는 분리된 상태가 맞습니다. 모듈러 모놀리스로 합쳐도 모듈 경계를 코드 리뷰·린트 규칙으로 강제하지 않으면 금방 다시 뒤섞입니다. 에이전트 효율은 아키텍처를 바꾸는 여러 이유 중 하나일 뿐이니 측정 없이 전사 리아키텍처를 밀어붙이지 마세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">에이전트 도입은 모놀리스·마이크로서비스 판단에 "에이전트가 한 번에 읽어야 하는 범위"라는 새 변수를 추가했을 뿐, 기존 배포 독립성·팀 자율성 기준을 대체하지 않습니다. IDP 없는 마이크로서비스는 분리 비용만 지불하고 이점은 못 누리는 가장 나쁜 조합입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#모놀리스 #마이크로서비스 #소프트웨어아키텍처 #AI에이전트 #모듈러모놀리스</p>
+
+</body>
+</html>
