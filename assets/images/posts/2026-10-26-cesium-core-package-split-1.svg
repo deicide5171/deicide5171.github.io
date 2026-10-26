@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="28" text-anchor="middle" font-size="17" font-weight="bold" fill="#222">CesiumJS 패키지 분리 전후 의존성 구조</text>
+
+  <!-- Before -->
+  <text x="40" y="60" font-size="13" font-weight="bold" fill="#c0392b">① 분리 전 — 연산만 쓰려 해도 렌더링 엔진 전체가 따라온다</text>
+
+  <rect x="40" y="75" width="150" height="55" rx="8" fill="#fdf0e8" stroke="#c0392b" stroke-width="2"/>
+  <text x="115" y="97" text-anchor="middle" font-size="12" font-weight="bold" fill="#8a2d1c">서버 배치 스크립트</text>
+  <text x="115" y="113" text-anchor="middle" font-size="10" fill="#8a2d1c">(좌표 변환만 필요)</text>
+
+  <defs>
+    <marker id="arrowc" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#c0392b"/>
+    </marker>
+  </defs>
+  <line x1="190" y1="102" x2="238" y2="102" stroke="#c0392b" stroke-width="2" marker-end="url(#arrowc)"/>
+
+  <rect x="240" y="65" width="330" height="80" rx="8" fill="#fff" stroke="#c0392b" stroke-width="2" stroke-dasharray="4,3"/>
+  <text x="405" y="85" text-anchor="middle" font-size="12" font-weight="bold" fill="#8a2d1c">@cesium/engine (전체)</text>
+  <rect x="255" y="95" width="140" height="35" rx="5" fill="#fdf0e8" stroke="#c0392b" stroke-width="1"/>
+  <text x="325" y="117" text-anchor="middle" font-size="10" fill="#8a2d1c">수학·지오메트리</text>
+  <rect x="405" y="95" width="150" height="35" rx="5" fill="#fdf0e8" stroke="#c0392b" stroke-width="1"/>
+  <text x="480" y="117" text-anchor="middle" font-size="10" fill="#8a2d1c">WebGL 렌더링·타일 로더</text>
+
+  <text x="600" y="100" font-size="10.5" fill="#8a2d1c">→ 필요 없는</text>
+  <text x="600" y="115" font-size="10.5" fill="#8a2d1c">렌더링 코드까지 설치</text>
+
+  <!-- After -->
+  <text x="40" y="200" font-size="13" font-weight="bold" fill="#1b5e20">② 분리 후 — 연산과 렌더링이 독립된 패키지로 나뉜다</text>
+
+  <rect x="40" y="215" width="150" height="55" rx="8" fill="#e8f4fd" stroke="#2b7fd1" stroke-width="2"/>
+  <text x="115" y="237" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a4d7a">서버 배치 스크립트</text>
+  <text x="115" y="253" text-anchor="middle" font-size="10" fill="#1a4d7a">(가시선·좌표 계산)</text>
+
+  <line x1="190" y1="242" x2="238" y2="242" stroke="#2e7d32" stroke-width="2" marker-end="url(#arrowg2)"/>
+  <defs>
+    <marker id="arrowg2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#2e7d32"/>
+    </marker>
+  </defs>
+
+  <rect x="240" y="215" width="160" height="55" rx="8" fill="#eef7ee" stroke="#2e7d32" stroke-width="2"/>
+  <text x="320" y="237" text-anchor="middle" font-size="12" font-weight="bold" fill="#1b5e20">@cesium/core</text>
+  <text x="320" y="253" text-anchor="middle" font-size="10" fill="#1b5e20">수학·지오메트리·시간</text>
+
+  <rect x="440" y="195" width="40" height="95" fill="none"/>
+  <line x1="460" y1="242" x2="460" y2="140" stroke="#888" stroke-width="1.5" stroke-dasharray="3,3"/>
+  <text x="470" y="180" font-size="9.5" fill="#666" transform="rotate(-90 470 180)"></text>
+
+  <rect x="480" y="215" width="200" height="55" rx="8" fill="#fff" stroke="#888" stroke-width="2"/>
+  <text x="580" y="233" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">브라우저 지도 앱</text>
+  <text x="580" y="249" text-anchor="middle" font-size="10" fill="#555">@cesium/engine 전체 사용</text>
+
+  <line x1="480" y1="242" x2="400" y2="242" stroke="#888" stroke-width="1.5" stroke-dasharray="3,3" marker-end="url(#arrowgray)"/>
+  <defs>
+    <marker id="arrowgray" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#888"/>
+    </marker>
+  </defs>
+  <text x="440" y="200" text-anchor="middle" font-size="9.5" fill="#666">engine이 core를</text>
+  <text x="440" y="212" text-anchor="middle" font-size="9.5" fill="#666">의존성으로 재사용</text>
+
+  <!-- Bottom note -->
+  <rect x="30" y="320" width="740" height="110" rx="8" fill="#fff7f0" stroke="#f0a04b" stroke-width="2"/>
+  <text x="400" y="345" text-anchor="middle" font-size="13" font-weight="bold" fill="#8a5a1c">판단 기준: 지구 타원체·3D 좌표계를 다루는 연산인가</text>
+  <text x="400" y="370" text-anchor="middle" font-size="12" fill="#5a4632">· 3D 좌표 변환·가시선 계산 중심 → @cesium/core만 설치해 서버 배치로 수행</text>
+  <text x="400" y="392" text-anchor="middle" font-size="12" fill="#5a4632">· 2D 평면 기하 연산이면 turf.js, DB 안 대량 쿼리면 PostGIS가 더 가볍다</text>
+  <text x="400" y="414" text-anchor="middle" font-size="12" fill="#5a4632">→ @cesium/engine의 재노출은 1.150에서 제거 예정, 지금부터 마이그레이션 권장</text>
+</svg>
