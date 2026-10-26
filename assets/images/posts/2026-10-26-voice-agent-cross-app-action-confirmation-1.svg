@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="28" text-anchor="middle" font-size="17" font-weight="bold" fill="#222">음성 에이전트의 확인(confirmation) 게이트 위치</text>
+
+  <rect x="30" y="60" width="120" height="55" rx="8" fill="#e8f4fd" stroke="#2b7fd1" stroke-width="2"/>
+  <text x="90" y="83" text-anchor="middle" font-size="12" font-weight="bold" fill="#1a4d7a">음성 입력</text>
+  <text x="90" y="99" text-anchor="middle" font-size="10" fill="#1a4d7a">(STT)</text>
+
+  <defs>
+    <marker id="av1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#555"/>
+    </marker>
+  </defs>
+  <line x1="150" y1="87" x2="198" y2="87" stroke="#555" stroke-width="2" marker-end="url(#av1)"/>
+
+  <rect x="200" y="60" width="150" height="55" rx="8" fill="#f3eefc" stroke="#7e57c2" stroke-width="2"/>
+  <text x="275" y="83" text-anchor="middle" font-size="12" font-weight="bold" fill="#4a2f8a">의도·슬롯 추출</text>
+  <text x="275" y="99" text-anchor="middle" font-size="9.5" fill="#4a2f8a">대상·시간·참석자 분리</text>
+
+  <line x1="350" y1="87" x2="398" y2="87" stroke="#555" stroke-width="2" marker-end="url(#av1)"/>
+
+  <rect x="400" y="60" width="180" height="55" rx="8" fill="#fff" stroke="#888" stroke-width="2"/>
+  <text x="490" y="83" text-anchor="middle" font-size="12" font-weight="bold" fill="#333">커넥터 오케스트레이션</text>
+  <text x="490" y="99" text-anchor="middle" font-size="9.5" fill="#555">Calendar · Slack · Gmail</text>
+
+  <line x1="490" y1="115" x2="490" y2="150" stroke="#555" stroke-width="2" marker-end="url(#av1)"/>
+
+  <!-- Decision diamond -->
+  <polygon points="490,160 600,210 490,260 380,210" fill="#fff7f0" stroke="#f0a04b" stroke-width="2"/>
+  <text x="490" y="205" text-anchor="middle" font-size="11" font-weight="bold" fill="#8a5a1c">행동이</text>
+  <text x="490" y="220" text-anchor="middle" font-size="11" font-weight="bold" fill="#8a5a1c">비가역적인가?</text>
+
+  <!-- Read-only path -->
+  <line x1="600" y1="210" x2="660" y2="210" stroke="#2e7d32" stroke-width="2" marker-end="url(#av2)"/>
+  <defs>
+    <marker id="av2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#2e7d32"/>
+    </marker>
+  </defs>
+  <text x="628" y="200" text-anchor="middle" font-size="9.5" fill="#1b5e20">아니오</text>
+  <rect x="660" y="183" width="110" height="50" rx="6" fill="#eef7ee" stroke="#2e7d32" stroke-width="2"/>
+  <text x="715" y="203" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#1b5e20">즉시 실행</text>
+  <text x="715" y="219" text-anchor="middle" font-size="9" fill="#1b5e20">(조회·요약)</text>
+
+  <!-- Irreversible path -->
+  <line x1="490" y1="260" x2="490" y2="300" stroke="#c0392b" stroke-width="2" marker-end="url(#av3)"/>
+  <defs>
+    <marker id="av3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#c0392b"/>
+    </marker>
+  </defs>
+  <text x="510" y="285" font-size="9.5" fill="#8a2d1c">예</text>
+
+  <rect x="340" y="300" width="300" height="60" rx="8" fill="#fdf0e8" stroke="#c0392b" stroke-width="2"/>
+  <text x="490" y="322" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#8a2d1c">음성으로 되묻는 확인 게이트</text>
+  <text x="490" y="340" text-anchor="middle" font-size="10" fill="#8a2d1c">"내일 3시로 등록하고 슬랙으로 보낼까요?"</text>
+  <text x="490" y="353" text-anchor="middle" font-size="9.5" fill="#8a2d1c">→ 턴 기반 왕복 1회로 승인/취소 수신</text>
+
+  <!-- Bottom note -->
+  <rect x="30" y="385" width="740" height="50" rx="8" fill="#f0f7f4" stroke="#2e7d32" stroke-width="2"/>
+  <text x="400" y="408" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1b5e20">화면 버튼이 없는 음성 인터페이스에서는, 되묻는 발화 자체가 확인 UI다</text>
+  <text x="400" y="425" text-anchor="middle" font-size="11" fill="#345">→ 파일럿은 읽기 전용 작업부터, 비가역적 쓰기는 가장 나중에 확장한다</text>
+</svg>

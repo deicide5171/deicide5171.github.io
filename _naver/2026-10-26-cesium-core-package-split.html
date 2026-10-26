@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"브라우저 없이 서버에서 가시선만 계산해주세요" — CesiumJS가 엔진에서 코어를 뽑아낸 이유</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"브라우저 없이 서버에서 가시선만 계산해주세요" — CesiumJS가 엔진에서 코어를 뽑아낸 이유</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 지도를 띄우지 않고 좌표 변환이나 가시선 계산만 서버 배치로 돌리고 싶다는 요구에서, CesiumJS는 오랫동안 WebGL 렌더링 엔진 전체를 끌고 와야 했습니다. 2026년 10월 1.146 릴리스로 분리된 @cesium/core 패키지가 이 요구를 어떻게 풀어내는지, 기존 대안과의 트레이드오프까지 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"매장 간 가시선이 확보되는지 수만 쌍을 미리 계산해서 배치로 돌려주세요. 지도를 매번 띄워서 확인할 순 없잖아요." 이런 요구는 브라우저도 사용자도 없는 서버 환경에서 순수 기하 연산만 필요하다는 뜻입니다. 문제는 CesiumJS가 오랫동안 이 기하 연산용 클래스를 WebGL 기반 렌더링 엔진인 @cesium/engine 패키지 안에 함께 묶어 배포해 왔다는 점입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">2026년 10월 1일 출시된 CesiumJS 1.146은 이 구조를 바꿨습니다. 수학·지오메트리·시간·유틸리티 클래스를 @cesium/engine에서 떼어내 독립된 <b>@cesium/core</b> 패키지로 분리한 것입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">기존 구조에서는 지도 애플리케이션이든 서버 배치 스크립트든 상관없이 @cesium/engine을 설치하면 렌더링 코드와 수학 연산 코드가 한 덩어리로 따라왔습니다. 분리 이후에는 연산 전용 레이어와 렌더링 레이어가 독립된 의존성 그래프를 갖습니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-26-cesium-core-package-split-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">cesium 메인 패키지로 임포트하던 코드는 변경이 필요 없습니다. 영향을 받는 것은 @cesium/engine에서 직접 수학·지오메트리 클래스를 가져오던 코드뿐입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">방식</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">설치 부담</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">적합한 상황</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">@cesium/core만 설치</td>
+<td style="border:1px solid #ddd; padding:10px;">가볍다</td>
+<td style="border:1px solid #ddd; padding:10px;">서버 배치, 헤드리스 연산</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">기존 @cesium/engine 전체</td>
+<td style="border:1px solid #ddd; padding:10px;">무겁다</td>
+<td style="border:1px solid #ddd; padding:10px;">브라우저 3D 지도 렌더링</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">turf.js + proj4js</td>
+<td style="border:1px solid #ddd; padding:10px;">가볍다</td>
+<td style="border:1px solid #ddd; padding:10px;">3D 좌표계가 필요 없는 2D 지도</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">PostGIS 함수</td>
+<td style="border:1px solid #ddd; padding:10px;">DB 서버 의존</td>
+<td style="border:1px solid #ddd; padding:10px;">이미 PostGIS에 데이터가 있는 대량 쿼리</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">판단 기준은 <b>연산이 지구 타원체·3D 좌표계를 다루는가</b>입니다. 위경도-ECEF 변환, 3D 공간상 가시선·고도 계산이라면 @cesium/core가 가장 적은 설치 부담으로 같은 연산 로직을 서버에 그대로 옮길 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">1. @cesium/engine을 직접 import하는 지점을 전수 조사합니다.<br>2. Math·Cartesian3·Transforms 등 연산 클래스만 쓰는 import를 @cesium/core로 바꿉니다.<br>3. 마이그레이션 기한을 확인합니다(1.150에서 재노출 제거 예정).<br>4. 서버 환경에서 번들·설치 용량을 비교합니다.<br>5. 가시선·좌표 변환 로직을 배치 작업에 실제로 적용합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">예제 코드:</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; line-height:1.6; overflow-x:auto;">&#35; 분리 후: 서버 배치에서는 연산 전용 패키지만 설치
+import { Cartesian3, Transforms, JulianDate } from "@cesium/core";
+
+const origin = Cartesian3.fromDegrees(127.05, 37.5, 30);
+const target = Cartesian3.fromDegrees(127.06, 37.51, 45);
+const matrix = Transforms.eastNorthUpToFixedFrame(origin);
+&#35; 렌더링 엔진 없이 좌표 변환·거리 계산만 서버에서 배치로 수행</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — @cesium/core는 렌더링 의존성이 없을 뿐 API는 기존과 동일합니다. 다만 3D Tiles 지형 데이터를 실제로 읽는 작업은 코어만으로는 부족합니다. 메인 cesium 패키지를 쓰는 기존 프로젝트는 당장 바꾸지 않아도 되지만, 1.150 제거 시점 전에 직접 import 코드가 있는지 점검해두는 게 안전합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">CesiumJS 1.146의 @cesium/core 분리는 "렌더링 없이 연산만 쓰고 싶다"는 요구를 패키지 의존성 구조로 직접 풀어낸 변화입니다. 판단 기준은 연산이 지구 타원체·3D 좌표계를 다루는지이며, 2D 평면 연산이면 turf.js, DB 안 대량 쿼리면 PostGIS가 더 맞을 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#CesiumJS #3DTiles #패키지분리 #서버사이드GIS #번들최적화</p>
+
+</body>
+</html>
