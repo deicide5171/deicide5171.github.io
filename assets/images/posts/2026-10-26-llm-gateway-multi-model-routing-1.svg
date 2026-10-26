@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="28" text-anchor="middle" font-size="17" font-weight="bold" fill="#222">LLM 게이트웨이의 시스템 내 위치</text>
+
+  <!-- App -->
+  <rect x="30" y="180" width="130" height="70" rx="8" fill="#e8f4fd" stroke="#2b7fd1" stroke-width="2"/>
+  <text x="95" y="210" text-anchor="middle" font-size="13" font-weight="bold" fill="#1a4d7a">애플리케이션</text>
+  <text x="95" y="228" text-anchor="middle" font-size="10" fill="#1a4d7a">(모델명 대신</text>
+  <text x="95" y="241" text-anchor="middle" font-size="10" fill="#1a4d7a">작업 의도만 전달)</text>
+
+  <defs>
+    <marker id="arrowg" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#555"/>
+    </marker>
+  </defs>
+  <line x1="160" y1="215" x2="218" y2="215" stroke="#555" stroke-width="2" marker-end="url(#arrowg)"/>
+
+  <!-- Gateway box -->
+  <rect x="220" y="90" width="260" height="260" rx="10" fill="#f3eefc" stroke="#7e57c2" stroke-width="2"/>
+  <text x="350" y="115" text-anchor="middle" font-size="13" font-weight="bold" fill="#4a2f8a">LLM 게이트웨이</text>
+
+  <rect x="240" y="130" width="220" height="45" rx="6" fill="#fff" stroke="#7e57c2" stroke-width="1.5"/>
+  <text x="350" y="148" text-anchor="middle" font-size="11" font-weight="bold" fill="#4a2f8a">라우팅 정책</text>
+  <text x="350" y="163" text-anchor="middle" font-size="9.5" fill="#555">비용 · p95 지연시간 · 실패율</text>
+
+  <rect x="240" y="185" width="220" height="45" rx="6" fill="#fff" stroke="#7e57c2" stroke-width="1.5"/>
+  <text x="350" y="203" text-anchor="middle" font-size="11" font-weight="bold" fill="#4a2f8a">실패 복구</text>
+  <text x="350" y="218" text-anchor="middle" font-size="9.5" fill="#555">429/503 시 대체 모델 전환</text>
+
+  <rect x="240" y="240" width="220" height="45" rx="6" fill="#fff" stroke="#7e57c2" stroke-width="1.5"/>
+  <text x="350" y="258" text-anchor="middle" font-size="11" font-weight="bold" fill="#4a2f8a">비용·사용량 추적</text>
+  <text x="350" y="273" text-anchor="middle" font-size="9.5" fill="#555">프로바이더별 토큰·요금 집계</text>
+
+  <rect x="240" y="295" width="220" height="40" rx="6" fill="#fff" stroke="#7e57c2" stroke-width="1.5"/>
+  <text x="350" y="314" text-anchor="middle" font-size="11" font-weight="bold" fill="#4a2f8a">응답 정규화</text>
+  <text x="350" y="327" text-anchor="middle" font-size="9.5" fill="#555">프로바이더 포맷 차이 흡수</text>
+
+  <!-- Providers -->
+  <line x1="480" y1="150" x2="540" y2="110" stroke="#555" stroke-width="2" marker-end="url(#arrowg)"/>
+  <line x1="480" y1="220" x2="540" y2="220" stroke="#555" stroke-width="2" marker-end="url(#arrowg)"/>
+  <line x1="480" y1="290" x2="540" y2="330" stroke="#555" stroke-width="2" marker-end="url(#arrowg)"/>
+
+  <rect x="545" y="80" width="200" height="55" rx="8" fill="#fdf0e8" stroke="#c0392b" stroke-width="2"/>
+  <text x="645" y="103" text-anchor="middle" font-size="12" font-weight="bold" fill="#8a2d1c">Anthropic Claude</text>
+  <text x="645" y="120" text-anchor="middle" font-size="10" fill="#8a2d1c">복잡한 추론, 고품질</text>
+
+  <rect x="545" y="192" width="200" height="55" rx="8" fill="#eef7ee" stroke="#2e7d32" stroke-width="2"/>
+  <text x="645" y="215" text-anchor="middle" font-size="12" font-weight="bold" fill="#1b5e20">저비용 모델</text>
+  <text x="645" y="232" text-anchor="middle" font-size="10" fill="#1b5e20">분류·요약 등 단순 작업</text>
+
+  <rect x="545" y="302" width="200" height="55" rx="8" fill="#fff7f0" stroke="#f0a04b" stroke-width="2"/>
+  <text x="645" y="325" text-anchor="middle" font-size="12" font-weight="bold" fill="#8a5a1c">배치 API</text>
+  <text x="645" y="342" text-anchor="middle" font-size="10" fill="#8a5a1c">비실시간, 저가 처리</text>
+
+  <!-- Bottom note -->
+  <rect x="30" y="375" width="740" height="60" rx="8" fill="#f0f7f4" stroke="#2e7d32" stroke-width="2"/>
+  <text x="400" y="398" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#1b5e20">판단 기준: 데이터가 외부 게이트웨이를 거쳐도 되는가 + 라우팅 정책이 표준적인가</text>
+  <text x="400" y="418" text-anchor="middle" font-size="11.5" fill="#345">→ 둘 다 '그렇다'면 오픈소스·매니지드 게이트웨이, 아니면 직접 구축 레이어로 감싼다</text>
+</svg>
