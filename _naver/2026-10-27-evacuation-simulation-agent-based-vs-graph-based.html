@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"대피 시뮬레이션 결과를 지도에서 재생해서 보여주세요" — 연산 엔진을 어디서 돌릴 것인가</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"대피 시뮬레이션 결과를 지도에서 재생해서 보여주세요" — 연산 엔진을 어디서 돌릴 것인가</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 재난 담당 부서의 요구 "대피 경로와 소요 시간을 지도에서 재생해서 보여주세요"는 그래프 기반 최단경로·용량 모델과 에이전트 기반 보행자 모델이라는 두 연산 방식의 선택 문제로 번역됩니다. 2026년 디지털 트윈 연구 사례를 기준으로 설계 기준을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"침수 시뮬레이션은 지도에서 재생이 되는데, 대피 시뮬레이션도 똑같이 보여줄 수 있나요?" 재난안전 담당 부서에서 흔히 받는 요구입니다. 침수는 물리 현상이 지형을 따라 퍼지는 문제이지만, 대피는 <b>사람들이 선택하고 서로 영향을 주며 도로망 위를 이동하는 문제</b>입니다. 이 한 문장 안에는 대피 시간·경로를 계산하는 연산 엔진 설계와, 그 결과를 지도에서 재생하는 문제가 함께 들어 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">2026년 디지털 트윈 연구들은 선택지를 구체적으로 보여줍니다. 고베시는 CrowdWalk 에이전트 기반 시뮬레이터에 OpenStreetMap과 휴대폰 인구 통계를 결합해, 신호 통제를 바꿨을 때 대피 시간이 기존의 37%까지 줄어드는 것을 확인했습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">대피 시뮬레이션은 입력 데이터부터 지도 재생까지 네 단계를 거칩니다. 도로망·건물·인구 데이터가 연산 엔진에 들어가고, 연산 엔진이 만든 시계열 결과를 웹 지도의 시간축 재생 레이어가 애니메이션으로 보여줍니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-27-evacuation-simulation-agent-based-vs-graph-based-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">연산 엔진은 그래프 기반 모델(최단경로+용량 제약)이거나 에이전트 기반 모델(개별 보행자가 규칙에 따라 움직임)입니다. 시계열 결과를 기존 침수 시뮬레이션과 같은 포맷으로 저장하면 재생 레이어를 그대로 재사용할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">기준</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">그래프 기반</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">에이전트 기반</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">연산 비용</td>
+<td style="border:1px solid #ddd; padding:10px;">가볍다</td>
+<td style="border:1px solid #ddd; padding:10px;">무겁다(개체×시간 스텝)</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">행동 현실성</td>
+<td style="border:1px solid #ddd; padding:10px;">혼잡 반영 어려움</td>
+<td style="border:1px solid #ddd; padding:10px;">개인별 속도·군중 밀집 반영</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">적합한 상황</td>
+<td style="border:1px solid #ddd; padding:10px;">정책 1차 스크리닝</td>
+<td style="border:1px solid #ddd; padding:10px;">세부 혼잡 지점 분석</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">2026년 리뷰 논문들이 공통으로 지적하는 지점은 <b>행동 현실성 검증과 실시간 데이터 통합의 부재</b>입니다. 에이전트 모델을 쓰더라도 실제 훈련 데이터나 통제군과 대조하지 않으면 숫자만 그럴듯한 시뮬레이션이 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">1. 목적부터 확정합니다(1차 스크리닝 vs 정밀 검증).<br>2. 도로망 그래프 소스를 정합니다(OSM 또는 자체 GIS 데이터).<br>3. 그래프 기반 베이스라인부터 구축합니다.<br>4. 병목으로 의심되는 구간만 에이전트 기반으로 확장합니다.<br>5. 결과를 시간축 포맷으로 저장해 기존 재생 레이어에 연결합니다.<br>6. 실측 데이터로 검증합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">예제 코드:</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; line-height:1.6; overflow-x:auto;">&#35; 그래프 기반 베이스라인: 도로망을 용량 제약이 있는 그래프로 모델링
+import networkx as nx
+
+G = nx.DiGraph()
+G.add_edge("A", "B", capacity=50, travel_time=4)
+G.add_edge("B", "shelter", capacity=30, travel_time=6)
+
+path = nx.shortest_path(G, "A", "shelter", weight="travel_time")
+total_time = nx.path_weight(G, path, weight="travel_time")
+&#35; 구간별 인원 수 / capacity로 병목 구간을 찾아 에이전트 기반 정밀화 대상 선정</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 에이전트 기반 모델을 전체 지역에 적용하면 연산 시간이 급격히 늘어납니다. 그래프 기반으로 먼저 병목 구간을 좁히고 그 구간에만 적용하는 단계적 접근이 현실적입니다. 실시간 데이터를 반영하지 못하면 아무리 정교한 모델도 정책 결정에 쓰기 어렵습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">대피 시뮬레이션은 연산 엔진 선택과 시간축 재생이라는 두 문제로 나뉩니다. 판단 기준은 정책 비교용 스크리닝인지 정밀 검증인지이며, 그래프 기반 베이스라인에서 병목만 에이전트 기반으로 확장하는 단계적 접근이 연산 비용을 줄입니다. 실측 데이터로 검증하지 않은 시뮬레이션은 숫자만 그럴듯한 결과가 될 수 있다는 점을 항상 전제로 둬야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#GIS #대피시뮬레이션 #에이전트기반모델 #디지털트윈 #시간축재생</p>
+
+</body>
+</html>
