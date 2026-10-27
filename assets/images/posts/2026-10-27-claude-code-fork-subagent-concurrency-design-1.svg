@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="28" text-anchor="middle" font-size="17" font-weight="bold" fill="#222">fork vs 신규 서브에이전트 — 분기와 실행 경로</text>
+
+  <rect x="320" y="45" width="160" height="50" rx="8" fill="#eef2fb" stroke="#3b5bdb" stroke-width="2"/>
+  <text x="400" y="66" text-anchor="middle" font-size="12" font-weight="bold" fill="#1c2e6b">부모 세션</text>
+  <text x="400" y="82" text-anchor="middle" font-size="10" fill="#1c2e6b">대화 맥락 + 캐시 + 도구 권한</text>
+
+  <defs>
+    <marker id="af1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#2e7d32"/></marker>
+    <marker id="af2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#c0392b"/></marker>
+  </defs>
+
+  <line x1="360" y1="95" x2="200" y2="140" stroke="#2e7d32" stroke-width="2" marker-end="url(#af1)"/>
+  <line x1="440" y1="95" x2="600" y2="140" stroke="#c0392b" stroke-width="2" marker-end="url(#af2)"/>
+
+  <rect x="90" y="140" width="220" height="70" rx="8" fill="#eef7ee" stroke="#2e7d32" stroke-width="2"/>
+  <text x="200" y="163" text-anchor="middle" font-size="12" font-weight="bold" fill="#1b5e20">fork 서브에이전트</text>
+  <text x="200" y="180" text-anchor="middle" font-size="10" fill="#1b5e20">맥락·캐시 상속 — 저렴, 넓은 권한</text>
+  <text x="200" y="196" text-anchor="middle" font-size="10" fill="#1b5e20">"같은 대화의 연장" 작업에 적합</text>
+
+  <rect x="490" y="140" width="220" height="70" rx="8" fill="#fdf0e8" stroke="#c0392b" stroke-width="2"/>
+  <text x="600" y="163" text-anchor="middle" font-size="12" font-weight="bold" fill="#8a2d1c">신규 서브에이전트</text>
+  <text x="600" y="180" text-anchor="middle" font-size="10" fill="#8a2d1c">백지 컨텍스트 — 비용 ↑, 범위 명확</text>
+  <text x="600" y="196" text-anchor="middle" font-size="10" fill="#8a2d1c">"독립된 임무" 작업에 적합</text>
+
+  <line x1="200" y1="210" x2="200" y2="245" stroke="#888" stroke-width="2" marker-end="url(#af1)"/>
+  <line x1="600" y1="210" x2="600" y2="245" stroke="#888" stroke-width="2" marker-end="url(#af2)"/>
+
+  <rect x="60" y="248" width="270" height="60" rx="8" fill="#fff" stroke="#888" stroke-width="1.5"/>
+  <text x="195" y="268" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">포그라운드 실행</text>
+  <text x="195" y="285" text-anchor="middle" font-size="9.5" fill="#555">결과를 기다려야 다음 행동 가능</text>
+  <text x="195" y="300" text-anchor="middle" font-size="9.5" fill="#555">(권한 프롬프트는 여기서 발생)</text>
+
+  <rect x="460" y="248" width="280" height="60" rx="8" fill="#fff" stroke="#888" stroke-width="1.5"/>
+  <text x="600" y="268" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">백그라운드 실행</text>
+  <text x="600" y="285" text-anchor="middle" font-size="9.5" fill="#555">완료 알림만 받고 다른 작업 계속</text>
+  <text x="600" y="300" text-anchor="middle" font-size="9.5" fill="#555">(추적 안 되면 결과를 놓치기 쉬움)</text>
+
+  <rect x="30" y="330" width="740" height="100" rx="8" fill="#fff7f0" stroke="#f0a04b" stroke-width="2"/>
+  <text x="400" y="353" text-anchor="middle" font-size="13" font-weight="bold" fill="#8a5a1c">동시성 상한 — 약 20개 동시 실행, 중첩(nesting) 깊이 3단계</text>
+  <text x="400" y="376" text-anchor="middle" font-size="12" fill="#5a4632">판단 축 ① 같은 대화의 연장인가, 독립된 임무인가 → fork / 신규 선택</text>
+  <text x="400" y="396" text-anchor="middle" font-size="12" fill="#5a4632">판단 축 ② 다음 행동이 결과를 기다려야 하는가 → 포그라운드 / 백그라운드 선택</text>
+  <text x="400" y="416" text-anchor="middle" font-size="12" fill="#5a4632">→ 기본값에 맡기지 말고 CI·자동화 스크립트에서는 매번 명시적으로 지정</text>
+</svg>
