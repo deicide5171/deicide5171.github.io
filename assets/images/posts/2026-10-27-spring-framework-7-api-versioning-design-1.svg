@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="28" text-anchor="middle" font-size="17" font-weight="bold" fill="#222">Spring Framework 7 네이티브 API 버저닝 흐름</text>
+
+  <rect x="30" y="55" width="160" height="60" rx="8" fill="#eef2fb" stroke="#3b5bdb" stroke-width="2"/>
+  <text x="110" y="80" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1c2e6b">클라이언트 요청</text>
+  <text x="110" y="97" text-anchor="middle" font-size="9.5" fill="#1c2e6b">헤더 / 경로 / 파라미터</text>
+
+  <defs>
+    <marker id="as1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#555"/></marker>
+  </defs>
+  <line x1="190" y1="85" x2="228" y2="85" stroke="#555" stroke-width="2" marker-end="url(#as1)"/>
+
+  <rect x="230" y="55" width="190" height="60" rx="8" fill="#fdf6e3" stroke="#b8860b" stroke-width="2"/>
+  <text x="325" y="78" text-anchor="middle" font-size="11" font-weight="bold" fill="#7a5c00">ApiVersionResolver</text>
+  <text x="325" y="95" text-anchor="middle" font-size="9.5" fill="#7a5c00">설정된 전략으로 버전 추출</text>
+
+  <line x1="420" y1="85" x2="458" y2="85" stroke="#555" stroke-width="2" marker-end="url(#as1)"/>
+
+  <rect x="460" y="55" width="200" height="60" rx="8" fill="#fdf6e3" stroke="#b8860b" stroke-width="2"/>
+  <text x="560" y="78" text-anchor="middle" font-size="11" font-weight="bold" fill="#7a5c00">SemanticApiVersionParser</text>
+  <text x="560" y="95" text-anchor="middle" font-size="9.5" fill="#7a5c00">major.minor.patch로 해석</text>
+
+  <line x1="560" y1="115" x2="560" y2="150" stroke="#555" stroke-width="2" marker-end="url(#as1)"/>
+
+  <rect x="340" y="153" width="440" height="60" rx="8" fill="#eef7ee" stroke="#2e7d32" stroke-width="2"/>
+  <text x="560" y="176" text-anchor="middle" font-size="11.5" font-weight="bold" fill="#1b5e20">버전별 핸들러 라우팅</text>
+  <text x="560" y="193" text-anchor="middle" font-size="9.5" fill="#1b5e20">@GetMapping(version="1.0.0") / (version="2.0.0")</text>
+
+  <line x1="560" y1="213" x2="560" y2="248" stroke="#2e7d32" stroke-width="2" marker-end="url(#as1)"/>
+  <line x1="340" y1="183" x2="230" y2="245" stroke="#c0392b" stroke-width="2" stroke-dasharray="4,3" marker-end="url(#as2)"/>
+  <defs>
+    <marker id="as2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#c0392b"/></marker>
+  </defs>
+
+  <rect x="30" y="248" width="200" height="55" rx="8" fill="#fdf0e8" stroke="#c0392b" stroke-width="2"/>
+  <text x="130" y="270" text-anchor="middle" font-size="11" font-weight="bold" fill="#8a2d1c">InvalidApiVersionException</text>
+  <text x="130" y="287" text-anchor="middle" font-size="9.5" fill="#8a2d1c">지원 안 하는 버전 요청 시</text>
+
+  <rect x="460" y="248" width="200" height="55" rx="8" fill="#fff" stroke="#888" stroke-width="2"/>
+  <text x="560" y="270" text-anchor="middle" font-size="11" font-weight="bold" fill="#333">정상 응답 + 선택적</text>
+  <text x="560" y="287" text-anchor="middle" font-size="9.5" fill="#555">Deprecation 헤더(RFC 9745)</text>
+
+  <rect x="30" y="325" width="740" height="105" rx="8" fill="#fff7f0" stroke="#f0a04b" stroke-width="2"/>
+  <text x="400" y="350" text-anchor="middle" font-size="13" font-weight="bold" fill="#8a5a1c">전략 선택 기준: 캐싱 vs REST 원칙 vs 클라이언트 구현 난이도</text>
+  <text x="400" y="373" text-anchor="middle" font-size="12" fill="#5a4632">· 외부 공개 API, 문서화 중요 → 경로 세그먼트(/v1/)</text>
+  <text x="400" y="393" text-anchor="middle" font-size="12" fill="#5a4632">· 내부 서비스 간, 세밀한 제어 → 요청 헤더</text>
+  <text x="400" y="413" text-anchor="middle" font-size="12" fill="#5a4632">→ 게이트웨이가 이미 버저닝 중이면 애플리케이션 레벨과 역할을 겹치지 않게 분리</text>
+</svg>
