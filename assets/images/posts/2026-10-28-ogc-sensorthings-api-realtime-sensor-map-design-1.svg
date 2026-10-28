@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="26" text-anchor="middle" font-size="16" font-weight="bold" fill="#222">실시간 센서 데이터 흐름 — OGC SensorThings API</text>
+
+  <rect x="20" y="50" width="130" height="50" rx="8" fill="#eef2fb" stroke="#3b5bdb" stroke-width="2"/>
+  <text x="85" y="72" text-anchor="middle" font-size="11" font-weight="bold" fill="#1c2e6b">수위 센서</text>
+  <text x="85" y="88" text-anchor="middle" font-size="9" fill="#1c2e6b">현장 디바이스 다수</text>
+
+  <defs>
+    <marker id="s1" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#3b5bdb"/></marker>
+    <marker id="s2" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#2e7d32"/></marker>
+    <marker id="s3" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M0,0 L8,4 L0,8 Z" fill="#8a5a1c"/></marker>
+  </defs>
+
+  <line x1="150" y1="75" x2="205" y2="75" stroke="#3b5bdb" stroke-width="2" marker-end="url(#s1)"/>
+  <rect x="210" y="50" width="140" height="50" rx="8" fill="#eef2fb" stroke="#3b5bdb" stroke-width="2"/>
+  <text x="280" y="72" text-anchor="middle" font-size="11" font-weight="bold" fill="#1c2e6b">MQTT 브로커</text>
+  <text x="280" y="88" text-anchor="middle" font-size="9" fill="#1c2e6b">재전송·버퍼링 흡수</text>
+
+  <line x1="350" y1="75" x2="405" y2="75" stroke="#3b5bdb" stroke-width="2" marker-end="url(#s1)"/>
+  <rect x="410" y="45" width="190" height="60" rx="8" fill="#eef7ee" stroke="#2e7d32" stroke-width="2"/>
+  <text x="505" y="66" text-anchor="middle" font-size="11" font-weight="bold" fill="#1b5e20">STA 서버 (FROST-Server)</text>
+  <text x="505" y="81" text-anchor="middle" font-size="9" fill="#1b5e20">Thing · Datastream · Observation</text>
+  <text x="505" y="95" text-anchor="middle" font-size="9" fill="#1b5e20">센서 데이터의 진실 공급원</text>
+
+  <line x1="505" y1="105" x2="505" y2="135" stroke="#2e7d32" stroke-width="2" marker-end="url(#s2)"/>
+  <rect x="335" y="140" width="150" height="55" rx="8" fill="#fff" stroke="#2e7d32" stroke-width="1.5"/>
+  <text x="410" y="161" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#1b5e20">MQTT 구독</text>
+  <text x="410" y="178" text-anchor="middle" font-size="9" fill="#1b5e20">값 변경 즉시 푸시</text>
+
+  <rect x="525" y="140" width="150" height="55" rx="8" fill="#fff" stroke="#2e7d32" stroke-width="1.5"/>
+  <text x="600" y="161" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#1b5e20">REST 조회</text>
+  <text x="600" y="178" text-anchor="middle" font-size="9" fill="#1b5e20">과거 이력·추세 그래프</text>
+
+  <line x1="410" y1="195" x2="410" y2="225" stroke="#888" stroke-width="2" marker-end="url(#s2)"/>
+  <line x1="600" y1="195" x2="600" y2="225" stroke="#888" stroke-width="2" marker-end="url(#s2)"/>
+  <rect x="330" y="228" width="345" height="50" rx="8" fill="#eef2fb" stroke="#3b5bdb" stroke-width="2"/>
+  <text x="502" y="248" text-anchor="middle" font-size="11" font-weight="bold" fill="#1c2e6b">지도 클라이언트</text>
+  <text x="502" y="264" text-anchor="middle" font-size="9" fill="#1c2e6b">실시간 마커 갱신 + 추세 그래프, 레이어 전체 리로드 없음</text>
+
+  <line x1="505" y1="105" x2="505" y2="235" stroke="#8a5a1c" stroke-width="2" stroke-dasharray="4,3" marker-end="url(#s3)"/>
+  <rect x="610" y="45" width="160" height="50" rx="8" fill="#fff7f0" stroke="#f0a04b" stroke-width="2"/>
+  <text x="690" y="66" text-anchor="middle" font-size="10.5" font-weight="bold" fill="#8a5a1c">경보 구독자</text>
+  <text x="690" y="81" text-anchor="middle" font-size="9" fill="#8a5a1c">임계값 판정 전담, 별도 분리</text>
+  <line x1="505" y1="60" x2="605" y2="65" stroke="#8a5a1c" stroke-width="2" stroke-dasharray="4,3" marker-end="url(#s3)"/>
+
+  <rect x="30" y="300" width="740" height="130" rx="8" fill="#f5f5f5" stroke="#999" stroke-width="1.5"/>
+  <text x="400" y="322" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#333">기존 GeoServer/WFS 스택과의 공존</text>
+  <text x="400" y="345" text-anchor="middle" font-size="11" fill="#444">필지·건물처럼 변경이 드문 정적 레이어 → 계속 WFS로 서빙 (STA로 옮기지 않는다)</text>
+  <text x="400" y="365" text-anchor="middle" font-size="11" fill="#444">센서처럼 계속 발생하는 시계열 관측값 → STA가 전담 (WFS 피처로 적재하지 않는다)</text>
+  <text x="400" y="385" text-anchor="middle" font-size="11" fill="#444">두 표준은 다른 문제를 풀도록 설계됐으므로 억지로 한 서버에 합치지 않는다</text>
+  <text x="400" y="408" text-anchor="middle" font-size="11" fill="#8a5a1c">판단 기준: 센서 수 적고 실시간성 불필요 → 과투자 / 수백 개 이상·실시간 경보 핵심 → 도입 가치 큼</text>
+</svg>
