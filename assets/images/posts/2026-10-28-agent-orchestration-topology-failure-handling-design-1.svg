@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="24" text-anchor="middle" font-size="16" font-weight="bold" fill="#222">토폴로지별 장애 전파 범위 — 순차 · 병렬 · 계층형</text>
+
+  <text x="20" y="55" font-size="12" font-weight="bold" fill="#333">순차 (Sequential)</text>
+  <rect x="20" y="65" width="80" height="34" rx="6" fill="#eef7ee" stroke="#2e7d32" stroke-width="1.5"/>
+  <text x="60" y="86" text-anchor="middle" font-size="10" fill="#1b5e20">리서치</text>
+  <defs>
+    <marker id="t1" markerWidth="7" markerHeight="7" refX="6" refY="3.5" orient="auto"><path d="M0,0 L7,3.5 L0,7 Z" fill="#888"/></marker>
+  </defs>
+  <line x1="100" y1="82" x2="120" y2="82" stroke="#888" stroke-width="2" marker-end="url(#t1)"/>
+  <rect x="124" y="65" width="80" height="34" rx="6" fill="#fdf0e8" stroke="#c0392b" stroke-width="2"/>
+  <text x="164" y="86" text-anchor="middle" font-size="10" fill="#8a2d1c">분석 ✕</text>
+  <line x1="204" y1="82" x2="224" y2="82" stroke="#c0392b" stroke-width="2" stroke-dasharray="3,2" marker-end="url(#t1)"/>
+  <rect x="228" y="65" width="80" height="34" rx="6" fill="#f0f0f0" stroke="#aaa" stroke-width="1.5"/>
+  <text x="268" y="86" text-anchor="middle" font-size="10" fill="#888">작성 (멈춤)</text>
+  <text x="165" y="116" text-anchor="middle" font-size="9.5" fill="#8a2d1c">실패 지점 이후 전체가 멈춘다</text>
+
+  <text x="350" y="55" font-size="12" font-weight="bold" fill="#333">병렬 (Parallel, fan-out/fan-in)</text>
+  <rect x="350" y="65" width="90" height="30" rx="6" fill="#eef7ee" stroke="#2e7d32" stroke-width="1.5"/>
+  <text x="395" y="84" text-anchor="middle" font-size="9.5" fill="#1b5e20">버그 리뷰</text>
+  <rect x="350" y="100" width="90" height="30" rx="6" fill="#fdf0e8" stroke="#c0392b" stroke-width="2"/>
+  <text x="395" y="119" text-anchor="middle" font-size="9.5" fill="#8a2d1c">성능 리뷰 ✕</text>
+  <rect x="350" y="135" width="90" height="30" rx="6" fill="#eef7ee" stroke="#2e7d32" stroke-width="1.5"/>
+  <text x="395" y="154" text-anchor="middle" font-size="9.5" fill="#1b5e20">보안 리뷰</text>
+  <line x1="440" y1="80" x2="480" y2="110" stroke="#2e7d32" stroke-width="1.5" marker-end="url(#t1)"/>
+  <line x1="440" y1="115" x2="480" y2="115" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#t1)"/>
+  <line x1="440" y1="150" x2="480" y2="120" stroke="#2e7d32" stroke-width="1.5" marker-end="url(#t1)"/>
+  <rect x="484" y="92" width="90" height="46" rx="6" fill="#fff7f0" stroke="#f0a04b" stroke-width="2"/>
+  <text x="529" y="110" text-anchor="middle" font-size="9.5" font-weight="bold" fill="#8a5a1c">fan-in</text>
+  <text x="529" y="124" text-anchor="middle" font-size="8.5" fill="#8a5a1c">2/3 quorum 필요</text>
+  <text x="462" y="175" text-anchor="middle" font-size="9.5" fill="#8a5a1c">실패는 국소적, fan-in 정책이 핵심</text>
+
+  <text x="620" y="55" font-size="12" font-weight="bold" fill="#333">계층형 (Hierarchical)</text>
+  <rect x="650" y="65" width="90" height="30" rx="6" fill="#eef2fb" stroke="#3b5bdb" stroke-width="2"/>
+  <text x="695" y="84" text-anchor="middle" font-size="9.5" fill="#1c2e6b">감독 에이전트 ✕</text>
+  <line x1="680" y1="95" x2="650" y2="125" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#t1)"/>
+  <line x1="710" y1="95" x2="740" y2="125" stroke="#c0392b" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#t1)"/>
+  <rect x="610" y="128" width="80" height="30" rx="6" fill="#f0f0f0" stroke="#aaa" stroke-width="1.5"/>
+  <text x="650" y="147" text-anchor="middle" font-size="9" fill="#888">하위 작업 A (고아)</text>
+  <rect x="700" y="128" width="80" height="30" rx="6" fill="#f0f0f0" stroke="#aaa" stroke-width="1.5"/>
+  <text x="740" y="147" text-anchor="middle" font-size="9" fill="#888">하위 작업 B (고아)</text>
+  <text x="695" y="175" text-anchor="middle" font-size="9.5" fill="#1c2e6b">감독 실패 → 서브트리 전체 영향</text>
+
+  <rect x="30" y="310" width="740" height="120" rx="8" fill="#f5f5f5" stroke="#999" stroke-width="1.5"/>
+  <text x="400" y="333" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#333">설계에서 먼저 정해야 할 것</text>
+  <text x="400" y="356" text-anchor="middle" font-size="11" fill="#444">① 작업 간 의존 관계를 그래프로 그려 토폴로지를 결정한다</text>
+  <text x="400" y="376" text-anchor="middle" font-size="11" fill="#444">② 각 노드의 실패 정책(재시도/건너뛰기/전체실패)을 설계 단계에서 정한다</text>
+  <text x="400" y="396" text-anchor="middle" font-size="11" fill="#444">③ fan-in의 부분 성공 기준(quorum)을 숫자로 못 박는다</text>
+  <text x="400" y="416" text-anchor="middle" font-size="11" fill="#8a5a1c">④ 계층형이면 감독 노드 자체의 장애 복구(체크포인트)를 별도 설계한다</text>
+</svg>
