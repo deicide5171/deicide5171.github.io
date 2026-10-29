@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill:#f4f8ff; stroke:#3b6fd6; stroke-width:1.5; rx:8; }
+    .box2 { fill:#fff4ec; stroke:#d97b3f; stroke-width:1.5; rx:8; }
+    .lbl { font-size:14px; fill:#1a1a1a; }
+    .sub { font-size:12px; fill:#555; }
+    .arrow { stroke:#444; stroke-width:1.5; marker-end:url(#arrow); fill:none; }
+    .title { font-size:16px; font-weight:bold; fill:#1a1a1a; }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#444"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="28" class="title">직접 도구 호출 (기존)</text>
+  <rect x="20" y="45" width="150" height="50" class="box"/>
+  <text x="95" y="75" text-anchor="middle" class="lbl">모델</text>
+  <path class="arrow" d="M170,70 L250,70"/>
+  <rect x="250" y="45" width="150" height="50" class="box"/>
+  <text x="325" y="70" text-anchor="middle" class="lbl">도구 호출 1건</text>
+  <text x="325" y="86" text-anchor="middle" class="sub">(JSON 왕복)</text>
+  <path class="arrow" d="M400,70 L470,70"/>
+  <text x="435" y="62" text-anchor="middle" class="sub">x N</text>
+  <rect x="470" y="45" width="150" height="50" class="box"/>
+  <text x="545" y="75" text-anchor="middle" class="lbl">MCP 서버</text>
+  <path class="arrow" d="M545,95 C545,130 325,130 325,95"/>
+  <text x="435" y="150" text-anchor="middle" class="sub">결과가 매번 모델 컨텍스트로 복귀 → N번 반복</text>
+
+  <line x1="20" y1="190" x2="780" y2="190" stroke="#ccc" stroke-dasharray="4,4"/>
+
+  <text x="20" y="220" class="title">Code Mode</text>
+  <rect x="20" y="240" width="140" height="50" class="box"/>
+  <text x="90" y="270" text-anchor="middle" class="lbl">모델</text>
+  <path class="arrow" d="M160,265 L230,265"/>
+  <text x="195" y="255" text-anchor="middle" class="sub">스크립트 작성</text>
+  <rect x="230" y="220" width="220" height="110" class="box2"/>
+  <text x="340" y="245" text-anchor="middle" class="lbl">샌드박스 (microVM/isolate)</text>
+  <text x="340" y="265" text-anchor="middle" class="sub">for 루프 안에서</text>
+  <text x="340" y="283" text-anchor="middle" class="sub">도구 함수 N회 호출</text>
+  <text x="340" y="301" text-anchor="middle" class="sub">중간 결과는 내부에만 체류</text>
+  <path class="arrow" d="M450,265 L530,265"/>
+  <rect x="530" y="240" width="130" height="50" class="box"/>
+  <text x="595" y="270" text-anchor="middle" class="lbl">HTTP 브릿지</text>
+  <path class="arrow" d="M660,265 L730,265"/>
+  <rect x="690" y="240" width="90" height="50" class="box"/>
+  <text x="735" y="258" text-anchor="middle" class="sub">자격증명</text>
+  <text x="735" y="274" text-anchor="middle" class="sub">다운스트림</text>
+  <path class="arrow" d="M340,330 C340,370 90,370 90,290"/>
+  <text x="220" y="395" text-anchor="middle" class="sub">최종 요약 결과만 1회 모델 컨텍스트로 복귀</text>
+</svg>
