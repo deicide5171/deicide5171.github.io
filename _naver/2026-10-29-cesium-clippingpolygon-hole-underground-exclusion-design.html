@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"지하 배관은 가리고 사유지는 통째로 빼주세요" — Cesium 1.145 ClippingPolygon 구멍 지원으로 제외 구역 설계하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"지하 배관은 가리고 사유지는 통째로 빼주세요" — Cesium 1.145 ClippingPolygon 구멍 지원으로 제외 구역 설계하기</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 지하 배관은 가리고 특정 구역은 통째로 빼달라는 요구는 3D Tiles에서 어디까지를 클라이언트 클리핑으로 풀고 어디부터 타일 생성 단계에서 막아야 하는지의 설계 문제입니다. Cesium 1.145의 ClippingPolygon 구멍(hole) 지원을 계기로 런타임 클리핑과 타일셋 베이크, 서버 필터링의 경계를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 설계가 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"지하 주차장이랑 배관 라인은 지도에서 안 보이게 하고, 이 구역은 사유지라서 3D 모델 자체를 통째로 가려주세요." 3D 도시 모델을 서비스하는 팀이라면 한 번쯤 받는 요구입니다. 더 까다로운 건 "이 구역은 가리되, 그 안의 한 블록은 다시 보여주세요" 같은 요구입니다 — 제외 구역 안에 다시 예외 구역이 뚫리는 구조입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">CesiumJS는 2024년 5월(1.117)부터 <b>ClippingPolygon</b>과 ClippingPolygonCollection으로 3D Tiles·지형의 특정 영역을 가리는 기능을 제공해왔지만, 한 폴리곤 안에 구멍을 뚫어 그 부분만 다시 보이게 하는 것은 할 수 없었습니다. 2026년 9월 2일 공개된 Cesium 1.145는 벡터 타일 렌더링 기법을 가져온 품질 알고리즘 개선과 함께, ClippingPolygon에 <b>구멍(hole) 지원</b>을 추가했습니다. 지하·제외 구역을 다루는 팀에게는 "클라이언트에서 즉시 반영할지, 타일 생성 단계에서 막을지"를 다시 판단해야 하는 계기입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">제외 구역을 만드는 방법은 데이터가 흐르는 파이프라인의 어느 지점에서 끊느냐에 따라 세 갈래로 나뉩니다. <b>클라이언트 런타임 클리핑</b>(3D Tiles 전체를 내려보내고 뷰어가 렌더링 단계에서 가림), <b>타일셋 생성 시점 베이크</b>(전처리 파이프라인에서 애초에 지오메트리를 제외), <b>서버 단 타일 필터링</b>(요청마다 사용자 권한에 따라 타일 자체를 거름)입니다.</p>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-10-29-cesium-clippingpolygon-hole-underground-exclusion-design-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">기준</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">클라이언트 클리핑</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">타일셋 베이크</td>
+<td style="border:1px solid #ddd; padding:10px; background-color:#f5f5f5; font-weight:bold;">서버 필터링</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">정책 변경 반영</td>
+<td style="border:1px solid #ddd; padding:10px;">즉시(코드 수정)</td>
+<td style="border:1px solid #ddd; padding:10px;">타일 재생성 필요</td>
+<td style="border:1px solid #ddd; padding:10px;">서버 설정만 변경</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">데이터 노출</td>
+<td style="border:1px solid #ddd; padding:10px;">전체 데이터가 이미 클라이언트에 도착</td>
+<td style="border:1px solid #ddd; padding:10px;">민감 지오메트리 전달 안 됨</td>
+<td style="border:1px solid #ddd; padding:10px;">민감 지오메트리 전달 안 됨</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">구멍(제외 안 예외)</td>
+<td style="border:1px solid #ddd; padding:10px;">1.145부터 지원</td>
+<td style="border:1px solid #ddd; padding:10px;">전처리 로직으로 구현</td>
+<td style="border:1px solid #ddd; padding:10px;">요청 단위 로직으로 구현</td>
+</tr>
+<tr>
+<td style="border:1px solid #ddd; padding:10px;">적합한 경우</td>
+<td style="border:1px solid #ddd; padding:10px;">정책이 자주 바뀌는 초기 단계</td>
+<td style="border:1px solid #ddd; padding:10px;">제외 구역이 안정화된 운영 단계</td>
+<td style="border:1px solid #ddd; padding:10px;">사용자별 접근 권한이 다른 경우</td>
+</tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">클라이언트 클리핑은 <b>데이터 노출 문제를 전혀 해결하지 못합니다.</b> 브라우저 네트워크 탭을 열면 가려진 지하 배관이나 사유지 모델의 지오메트리가 이미 다운로드돼 있습니다. 군사시설 좌표처럼 진짜 민감한 정보라면 타일을 만들기 전에 서버·전처리 단계에서 애초에 제외해야 합니다. 또한 ClippingPolygon은 절단면을 비울 뿐 단면에 꽉 찬 캡을 채워주지 않으므로, 건축 단면도 같은 표현이 필요하면 모델링 단계에서 별도 메쉬를 준비해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">예제 코드:</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; line-height:1.6; overflow-x:auto;">// CesiumJS 1.145 - 구멍이 있는 ClippingPolygon
+const outer = Cesium.Cartesian3.fromDegreesArray([
+  127.10, 37.50, 127.12, 37.50, 127.12, 37.52, 127.10, 37.52,
+]);
+const hole = Cesium.Cartesian3.fromDegreesArray([
+  127.108, 37.508, 127.112, 37.508, 127.112, 37.512, 127.108, 37.512,
+]);
+
+const clippingPolygon = new Cesium.ClippingPolygon({
+  positions: outer,
+  holes: [new Cesium.ClippingPolygon({ positions: hole })],
+});
+
+tileset.clippingPolygons = new Cesium.ClippingPolygonCollection({
+  polygons: [clippingPolygon],
+  unionClippingRegions: false,
+});</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 클라이언트 클리핑을 "임시 보안 조치"로 쓰면 안 됩니다. 접근 자체를 막아야 하는 사유지·보안 구역은 처음부터 서버단에서 타일 전달을 거르는 설계로 가야 합니다. 구멍이 여러 개 겹치는 복합 제외 구역은 줌 레벨별로 경계 품질이 들쭉날쭉해질 수 있으니, 운영 전에 목표 줌 레벨 구간에서 반드시 육안 검증을 거치세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">ClippingPolygon의 구멍 지원(1.145, 2026년 9월 2일)은 제외 구역 안의 예외 구역을 코드만으로 표현할 수 있게 한 실질적 진전입니다. 하지만 클라이언트 클리핑은 데이터를 숨기지 못하므로, 진짜 민감한 지오메트리는 타일 생성·서버 단계에서 애초에 제외해야 합니다. 정책이 자주 바뀌는 초기에는 클라이언트 클리핑으로 빠르게 검증하고, 범위가 안정되면 타일셋 베이크로 옮겨 런타임 비용을 없애는 순서가 안전합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#Cesium #3DTiles #ClippingPolygon #지하표현 #3D지도</p>
+
+</body>
+</html>
