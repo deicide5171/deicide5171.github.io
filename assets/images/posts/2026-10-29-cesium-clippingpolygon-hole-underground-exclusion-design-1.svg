@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .src { fill:#eef3fb; stroke:#3b6fd6; stroke-width:1.5; }
+    .proc { fill:#fff4ec; stroke:#d97b3f; stroke-width:1.5; }
+    .out { fill:#eefbf2; stroke:#2f9e5c; stroke-width:1.5; }
+    .lbl { font-size:13px; fill:#1a1a1a; }
+    .sub { font-size:11px; fill:#555; }
+    .title { font-size:16px; font-weight:bold; fill:#1a1a1a; }
+    .arrow { stroke:#444; stroke-width:1.5; marker-end:url(#arrow); fill:none; }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#444"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="28" class="title">제외 구역을 끊는 세 지점</text>
+
+  <rect x="20" y="55" width="140" height="50" rx="6" class="src"/>
+  <text x="90" y="80" text-anchor="middle" class="lbl">원본 3D 모델</text>
+  <text x="90" y="96" text-anchor="middle" class="sub">(지하·사유지 포함)</text>
+
+  <path class="arrow" d="M160,80 L200,80"/>
+
+  <!-- path 1: client clipping -->
+  <rect x="200" y="55" width="150" height="50" rx="6" class="proc"/>
+  <text x="275" y="76" text-anchor="middle" class="lbl">타일 생성(그대로)</text>
+  <text x="275" y="92" text-anchor="middle" class="sub">민감 지오메트리 포함</text>
+  <path class="arrow" d="M350,80 L400,80"/>
+  <rect x="400" y="55" width="150" height="50" rx="6" class="proc"/>
+  <text x="475" y="76" text-anchor="middle" class="lbl">클라이언트 뷰어</text>
+  <text x="475" y="92" text-anchor="middle" class="sub">ClippingPolygon 렌더링 시 숨김</text>
+  <path class="arrow" d="M550,80 L600,80"/>
+  <rect x="600" y="55" width="160" height="50" rx="6" class="out"/>
+  <text x="680" y="76" text-anchor="middle" class="lbl">화면 표시</text>
+  <text x="680" y="92" text-anchor="middle" class="sub">데이터는 이미 도착해 있음</text>
+
+  <!-- path 2: tileset bake -->
+  <path class="arrow" d="M90,105 C90,160 275,160 275,150"/>
+  <rect x="200" y="150" width="150" height="50" rx="6" class="proc"/>
+  <text x="275" y="171" text-anchor="middle" class="lbl">타일셋 베이크</text>
+  <text x="275" y="187" text-anchor="middle" class="sub">전처리에서 지오메트리 제외</text>
+  <path class="arrow" d="M350,175 L400,175"/>
+  <rect x="400" y="150" width="150" height="50" rx="6" class="proc"/>
+  <text x="475" y="171" text-anchor="middle" class="lbl">정적 타일 배포</text>
+  <text x="475" y="187" text-anchor="middle" class="sub">런타임 연산 없음</text>
+  <path class="arrow" d="M550,175 L600,175"/>
+  <rect x="600" y="150" width="160" height="50" rx="6" class="out"/>
+  <text x="680" y="171" text-anchor="middle" class="lbl">화면 표시</text>
+  <text x="680" y="187" text-anchor="middle" class="sub">민감 데이터 전달 안 됨</text>
+
+  <!-- path 3: server filter -->
+  <path class="arrow" d="M90,105 C90,245 275,245 275,245"/>
+  <rect x="200" y="245" width="150" height="50" rx="6" class="proc"/>
+  <text x="275" y="266" text-anchor="middle" class="lbl">타일 서버</text>
+  <text x="275" y="282" text-anchor="middle" class="sub">요청 권한별 필터링</text>
+  <path class="arrow" d="M350,270 L400,270"/>
+  <rect x="400" y="245" width="150" height="50" rx="6" class="proc"/>
+  <text x="475" y="266" text-anchor="middle" class="lbl">사용자별 응답</text>
+  <text x="475" y="282" text-anchor="middle" class="sub">권한 없는 타일 미전달</text>
+  <path class="arrow" d="M550,270 L600,270"/>
+  <rect x="600" y="245" width="160" height="50" rx="6" class="out"/>
+  <text x="680" y="266" text-anchor="middle" class="lbl">화면 표시</text>
+  <text x="680" y="282" text-anchor="middle" class="sub">접근 통제 보장</text>
+
+  <text x="20" y="340" class="sub">※ 클라이언트 클리핑은 UX 목적(지하 배관 숨기기)에 적합하지만</text>
+  <text x="20" y="360" class="sub">   데이터 노출을 막지 못한다 — 보안 목적은 타일셋 베이크·서버 필터링으로.</text>
+  <text x="20" y="390" class="sub">1.145부터 ClippingPolygon이 구멍(hole)을 지원해, 제외 구역 안에</text>
+  <text x="20" y="410" class="sub">다시 예외 구역을 뚫는 표현을 코드만으로 할 수 있게 됐다.</text>
+</svg>
