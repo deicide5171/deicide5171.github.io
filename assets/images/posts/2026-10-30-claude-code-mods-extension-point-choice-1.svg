@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill:#f4f8ff; stroke:#3b6fd6; stroke-width:1.5; }
+    .box2 { fill:#fff4ec; stroke:#d97b3f; stroke-width:1.5; }
+    .box3 { fill:#f0fbf4; stroke:#2f9e5b; stroke-width:1.5; }
+    .lbl { font-size:14px; fill:#1a1a1a; }
+    .sub { font-size:12px; fill:#555; }
+    .arrow { stroke:#444; stroke-width:1.5; marker-end:url(#arrow); fill:none; }
+    .title { font-size:16px; font-weight:bold; fill:#1a1a1a; }
+    .dim { font-size:12px; fill:#999; }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#444"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="28" class="title">사용자 요구</text>
+  <rect x="20" y="40" width="200" height="50" rx="8" class="box"/>
+  <text x="120" y="60" text-anchor="middle" class="lbl">"이렇게 해주세요"</text>
+  <text x="120" y="78" text-anchor="middle" class="sub">행동·연동·렌더링 혼재</text>
+
+  <path class="arrow" d="M120,90 C120,130 90,130 90,150"/>
+  <path class="arrow" d="M220,65 C320,65 320,150 320,150"/>
+  <path class="arrow" d="M220,80 C520,80 520,150 520,150"/>
+
+  <rect x="20" y="150" width="140" height="55" rx="8" class="box3"/>
+  <text x="90" y="172" text-anchor="middle" class="lbl">Skill</text>
+  <text x="90" y="190" text-anchor="middle" class="sub">행동·절차 지시</text>
+
+  <rect x="250" y="150" width="140" height="55" rx="8" class="box"/>
+  <text x="320" y="172" text-anchor="middle" class="lbl">MCP 도구</text>
+  <text x="320" y="190" text-anchor="middle" class="sub">외부 연동</text>
+
+  <rect x="450" y="150" width="140" height="55" rx="8" class="box2"/>
+  <text x="520" y="172" text-anchor="middle" class="lbl">Mod (UI)</text>
+  <text x="520" y="190" text-anchor="middle" class="sub">화면 렌더링</text>
+
+  <path class="arrow" d="M90,205 L90,250"/>
+  <path class="arrow" d="M320,205 L320,250"/>
+  <path class="arrow" d="M520,205 L520,250"/>
+
+  <text x="90" y="270" text-anchor="middle" class="sub">어디서나</text>
+  <text x="90" y="285" text-anchor="middle" class="sub">동일 작동</text>
+
+  <text x="320" y="270" text-anchor="middle" class="sub">서버만 떠 있으면</text>
+  <text x="320" y="285" text-anchor="middle" class="sub">클라이언트 무관</text>
+
+  <line x1="450" y1="320" x2="780" y2="320" stroke="#ccc" stroke-dasharray="4,4"/>
+  <text x="615" y="340" text-anchor="middle" class="title">Mod 렌더 가능 범위</text>
+
+  <rect x="450" y="355" width="140" height="60" rx="8" class="box3"/>
+  <text x="520" y="378" text-anchor="middle" class="lbl">터미널</text>
+  <text x="520" y="396" text-anchor="middle" class="lbl">데스크톱 Code 탭</text>
+  <text x="520" y="410" text-anchor="middle" class="dim">패널·밴드 정상 렌더</text>
+
+  <rect x="610" y="355" width="170" height="60" rx="8" class="box2"/>
+  <text x="695" y="375" text-anchor="middle" class="lbl">VS Code 패널 /</text>
+  <text x="695" y="391" text-anchor="middle" class="lbl">Agent SDK·claude -p</text>
+  <text x="695" y="407" text-anchor="middle" class="dim">훅만 실행, 화면엔 미노출</text>
+
+  <path class="arrow" d="M520,250 C520,300 520,320 520,355"/>
+</svg>

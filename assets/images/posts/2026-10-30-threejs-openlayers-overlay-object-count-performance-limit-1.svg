@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill:#f4f8ff; stroke:#3b6fd6; stroke-width:1.5; }
+    .box2 { fill:#fff4ec; stroke:#d97b3f; stroke-width:1.5; }
+    .box3 { fill:#f0fbf4; stroke:#2f9e5b; stroke-width:1.5; }
+    .lbl { font-size:13px; fill:#1a1a1a; }
+    .sub { font-size:11px; fill:#555; }
+    .title { font-size:16px; font-weight:bold; fill:#1a1a1a; }
+    .bar { stroke:#333; stroke-width:1; }
+  </style>
+
+  <text x="20" y="25" class="title">프레임 예산 16.6ms — 오브젝트 10개</text>
+  <rect x="20" y="40" width="600" height="30" fill="#eee" stroke="#999"/>
+  <rect x="20" y="40" width="200" height="30" class="box"/>
+  <text x="120" y="60" text-anchor="middle" class="lbl">OpenLayers 2D 렌더 (6ms)</text>
+  <rect x="220" y="40" width="40" height="30" class="box2"/>
+  <text x="240" y="60" text-anchor="middle" class="sub" font-size="10">three.js</text>
+  <text x="300" y="60" class="sub">여유 있음 — 60fps 유지</text>
+
+  <text x="20" y="110" class="title">프레임 예산 16.6ms — 오브젝트 500개 (개별 Mesh)</text>
+  <rect x="20" y="125" width="600" height="30" fill="#eee" stroke="#999"/>
+  <rect x="20" y="125" width="200" height="30" class="box"/>
+  <text x="120" y="145" text-anchor="middle" class="lbl">OpenLayers 2D 렌더 (6ms)</text>
+  <rect x="220" y="125" width="420" height="30" class="box2"/>
+  <text x="430" y="145" text-anchor="middle" class="lbl">three.js 드로우콜 500회 (예산 초과)</text>
+  <line x1="640" y1="115" x2="640" y2="165" stroke="red" stroke-width="2" stroke-dasharray="3,3"/>
+  <text x="700" y="145" text-anchor="middle" fill="#c0392b" class="sub">프레임 드랍</text>
+
+  <text x="20" y="195" class="title">InstancedMesh 적용 후 — 오브젝트 500개</text>
+  <rect x="20" y="210" width="600" height="30" fill="#eee" stroke="#999"/>
+  <rect x="20" y="210" width="200" height="30" class="box"/>
+  <text x="120" y="230" text-anchor="middle" class="lbl">OpenLayers 2D 렌더 (6ms)</text>
+  <rect x="220" y="210" width="60" height="30" class="box3"/>
+  <text x="250" y="230" text-anchor="middle" class="sub" font-size="10">드로우콜 1회</text>
+  <text x="320" y="230" class="sub">예산 내 복귀 — 60fps 유지</text>
+
+  <line x1="20" y1="270" x2="780" y2="270" stroke="#ccc" stroke-dasharray="4,4"/>
+  <text x="400" y="295" text-anchor="middle" class="title">오브젝트 수에 따른 분기</text>
+
+  <rect x="60" y="315" width="190" height="90" rx="8" class="box3"/>
+  <text x="155" y="340" text-anchor="middle" class="lbl">수십 개</text>
+  <text x="155" y="360" text-anchor="middle" class="sub">개별 Mesh로도</text>
+  <text x="155" y="375" text-anchor="middle" class="sub">문제 없음</text>
+
+  <rect x="310" y="315" width="190" height="90" rx="8" class="box2"/>
+  <text x="405" y="340" text-anchor="middle" class="lbl">수백~수천 개</text>
+  <text x="405" y="360" text-anchor="middle" class="sub">Instancing·LOD로</text>
+  <text x="405" y="375" text-anchor="middle" class="sub">형태 반복 시 대응 가능</text>
+
+  <rect x="560" y="315" width="190" height="90" rx="8" fill="#fbeaea" stroke="#c0392b" stroke-width="1.5"/>
+  <text x="655" y="340" text-anchor="middle" class="lbl">그 이상 / 형태 제각각</text>
+  <text x="655" y="360" text-anchor="middle" class="sub">Cesium 3D Tiles</text>
+  <text x="655" y="375" text-anchor="middle" class="sub">deck.gl 전환 검토</text>
+</svg>
