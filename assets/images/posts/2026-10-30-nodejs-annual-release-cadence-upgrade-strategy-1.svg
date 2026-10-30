@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill:#f4f8ff; stroke:#3b6fd6; stroke-width:1.5; }
+    .box2 { fill:#fff4ec; stroke:#d97b3f; stroke-width:1.5; }
+    .box3 { fill:#f0fbf4; stroke:#2f9e5b; stroke-width:1.5; }
+    .lbl { font-size:13px; fill:#1a1a1a; }
+    .sub { font-size:11px; fill:#555; }
+    .arrow { stroke:#444; stroke-width:1.5; marker-end:url(#arrow); fill:none; }
+    .title { font-size:16px; font-weight:bold; fill:#1a1a1a; }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#444"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="25" class="title">기존: 연 2회·홀짝 구분</text>
+  <rect x="20" y="40" width="160" height="45" rx="6" class="box2"/>
+  <text x="100" y="58" text-anchor="middle" class="lbl">홀수 버전</text>
+  <text x="100" y="74" text-anchor="middle" class="sub">실험 라인, 6개월</text>
+  <rect x="200" y="40" width="160" height="45" rx="6" class="box3"/>
+  <text x="280" y="58" text-anchor="middle" class="lbl">짝수 버전</text>
+  <text x="280" y="74" text-anchor="middle" class="sub">LTS, 30개월</text>
+
+  <text x="450" y="25" class="title">신규: 연 1회·전부 LTS (Node 27~)</text>
+  <rect x="450" y="40" width="130" height="45" rx="6" class="box"/>
+  <text x="515" y="58" text-anchor="middle" class="lbl">4월 알파</text>
+  <text x="515" y="74" text-anchor="middle" class="sub">조기 공개</text>
+  <path class="arrow" d="M580,62 L610,62"/>
+  <rect x="610" y="40" width="160" height="45" rx="6" class="box3"/>
+  <text x="690" y="58" text-anchor="middle" class="lbl">10월 LTS 승격</text>
+  <text x="690" y="74" text-anchor="middle" class="sub">홀짝 구분 없음</text>
+
+  <line x1="20" y1="110" x2="780" y2="110" stroke="#ccc" stroke-dasharray="4,4"/>
+  <text x="400" y="135" text-anchor="middle" class="title">버전 번호를 직접 참조하는 네 지점</text>
+
+  <rect x="40" y="160" width="160" height="90" rx="8" class="box"/>
+  <text x="120" y="185" text-anchor="middle" class="lbl">CI 매트릭스</text>
+  <text x="120" y="205" text-anchor="middle" class="sub">테스트할 Node</text>
+  <text x="120" y="220" text-anchor="middle" class="sub">버전 목록 하드코딩</text>
+
+  <rect x="230" y="160" width="160" height="90" rx="8" class="box"/>
+  <text x="310" y="185" text-anchor="middle" class="lbl">Docker 베이스 이미지</text>
+  <text x="310" y="205" text-anchor="middle" class="sub">node:짝수-slim</text>
+  <text x="310" y="220" text-anchor="middle" class="sub">태그 고정</text>
+
+  <rect x="420" y="160" width="160" height="90" rx="8" class="box"/>
+  <text x="500" y="185" text-anchor="middle" class="lbl">package.json</text>
+  <text x="500" y="205" text-anchor="middle" class="sub">engines.node</text>
+  <text x="500" y="220" text-anchor="middle" class="sub">최소 지원 버전 선언</text>
+
+  <rect x="610" y="160" width="160" height="90" rx="8" class="box2"/>
+  <text x="690" y="185" text-anchor="middle" class="lbl">네이티브 애드온</text>
+  <text x="690" y="205" text-anchor="middle" class="sub">ABI 호환성</text>
+  <text x="690" y="220" text-anchor="middle" class="sub">재빌드·바이너리 교체</text>
+
+  <path class="arrow" d="M120,260 C120,310 400,330 400,340"/>
+  <path class="arrow" d="M310,260 C310,300 400,330 400,340"/>
+  <path class="arrow" d="M500,260 C500,300 400,330 400,340"/>
+  <path class="arrow" d="M690,260 C690,310 400,330 400,340"/>
+
+  <rect x="260" y="350" width="280" height="60" rx="8" fill="#fbfbfb" stroke="#999" stroke-width="1.5"/>
+  <text x="400" y="375" text-anchor="middle" class="lbl">연 1회 창을 놓치면</text>
+  <text x="400" y="395" text-anchor="middle" class="sub">다음 업그레이드까지 1년 대기</text>
+</svg>
