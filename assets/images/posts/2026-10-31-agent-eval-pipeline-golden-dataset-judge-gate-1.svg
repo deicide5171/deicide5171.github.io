@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill:#f4f8ff; stroke:#3b6fd6; stroke-width:1.5; }
+    .box2 { fill:#fff4ec; stroke:#d97b3f; stroke-width:1.5; }
+    .box3 { fill:#f0fbf4; stroke:#2f9e5b; stroke-width:1.5; }
+    .boxbad { fill:#fbeaea; stroke:#c0392b; stroke-width:1.5; }
+    .lbl { font-size:13px; fill:#1a1a1a; }
+    .sub { font-size:11px; fill:#555; }
+    .title { font-size:16px; font-weight:bold; fill:#1a1a1a; }
+    .arrow { stroke:#555; stroke-width:1.5; marker-end:url(#arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="25" class="title">평가 파이프라인 — 6단계</text>
+
+  <rect x="20" y="45" width="115" height="55" rx="6" class="box"/>
+  <text x="77" y="68" text-anchor="middle" class="lbl">프로덕션</text>
+  <text x="77" y="84" text-anchor="middle" class="sub">트래픽·트레이스</text>
+
+  <line x1="135" y1="72" x2="175" y2="72" class="arrow"/>
+
+  <rect x="180" y="45" width="115" height="55" rx="6" class="box2"/>
+  <text x="237" y="68" text-anchor="middle" class="lbl">실패 샘플링</text>
+  <text x="237" y="84" text-anchor="middle" class="sub">어려운 케이스 추출</text>
+
+  <line x1="295" y1="72" x2="335" y2="72" class="arrow"/>
+
+  <rect x="340" y="45" width="130" height="55" rx="6" class="box3"/>
+  <text x="405" y="68" text-anchor="middle" class="lbl">골든 데이터셋</text>
+  <text x="405" y="84" text-anchor="middle" class="sub">버전 고정, 레포 저장</text>
+
+  <line x1="470" y1="72" x2="510" y2="72" class="arrow"/>
+
+  <rect x="515" y="45" width="130" height="55" rx="6" class="box"/>
+  <text x="580" y="68" text-anchor="middle" class="lbl">평가자 실행</text>
+  <text x="580" y="84" text-anchor="middle" class="sub">저지 + 결정론적 검증</text>
+
+  <line x1="645" y1="72" x2="685" y2="72" class="arrow"/>
+
+  <rect x="690" y="45" width="95" height="55" rx="6" class="box2"/>
+  <text x="737" y="68" text-anchor="middle" class="lbl">CI 게이트</text>
+  <text x="737" y="84" text-anchor="middle" class="sub">점수 하락 시 차단</text>
+
+  <line x1="400" y1="130" x2="400" y2="115" stroke="#ccc" stroke-dasharray="4,4"/>
+  <text x="400" y="150" text-anchor="middle" class="title">세 가지 검증 층을 나눠서 조합한다</text>
+
+  <rect x="40" y="175" width="220" height="110" rx="8" class="box3"/>
+  <text x="150" y="200" text-anchor="middle" class="lbl">구조화된 출력</text>
+  <text x="150" y="222" text-anchor="middle" class="sub">JSON 필드·함수 호출 인자</text>
+  <text x="150" y="242" text-anchor="middle" class="sub">스키마·값 비교로 검증</text>
+  <text x="150" y="265" text-anchor="middle" fill="#2f9e5b" class="sub">정확도 높음·비용 매우 낮음</text>
+
+  <rect x="290" y="175" width="220" height="110" rx="8" class="box2"/>
+  <text x="400" y="200" text-anchor="middle" class="lbl">자유 형식 출력</text>
+  <text x="400" y="222" text-anchor="middle" class="sub">LLM 저지로 채점</text>
+  <text x="400" y="242" text-anchor="middle" class="sub">사람 평가와 상관관계 보정 필수</text>
+  <text x="400" y="265" text-anchor="middle" fill="#c0392b" class="sub">보정 없이 쓰면 신뢰 어려움</text>
+
+  <rect x="540" y="175" width="220" height="110" rx="8" class="box"/>
+  <text x="650" y="200" text-anchor="middle" class="lbl">중간 도구 호출</text>
+  <text x="650" y="222" text-anchor="middle" class="sub">step-level 평가</text>
+  <text x="650" y="242" text-anchor="middle" class="sub">운 좋게 맞은 경로 포착</text>
+  <text x="650" y="265" text-anchor="middle" class="sub">다단계 에이전트에 필요</text>
+
+  <line x1="20" y1="320" x2="780" y2="320" stroke="#ccc" stroke-dasharray="4,4"/>
+  <text x="400" y="345" text-anchor="middle" class="title">관측성(트레이싱)과의 차이</text>
+
+  <rect x="80" y="365" width="280" height="65" rx="8" class="box"/>
+  <text x="220" y="390" text-anchor="middle" class="lbl">트레이싱(OTel GenAI)</text>
+  <text x="220" y="410" text-anchor="middle" class="sub">이 요청이 왜 이렇게 응답했는가 — 사후 디버깅</text>
+
+  <rect x="440" y="365" width="280" height="65" rx="8" class="box3"/>
+  <text x="580" y="390" text-anchor="middle" class="lbl">평가 파이프라인</text>
+  <text x="580" y="410" text-anchor="middle" class="sub">이 변경이 품질을 유지하는가 — 변경 시점마다 자동 검증</text>
+</svg>
