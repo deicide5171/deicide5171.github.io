@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill:#f4f8ff; stroke:#3b6fd6; stroke-width:1.5; }
+    .box2 { fill:#fff4ec; stroke:#d97b3f; stroke-width:1.5; }
+    .box3 { fill:#f0fbf4; stroke:#2f9e5b; stroke-width:1.5; }
+    .boxbad { fill:#fbeaea; stroke:#c0392b; stroke-width:1.5; }
+    .lbl { font-size:13px; fill:#1a1a1a; }
+    .sub { font-size:11px; fill:#555; }
+    .title { font-size:16px; font-weight:bold; fill:#1a1a1a; }
+    .arrow { stroke:#555; stroke-width:1.5; marker-end:url(#arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="25" class="title">요청 → 캐시 키 생성 흐름</text>
+
+  <rect x="20" y="45" width="110" height="50" rx="6" class="box"/>
+  <text x="75" y="75" text-anchor="middle" class="lbl">클라이언트</text>
+
+  <line x1="130" y1="70" x2="185" y2="70" class="arrow"/>
+
+  <rect x="190" y="45" width="150" height="50" rx="6" class="box2"/>
+  <text x="265" y="68" text-anchor="middle" class="lbl">GeoServer</text>
+  <text x="265" y="84" text-anchor="middle" class="sub">보안 관리자(GeoFence/ACL)</text>
+
+  <line x1="340" y1="70" x2="395" y2="70" class="arrow"/>
+
+  <rect x="400" y="45" width="190" height="50" rx="6" class="box2"/>
+  <text x="495" y="63" text-anchor="middle" class="lbl">권한 평가 후 합성 파라미터 주입</text>
+  <text x="495" y="80" text-anchor="middle" class="sub">ACCESS_LIMITS_KEY / SECURITY_TAGS_KEY</text>
+
+  <line x1="590" y1="70" x2="650" y2="70" class="arrow"/>
+
+  <rect x="655" y="45" width="125" height="50" rx="6" class="box"/>
+  <text x="717" y="68" text-anchor="middle" class="lbl">GWC</text>
+  <text x="717" y="84" text-anchor="middle" class="sub">캐시 키에 반영</text>
+
+  <line x1="400" y1="270" x2="400" y2="115" stroke="#ccc" stroke-dasharray="4,4"/>
+
+  <text x="20" y="140" class="title">GSIP 241 이전 — 보안 무관 캐시 (위험)</text>
+  <rect x="20" y="155" width="340" height="60" rx="6" class="boxbad"/>
+  <text x="190" y="178" text-anchor="middle" class="lbl">같은 bbox·zoom → 같은 캐시 키</text>
+  <text x="190" y="198" text-anchor="middle" class="sub">A의 권한으로 구운 타일을 B에게도 그대로 반환</text>
+
+  <text x="420" y="140" class="title">GSIP 241 적용 후 — 권한별 분리 (안전)</text>
+  <rect x="420" y="155" width="360" height="60" rx="6" class="box3"/>
+  <text x="600" y="178" text-anchor="middle" class="lbl">같은 bbox·zoom이라도 권한이 다르면 다른 키</text>
+  <text x="600" y="198" text-anchor="middle" class="sub">역할별 캐시 엔트리로 분리 저장</text>
+
+  <line x1="20" y1="245" x2="780" y2="245" stroke="#ccc" stroke-dasharray="4,4"/>
+  <text x="400" y="270" text-anchor="middle" class="title">권한 조합 카디널리티에 따른 캐시 효율</text>
+
+  <rect x="60" y="290" width="200" height="100" rx="8" class="box3"/>
+  <text x="160" y="315" text-anchor="middle" class="lbl">역할 3~5개 고정</text>
+  <text x="160" y="337" text-anchor="middle" class="sub">조합 수 적음</text>
+  <text x="160" y="355" text-anchor="middle" class="sub">캐시 히트율 거의 유지</text>
+  <text x="160" y="373" text-anchor="middle" class="sub" fill="#2f9e5b">→ GSIP 241 적합</text>
+
+  <rect x="300" y="290" width="200" height="100" rx="8" class="box2"/>
+  <text x="400" y="315" text-anchor="middle" class="lbl">사용자별 동적 필터</text>
+  <text x="400" y="337" text-anchor="middle" class="sub">조합 수 수백 단위</text>
+  <text x="400" y="355" text-anchor="middle" class="sub">캐시 엔트리 쪼개져</text>
+  <text x="400" y="373" text-anchor="middle" fill="#c0392b" class="sub">→ 캐시 사실상 무력화</text>
+
+  <rect x="540" y="290" width="220" height="100" rx="8" class="box"/>
+  <text x="650" y="315" text-anchor="middle" class="lbl">대응: 레이어 분리 설계</text>
+  <text x="650" y="337" text-anchor="middle" class="sub">공개 레이어 → 기존 캐싱 유지</text>
+  <text x="650" y="355" text-anchor="middle" class="sub">개인화 레이어 → 비캐싱</text>
+  <text x="650" y="373" text-anchor="middle" class="sub">+ 쿼리 최적화로 대응</text>
+</svg>
