@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"전국 위성 래스터와 수천만 건 벡터를 조인해서 지도로, 에이전트가 직접 만들게 해주세요" — 분산 공간 연산과 협업 지도의 경계 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"전국 위성 래스터와 수천만 건 벡터를 조인해서 지도로, 에이전트가 직접 만들게 해주세요" — 분산 공간 연산과 협업 지도의 경계 설계</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 전국 단위 래스터·벡터 조인이 단일 노드 공간 DB의 한계를 넘을 때, 분산 공간 연산 엔진과 에이전트가 직접 다루는 협업 지도 레이어를 어떻게 분리해서 설계해야 하는지 Apache Sedona·Wherobots·Felt MCP 사례로 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 경계가 중요해졌는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"전국 단위로 위성 영상과 건물·필지 데이터를 조인해서 지도로 보여주세요. 그것도 기획자가 에이전트한테 말만 하면 바로 만들어지게 해주세요." PostGIS vs pgvector, DuckDB Spatial vs PostGIS, PMTiles 서버리스 서빙처럼 이전까지 다룬 주제는 모두 암묵적으로 "데이터가 한 대의 서버 혹은 한 번의 프로세스 안에서 처리된다"는 전제를 깔고 있었습니다. 그런데 요구사항의 스케일이 "전국", "위성 래스터 전체", "에이전트가 직접"으로 커지는 순간 이 전제가 깨집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 변화는 실제 업계 움직임과 정확히 맞물려 있습니다. Apache Sedona의 원 개발자들이 만든 Wherobots는 2026년 들어 Rust 네이티브 Arrow 컬럼 실행 엔진으로 WherobotsDB를 재구성했고, 래스터와 벡터를 하나의 분산 엔진에서 조인하는 벤치마크를 공개하며 Google Earth Engine·BigQuery 조합과 직접 비교하고 나섰습니다. 같은 해 2월에는 협업 지도 플랫폼 Felt가 Wherobots와 전략적 파트너십을 발표해 <b>"AI-ready spatial data stack"</b>을 표방했고, Felt 자체도 MCP 서버를 공개해 Claude나 ChatGPT 같은 에이전트가 레이어를 불러오고 공간 SQL을 돌려 바로 공유 가능한 지도를 발행하게 만들었습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">요구사항을 두 개의 다른 기술 문제로 쪼개기</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"전국 데이터를 조인해서, 에이전트가 직접 만들게"라는 한 문장은 사실 서로 완전히 다른 레이어의 문제 두 개가 합쳐진 것입니다. 첫째는 <b>연산 규모 문제</b>입니다. 전국 단위 위성 래스터와 수천만 건의 벡터 폴리곤을 공간 조인하는 작업은 단일 노드 메모리와 디스크 I/O의 한계를 가볍게 넘습니다. 더 좋은 서버를 사는 걸로 해결되지 않고, 연산을 여러 노드에 나누는 분산 엔진으로 넘어가야 풀립니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">둘째는 <b>접근성·협업 문제</b>입니다. 연산 결과가 아무리 정확해도 기획자나 에이전트가 바로 지도로 보고 공유할 수 없으면 쓸모가 없습니다. 이 둘을 하나의 시스템으로 뭉뚱그리면 사고가 납니다. 가장 흔한 실패는 에이전트에게 분산 연산 엔진을 직접 호출할 권한을 주는 것입니다 — 비전문가가 자연어로 "전국 데이터 다시 조인해줘"를 반복하면 매번 수십 분짜리 분산 작업과 그만큼의 비용이 발생합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-01-distributed-geospatial-compute-collaborative-map-agent-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">데이터 레이크부터 최종 사용자까지는 명확히 분리된 네 단계를 거칩니다. 분산 연산 엔진은 배치·온디맨드로 무거운 작업만 처리하고, 그 결과를 사전 집계된 타일이나 요약 테이블로 떨어뜨린 뒤에야 협업 지도 레이어와 에이전트가 그 위에서 가볍게 움직입니다. 핵심은 화살표 방향입니다. 에이전트는 분산 엔진 박스를 건너뛰고 곧바로 협업 지도 레이어(사전 집계된 결과)에만 닿아야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">구분</th><th style="border:1px solid #ddd; padding:8px;">단일 노드(PostGIS/DuckDB)</th><th style="border:1px solid #ddd; padding:8px;">분산 자체호스팅(Sedona)</th><th style="border:1px solid #ddd; padding:8px;">매니지드 분산(Wherobots)</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">적정 규모</td><td style="border:1px solid #ddd; padding:8px;">수백만~수천만 건</td><td style="border:1px solid #ddd; padding:8px;">전국~글로벌</td><td style="border:1px solid #ddd; padding:8px;">전국~글로벌</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">운영 복잡도</td><td style="border:1px solid #ddd; padding:8px;">낮음</td><td style="border:1px solid #ddd; padding:8px;">높음(클러스터 운영)</td><td style="border:1px solid #ddd; padding:8px;">낮음(대신 비용)</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">비용 구조</td><td style="border:1px solid #ddd; padding:8px;">서버 고정비</td><td style="border:1px solid #ddd; padding:8px;">클러스터 가동 시간</td><td style="border:1px solid #ddd; padding:8px;">사용량 기반+구독</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">쓰면 안 되는 경우</td><td style="border:1px solid #ddd; padding:8px;">전국 래스터 조인</td><td style="border:1px solid #ddd; padding:8px;">데이터가 작을 때</td><td style="border:1px solid #ddd; padding:8px;">비용 민감+자체 인력 보유</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">핵심 판단 기준은 "지금 겪는 병목이 쿼리 튜닝으로 풀리는가, 아니면 애초에 한 대로는 안 되는 규모인가"입니다. DuckDB Spatial로 넘어가도 여전히 타임아웃이 난다면, 그건 엔진 선택의 문제가 아니라 애초에 단일 프로세스 아키텍처 자체가 틀린 것입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">코드로 보는 경계</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">분산 엔진 쪽 작업은 배치 잡으로만 존재해야 합니다. Sedona SQL로 래스터-벡터 조인을 돌리는 전형적인 형태는 다음과 같습니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; overflow-x:auto;">SELECT b.building_id, ST_Value(r.raster, b.geom) AS ndvi_value
+FROM buildings b
+JOIN satellite_raster r
+ON ST_Intersects(ST_Envelope(r.raster), b.geom)</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 쿼리는 사람이 스케줄링한 배치 파이프라인 안에서만 실행되고, 결과는 PMTiles나 요약 테이블로 떨어집니다. 에이전트가 보는 쪽은 그 결과를 조회하는 가벼운 도구 호출뿐이어야 합니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; overflow-x:auto;">{
+  "tool": "felt_publish_layer",
+  "args": { "source": "s3://agg/ndvi_by_building.pmtiles", "title": "건물별 식생지수" }
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">에이전트에게 노출하는 도구 스키마에 분산 엔진을 직접 트리거하는 함수를 넣지 않는 것, 이것이 설계의 핵심입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">1) 기존 단일 노드 파이프라인에서 타임아웃·OOM 로그를 모아 병목이 실제로 "규모" 문제인지 확인합니다.<br>
+2) SedonaDB 같은 싱글노드 분산 엔진으로 먼저 쿼리를 재작성해 쿼리 패턴 자체의 문제인지 가려냅니다.<br>
+3) 그래도 안 되면 Spark 클러스터(자체 호스팅) 또는 Wherobots(매니지드) 중 운영 인력과 비용 구조로 선택합니다.<br>
+4) 에이전트가 닿을 사전 집계 레이어(타일, 요약 테이블)의 경계와 갱신 주기를 먼저 설계합니다.<br>
+5) 협업 지도 레이어(Felt 또는 자체 MCP 서버)를 올리고, 에이전트 도구 스키마에 분산 연산 트리거가 없는지 검증합니다.<br>
+6) 비용 모니터링을 배치 작업 단위로 걸어 에이전트 요청이 숨은 배치를 반복 유발하지 않는지 추적합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 매니지드 서비스의 MCP 서버를 쓸 때 에이전트가 "사용자 권한으로" 행동한다는 말을 그대로 믿지 말고, 실제로 어떤 레이어까지 노출되는지 권한 범위를 직접 검증해야 합니다. 사전 집계 경계를 너무 좁게 잡으면 에이전트의 사소한 요청마다 배치를 다시 돌려야 해서 비용이 터질 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">전국 단위 래스터+벡터 조인은 단일 노드 공간 DB의 튜닝으로 풀리지 않는 규모 문제입니다. 분산 연산 엔진(Apache Sedona/Wherobots)과 협업 지도·에이전트 레이어(Felt MCP)는 서로 다른 레이어이며, 에이전트는 사전 집계된 결과에만 닿아야 합니다. 설계의 핵심은 기술 선택이 아니라 "에이전트가 분산 엔진을 직접 건드리지 못하게 막는 경계"를 어디에 긋느냐입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#ApacheSedona #Wherobots #Felt #MCP #분산공간처리</p>
+
+</body>
+</html>
