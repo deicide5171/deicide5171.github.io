@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Apple SD Gothic Neo','Malgun Gothic',sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <!-- Row 1: batch pipeline -->
+  <rect x="30" y="50" width="160" height="90" rx="10" fill="#eef2f7" stroke="#4a5568" stroke-width="2"/>
+  <text x="110" y="88" text-anchor="middle" font-size="15" fill="#2d3748" font-weight="bold">데이터 레이크</text>
+  <text x="110" y="110" text-anchor="middle" font-size="12" fill="#4a5568">S3 / GeoParquet</text>
+  <text x="110" y="126" text-anchor="middle" font-size="12" fill="#4a5568">COG 래스터</text>
+
+  <path d="M190 95 H250" stroke="#4a5568" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="250" y="40" width="190" height="110" rx="10" fill="#fef3e2" stroke="#c05621" stroke-width="2"/>
+  <text x="345" y="75" text-anchor="middle" font-size="15" fill="#7b341e" font-weight="bold">분산 공간 연산 엔진</text>
+  <text x="345" y="97" text-anchor="middle" font-size="12" fill="#7b341e">Apache Sedona /</text>
+  <text x="345" y="114" text-anchor="middle" font-size="12" fill="#7b341e">WherobotsDB (배치)</text>
+  <text x="345" y="134" text-anchor="middle" font-size="11" fill="#9c4221">래스터+벡터 조인</text>
+
+  <path d="M440 95 H500" stroke="#4a5568" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="500" y="50" width="170" height="90" rx="10" fill="#eef2f7" stroke="#4a5568" stroke-width="2"/>
+  <text x="585" y="85" text-anchor="middle" font-size="15" fill="#2d3748" font-weight="bold">사전 집계 결과</text>
+  <text x="585" y="107" text-anchor="middle" font-size="12" fill="#4a5568">PMTiles / 타일</text>
+  <text x="585" y="123" text-anchor="middle" font-size="12" fill="#4a5568">요약 테이블</text>
+
+  <!-- vertical connector down -->
+  <path d="M585 140 V230" stroke="#4a5568" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Row 2: agent-facing layer -->
+  <rect x="470" y="245" width="200" height="90" rx="10" fill="#e6f7ed" stroke="#2f855a" stroke-width="2"/>
+  <text x="570" y="280" text-anchor="middle" font-size="15" fill="#22543d" font-weight="bold">협업 지도 레이어</text>
+  <text x="570" y="302" text-anchor="middle" font-size="12" fill="#22543d">Felt + MCP 서버</text>
+  <text x="570" y="320" text-anchor="middle" font-size="11" fill="#276749">레이어 발행 · 공유</text>
+
+  <path d="M470 290 H250" stroke="#4a5568" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="60" y="245" width="190" height="90" rx="10" fill="#edf2ff" stroke="#3c4a9c" stroke-width="2"/>
+  <text x="155" y="280" text-anchor="middle" font-size="15" fill="#2a3365" font-weight="bold">에이전트 / 사용자</text>
+  <text x="155" y="302" text-anchor="middle" font-size="12" fill="#2a3365">가벼운 도구 호출만</text>
+  <text x="155" y="320" text-anchor="middle" font-size="11" fill="#2a3365">(자연어 요청)</text>
+
+  <!-- forbidden direct path from agent to distributed engine -->
+  <path d="M155 245 C 155 180, 250 100, 250 95" stroke="#c53030" stroke-width="2" stroke-dasharray="6,5" fill="none" marker-end="url(#arrowred)"/>
+  <rect x="150" y="150" width="130" height="26" rx="6" fill="#fff5f5" stroke="#c53030"/>
+  <text x="215" y="168" text-anchor="middle" font-size="12" fill="#c53030" font-weight="bold">직접 트리거 금지</text>
+
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#4a5568"/>
+    </marker>
+    <marker id="arrowred" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0 0 L10 5 L0 10 z" fill="#c53030"/>
+    </marker>
+  </defs>
+
+  <text x="400" y="400" text-anchor="middle" font-size="13" fill="#718096">무거운 연산은 배치로, 에이전트는 사전 집계 결과만 소비한다</text>
+</svg>

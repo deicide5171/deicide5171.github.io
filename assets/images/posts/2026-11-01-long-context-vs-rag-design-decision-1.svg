@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill:#f4f8ff; stroke:#3b6fd6; stroke-width:1.5; }
+    .box2 { fill:#fff4ec; stroke:#d97b3f; stroke-width:1.5; }
+    .box3 { fill:#f0fbf4; stroke:#2f9e5b; stroke-width:1.5; }
+    .boxbad { fill:#fbeaea; stroke:#c0392b; stroke-width:1.5; }
+    .lbl { font-size:13px; fill:#1a1a1a; }
+    .sub { font-size:11px; fill:#555; }
+    .title { font-size:16px; font-weight:bold; fill:#1a1a1a; }
+    .arrow { stroke:#555; stroke-width:1.5; marker-end:url(#arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="25" class="title">요청이 들어온 뒤 — 분기 지점</text>
+
+  <rect x="20" y="45" width="140" height="55" rx="6" class="box"/>
+  <text x="90" y="68" text-anchor="middle" class="lbl">사용자 요청</text>
+  <text x="90" y="84" text-anchor="middle" class="sub">"코드베이스 전체 분석"</text>
+
+  <line x1="160" y1="72" x2="200" y2="72" class="arrow"/>
+
+  <rect x="205" y="45" width="150" height="55" rx="6" class="box2"/>
+  <text x="280" y="68" text-anchor="middle" class="lbl">코퍼스 크기·신선도 판단</text>
+  <text x="280" y="84" text-anchor="middle" class="sub">작고 안 바뀜 vs 크고 자주 바뀜</text>
+
+  <line x1="280" y1="100" x2="150" y2="150" class="arrow"/>
+  <line x1="280" y1="100" x2="500" y2="150" class="arrow"/>
+
+  <rect x="40" y="155" width="220" height="95" rx="8" class="box3"/>
+  <text x="150" y="180" text-anchor="middle" class="lbl">경로 A — 롱컨텍스트</text>
+  <text x="150" y="200" text-anchor="middle" class="sub">코퍼스 전체를 그대로 적재</text>
+  <text x="150" y="218" text-anchor="middle" class="sub">검색·인덱싱 단계 없음</text>
+  <text x="150" y="236" text-anchor="middle" fill="#2f9e5b" class="sub">소규모·캐시 재사용 많을 때 유리</text>
+
+  <rect x="400" y="155" width="240" height="95" rx="8" class="box2"/>
+  <text x="520" y="180" text-anchor="middle" class="lbl">경로 B — RAG</text>
+  <text x="520" y="200" text-anchor="middle" class="sub">임베딩 검색으로 후보 문서 추출</text>
+  <text x="520" y="218" text-anchor="middle" class="sub">상위 K개만 프롬프트에 포함</text>
+  <text x="520" y="236" text-anchor="middle" fill="#c0392b" class="sub">대규모·갱신 잦을 때 유리</text>
+
+  <line x1="150" y1="250" x2="150" y2="280" class="arrow"/>
+  <line x1="520" y1="250" x2="520" y2="280" class="arrow"/>
+
+  <rect x="60" y="285" width="180" height="50" rx="6" class="box"/>
+  <text x="150" y="315" text-anchor="middle" class="lbl">모델 호출 (단일 프롬프트)</text>
+
+  <rect x="430" y="285" width="180" height="50" rx="6" class="box"/>
+  <text x="520" y="315" text-anchor="middle" class="lbl">모델 호출 (압축된 프롬프트)</text>
+
+  <line x1="150" y1="335" x2="320" y2="375" class="arrow"/>
+  <line x1="520" y1="335" x2="350" y2="375" class="arrow"/>
+
+  <rect x="250" y="380" width="150" height="50" rx="6" class="box3"/>
+  <text x="325" y="410" text-anchor="middle" class="lbl">응답</text>
+
+  <rect x="620" y="155" width="160" height="275" rx="8" class="boxbad"/>
+  <text x="700" y="180" text-anchor="middle" class="lbl">하이브리드</text>
+  <text x="700" y="200" text-anchor="middle" class="sub">넓게 후보 검색 →</text>
+  <text x="700" y="216" text-anchor="middle" class="sub">관련 파일만</text>
+  <text x="700" y="232" text-anchor="middle" class="sub">전체 내용으로</text>
+  <text x="700" y="248" text-anchor="middle" class="sub">롱컨텍스트에 적재</text>
+  <text x="700" y="275" text-anchor="middle" class="sub">두 경로의</text>
+  <text x="700" y="291" text-anchor="middle" class="sub">비용·정확도를</text>
+  <text x="700" y="307" text-anchor="middle" class="sub">절충</text>
+  <text x="700" y="335" text-anchor="middle" fill="#2f9e5b" class="sub">대부분의 실무는</text>
+  <text x="700" y="351" text-anchor="middle" fill="#2f9e5b" class="sub">결국 여기로 수렴</text>
+</svg>
