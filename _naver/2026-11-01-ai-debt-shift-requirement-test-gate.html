@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"에이전트 덕분에 버그는 줄었는데, 엉뚱한 걸 만들었어요" — 부채가 설계에서 요구사항·테스트로 옮겨갈 때의 게이트 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"에이전트 덕분에 버그는 줄었는데, 엉뚱한 걸 만들었어요" — 부채가 설계에서 요구사항·테스트로 옮겨갈 때의 게이트 설계</div>
+<p style="font-size:14px; color:#999;">dev-strategy</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — AI 코딩 에이전트 도입 이후 코드 설계 결함은 줄어드는데 요구사항 오해와 테스트 누락 사고는 늘어난다는 2026년 업계 분석을 바탕으로, 부채가 옮겨간 자리에 어떤 게이트를 어느 순서로 심을지 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 문제가 불거지는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"에이전트 붙인 뒤로 버그 리포트는 확실히 줄었는데, 지난 스프린트에 만든 기능 중 두 개는 완전히 엉뚱한 걸 만들어버렸어요." AI 코딩 에이전트를 본격 도입한 팀 리드들에게서 공통으로 나오는 말입니다. 처음엔 이상한 보고처럼 들리지만, 2026년 7월 LeadDev 패널이 정리한 관찰과 정확히 일치합니다. <b>AI는 지역적인 설계 결함은 줄이지만, 그 대신 요구사항 부채와 테스트 부채를 끌어올린다</b>는 것입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 변화가 중요한 이유는 단순합니다. 지금까지 팀이 쌓아온 품질 게이트—코드 리뷰, 정적 분석, 린터—는 전부 "코드 설계 단계에서 생기는 결함"을 잡도록 설계됐습니다. 부채가 생기는 자리가 바뀌었는데 게이트는 그대로라면, 사고는 기존 게이트를 유유히 통과한 뒤 운영 환경에서야 발견됩니다. "에이전트 생산성 올려주세요"라는 요청을 받았을 때, 모델 선택이나 작업 레인 수보다 먼저 물어야 할 질문은 <b>"부채가 어디로 옮겨갔고, 그 자리에 게이트가 있는가"</b>입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">부채는 왜 양끝으로 옮겨가는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">에이전트가 코드를 쓰는 동안 사람이 하던 일 중 사라지는 것은 "로직을 한 줄씩 머릿속으로 시뮬레이션하는 과정"입니다. 이 과정에서 사람은 자연스럽게 요구사항을 재해석하고, 엣지케이스를 떠올립니다. 에이전트는 주어진 스펙을 문자 그대로, 빠르게 구현합니다. 설계 결함(변수명, 함수 분리, 중복)은 사람보다 오히려 깔끔하게 나오는 경우가 많습니다. 문제는 스펙 자체가 모호했거나, 테스트가 "에이전트가 생성한 코드가 통과하는 테스트"로 수렴해버리는 지점입니다. Meituan의 31만 라인 리팩터링 사례도 결국 <b>"에이전트 기반 평가 프레임워크로 전수 스캔하되, 고위험 영역은 사람이 고른다"</b>는 구조로 귀결됐습니다 — 사람의 판단력을 설계 단계가 아니라 식별 단계로 재배치한 것입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-01-ai-debt-shift-requirement-test-gate-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">요구사항 → 스펙 → 에이전트 코드 생성 → 로컬 테스트 → 리뷰 → 배포 → 운영으로 이어지는 흐름에서, 기존 게이트(코드 리뷰, 정적 분석)는 전부 "코드 생성" 직후에 몰려 있습니다. 반면 새로 두꺼워진 부채는 "요구사항"과 "로컬 테스트" 양 끝에 있습니다. 요구사항 쪽은 에이전트에게 스펙이 넘어가기 전에 걸러야 하고, 테스트 쪽은 머지 전에 걸러야 합니다. 리뷰 단계에서 사람이 두 가지를 동시에 다시 잡으려 하면, 리뷰어가 요구사항 적합성과 코드 품질을 동시에 판단해야 해서 결국 리뷰가 병목이 됩니다 — 이미 여러 팀이 겪은 실패 패턴입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">세 가지 대응 전략과 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">전략</th><th style="border:1px solid #ddd; padding:8px;">포착 시점</th><th style="border:1px solid #ddd; padding:8px;">장점</th><th style="border:1px solid #ddd; padding:8px;">비용·한계</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">수용 기준 체크리스트</td><td style="border:1px solid #ddd; padding:8px;">코드 생성 전</td><td style="border:1px solid #ddd; padding:8px;">요구사항 오해를 가장 일찍 차단</td><td style="border:1px solid #ddd; padding:8px;">PM·에이전트 왕복이 늘어 속도 이점 감소</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">자동 수용 테스트 게이트</td><td style="border:1px solid #ddd; padding:8px;">머지 전</td><td style="border:1px solid #ddd; padding:8px;">엣지케이스 누락을 기계적으로 강제</td><td style="border:1px solid #ddd; padding:8px;">테스트 생성 에이전트가 틀린 동작에 맞춰 assert를 쓰는 위험</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">피처 플래그 + 단계적 롤아웃</td><td style="border:1px solid #ddd; padding:8px;">배포 후</td><td style="border:1px solid #ddd; padding:8px;">되돌리기 쉬움, 구현 비용 낮음</td><td style="border:1px solid #ddd; padding:8px;">조기 탐지가 아니라 피해 축소 수단일 뿐</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">세 전략은 서로 대체재가 아니라 보완재입니다. 수용 기준 체크리스트만 두면 통과 후 테스트 누락은 못 잡고, 자동 테스트 게이트만 두면 애초에 잘못된 요구사항을 "올바르게" 구현한 코드를 그대로 통과시킵니다. 피처 플래그는 둘 다 뚫렸을 때의 마지막 안전망이지, 대체 수단이 아닙니다. 배포 빈도가 낮고 한 번의 실수 비용이 큰 도메인(결제, 의료)일수록 앞의 두 게이트에 투자해야 하고, 되돌리기 쉬운 내부 도구성 기능일수록 피처 플래그 비중을 높여도 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제로 도입하는 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">1) 최근 사고를 "설계 결함 / 요구사항 오해 / 테스트 누락"으로 분류해 비중을 셉니다. 분류 없이 게이트부터 깔면 안 맞는 곳에 투자하게 됩니다.<br>
+2) 요구사항 오해 비중이 크면 에이전트에게 스펙을 넘기기 전 수용 기준 체크리스트를 먼저 넣습니다. 과거 사고가 집중된 영역(결제 금액 계산, 권한 분기)부터 좁게 시작합니다.<br>
+3) 테스트 누락 비중이 크면 커버리지 숫자보다 "사고가 난 시나리오를 테스트 케이스로 역산"하는 방식으로 자동 수용 테스트를 쌓습니다. 테스트 생성을 에이전트에게 맡긴다면 사람이 최소 샘플링으로 assert 내용을 검수하는 단계를 반드시 둡니다.<br>
+4) 여기까지 했는데도 사고가 나면 그때 피처 플래그를 넓힙니다. 처음부터 피처 플래그로 시작하면 "일단 켜고 사고 나면 끈다"는 습관이 굳어 앞의 두 게이트에 투자할 동기가 사라집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 막히는 지점은 보통 2단계입니다. 체크리스트가 두꺼워지면 에이전트 도입의 원래 목적이었던 속도 이득이 사라지고, 팀은 다시 "그냥 사람이 리뷰하자"로 회귀하려는 압력을 받습니다. 이때 체크리스트를 줄이는 대신, 과거 사고 데이터를 근거로 체크 항목의 우선순위를 재조정하는 쪽이 낫습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">AI 코딩 에이전트는 코드 설계 단계의 부채는 줄이지만, 요구사항 오해와 테스트 누락이라는 두 양끝의 부채를 늘립니다. 기존 품질 게이트는 설계 단계에 몰려 있어 이동한 부채를 잡지 못합니다. 수용 기준 체크리스트와 자동 수용 테스트 게이트를 새로 심고, 피처 플래그는 마지막 안전망으로만 쓰는 순서를 지켜야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#기술부채 #요구사항부채 #테스트전략 #피처플래그 #AI코딩에이전트 #개발프로세스거버넌스</p>
+
+</body>
+</html>
