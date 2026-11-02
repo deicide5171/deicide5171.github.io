@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill:#f4f8ff; stroke:#3b6fd6; stroke-width:1.5; }
+    .box2 { fill:#fff4ec; stroke:#d97b3f; stroke-width:1.5; }
+    .box3 { fill:#f0fbf4; stroke:#2f9e5b; stroke-width:1.5; }
+    .boxwarn { fill:#fbeaea; stroke:#c0392b; stroke-width:1.5; }
+    .lbl { font-size:12.5px; fill:#1a1a1a; }
+    .sub { font-size:10.5px; fill:#555; }
+    .title { font-size:16px; font-weight:bold; fill:#1a1a1a; }
+    .arrow { stroke:#555; stroke-width:1.5; marker-end:url(#arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="25" class="title">위성영상 커버리지 서비스의 위치</text>
+
+  <rect x="20" y="50" width="180" height="70" rx="6" class="box"/>
+  <text x="110" y="75" text-anchor="middle" class="lbl">저장 계층</text>
+  <text x="110" y="93" text-anchor="middle" class="sub">STAC + COG</text>
+  <text x="110" y="109" text-anchor="middle" class="sub">클라우드 네이티브 위성영상</text>
+
+  <line x1="200" y1="85" x2="240" y2="85" class="arrow"/>
+
+  <rect x="245" y="30" width="230" height="100" rx="8" class="box2"/>
+  <text x="360" y="52" text-anchor="middle" class="lbl">WCS</text>
+  <text x="360" y="70" text-anchor="middle" class="sub">XML/GML · GetCoverage</text>
+  <text x="360" y="86" text-anchor="middle" class="sub">성숙·검증된 표준</text>
+  <text x="360" y="102" text-anchor="middle" fill="#2f9e5b" class="sub">지금 당장 프로덕션에 안전</text>
+
+  <rect x="245" y="145" width="230" height="110" rx="8" class="box3"/>
+  <text x="360" y="167" text-anchor="middle" class="lbl">OGC API - Coverages</text>
+  <text x="360" y="185" text-anchor="middle" class="sub">REST/JSON · OpenAPI</text>
+  <text x="360" y="201" text-anchor="middle" class="sub">scenes 리소스(다중 장면)</text>
+  <text x="360" y="217" text-anchor="middle" fill="#c0392b" class="sub">아직 초안 · 커뮤니티 모듈</text>
+  <text x="360" y="235" text-anchor="middle" class="sub">OGC API - Tiles와 결합 설계</text>
+
+  <line x1="200" y1="100" x2="240" y2="200" class="arrow"/>
+
+  <line x1="475" y1="80" x2="520" y2="80" class="arrow"/>
+  <line x1="475" y1="200" x2="520" y2="200" class="arrow"/>
+
+  <rect x="525" y="40" width="230" height="90" rx="6" class="box"/>
+  <text x="640" y="65" text-anchor="middle" class="lbl">전문 GIS 클라이언트</text>
+  <text x="640" y="83" text-anchor="middle" class="sub">QGIS 구버전 등</text>
+  <text x="640" y="101" text-anchor="middle" class="sub">레거시 호환 필요 시 WCS 유지</text>
+
+  <rect x="525" y="150" width="230" height="100" rx="6" class="box"/>
+  <text x="640" y="175" text-anchor="middle" class="lbl">범용 HTTP/JSON 클라이언트</text>
+  <text x="640" y="193" text-anchor="middle" class="sub">외부 개발자·일반 백엔드</text>
+  <text x="640" y="211" text-anchor="middle" fill="#2f9e5b" class="sub">접근성 — Coverages가 유리</text>
+
+  <rect x="140" y="300" width="520" height="110" rx="8" class="boxwarn"/>
+  <text x="400" y="325" text-anchor="middle" class="lbl">판단 순서</text>
+  <text x="400" y="348" text-anchor="middle" class="sub">레거시 호환·복잡 연산 필수 → WCS 유지</text>
+  <text x="400" y="366" text-anchor="middle" class="sub">신규 서비스 + 외부 접근성 중요 → Coverages를 제한 범위로 검증</text>
+  <text x="400" y="384" text-anchor="middle" class="sub">둘 다 즉시 전환하지 않고 병행 운영 기간을 둔다</text>
+</svg>
