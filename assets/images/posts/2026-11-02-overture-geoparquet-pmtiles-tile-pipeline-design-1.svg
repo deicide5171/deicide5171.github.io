@@ -1,0 +1,73 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill:#f4f8ff; stroke:#3b6fd6; stroke-width:1.5; }
+    .box2 { fill:#fff4ec; stroke:#d97b3f; stroke-width:1.5; }
+    .box3 { fill:#f0fbf4; stroke:#2f9e5b; stroke-width:1.5; }
+    .boxwarn { fill:#fbeaea; stroke:#c0392b; stroke-width:1.5; }
+    .lbl { font-size:12.5px; fill:#1a1a1a; }
+    .sub { font-size:10.5px; fill:#555; }
+    .title { font-size:16px; font-weight:bold; fill:#1a1a1a; }
+    .arrow { stroke:#555; stroke-width:1.5; marker-end:url(#arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="25" class="title">Overture 데이터 → 우리 서비스 베이스맵 파이프라인</text>
+
+  <rect x="20" y="50" width="160" height="70" rx="6" class="box"/>
+  <text x="100" y="72" text-anchor="middle" class="lbl">Overture GeoParquet</text>
+  <text x="100" y="88" text-anchor="middle" class="sub">테마별 클라우드 저장</text>
+  <text x="100" y="104" text-anchor="middle" fill="#3b6fd6" class="sub">Overture가 책임지는 범위</text>
+
+  <line x1="180" y1="85" x2="220" y2="85" class="arrow"/>
+
+  <rect x="225" y="50" width="150" height="70" rx="6" class="box2"/>
+  <text x="300" y="72" text-anchor="middle" class="lbl">지역·테마 추출</text>
+  <text x="300" y="88" text-anchor="middle" class="sub">bbox + 필요 테마만</text>
+  <text x="300" y="104" text-anchor="middle" class="sub">컬럼 지향 선택적 읽기</text>
+
+  <line x1="375" y1="85" x2="415" y2="85" class="arrow"/>
+
+  <rect x="420" y="50" width="150" height="70" rx="6" class="box2"/>
+  <text x="495" y="72" text-anchor="middle" class="lbl">Tippecanoe 타일 생성</text>
+  <text x="495" y="88" text-anchor="middle" class="sub">줌 레벨·단순화 설정</text>
+  <text x="495" y="104" text-anchor="middle" class="sub">MVT 생성</text>
+
+  <line x1="495" y1="120" x2="495" y2="155" class="arrow"/>
+
+  <rect x="400" y="160" width="190" height="70" rx="6" class="box3"/>
+  <text x="495" y="182" text-anchor="middle" class="lbl">PMTiles 패키징</text>
+  <text x="495" y="198" text-anchor="middle" class="sub">단일 아카이브 파일</text>
+  <text x="495" y="214" text-anchor="middle" class="sub">extract로 지역 분할 가능</text>
+
+  <line x1="495" y1="230" x2="495" y2="265" class="arrow"/>
+
+  <rect x="380" y="270" width="230" height="60" rx="6" class="box"/>
+  <text x="495" y="295" text-anchor="middle" class="lbl">CDN 서빙</text>
+  <text x="495" y="311" text-anchor="middle" class="sub">HTTP Range 요청 · 서버 프로세스 없음</text>
+
+  <line x1="495" y1="330" x2="495" y2="365" class="arrow"/>
+
+  <rect x="380" y="370" width="230" height="55" rx="6" class="box3"/>
+  <text x="495" y="393" text-anchor="middle" class="lbl">클라이언트 (MapLibre 등)</text>
+  <text x="495" y="409" text-anchor="middle" class="sub">베이스맵 렌더링</text>
+
+  <rect x="620" y="50" width="160" height="140" rx="8" class="boxwarn"/>
+  <text x="700" y="75" text-anchor="middle" class="lbl">Overture 공식 PMTiles</text>
+  <text x="700" y="95" text-anchor="middle" class="sub">데이터 점검용</text>
+  <text x="700" y="113" text-anchor="middle" fill="#c0392b" class="sub">"프로덕션에 쓰지 말 것"</text>
+  <text x="700" y="133" text-anchor="middle" class="sub">공식 문서 명시</text>
+  <text x="700" y="153" text-anchor="middle" class="sub">→ 직접 파이프라인으로</text>
+  <text x="700" y="169" text-anchor="middle" class="sub">대체해야 함</text>
+
+  <rect x="620" y="270" width="160" height="155" rx="8" class="box"/>
+  <text x="700" y="295" text-anchor="middle" class="lbl">GeoServer WMS/WFS</text>
+  <text x="700" y="315" text-anchor="middle" class="sub">자체 운영 데이터</text>
+  <text x="700" y="331" text-anchor="middle" class="sub">동적 필터·실시간 갱신이</text>
+  <text x="700" y="347" text-anchor="middle" class="sub">필요한 레이어는 이쪽</text>
+  <text x="700" y="367" text-anchor="middle" fill="#2f9e5b" class="sub">PMTiles 베이스맵과</text>
+  <text x="700" y="383" text-anchor="middle" fill="#2f9e5b" class="sub">레이어 성격별로 병행</text>
+</svg>
