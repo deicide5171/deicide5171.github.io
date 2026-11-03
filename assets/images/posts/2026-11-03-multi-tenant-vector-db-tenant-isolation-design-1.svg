@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill:#f4f8ff; stroke:#3b6fd6; stroke-width:1.5; }
+    .boxwarn { fill:#fbeaea; stroke:#c0392b; stroke-width:1.5; }
+    .box3 { fill:#f0fbf4; stroke:#2f9e5b; stroke-width:1.5; }
+    .lbl { font-size:12.5px; fill:#1a1a1a; }
+    .sub { font-size:10.5px; fill:#555; }
+    .title { font-size:16px; font-weight:bold; fill:#1a1a1a; }
+    .arrow { stroke:#555; stroke-width:1.5; marker-end:url(#arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="25" class="title">멀티테넌트 RAG의 격리 강제 지점</text>
+
+  <rect x="20" y="60" width="160" height="80" rx="6" class="box"/>
+  <text x="100" y="85" text-anchor="middle" class="lbl">요청 + JWT</text>
+  <text x="100" y="103" text-anchor="middle" class="sub">검증된 테넌트 클레임</text>
+  <text x="100" y="119" text-anchor="middle" fill="#3b6fd6" class="sub">클라이언트 tenant_id는 불신</text>
+
+  <line x1="180" y1="100" x2="220" y2="100" class="arrow"/>
+
+  <rect x="225" y="40" width="200" height="120" rx="8" class="boxwarn"/>
+  <text x="325" y="62" text-anchor="middle" class="lbl">위험한 패턴</text>
+  <text x="325" y="82" text-anchor="middle" class="sub">애플리케이션 코드에서</text>
+  <text x="325" y="98" text-anchor="middle" class="sub">tenant_id로 결과만 필터</text>
+  <text x="325" y="118" text-anchor="middle" fill="#c0392b" class="sub">필터 누락 시 전체 인덱스 노출</text>
+  <text x="325" y="138" text-anchor="middle" fill="#c0392b" class="sub">LLM에게 "거르라"는 지시도 동일 위험</text>
+
+  <rect x="225" y="175" width="200" height="120" rx="8" class="box3"/>
+  <text x="325" y="197" text-anchor="middle" class="lbl">안전한 패턴</text>
+  <text x="325" y="217" text-anchor="middle" class="sub">검증된 클레임을 곧바로</text>
+  <text x="325" y="233" text-anchor="middle" class="sub">벡터 스토어 네임스페이스/RLS에 전달</text>
+  <text x="325" y="253" text-anchor="middle" fill="#2f9e5b" class="sub">쿼리 자체가 다른 테넌트 벡터를</text>
+  <text x="325" y="269" text-anchor="middle" fill="#2f9e5b" class="sub">아예 스캔하지 않음</text>
+
+  <line x1="425" y1="235" x2="470" y2="235" class="arrow"/>
+
+  <rect x="475" y="150" width="140" height="170" rx="6" class="box"/>
+  <text x="545" y="175" text-anchor="middle" class="lbl">벡터 스토어</text>
+  <text x="545" y="200" text-anchor="middle" class="sub">Silo</text>
+  <text x="545" y="216" text-anchor="middle" class="sub">테넌트별 전용 인덱스</text>
+  <text x="545" y="240" text-anchor="middle" class="sub">Pool + RLS</text>
+  <text x="545" y="256" text-anchor="middle" class="sub">공유 인덱스 + 행 수준 보안</text>
+  <text x="545" y="280" text-anchor="middle" fill="#2f9e5b" class="sub">규모·규제에 따라 혼합</text>
+
+  <line x1="615" y1="235" x2="660" y2="235" class="arrow"/>
+
+  <rect x="665" y="190" width="115" height="90" rx="6" class="box"/>
+  <text x="722" y="215" text-anchor="middle" class="lbl">LLM 컨텍스트</text>
+  <text x="722" y="233" text-anchor="middle" class="sub">조립 · 응답</text>
+  <text x="722" y="251" text-anchor="middle" fill="#2f9e5b" class="sub">이미 격리된 데이터만</text>
+
+  <rect x="90" y="330" width="620" height="100" rx="8" class="box"/>
+  <text x="400" y="355" text-anchor="middle" class="lbl">도입 판단 순서</text>
+  <text x="400" y="378" text-anchor="middle" class="sub">1. tenant_id 출처를 JWT 클레임으로 통일 → 2. 필터링을 DB 계층으로 이전</text>
+  <text x="400" y="398" text-anchor="middle" class="sub">3. 교차 접근 테스트 CI화 → 4. 대형·고규제 테넌트만 silo로 분리 기준 수립</text>
+</svg>

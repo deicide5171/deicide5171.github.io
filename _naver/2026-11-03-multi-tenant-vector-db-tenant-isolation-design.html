@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"고객사마다 자기 문서만 검색되게 해주세요" — 멀티테넌트 RAG에서 벡터 DB 격리는 어디서 해야 하는가</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"고객사마다 자기 문서만 검색되게 해주세요" — 멀티테넌트 RAG에서 벡터 DB 격리는 어디서 해야 하는가</div>
+<p style="font-size:14px; color:#999;">System Design</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 고객사마다 자기 회사 문서만 검색되게 해달라는 요구는 애플리케이션 코드의 tenant_id 필터만으로는 보장되지 않습니다. 벡터 검색의 구조적 특성 때문에 필터링이 어디서 강제돼야 하는지, silo와 pool 중 무엇을 고를지의 판단 기준을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 중요해졌는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"고객사마다 자기 회사 문서만 검색되게 해주세요. 다른 회사 데이터가 섞이면 절대 안 됩니다." 멀티테넌트 RAG 서비스를 만들 때 가장 먼저 듣는 요구이고, 동시에 가장 쉽게 잘못 구현되는 요구이기도 합니다. 많은 팀이 처음에는 애플리케이션 코드에서 검색 결과를 tenant_id로 걸러내거나, 시스템 프롬프트에 "너는 테넌트 A의 데이터만 봐야 한다"고 적어두는 식으로 가볍게 처리합니다. 실제로 2026년에 보고된 한 사고에서는 지원 업무를 하던 외부 계약직 직원이 필터링이 허술한 벡터 검색을 통해 CEO의 기밀 문서에 접근한 사례까지 나왔습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 사고가 보여주는 건 벡터 검색의 구조적 특성입니다. ANN(근사 최근접 이웃) 검색은 기본적으로 인덱스 전체를 대상으로 돕니다. tenant_id 필터가 애플리케이션 코드 어딘가에서 빠지거나 버그로 느슨해지는 순간 전체 인덱스가 그대로 노출됩니다. <b>LLM에게 "이건 보지 마"라고 프롬프트로 지시하는 방식은 접근 제어가 아닙니다.</b> 모델은 확률적으로 동작하므로 프롬프트 인젝션이나 단순한 실수로도 얼마든지 우회될 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-03-multi-tenant-vector-db-tenant-isolation-design-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">멀티테넌트 RAG의 요청 흐름은 인증 → 임베딩 검색 → LLM 컨텍스트 조립 → 응답 순서를 따릅니다. 격리가 뚫리는 지점은 거의 항상 두 번째 단계, 즉 "검색 쿼리가 어떤 벡터 집합을 대상으로 도는가"를 결정하는 지점입니다. 안전한 설계는 클라이언트가 보내는 tenant_id 값을 그대로 믿지 않고, 인증 단계에서 검증된 JWT 안의 테넌트 클레임에서 식별자를 뽑아 그 값을 곧바로 벡터 스토어의 네임스페이스 매개변수나 행 수준 보안(RLS) 정책에 전달합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">격리를 애플리케이션 레이어에만 두면, 새 엔드포인트가 하나 추가될 때마다 같은 필터링 로직을 빠짐없이 반복해야 합니다. 한 곳이라도 빠지면 그 경로를 통해 전체 인덱스가 열립니다. 격리는 <b>개발자의 주의력이 아니라 벡터 스토어가 구조적으로 강제하는 제약</b>이어야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">기준</th><th style="border:1px solid #ddd; padding:8px;">Silo(전용 인덱스)</th><th style="border:1px solid #ddd; padding:8px;">Pool(네임스페이스)</th><th style="border:1px solid #ddd; padding:8px;">Pool + RLS</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">격리 강도</td><td style="border:1px solid #ddd; padding:8px;">물리적으로 완전 분리</td><td style="border:1px solid #ddd; padding:8px;">네임스페이스 필터 의존</td><td style="border:1px solid #ddd; padding:8px;">DB 엔진이 행 단위 강제</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">비용</td><td style="border:1px solid #ddd; padding:8px;">테넌트 수만큼 증가</td><td style="border:1px solid #ddd; padding:8px;">낮음</td><td style="border:1px solid #ddd; padding:8px;">낮음</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">온보딩·오프보딩</td><td style="border:1px solid #ddd; padding:8px;">인덱스 생성·삭제로 명확</td><td style="border:1px solid #ddd; padding:8px;">네임스페이스 생성만으로 빠름</td><td style="border:1px solid #ddd; padding:8px;">행 삭제만으로 빠름</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">실수 시 피해 범위</td><td style="border:1px solid #ddd; padding:8px;">해당 테넌트로 한정</td><td style="border:1px solid #ddd; padding:8px;">필터 누락 시 전체</td><td style="border:1px solid #ddd; padding:8px;">누락 시에도 DB가 기본 차단</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">표의 핵심은 <b>"pool이 저렴하지만 더 위험하다"가 아니라 "pool을 쓰더라도 필터링을 어디서 강제하느냐가 더 중요하다"</b>는 점입니다. 테넌트 수가 많고 규모가 작다면 pool+RLS가 비용과 안전성의 균형점에 가깝고, 계약 규모가 크거나 규제 산업(금융·의료) 테넌트가 섞여 있다면 그 테넌트만 silo로 분리하는 하이브리드가 현실적입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">1) 테넌트 식별자의 출처부터 점검합니다 — 클라이언트가 보낸 tenant_id를 그대로 믿는 코드가 있는지 찾아 JWT 클레임 기반으로 바꿉니다.<br>
+2) 필터링을 애플리케이션 코드에서 벡터 스토어 계층(네임스페이스 API, RLS)으로 옮깁니다.<br>
+3) 소규모 테넌트는 pool로 시작하되, 테넌트 간 교차 접근 테스트를 먼저 CI에 자동화합니다.<br>
+4) 대형·고규제 테넌트를 silo로 분리하는 기준을 영업·법무와 미리 문서화합니다.<br>
+5) 오프보딩 시 네임스페이스·행이 실제로, 백업본까지 삭제되는지 확인하는 절차를 운영에 넣습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — LLM에게 거르게 하지 마세요. "이 문서는 다른 회사 것이니 무시해"라는 프롬프트 지시는 권고일 뿐 접근 제어가 아닙니다. 또한 pool에서 silo로의 마이그레이션 비용을 과소평가하지 마세요. 처음부터 모든 테넌트를 pool로 설계했다가 나중에 특정 테넌트만 silo로 옮기려면 데이터 이관과 서비스 중단 리스크가 커집니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">벡터 검색은 인덱스 전체를 스캔하는 구조적 특성 때문에 애플리케이션 코드의 tenant_id 필터만으로는 격리가 보장되지 않으며, 실제로 필터 누락으로 인한 데이터 유출 사고가 보고됐습니다. 테넌트 식별자는 검증된 JWT 클레임에서만 추출해 벡터 스토어의 네임스페이스나 RLS 정책에 직접 전달하는, DB 계층에서 결정론적으로 강제되는 격리가 안전한 기본값입니다. 다수의 소규모 테넌트는 pool+RLS로, 대형·고규제 테넌트는 silo로 분리하는 하이브리드 전략을 계약 단계에서부터 정해두면 나중의 마이그레이션 비용을 크게 줄일 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#멀티테넌트 #벡터DB #RAG #테넌트격리 #접근제어</p>
+
+</body>
+</html>

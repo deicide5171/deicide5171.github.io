@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill:#f4f8ff; stroke:#3b6fd6; stroke-width:1.5; }
+    .boxwarn { fill:#fbeaea; stroke:#c0392b; stroke-width:1.5; }
+    .box3 { fill:#f0fbf4; stroke:#2f9e5b; stroke-width:1.5; }
+    .lbl { font-size:12.5px; fill:#1a1a1a; }
+    .sub { font-size:10.5px; fill:#555; }
+    .title { font-size:16px; font-weight:bold; fill:#1a1a1a; }
+    .arrow { stroke:#555; stroke-width:1.5; marker-end:url(#arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="25" class="title">에이전틱 브라우저의 신뢰 경계</text>
+
+  <rect x="20" y="50" width="190" height="70" rx="6" class="box"/>
+  <text x="115" y="75" text-anchor="middle" class="lbl">사용자 지시</text>
+  <text x="115" y="93" text-anchor="middle" class="sub">"폼 채우고 결제해줘"</text>
+  <text x="115" y="109" text-anchor="middle" fill="#3b6fd6" class="sub">신뢰 가능한 입력</text>
+
+  <rect x="20" y="150" width="190" height="90" rx="6" class="boxwarn"/>
+  <text x="115" y="172" text-anchor="middle" class="lbl">웹페이지 콘텐츠</text>
+  <text x="115" y="190" text-anchor="middle" class="sub">DOM · 스크린샷 · OCR</text>
+  <text x="115" y="206" text-anchor="middle" fill="#c0392b" class="sub">공격자가 통제 가능</text>
+  <text x="115" y="222" text-anchor="middle" fill="#c0392b" class="sub">신뢰할 수 없는 입력</text>
+
+  <line x1="210" y1="85" x2="260" y2="140" class="arrow"/>
+  <line x1="210" y1="195" x2="260" y2="155" class="arrow"/>
+
+  <rect x="265" y="90" width="210" height="110" rx="8" class="box"/>
+  <text x="370" y="115" text-anchor="middle" class="lbl">플래너 (다음 행동 결정)</text>
+  <text x="370" y="135" text-anchor="middle" class="sub">지시와 페이지 콘텐츠를</text>
+  <text x="370" y="151" text-anchor="middle" class="sub">같은 채널에 섞으면</text>
+  <text x="370" y="167" text-anchor="middle" fill="#c0392b" class="sub">숨긴 글자를 지시로 착각</text>
+  <text x="370" y="185" text-anchor="middle" fill="#2f9e5b" class="sub">→ 채널 분리가 핵심 대응</text>
+
+  <line x1="475" y1="145" x2="520" y2="145" class="arrow"/>
+
+  <rect x="525" y="60" width="240" height="90" rx="6" class="box"/>
+  <text x="645" y="82" text-anchor="middle" class="lbl">되돌릴 수 없는 행동</text>
+  <text x="645" y="100" text-anchor="middle" class="sub">결제 · 전송 · 계정 변경</text>
+  <text x="645" y="118" text-anchor="middle" fill="#c0392b" class="sub">사람 확인 체크포인트 필수</text>
+  <text x="645" y="136" text-anchor="middle" class="sub">(Atlas형 confirmation-first)</text>
+
+  <rect x="525" y="165" width="240" height="80" rx="6" class="box3"/>
+  <text x="645" y="187" text-anchor="middle" class="lbl">읽기·탐색 행동</text>
+  <text x="645" y="205" text-anchor="middle" class="sub">검색 · 스크롤 · 정보 추출</text>
+  <text x="645" y="223" text-anchor="middle" fill="#2f9e5b" class="sub">마찰 없는 자동화 허용 가능</text>
+
+  <rect x="90" y="280" width="620" height="140" rx="8" class="box"/>
+  <text x="400" y="305" text-anchor="middle" class="lbl">도입 판단 순서</text>
+  <text x="400" y="328" text-anchor="middle" class="sub">1. 행동을 '읽기' / '되돌릴 수 없음'으로 분류</text>
+  <text x="400" y="346" text-anchor="middle" class="sub">2. 되돌릴 수 없는 행동마다 사람 확인 체크포인트 배치</text>
+  <text x="400" y="364" text-anchor="middle" class="sub">3. 페이지 콘텐츠는 지시와 분리된 데이터 채널로 전달</text>
+  <text x="400" y="382" text-anchor="middle" class="sub">4. 민감 세션 탭 격리 → 배포 전 red-team 공격 재현 테스트</text>
+</svg>
