@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill:#f4f8ff; stroke:#3b6fd6; stroke-width:1.5; }
+    .box2 { fill:#fff4ec; stroke:#d97b3f; stroke-width:1.5; }
+    .box3 { fill:#f0fbf4; stroke:#2f9e5b; stroke-width:1.5; }
+    .lbl { font-size:12.5px; fill:#1a1a1a; }
+    .sub { font-size:10.5px; fill:#555; }
+    .title { font-size:16px; font-weight:bold; fill:#1a1a1a; }
+    .arrow { stroke:#555; stroke-width:1.5; marker-end:url(#arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="25" class="title">JSON-FG의 place/geometry 이중 필드 구조</text>
+
+  <rect x="20" y="60" width="170" height="90" rx="6" class="box"/>
+  <text x="105" y="85" text-anchor="middle" class="lbl">저장 계층</text>
+  <text x="105" y="103" text-anchor="middle" class="sub">PostGIS</text>
+  <text x="105" y="119" text-anchor="middle" class="sub">원본 좌표계(UTM-K 등)</text>
+  <text x="105" y="135" text-anchor="middle" class="sub">3D 솔리드 기하</text>
+
+  <line x1="190" y1="105" x2="230" y2="105" class="arrow"/>
+
+  <rect x="235" y="40" width="250" height="140" rx="8" class="box2"/>
+  <text x="360" y="62" text-anchor="middle" class="lbl">API 직렬화 계층 (JSON-FG)</text>
+  <text x="360" y="84" text-anchor="middle" class="sub">place: 원본 좌표계 + 3D/솔리드</text>
+  <text x="360" y="100" text-anchor="middle" class="sub">geometry: WGS84 투영본(GeoJSON 호환)</text>
+  <text x="360" y="120" text-anchor="middle" class="sub">featureType: 피처 분류 필드</text>
+  <text x="360" y="142" text-anchor="middle" fill="#d97b3f" class="sub">두 필드를 같은 응답에 동시 포함</text>
+  <text x="360" y="160" text-anchor="middle" fill="#d97b3f" class="sub">→ 모르는 필드는 무시되는 GeoJSON 상위 호환</text>
+
+  <line x1="485" y1="80" x2="525" y2="80" class="arrow"/>
+  <line x1="485" y1="160" x2="525" y2="160" class="arrow"/>
+
+  <rect x="530" y="40" width="240" height="90" rx="6" class="box"/>
+  <text x="650" y="62" text-anchor="middle" class="lbl">레거시 GeoJSON 클라이언트</text>
+  <text x="650" y="80" text-anchor="middle" class="sub">place 필드는 무시</text>
+  <text x="650" y="98" text-anchor="middle" class="sub">geometry만 읽고 그대로 동작</text>
+  <text x="650" y="116" text-anchor="middle" fill="#3b6fd6" class="sub">코드 변경 없이 호환 유지</text>
+
+  <rect x="530" y="140" width="240" height="100" rx="6" class="box3"/>
+  <text x="650" y="162" text-anchor="middle" class="lbl">신규 CRS/3D 인지 클라이언트</text>
+  <text x="650" y="180" text-anchor="middle" class="sub">place로 원본 좌표계 정밀 연산</text>
+  <text x="650" y="198" text-anchor="middle" class="sub">솔리드·프리즘 그대로 렌더링</text>
+  <text x="650" y="216" text-anchor="middle" fill="#2f9e5b" class="sub">서버 재투영 비용 생략</text>
+
+  <rect x="90" y="260" width="620" height="150" rx="8" class="box"/>
+  <text x="400" y="285" text-anchor="middle" class="lbl">도입 판단 순서</text>
+  <text x="400" y="310" text-anchor="middle" class="sub">1. GeoJSON으로 못 하는 요구를 구체화 (재투영 비용 / 3D 불가 / 타입 미분류)</text>
+  <text x="400" y="330" text-anchor="middle" class="sub">2. GDAL 3.8+ 드라이버로 샘플 레이어만 JSON-FG 변환 시험</text>
+  <text x="400" y="350" text-anchor="middle" class="sub">3. 레거시 클라이언트는 geometry만, 신규 클라이언트만 place를 읽도록 분리</text>
+  <text x="400" y="370" text-anchor="middle" class="sub">4. 파일럿 엔드포인트 하나로 응답 크기·파싱 비용 측정 후 범위 확대 여부 결정</text>
+</svg>
