@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill:#f4f8ff; stroke:#3b6fd6; stroke-width:1.5; }
+    .box2 { fill:#fff4ec; stroke:#d97b3f; stroke-width:1.5; }
+    .box3 { fill:#f0fbf4; stroke:#2f9e5b; stroke-width:1.5; }
+    .boxblock { fill:#fdecec; stroke:#cc4444; stroke-width:1.5; stroke-dasharray:4,3; }
+    .lbl { font-size:12.5px; fill:#1a1a1a; }
+    .sub { font-size:10.5px; fill:#555; }
+    .title { font-size:16px; font-weight:bold; fill:#1a1a1a; }
+    .arrow { stroke:#555; stroke-width:1.5; marker-end:url(#arrow); }
+    .arrowblock { stroke:#cc4444; stroke-width:1.5; stroke-dasharray:4,3; }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="25" class="title">중첩 서브에이전트 깊이 제한과 SessionStore</text>
+
+  <rect x="320" y="45" width="160" height="55" rx="6" class="box"/>
+  <text x="400" y="68" text-anchor="middle" class="lbl">루트 에이전트</text>
+  <text x="400" y="85" text-anchor="middle" class="sub">사용자 요청 수신</text>
+
+  <line x1="360" y1="100" x2="220" y2="145" class="arrow"/>
+  <line x1="400" y1="100" x2="400" y2="145" class="arrow"/>
+  <line x1="440" y1="100" x2="580" y2="145" class="arrow"/>
+
+  <rect x="140" y="150" width="160" height="55" rx="6" class="box3"/>
+  <text x="220" y="173" text-anchor="middle" class="lbl">서브에이전트 A</text>
+  <text x="220" y="190" text-anchor="middle" class="sub">깊이 1 (기본 허용)</text>
+
+  <rect x="320" y="150" width="160" height="55" rx="6" class="box3"/>
+  <text x="400" y="173" text-anchor="middle" class="lbl">서브에이전트 B</text>
+  <text x="400" y="190" text-anchor="middle" class="sub">깊이 1 (기본 허용)</text>
+
+  <rect x="500" y="150" width="160" height="55" rx="6" class="box3"/>
+  <text x="580" y="173" text-anchor="middle" class="lbl">서브에이전트 C</text>
+  <text x="580" y="190" text-anchor="middle" class="sub">깊이 1 (기본 허용)</text>
+
+  <line x1="400" y1="205" x2="400" y2="245" class="arrowblock"/>
+  <rect x="320" y="250" width="160" height="55" rx="6" class="boxblock"/>
+  <text x="400" y="273" text-anchor="middle" class="lbl" fill="#cc4444">중첩 서브에이전트</text>
+  <text x="400" y="290" text-anchor="middle" class="sub" fill="#cc4444">깊이 2 — 기본 차단</text>
+
+  <text x="400" y="325" text-anchor="middle" class="sub" fill="#cc4444">MAX_SUBAGENT_SPAWN_DEPTH로만 허용</text>
+
+  <rect x="40" y="360" width="720" height="70" rx="8" class="box2"/>
+  <text x="400" y="382" text-anchor="middle" class="lbl">SessionStore 어댑터</text>
+  <text x="400" y="400" text-anchor="middle" class="sub">A·B·C 각 세션의 트랜스크립트를 S3 / Redis / Postgres로 미러링</text>
+  <text x="400" y="417" text-anchor="middle" class="sub">워커가 재시작돼도 같은 세션을 이어받아 재개 (알파 단계)</text>
+
+  <line x1="220" y1="205" x2="220" y2="360" class="arrow"/>
+  <line x1="580" y1="205" x2="580" y2="360" class="arrow"/>
+</svg>
