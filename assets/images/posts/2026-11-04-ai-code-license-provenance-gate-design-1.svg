@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill:#f4f8ff; stroke:#3b6fd6; stroke-width:1.5; }
+    .box2 { fill:#fff4ec; stroke:#d97b3f; stroke-width:1.5; }
+    .box3 { fill:#f0fbf4; stroke:#2f9e5b; stroke-width:1.5; }
+    .boxgap { fill:#fdecec; stroke:#cc4444; stroke-width:1.5; stroke-dasharray:4,3; }
+    .lbl { font-size:12.5px; fill:#1a1a1a; }
+    .sub { font-size:10.5px; fill:#555; }
+    .title { font-size:16px; font-weight:bold; fill:#1a1a1a; }
+    .arrow { stroke:#555; stroke-width:1.5; marker-end:url(#arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="25" class="title">기존 파이프라인의 빈틈 — 스니펫 단위 프로비넌스 게이트</text>
+
+  <rect x="20" y="55" width="140" height="60" rx="6" class="box"/>
+  <text x="90" y="80" text-anchor="middle" class="lbl">에이전트</text>
+  <text x="90" y="97" text-anchor="middle" class="sub">코드 생성 + PR 생성</text>
+
+  <line x1="160" y1="85" x2="200" y2="85" class="arrow"/>
+
+  <rect x="205" y="55" width="150" height="60" rx="6" class="box"/>
+  <text x="280" y="78" text-anchor="middle" class="lbl">기존 CI</text>
+  <text x="280" y="95" text-anchor="middle" class="sub">단위 테스트 · 린트</text>
+
+  <line x1="355" y1="85" x2="395" y2="85" class="arrow"/>
+
+  <rect x="400" y="55" width="180" height="60" rx="6" class="box"/>
+  <text x="490" y="78" text-anchor="middle" class="lbl">매니페스트 기반 SCA</text>
+  <text x="490" y="95" text-anchor="middle" class="sub">package.json 등 의존성만 검사</text>
+
+  <line x1="580" y1="85" x2="620" y2="85" class="arrow"/>
+
+  <rect x="625" y="55" width="140" height="60" rx="6" class="box3"/>
+  <text x="695" y="78" text-anchor="middle" class="lbl">머지</text>
+  <text x="695" y="95" text-anchor="middle" class="sub">배포</text>
+
+  <line x1="90" y1="115" x2="90" y2="160" class="arrow"/>
+  <text x="90" y="178" text-anchor="middle" class="sub" fill="#cc4444">함수 본문에 직접</text>
+  <text x="90" y="192" text-anchor="middle" class="sub" fill="#cc4444">삽입된 코드 블록</text>
+
+  <rect x="20" y="200" width="300" height="60" rx="6" class="boxgap"/>
+  <text x="170" y="223" text-anchor="middle" class="lbl" fill="#cc4444">매니페스트에 등록 안 됨</text>
+  <text x="170" y="240" text-anchor="middle" class="sub" fill="#cc4444">→ 기존 SCA가 보지 못하는 경로</text>
+
+  <line x1="170" y1="260" x2="170" y2="300" class="arrow"/>
+
+  <rect x="20" y="305" width="580" height="95" rx="8" class="box2"/>
+  <text x="310" y="330" text-anchor="middle" class="lbl">신설: 스니펫·유사도 기반 프로비넌스 게이트</text>
+  <text x="310" y="350" text-anchor="middle" class="sub">PR 생성 시점, 기존 SCA와 나란히 배치</text>
+  <text x="310" y="367" text-anchor="middle" class="sub">사후 감사(로그) → PR 게이트(가시화) → merge 블로킹(강제) 순으로 격상</text>
+  <text x="310" y="384" text-anchor="middle" class="sub">AI 생성 여부·모델·시각 메타데이터를 커밋에 함께 기록</text>
+</svg>
