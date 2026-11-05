@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill:#f4f8ff; stroke:#3b6fd6; stroke-width:1.5; }
+    .box2 { fill:#fff4ec; stroke:#d97b3f; stroke-width:1.5; }
+    .box3 { fill:#f0fbf4; stroke:#2f9e5b; stroke-width:1.5; }
+    .lbl { font-size:12.5px; fill:#1a1a1a; }
+    .sub { font-size:10px; fill:#555; }
+    .title { font-size:16px; font-weight:bold; fill:#1a1a1a; }
+    .arrow { stroke:#555; stroke-width:1.5; marker-end:url(#arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="25" class="title">공간 데이터 저장 포맷 선택지와 질의 엔진</text>
+
+  <rect x="300" y="40" width="200" height="50" rx="6" class="box"/>
+  <text x="400" y="62" text-anchor="middle" class="lbl">수집 단계</text>
+  <text x="400" y="78" text-anchor="middle" class="sub">위성·필지·센서 원천 데이터</text>
+
+  <line x1="340" y1="90" x2="150" y2="130" class="arrow"/>
+  <line x1="400" y1="90" x2="400" y2="130" class="arrow"/>
+  <line x1="460" y1="90" x2="650" y2="130" class="arrow"/>
+
+  <rect x="50" y="135" width="200" height="55" rx="6" class="box"/>
+  <text x="150" y="158" text-anchor="middle" class="lbl">PostGIS</text>
+  <text x="150" y="175" text-anchor="middle" class="sub">GiST 인덱스, 트랜잭션 갱신</text>
+
+  <rect x="300" y="135" width="200" height="55" rx="6" class="box2"/>
+  <text x="400" y="158" text-anchor="middle" class="lbl">GeoParquet 1.x</text>
+  <text x="400" y="175" text-anchor="middle" class="sub">지오메트리=불투명 바이트 열</text>
+
+  <rect x="550" y="135" width="200" height="55" rx="6" class="box3"/>
+  <text x="650" y="158" text-anchor="middle" class="lbl">GeoParquet 2.0</text>
+  <text x="650" y="175" text-anchor="middle" class="sub">네이티브 GEOMETRY 타입 (RC 단계)</text>
+
+  <line x1="150" y1="190" x2="150" y2="230" class="arrow"/>
+  <line x1="400" y1="190" x2="400" y2="230" class="arrow"/>
+  <line x1="650" y1="190" x2="650" y2="230" class="arrow"/>
+
+  <rect x="50" y="235" width="200" height="50" rx="6" class="box"/>
+  <text x="150" y="257" text-anchor="middle" class="lbl">운영 DB 질의</text>
+  <text x="150" y="273" text-anchor="middle" class="sub">실시간 조회·갱신</text>
+
+  <rect x="300" y="235" width="200" height="50" rx="6" class="box2"/>
+  <text x="400" y="257" text-anchor="middle" class="lbl">파일 레벨 bbox만 필터</text>
+  <text x="400" y="273" text-anchor="middle" class="sub">DuckDB·Spark·GDAL 전부 지원</text>
+
+  <rect x="550" y="235" width="200" height="50" rx="6" class="box3"/>
+  <text x="650" y="257" text-anchor="middle" class="lbl">row group 통계로 세밀 필터</text>
+  <text x="650" y="273" text-anchor="middle" class="sub">DuckDB 앞섬, GDAL·QGIS 과도기</text>
+
+  <rect x="40" y="320" width="720" height="70" rx="8" class="box"/>
+  <text x="400" y="345" text-anchor="middle" class="lbl">판단 기준: 실시간 조회·갱신이 섞이면 PostGIS,</text>
+  <text x="400" y="364" text-anchor="middle" class="sub">배치 분석 전용이고 읽기 도구를 DuckDB 중심으로 고정할 수 있으면 2.0 선제 채택 검토</text>
+
+  <text x="400" y="420" text-anchor="middle" class="sub" fill="#555">이미 안정 운영 중인 1.x 아카이브는 억지로 재작성하지 않는다</text>
+</svg>
