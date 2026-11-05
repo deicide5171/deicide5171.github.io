@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"공간 데이터 수억 건, 어디에 저장할까요" — GeoParquet 2.0 네이티브 타입 전환기에 내리는 저장 포맷 판단</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"공간 데이터 수억 건, 어디에 저장할까요" — GeoParquet 2.0 네이티브 타입 전환기에 내리는 저장 포맷 판단</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — GeoParquet 2.0이 지오메트리를 불투명한 바이너리 열 대신 Parquet 자체의 GEOMETRY·GEOGRAPHY 타입으로 저장하도록 바뀌었습니다. 아직 OGC 승인 전 release candidate 단계인 이 전환기에, 저장 포맷을 지금 바꿀지 말지를 판단하는 기준을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 중요해졌는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"위성 영상·필지·센서 로그를 합쳐서 수억 건 단위로 쌓고, 공간 조건으로 빠르게 질의하게 해주세요." 분석 파이프라인을 짜다 보면 반드시 마주치는 요구입니다. 지금까지는 PostGIS 같은 공간 DB에 넣거나, 클라우드 네이티브 포맷인 GeoParquet 1.x로 객체 스토리지에 올려 DuckDB·Spark로 읽는 방식 중 하나였습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">그런데 GeoParquet 2.0에서 전제가 바뀌었습니다. 1.x는 지오메트리를 WKB로 직렬화해 평범한 바이트 열에 욱여넣고, "이 열이 공간 데이터"라는 사실을 파일 바깥 메타데이터로만 알렸습니다. 엔진 입장에서는 인덱스도 못 타고 술어 푸시다운도 못 받는 불투명한 뭉치였던 셈입니다. <b>2.0은 이걸 뒤집어 Parquet 포맷 자체의 GEOMETRY·GEOGRAPHY 로지컬 타입을 쓰도록 강제합니다.</b> 문제는 이 스펙이 아직 release candidate이고 OGC 승인도 대기 중이며, 도구 지원이 고르지 않다는 점입니다. 이런 전환기에 포맷을 지금 바꿀지는 유행이 아니라 실제 설계 판단입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-05-geoparquet-2-native-geometry-storage-decision-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">공간 데이터 파이프라인에서 저장 포맷은 수집과 질의 사이에 앉습니다. PostGIS에 넣으면 공간 인덱스와 트랜잭션을 그대로 쓸 수 있지만 쓰기·스케일 비용이 따라옵니다. GeoParquet 1.x로 두면 저장 비용은 싸지지만, 공간 열이 불투명해서 엔진이 파일 전체를 읽은 뒤에야 필터를 적용하는 비효율이 생깁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">GeoParquet 2.0은 이 지점에 변화를 줍니다. 지오메트리가 포맷 스키마에 선언되므로, 엔진이 파일을 다 읽지 않고도 파일·row group 단위의 공간 범위 통계만 보고 읽을 파일을 걸러낼 수 있습니다. <b>"질의 엔진이 저장 포맷의 구조를 얼마나 미리 알 수 있는가"</b>가 대용량 공간 데이터 파이프라인의 실제 성능을 가릅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">기준</th><th style="border:1px solid #ddd; padding:8px;">PostGIS</th><th style="border:1px solid #ddd; padding:8px;">GeoParquet 1.x</th><th style="border:1px solid #ddd; padding:8px;">GeoParquet 2.0</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">공간 질의 가속</td><td style="border:1px solid #ddd; padding:8px;">GiST 인덱스, 성숙</td><td style="border:1px solid #ddd; padding:8px;">파일 레벨 bbox만</td><td style="border:1px solid #ddd; padding:8px;">row group 통계로 더 세밀</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">표준화 상태</td><td style="border:1px solid #ddd; padding:8px;">OGC 표준, 안정</td><td style="border:1px solid #ddd; padding:8px;">커뮤니티 표준, 안정</td><td style="border:1px solid #ddd; padding:8px;">RC, OGC 승인 대기</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">도구 생태계</td><td style="border:1px solid #ddd; padding:8px;">전 영역 성숙</td><td style="border:1px solid #ddd; padding:8px;">GDAL·DuckDB·Spark 폭넓게</td><td style="border:1px solid #ddd; padding:8px;">DuckDB 앞섬, GDAL·QGIS 과도기</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">적합한 상황</td><td style="border:1px solid #ddd; padding:8px;">실시간 조회·갱신</td><td style="border:1px solid #ddd; padding:8px;">이미 안정화된 아카이브</td><td style="border:1px solid #ddd; padding:8px;">신규 분석 파이프라인 설계</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">표가 가리키는 핵심은 2.0이 1.x를 당장 대체하는 관계가 아니라는 점입니다. 이미 1.x로 안정 운영 중인 파이프라인을 급하게 옮길 이유는 아직 약합니다. 반대로 지금 새 분석 파이프라인을 설계한다면, DuckDB 중심으로 엔진을 고정할 수 있는지에 따라 선제 채택 여부가 갈립니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">1) 질의 패턴부터 분류합니다. 실시간 조회·갱신이 섞이면 PostGIS가 기본값이고, 쓰기 한 번·읽기 여러 번의 분석 전용이면 Parquet 계열이 출발점입니다.<br>
+2) 분석 전용이라면 읽기 쪽 도구 체인을 먼저 확정합니다. DuckDB·Spark만 쓴다면 2.0의 이점을 바로 누릴 수 있지만, GDAL·QGIS에 의존하는 단계가 섞여 있으면 버전부터 확인해야 합니다.<br>
+3) 신규 파이프라인은 작은 데이터셋으로 1.x와 2.0을 모두 적재해 읽어들이는 바이트 양을 직접 비교합니다.<br>
+4) 기존 1.x 아카이브는 억지로 재작성하지 않고, 신규 적재분부터 2.0을 적용해 공존시킵니다.<br>
+5) 스펙이 아직 RC라는 점을 운영 문서에 명시하고, 되돌리기 어려운 전용 의존은 만들지 않습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — "네이티브 타입이라 빠르다"는 말을 곧이곧대로 믿지 마세요. 실제 가속은 엔진이 그 타입을 알고 통계를 활용할 때만 일어납니다. 또한 2.0에서는 좌표계 표기 방식도 바뀌었으므로, 기존 1.x 메타데이터 파싱 코드를 그대로 재사용하면 좌표계를 놓치는 조용한 버그가 생길 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">GeoParquet 2.0은 지오메트리를 네이티브 타입으로 승격시켜 질의 엔진이 공간 범위로 더 세밀하게 걸러낼 수 있게 합니다. 하지만 아직 RC 단계이고 DuckDB를 제외한 도구 생태계는 과도기에 있어, 모든 파이프라인을 당장 옮길 이유는 약합니다. 판단 기준은 유행이 아니라 질의 패턴과 다운스트림 도구 체인입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#GeoParquet #공간데이터 #DuckDB #PostGIS #클라우드네이티브GIS</p>
+
+</body>
+</html>
