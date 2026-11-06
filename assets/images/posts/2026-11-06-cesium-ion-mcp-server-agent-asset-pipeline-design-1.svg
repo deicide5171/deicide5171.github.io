@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill:#f4f8ff; stroke:#3b6fd6; stroke-width:1.5; }
+    .box2 { fill:#fff4ec; stroke:#d97b3f; stroke-width:1.5; }
+    .box3 { fill:#f0fbf4; stroke:#2f9e5b; stroke-width:1.5; }
+    .boxbad { fill:#fbeaea; stroke:#c0392b; stroke-width:1.5; }
+    .lbl { font-size:13px; fill:#1a1a1a; }
+    .sub { font-size:11px; fill:#555; }
+    .title { font-size:16px; font-weight:bold; fill:#1a1a1a; }
+    .arrow { stroke:#555; stroke-width:1.5; marker-end:url(#arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="25" class="title">3D 자산 파이프라인 — 사람 운영 vs 에이전트 운영(MCP)</text>
+
+  <rect x="20" y="45" width="170" height="55" rx="6" class="box"/>
+  <text x="105" y="68" text-anchor="middle" class="lbl">원본 데이터</text>
+  <text x="105" y="84" text-anchor="middle" class="sub">BIM·CAD·포인트클라우드·GeoTIFF</text>
+
+  <line x1="190" y1="72" x2="230" y2="72" class="arrow"/>
+
+  <rect x="235" y="45" width="160" height="55" rx="6" class="box2"/>
+  <text x="315" y="68" text-anchor="middle" class="lbl">ion REST API</text>
+  <text x="315" y="84" text-anchor="middle" class="sub">업로드·타일링·메타데이터</text>
+
+  <line x1="395" y1="72" x2="435" y2="72" class="arrow"/>
+
+  <rect x="440" y="45" width="170" height="55" rx="6" class="box3"/>
+  <text x="525" y="68" text-anchor="middle" class="lbl">3D Tiles 저장소/CDN</text>
+  <text x="525" y="84" text-anchor="middle" class="sub">CesiumJS 뷰어가 스트리밍 소비</text>
+
+  <line x1="105" y1="100" x2="105" y2="150" class="arrow"/>
+  <line x1="315" y1="100" x2="315" y2="150" class="arrow"/>
+
+  <rect x="20" y="155" width="270" height="80" rx="8" class="box"/>
+  <text x="155" y="180" text-anchor="middle" class="lbl">기존 경로: 사람이 콘솔·CLI 조작</text>
+  <text x="155" y="200" text-anchor="middle" class="sub">자산 검색·업로드·태깅을</text>
+  <text x="155" y="216" text-anchor="middle" class="sub">운영자가 ion 콘솔에서 직접 수행</text>
+
+  <rect x="320" y="155" width="290" height="80" rx="8" class="box2"/>
+  <text x="465" y="180" text-anchor="middle" class="lbl">새 경로: Cesium ion MCP Server</text>
+  <text x="465" y="200" text-anchor="middle" class="sub">Claude·Cursor 등 MCP 클라이언트가</text>
+  <text x="465" y="216" text-anchor="middle" class="sub">자연어로 같은 작업을 호출</text>
+
+  <line x1="465" y1="235" x2="465" y2="280" class="arrow"/>
+
+  <rect x="320" y="285" width="130" height="70" rx="6" class="box3"/>
+  <text x="385" y="308" text-anchor="middle" class="lbl">읽기 전용 도구</text>
+  <text x="385" y="326" text-anchor="middle" class="sub">자산 검색, 상태 조회</text>
+  <text x="385" y="342" text-anchor="middle" fill="#2f9e5b" class="sub">확인 없이 자동 실행 가능</text>
+
+  <rect x="460" y="285" width="150" height="70" rx="6" class="boxbad"/>
+  <text x="535" y="308" text-anchor="middle" class="lbl">쓰기·파괴적 도구</text>
+  <text x="535" y="326" text-anchor="middle" class="sub">업로드, 재타일링, 삭제</text>
+  <text x="535" y="342" text-anchor="middle" fill="#c0392b" class="sub">annotation 기반 확인 필요</text>
+
+  <rect x="630" y="45" width="150" height="310" rx="8" class="box"/>
+  <text x="705" y="68" text-anchor="middle" class="lbl">판단 포인트</text>
+  <text x="705" y="92" text-anchor="middle" class="sub">지도 "서빙"은</text>
+  <text x="705" y="108" text-anchor="middle" class="sub">여전히 GeoServer·</text>
+  <text x="705" y="124" text-anchor="middle" class="sub">CesiumJS 몫</text>
+  <text x="705" y="150" text-anchor="middle" class="sub">MCP는 "운영·관리"</text>
+  <text x="705" y="166" text-anchor="middle" class="sub">자동화 자리에만</text>
+  <text x="705" y="182" text-anchor="middle" class="sub">들어온다</text>
+  <text x="705" y="208" text-anchor="middle" class="sub">대용량 타일 자체를</text>
+  <text x="705" y="224" text-anchor="middle" class="sub">LLM 컨텍스트에</text>
+  <text x="705" y="240" text-anchor="middle" class="sub">올리지 않는다</text>
+  <text x="705" y="266" text-anchor="middle" class="sub">자격 증명은</text>
+  <text x="705" y="282" text-anchor="middle" class="sub">ion OAuth 범위로</text>
+  <text x="705" y="298" text-anchor="middle" class="sub">제한해야 한다</text>
+</svg>

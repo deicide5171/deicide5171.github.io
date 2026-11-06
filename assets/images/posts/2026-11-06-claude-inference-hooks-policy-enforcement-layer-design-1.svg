@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill:#f4f8ff; stroke:#3b6fd6; stroke-width:1.5; }
+    .box2 { fill:#fff4ec; stroke:#d97b3f; stroke-width:1.5; }
+    .box3 { fill:#f0fbf4; stroke:#2f9e5b; stroke-width:1.5; }
+    .boxbad { fill:#fbeaea; stroke:#c0392b; stroke-width:1.5; }
+    .lbl { font-size:13px; fill:#1a1a1a; }
+    .sub { font-size:11px; fill:#555; }
+    .title { font-size:16px; font-weight:bold; fill:#1a1a1a; }
+    .arrow { stroke:#555; stroke-width:1.5; marker-end:url(#arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="25" class="title">정책 집행 지점을 어디에 둘 것인가</text>
+
+  <rect x="20" y="50" width="160" height="55" rx="6" class="box"/>
+  <text x="100" y="73" text-anchor="middle" class="lbl">사용자/에이전트 프롬프트</text>
+  <text x="100" y="89" text-anchor="middle" class="sub">claude.ai·Cowork·Claude Code</text>
+
+  <line x1="180" y1="77" x2="220" y2="77" class="arrow"/>
+
+  <rect x="225" y="50" width="180" height="55" rx="6" class="box2"/>
+  <text x="315" y="73" text-anchor="middle" class="lbl">Inference Hooks(공급자 내장)</text>
+  <text x="315" y="89" text-anchor="middle" class="sub">조직 보안 서버에 허용/거부 질의</text>
+
+  <line x1="405" y1="77" x2="445" y2="77" class="arrow"/>
+
+  <rect x="450" y="50" width="150" height="55" rx="6" class="box3"/>
+  <text x="525" y="73" text-anchor="middle" class="lbl">모델 추론 실행</text>
+  <text x="525" y="89" text-anchor="middle" class="sub">허용된 경우에만</text>
+
+  <rect x="20" y="130" width="400" height="80" rx="8" class="box"/>
+  <text x="220" y="155" text-anchor="middle" class="lbl">대안 1: 자체 게이트웨이에서 집행</text>
+  <text x="220" y="175" text-anchor="middle" class="sub">모든 공급자(API·Bedrock·GCP) 호출을</text>
+  <text x="220" y="191" text-anchor="middle" class="sub">같은 규칙으로 통제 — 구축·운영 비용은 우리 몫</text>
+
+  <rect x="440" y="130" width="340" height="80" rx="8" class="box2"/>
+  <text x="610" y="155" text-anchor="middle" class="lbl">대안 2: Inference Hooks(공급자 내장)</text>
+  <text x="610" y="175" text-anchor="middle" class="sub">claude.ai·Cowork·Claude Code만 커버</text>
+  <text x="610" y="191" text-anchor="middle" class="sub">API·Bedrock·GCP 직접 호출은 우회됨</text>
+
+  <line x1="220" y1="210" x2="220" y2="250" class="arrow"/>
+  <line x1="610" y1="210" x2="610" y2="250" class="arrow"/>
+
+  <rect x="20" y="255" width="400" height="70" rx="6" class="box3"/>
+  <text x="220" y="280" text-anchor="middle" class="lbl">전 경로 커버, 지연시간 전부 우리 책임</text>
+  <text x="220" y="298" text-anchor="middle" class="sub">모델 교체·멀티벤더에도 재사용 가능</text>
+
+  <rect x="440" y="255" width="340" height="70" rx="6" class="boxbad"/>
+  <text x="610" y="280" text-anchor="middle" class="lbl">사각지대 존재 — 반드시 보완 필요</text>
+  <text x="610" y="298" text-anchor="middle" fill="#c0392b" class="sub">Message Threads 조직은 미지원</text>
+
+  <rect x="20" y="340" width="760" height="90" rx="8" class="box"/>
+  <text x="400" y="365" text-anchor="middle" class="lbl">사후 보완: Compliance API — 추론 "이후" 감사·조회</text>
+  <text x="400" y="388" text-anchor="middle" class="sub">인라인 차단은 못 하지만, 사각지대에서 일어난 호출까지 포함해 전체 기록을 남긴다</text>
+  <text x="400" y="408" text-anchor="middle" fill="#2f9e5b" class="sub">실무는 "인라인 집행 + 사후 감사"를 함께 둬야 완전해진다</text>
+</svg>

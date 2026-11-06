@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>에이전트가 우리 3D 타일 자산을 직접 관리하게 해주세요 — Cesium ion MCP Server로 보는 공간 데이터 파이프라인 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">에이전트가 우리 3D 타일 자산을 직접 관리하게 해주세요 — Cesium ion MCP Server로 보는 공간 데이터 파이프라인 설계</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — Cesium이 공개한 ion MCP Server는 자산 업로드·타일링·태깅 같은 3D 자산 파이프라인 운영을 에이전트 도구 호출로 바꿉니다. 기존 ArcGIS·SkyFi MCP가 "공간 질의"와 "영상 주문"을 다뤘다면, 이번엔 "지도 뒤편의 데이터 관리" 자체가 도구가 됐다는 점이 다릅니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 중요해졌는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"드론으로 새로 찍은 건설 현장 데이터 들어왔는데, 타일링해서 바로 지도에 올려주세요." 3D 공간 데이터를 다루는 팀이라면 매주 반복되는 요구입니다. 지금까지 이 흐름은 운영자가 Cesium ion 콘솔에 로그인해서 파일을 업로드하고, 타일링 옵션을 고르고, 완료를 기다렸다가 태깅하는 수작업 연쇄였습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Cesium이 공개한 <b>ion MCP Server</b>는 이 수작업 연쇄 자체를 에이전트 도구 호출로 바꿉니다. Claude Code, Cursor, GitHub Copilot 같은 MCP 호환 클라이언트가 ion 계정에 OAuth로 로그인한 뒤, 자산을 검색하고 업로드해 타일링을 요청하고 라벨로 정리하는 작업을 자연어 대화 안에서 처리할 수 있습니다. 여기서 눈여겨볼 점은 이 서버가 노출하는 게 "공간 질의"나 "신규 촬영 주문"이 아니라 <b>자산 파이프라인 운영 그 자체</b>라는 것입니다. 같은 MCP라도 시스템에서 차지하는 자리가 다르므로 설계 판단도 다르게 내려야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-06-cesium-ion-mcp-server-agent-asset-pipeline-design-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">ion MCP Server는 원본 데이터와 타일 저장소 사이, 즉 <b>자산 수집·가공 단계</b>에만 자리 잡습니다. 그 뒷단 — CesiumJS 뷰어가 타일을 스트리밍해 렌더링하는 서빙 경로 — 는 전혀 바뀌지 않습니다. 이 구분이 중요한 이유는, 팀이 종종 "MCP가 들어왔으니 지도 서빙까지 에이전트가 대신한다"고 과대평가하기 때문입니다. 실제로는 에이전트가 ion REST API의 프런트엔드 역할을 할 뿐이고, 대용량 타일 데이터 자체가 LLM 컨텍스트에 올라가는 일은 없습니다 — 올라가는 것은 자산 메타데이터와 작업 상태뿐입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">기준</th><th style="border:1px solid #ddd; padding:8px;">기존: 사람이 콘솔 조작</th><th style="border:1px solid #ddd; padding:8px;">ion MCP Server 도입</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">반복 작업 속도</td><td style="border:1px solid #ddd; padding:8px;">매번 수동 — 업로드마다 여러 단계</td><td style="border:1px solid #ddd; padding:8px;">자연어 요청 한 번으로 체인 실행</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">실수 방지</td><td style="border:1px solid #ddd; padding:8px;">숙련도에 의존</td><td style="border:1px solid #ddd; padding:8px;">파괴적 작업에 confirmation 적용</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">권한 경계</td><td style="border:1px solid #ddd; padding:8px;">콘솔 로그인 계정 권한 그대로</td><td style="border:1px solid #ddd; padding:8px;">OAuth 범위를 에이전트 전용으로 제한 가능</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">감사 추적</td><td style="border:1px solid #ddd; padding:8px;">콘솔 로그 중심</td><td style="border:1px solid #ddd; padding:8px;">MCP 호출 로그를 별도로 쌓아야 함</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">적합한 상황</td><td style="border:1px solid #ddd; padding:8px;">일회성·고위험 자산 작업</td><td style="border:1px solid #ddd; padding:8px;">반복적인 업로드·태깅·정리 작업</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 흔한 함정은 "MCP가 붙었으니 운영자 없이도 돌아간다"고 성급히 결론 내리는 것입니다. 읽기 전용 도구는 자동 실행에 적합하지만, 업로드·재타일링·삭제 같은 쓰기·파괴적 도구는 클라이언트가 확인을 요청하도록 설계돼 있습니다. 이 확인 단계를 임의로 생략하면 운영 중인 타일셋을 에이전트가 실수로 삭제하는 사고로 이어질 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">1) 읽기 전용 작업부터 연결합니다. 자산 검색·목록·상태 조회처럼 되돌릴 필요 없는 작업으로 먼저 워크플로를 붙입니다.<br>
+2) 에이전트 전용 ion 계정이나 제한된 OAuth 범위를 분리합니다. 운영자 개인 계정의 전체 권한을 그대로 넘기면 권한 경계가 흐려집니다.<br>
+3) 쓰기·파괴적 도구는 스테이징 자산에서 먼저 검증합니다.<br>
+4) MCP 호출 자체를 감사 로그로 남기는 레이어를 추가합니다.<br>
+5) 지도 서빙 경로(GeoServer·CesiumJS)는 손대지 않습니다. 이번 변화는 자산 관리 단계로 국한됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — "MCP 서버가 공식인가 커뮤니티 프로젝트인가"부터 확인하세요. Cesium ion MCP Server 외에도 CesiumJS 글로브를 조작하는 비공식 커뮤니티 MCP 프로젝트가 따로 존재해 이름이 비슷해 혼동하기 쉽습니다. 또한 대용량 자산 처리 시간 자체는 MCP가 줄여주지 않으므로, 비동기 완료를 기다리는 설계가 여전히 필요합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Cesium ion MCP Server는 지도 서빙이 아니라 3D 자산 수집·가공 파이프라인의 운영 단계에 들어오는 자동화이며, 기존 공간 질의·영상 주문용 MCP와는 시스템에서 차지하는 자리가 다릅니다. 읽기 전용 도구와 쓰기·파괴적 도구를 구분해 확인 단계를 유지하고, 에이전트 전용 OAuth 범위 분리와 호출 감사 로그는 도입 초기부터 설계에 포함해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#Cesium #MCP #3DTiles #에이전틱GIS #공간데이터파이프라인</p>
+
+</body>
+</html>
