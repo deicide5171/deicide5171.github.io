@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill:#f4f8ff; stroke:#3b6fd6; stroke-width:1.5; }
+    .box2 { fill:#fff4ec; stroke:#d97b3f; stroke-width:1.5; }
+    .box3 { fill:#f0fbf4; stroke:#2f9e5b; stroke-width:1.5; }
+    .boxbad { fill:#fbeaea; stroke:#c0392b; stroke-width:1.5; }
+    .lbl { font-size:13px; fill:#1a1a1a; }
+    .sub { font-size:11px; fill:#555; }
+    .title { font-size:16px; font-weight:bold; fill:#1a1a1a; }
+    .arrow { stroke:#555; stroke-width:1.5; marker-end:url(#arrow); }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <text x="20" y="25" class="title">턴마다 보내는 바디 — 기존 방식 vs Message Threads</text>
+
+  <rect x="20" y="45" width="190" height="55" rx="6" class="box"/>
+  <text x="115" y="68" text-anchor="middle" class="lbl">클라이언트 세션 스토어</text>
+  <text x="115" y="84" text-anchor="middle" class="sub">전체 대화 히스토리 보관</text>
+
+  <line x1="115" y1="100" x2="115" y2="140" class="arrow"/>
+
+  <rect x="20" y="145" width="190" height="70" rx="8" class="boxbad"/>
+  <text x="115" y="168" text-anchor="middle" class="lbl">기존: 매 턴 전체 재전송</text>
+  <text x="115" y="186" text-anchor="middle" class="sub">요청 바디 = 지금까지의</text>
+  <text x="115" y="202" text-anchor="middle" class="sub">모든 메시지</text>
+
+  <rect x="300" y="145" width="200" height="70" rx="8" class="box3"/>
+  <text x="400" y="168" text-anchor="middle" class="lbl">Message Threads</text>
+  <text x="400" y="186" text-anchor="middle" class="sub">요청 바디 = 새 메시지 +</text>
+  <text x="400" y="202" text-anchor="middle" class="sub">이전 응답 ID(thread)</text>
+
+  <line x1="210" y1="180" x2="295" y2="180" class="arrow"/>
+
+  <line x1="115" y1="215" x2="115" y2="255" class="arrow"/>
+  <line x1="400" y1="215" x2="400" y2="255" class="arrow"/>
+
+  <rect x="20" y="260" width="190" height="60" rx="6" class="box"/>
+  <text x="115" y="283" text-anchor="middle" class="lbl">모델: 매번 전체를 새로 읽음</text>
+  <text x="115" y="300" text-anchor="middle" class="sub">TTFT 상승, 토큰 비용 동일</text>
+
+  <rect x="300" y="260" width="200" height="60" rx="6" class="box3"/>
+  <text x="400" y="283" text-anchor="middle" class="lbl">서버 측 스레드 캐시(TTL 5분)</text>
+  <text x="400" y="300" text-anchor="middle" class="sub">조립 후 모델에 전달</text>
+
+  <rect x="580" y="145" width="200" height="245" rx="8" class="box2"/>
+  <text x="680" y="168" text-anchor="middle" class="lbl">끊기는 지점</text>
+  <text x="680" y="190" text-anchor="middle" class="sub">5분간 요청 없으면</text>
+  <text x="680" y="206" text-anchor="middle" class="sub">스레드 만료</text>
+  <text x="680" y="228" text-anchor="middle" class="sub">Batches·토큰 카운팅·</text>
+  <text x="680" y="244" text-anchor="middle" class="sub">컨텍스트 편집 미지원</text>
+  <text x="680" y="266" text-anchor="middle" class="sub">Inference Hooks 조직은</text>
+  <text x="680" y="282" text-anchor="middle" class="sub">사용 불가</text>
+  <text x="680" y="310" text-anchor="middle" class="sub">→ 클라이언트는 이 경우를</text>
+  <text x="680" y="326" text-anchor="middle" class="sub">대비해 항상 전체 재전송</text>
+  <text x="680" y="342" text-anchor="middle" class="sub">폴백 경로를 들고 있어야</text>
+  <text x="680" y="358" text-anchor="middle" fill="#c0392b" class="sub">한다 — 선택이 아니라 필수</text>
+
+  <line x1="400" y1="320" x2="400" y2="370" class="arrow"/>
+  <rect x="300" y="375" width="200" height="60" rx="6" class="box"/>
+  <text x="400" y="398" text-anchor="middle" class="lbl">응답 + 새 response ID</text>
+  <text x="400" y="415" text-anchor="middle" class="sub">다음 턴의 thread 파라미터로</text>
+</svg>
