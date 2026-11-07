@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>클라우드 에이전트가 제 로컬 개발 폴더도 쓰게 해주세요 — Remote Control 폴더 연결의 신뢰 경계 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">클라우드 에이전트가 제 로컬 개발 폴더도 쓰게 해주세요 — Remote Control 폴더 연결의 신뢰 경계 설계</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 클라우드 에이전트가 사용자의 로컬 파일에 접근해야 한다는 요구는, 세션과 로컬 폴더를 1:1로 묶고 매 요청마다 사람 승인을 받는 신뢰 경계 설계 문제로 번역됩니다. 승인 유효 기간과 해제 권한을 누구에게 주는지가 전체 설계의 핵심입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 불거지는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"에이전트를 클라우드에서 돌리고 있는데, 로컬에만 있는 라이브러리나 사내 전용 레지스트리, 로컬 DB 덤프 파일은 어떻게 쓰나요?" 클라우드 기반 에이전트 세션을 도입한 팀이라면 금방 마주치는 질문입니다. 코드 저장소는 깃헙에 올려두면 되지만, 실무에서는 아직 커밋되지 않은 작업 파일, 회사 VPN 안에서만 열리는 내부 도구, 개발자의 로컬 환경에만 설치된 바이너리처럼 "깃헙에는 없고 내 컴퓨터에만 있는" 자원이 항상 남습니다. 이 요구를 그대로 들어주면, 클라우드에 떠 있는 에이전트 프로세스가 사용자의 개인 컴퓨터 파일시스템에 직접 손을 대는 통로가 하나 열립니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">문제는 이 통로가 편도가 아니라는 데 있습니다. 한 번 열어주면 에이전트가 그 컴퓨터의 다른 폴더로, 또 다른 세션으로 옮겨 다닐 수 있을까요? 승인은 한 번만 받으면 영구히 유효할까요, 아니면 매번 다시 물어야 할까요? 이런 질문에 답하지 않고 "로컬 접근 기능"부터 구현하면, 보안 사고가 나기 전까지는 편리하다가 사고가 나는 순간 전체 신뢰 모델을 재설계해야 하는 상황에 몰립니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-07-cloud-agent-remote-control-folder-trust-boundary-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 기능은 세 개의 서로 다른 신뢰 영역을 잇습니다. 첫째는 클라우드 컨테이너 — 에이전트 세션이 실제로 실행되는 곳으로, 이미 저장소나 업로드 파일, 컨테이너 이미지가 들어 있습니다. 둘째는 사람의 승인이라는 관문으로, 어떤 자동화 설정으로도 건너뛸 수 없는 지점입니다. 셋째는 사용자의 로컬 컴퓨터로, 상주 프로세스가 돌면서 "이 폴더는 외부 세션에 내줘도 된다"고 미리 지정해 둔 폴더 목록을 들고 있습니다. 신뢰 확인이 한 곳에서 끝나지 않는다는 점이 중요합니다. "이 컨테이너 안의 코드·파일을 믿는가"와 "이 세션이 내 다른 컴퓨터·세션에 손대도 되는가"는 서로 다른 질문이라서 별도의 승인 게이트로 분리돼 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">방식</th><th style="border:1px solid #ddd; padding:8px;">승인 시점</th><th style="border:1px solid #ddd; padding:8px;">노출 범위</th><th style="border:1px solid #ddd; padding:8px;">해제 주체</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">장기 SSH 키</td><td style="border:1px solid #ddd; padding:8px;">최초 1회</td><td style="border:1px solid #ddd; padding:8px;">키가 접근 가능한 전체 경로</td><td style="border:1px solid #ddd; padding:8px;">사람(수동 키 폐기)</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">VPN + 서비스 계정</td><td style="border:1px solid #ddd; padding:8px;">계정 발급 시</td><td style="border:1px solid #ddd; padding:8px;">네트워크 세그먼트 전체</td><td style="border:1px solid #ddd; padding:8px;">관리자</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">브라우저 네이티브 메시징</td><td style="border:1px solid #ddd; padding:8px;">설치 시 1회</td><td style="border:1px solid #ddd; padding:8px;">호스트가 노출한 범위</td><td style="border:1px solid #ddd; padding:8px;">사용자(확장 제거)</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;"><b>세션-폴더 1:1 바인딩</b></td><td style="border:1px solid #ddd; padding:8px;"><b>요청마다 매번</b></td><td style="border:1px solid #ddd; padding:8px;"><b>세션당 폴더 정확히 1개</b></td><td style="border:1px solid #ddd; padding:8px;"><b>사람만</b></td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">세션-폴더 1:1 바인딩 방식이 다른 셋과 가장 크게 다른 점은 "승인의 유효 기간"입니다. 장기 키나 VPN 계정은 한 번 발급되면 누군가 명시적으로 회수할 때까지 계속 살아 있어서, 시간이 지날수록 "이게 아직도 필요한 접근인가"를 아무도 추적하지 못하는 상태가 됩니다. 반면 이 설계는 세션이 끝나면 접근도 함께 끝납니다. 대신 그 대가로 세션마다 사람이 다시 응답해야 하므로, 완전 자동화된 배치 작업에는 쓸 수 없습니다 — 이건 결함이 아니라 의도된 제약입니다. 반대로 사람이 매번 응답할 수 없는 배치 작업이라면 이 패턴은 처음부터 맞지 않으며, 범위를 좁힌 서비스 계정과 짧은 TTL 토큰 조합이 낫습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">1) 경계부터 숫자로 정의합니다 — 세션 하나당 외부 자원 몇 개까지 연결 가능한지. 여러 개를 허용하면 "이 세션이 지금 뭘 쥐고 있는지" 추적하는 별도 장부가 필요해집니다.<br>
+2) 실제 파일 전송 로직보다 승인 UX부터 끝까지 동작하게 만듭니다 — 요청·승인 질문·attached/refused/무응답 세 가지 결과 흐름이 먼저입니다.<br>
+3) 승인을 UI가 아니라 서버 쪽에서 강제합니다. 클라이언트에서만 막으면 우회될 수 있습니다.<br>
+4) 모든 연결·해제 이벤트를 로그로 남깁니다. 그렇지 않으면 사고가 났을 때 당시 상태를 복원할 수 없습니다.<br>
+5) "컨텐츠를 믿는가"와 "다른 자원에 손대도 되는가"를 하나의 승인으로 합치지 않고 기능 단위로 분리합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #f0a04b; padding:14px 16px; font-size:15px; color:#5a4632; line-height:1.7;">
+<b>주의</b> — 에이전트 쪽에 연결 해제 도구를 일부러 주지 않는 것은 실수가 아니라 설계 의도입니다. 에이전트가 스스로 연결을 끊을 수 있다면, 반대로 스스로 다시 연결을 요청하는 루프를 만들 유인도 함께 생깁니다. 해제를 전적으로 사람에게만 맡겨야, 적어도 연결 유지 방향으로는 에이전트가 자동화를 밀어붙일 수 없습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">정리</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">클라우드 에이전트의 로컬 자원 접근은 기능이 아니라 신뢰 경계 설계 문제로 먼저 다뤄야 합니다. 세션-자원 1:1 바인딩과 매 요청 승인은 장기 키·VPN 방식보다 노출 범위를 좁히는 대신 완전 자동화와는 양립하지 않으며, 데이터 전송 로직보다 승인 UX와 서버 측 강제, 연결·해제 로깅을 먼저 완성해야 사고 시 복원 가능한 설계가 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:15px; color:#03c75a;">#에이전트보안 #RemoteControl #신뢰경계 #세션설계 #클라우드에이전트</p>
+
+</body>
+</html>

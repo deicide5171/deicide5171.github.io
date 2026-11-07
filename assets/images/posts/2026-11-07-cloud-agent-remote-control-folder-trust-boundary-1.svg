@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <!-- Cloud container -->
+  <rect x="30" y="60" width="210" height="150" rx="10" fill="#eef4ff" stroke="#3b6fd6" stroke-width="2"/>
+  <text x="135" y="88" text-anchor="middle" font-size="15" font-weight="bold" fill="#1f3b6e">클라우드 컨테이너</text>
+  <text x="135" y="112" text-anchor="middle" font-size="13" fill="#333">에이전트 세션</text>
+  <text x="135" y="136" text-anchor="middle" font-size="12" fill="#555">repo · 업로드 파일</text>
+  <text x="135" y="154" text-anchor="middle" font-size="12" fill="#555">컨테이너 이미지</text>
+  <rect x="48" y="166" width="174" height="30" rx="6" fill="#fff" stroke="#3b6fd6"/>
+  <text x="135" y="186" text-anchor="middle" font-size="11" fill="#1f3b6e">신뢰 확인 게이트 1</text>
+
+  <!-- Approval broker -->
+  <polygon points="400,55 470,110 400,165 330,110" fill="#fff7e6" stroke="#d98c00" stroke-width="2"/>
+  <text x="400" y="100" text-anchor="middle" font-size="13" font-weight="bold" fill="#8a5600">사람 승인</text>
+  <text x="400" y="118" text-anchor="middle" font-size="12" fill="#8a5600">매 요청마다</text>
+  <text x="400" y="134" text-anchor="middle" font-size="11" fill="#8a5600">정책으로 생략 불가</text>
+
+  <!-- Local computer -->
+  <rect x="560" y="60" width="210" height="150" rx="10" fill="#eafaf1" stroke="#1f9d55" stroke-width="2"/>
+  <text x="665" y="88" text-anchor="middle" font-size="15" font-weight="bold" fill="#0f5c31">사용자 로컬 컴퓨터</text>
+  <text x="665" y="112" text-anchor="middle" font-size="13" fill="#333">Remote Control 데몬</text>
+  <text x="665" y="136" text-anchor="middle" font-size="12" fill="#555">선택된 폴더 1개</text>
+  <rect x="578" y="150" width="174" height="30" rx="6" fill="#fff" stroke="#1f9d55"/>
+  <text x="665" y="170" text-anchor="middle" font-size="11" fill="#0f5c31">세션당 폴더 1개 바인딩</text>
+
+  <!-- Arrows -->
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#555"/>
+    </marker>
+  </defs>
+  <line x1="240" y1="135" x2="330" y2="110" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="470" y1="110" x2="560" y2="135" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="285" y="115" text-anchor="middle" font-size="11" fill="#555">폴더 요청</text>
+  <text x="515" y="115" text-anchor="middle" font-size="11" fill="#555">승인 시 연결</text>
+
+  <!-- Bottom: lifecycle -->
+  <rect x="60" y="260" width="680" height="150" rx="10" fill="#f7f7f7" stroke="#999" stroke-width="1.5"/>
+  <text x="400" y="288" text-anchor="middle" font-size="14" font-weight="bold" fill="#333">세션 생애주기 동안의 제약</text>
+
+  <rect x="90" y="305" width="190" height="80" rx="6" fill="#fff" stroke="#3b6fd6"/>
+  <text x="185" y="328" text-anchor="middle" font-size="12" fill="#1f3b6e">결과는 셋 중 하나</text>
+  <text x="185" y="348" text-anchor="middle" font-size="11" fill="#333">attached</text>
+  <text x="185" y="364" text-anchor="middle" font-size="11" fill="#333">refused(사유 포함)</text>
+  <text x="185" y="380" text-anchor="middle" font-size="11" fill="#333">did_not_answer</text>
+
+  <rect x="305" y="305" width="190" height="80" rx="6" fill="#fff" stroke="#d98c00"/>
+  <text x="400" y="328" text-anchor="middle" font-size="12" fill="#8a5600">세션 = 폴더 1개</text>
+  <text x="400" y="350" text-anchor="middle" font-size="11" fill="#333">다른 폴더를 쓰려면</text>
+  <text x="400" y="366" text-anchor="middle" font-size="11" fill="#333">새 세션을 열어야 함</text>
+
+  <rect x="520" y="305" width="190" height="80" rx="6" fill="#fff" stroke="#1f9d55"/>
+  <text x="615" y="328" text-anchor="middle" font-size="12" fill="#0f5c31">해제는 사람만</text>
+  <text x="615" y="350" text-anchor="middle" font-size="11" fill="#333">에이전트 쪽에는</text>
+  <text x="615" y="366" text-anchor="middle" font-size="11" fill="#333">연결 해제 도구 없음</text>
+</svg>
