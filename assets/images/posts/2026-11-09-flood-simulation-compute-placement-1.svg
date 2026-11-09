@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <marker id="arrowF" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <!-- input -->
+  <rect x="300" y="16" width="200" height="50" rx="8" fill="#eef5ff" stroke="#2f6fed" stroke-width="2"/>
+  <text x="400" y="38" text-anchor="middle" font-size="13" fill="#1b3a73">강우량·하천 수위·지형 DEM</text>
+  <text x="400" y="56" text-anchor="middle" font-size="11" fill="#1b3a73">(입력 데이터)</text>
+
+  <line x1="400" y1="66" x2="400" y2="98" stroke="#555" stroke-width="2" marker-end="url(#arrowF)"/>
+
+  <!-- model -->
+  <rect x="280" y="100" width="240" height="50" rx="8" fill="#f3f0ff" stroke="#6c4fd6" stroke-width="2"/>
+  <text x="400" y="122" text-anchor="middle" font-size="13" fill="#3a2a73">수문·수리 모델 연산</text>
+  <text x="400" y="140" text-anchor="middle" font-size="11" fill="#3a2a73">(얕은 물 방정식 / 유량 예보)</text>
+
+  <line x1="330" y1="150" x2="150" y2="200" stroke="#555" stroke-width="2" marker-end="url(#arrowF)"/>
+  <line x1="400" y1="150" x2="400" y2="200" stroke="#555" stroke-width="2" marker-end="url(#arrowF)"/>
+  <line x1="470" y1="150" x2="650" y2="200" stroke="#555" stroke-width="2" marker-end="url(#arrowF)"/>
+
+  <!-- three branches -->
+  <rect x="40" y="202" width="220" height="70" rx="8" fill="#fff7f0" stroke="#e08a2e" stroke-width="2"/>
+  <text x="150" y="226" text-anchor="middle" font-size="13" fill="#7a4310">서버 사전계산 + 타일 발행</text>
+  <text x="150" y="244" text-anchor="middle" font-size="11" fill="#7a4310">전체 시나리오 서버에서 완결</text>
+  <text x="150" y="260" text-anchor="middle" font-size="11" fill="#7a4310">(ArcGIS Flood Simulation)</text>
+
+  <rect x="290" y="202" width="220" height="70" rx="8" fill="#f0f7f4" stroke="#03c75a" stroke-width="2"/>
+  <text x="400" y="226" text-anchor="middle" font-size="13" fill="#15502f">서버 예보 + 클라이언트</text>
+  <text x="400" y="242" text-anchor="middle" font-size="11" fill="#15502f">경량 지오프로세싱(WASM)</text>
+  <text x="400" y="260" text-anchor="middle" font-size="11" fill="#15502f">IndexedDB 캐시</text>
+
+  <rect x="540" y="202" width="220" height="70" rx="8" fill="#fdf0f0" stroke="#d6555a" stroke-width="2"/>
+  <text x="650" y="226" text-anchor="middle" font-size="13" fill="#7a2a2d">완전 클라이언트 물리모델</text>
+  <text x="650" y="242" text-anchor="middle" font-size="11" fill="#7a2a2d">서버는 정적 입력만 제공</text>
+  <text x="650" y="260" text-anchor="middle" font-size="11" fill="#7a2a2d">(fastflood.org, HAND WASM)</text>
+
+  <line x1="150" y1="272" x2="330" y2="330" stroke="#555" stroke-width="2" marker-end="url(#arrowF)"/>
+  <line x1="400" y1="272" x2="400" y2="330" stroke="#555" stroke-width="2" marker-end="url(#arrowF)"/>
+  <line x1="650" y1="272" x2="470" y2="330" stroke="#555" stroke-width="2" marker-end="url(#arrowF)"/>
+
+  <!-- result -->
+  <rect x="250" y="332" width="300" height="60" rx="8" fill="#f5f5f5" stroke="#777777" stroke-width="2"/>
+  <text x="400" y="356" text-anchor="middle" font-size="14" fill="#333333">지도 렌더링 — 침수 범위·심도 표시</text>
+  <text x="400" y="376" text-anchor="middle" font-size="11" fill="#333333">응답 지연·시나리오 유연성이 갈라지는 지점</text>
+
+  <text x="400" y="420" text-anchor="middle" font-size="12" fill="#999999">서버 쪽으로 경계선을 당길수록 정확·고비용, 클라이언트로 밀수록 유연·저비용</text>
+</svg>
