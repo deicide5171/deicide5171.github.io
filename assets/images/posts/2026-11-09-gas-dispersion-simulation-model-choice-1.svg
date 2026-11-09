@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <marker id="arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <!-- inputs -->
+  <rect x="40" y="24" width="220" height="60" rx="8" fill="#eef5ff" stroke="#2f6fed" stroke-width="2"/>
+  <text x="150" y="48" text-anchor="middle" font-size="13" fill="#1b3a73">실시간 기상 데이터</text>
+  <text x="150" y="66" text-anchor="middle" font-size="11" fill="#1b3a73">풍향·풍속·대기 안정도</text>
+
+  <rect x="540" y="24" width="220" height="60" rx="8" fill="#eef5ff" stroke="#2f6fed" stroke-width="2"/>
+  <text x="650" y="48" text-anchor="middle" font-size="13" fill="#1b3a73">누출 지점·물질 정보</text>
+  <text x="650" y="66" text-anchor="middle" font-size="11" fill="#1b3a73">배출량, 가스 비중</text>
+
+  <line x1="200" y1="84" x2="340" y2="140" stroke="#555" stroke-width="2" marker-end="url(#arrowG)"/>
+  <line x1="600" y1="84" x2="460" y2="140" stroke="#555" stroke-width="2" marker-end="url(#arrowG)"/>
+
+  <!-- model choice -->
+  <rect x="260" y="142" width="280" height="64" rx="8" fill="#f3f0ff" stroke="#6c4fd6" stroke-width="2"/>
+  <text x="400" y="166" text-anchor="middle" font-size="13" fill="#3a2a73">플룸 모델 연산</text>
+  <text x="400" y="184" text-anchor="middle" font-size="11" fill="#3a2a73">가우시안 플룸(경가스) / SLAB(중가스)</text>
+  <text x="400" y="200" text-anchor="middle" font-size="10" fill="#3a2a73">※ CFD는 설계 검토용, 실시간 대응엔 사용 안 함</text>
+
+  <line x1="400" y1="206" x2="400" y2="246" stroke="#555" stroke-width="2" marker-end="url(#arrowG)"/>
+
+  <!-- output -->
+  <rect x="220" y="248" width="360" height="60" rx="8" fill="#fff7f0" stroke="#e08a2e" stroke-width="2"/>
+  <text x="400" y="272" text-anchor="middle" font-size="13" fill="#7a4310">지도 위 확산 범위(등농도선)</text>
+  <text x="400" y="290" text-anchor="middle" font-size="11" fill="#7a4310">매 기상 업데이트 주기마다 재계산</text>
+
+  <line x1="400" y1="308" x2="400" y2="344" stroke="#555" stroke-width="2" marker-end="url(#arrowG)"/>
+
+  <rect x="250" y="346" width="300" height="56" rx="8" fill="#fdf0f0" stroke="#d6555a" stroke-width="2"/>
+  <text x="400" y="370" text-anchor="middle" font-size="13" fill="#7a2a2d">대피 반경 경보</text>
+  <text x="400" y="388" text-anchor="middle" font-size="11" fill="#7a2a2d">기상 데이터 끊기면 가장 위험한 구간</text>
+
+  <text x="400" y="424" text-anchor="middle" font-size="12" fill="#999999">설계용(정확·느림)과 대응용(근사·즉시)은 다른 모델이 필요하다</text>
+</svg>
