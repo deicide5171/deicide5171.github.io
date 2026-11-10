@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <marker id="arrowC" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="24" text-anchor="middle" font-size="13" fill="#333333">직접 결합 구조 vs 게이트웨이 분리 구조 — 공급 중단이 미치는 범위</text>
+
+  <!-- top: direct coupling -->
+  <text x="40" y="58" font-size="12" fill="#7a2a2d" font-weight="bold">A. 벤더 API 직접 결합</text>
+
+  <rect x="40" y="68" width="200" height="54" rx="8" fill="#f5f5f5" stroke="#777777" stroke-width="2"/>
+  <text x="140" y="90" text-anchor="middle" font-size="12" fill="#333333">에이전트 코어 로직</text>
+  <text x="140" y="108" text-anchor="middle" font-size="10" fill="#333333">(프롬프트·도구 스키마 포함)</text>
+
+  <line x1="240" y1="95" x2="280" y2="95" stroke="#555" stroke-width="2" marker-end="url(#arrowC)"/>
+
+  <rect x="282" y="68" width="200" height="54" rx="8" fill="#fdf0f0" stroke="#d6555a" stroke-width="2"/>
+  <text x="382" y="90" text-anchor="middle" font-size="12" fill="#7a2a2d">벤더 A SDK 직접 호출</text>
+  <text x="382" y="108" text-anchor="middle" font-size="10" fill="#7a2a2d">(스키마·캐싱 API 결합)</text>
+
+  <rect x="520" y="68" width="230" height="54" rx="8" fill="#fdf0f0" stroke="#d6555a" stroke-width="2" stroke-dasharray="4,3"/>
+  <text x="635" y="90" text-anchor="middle" font-size="11" fill="#7a2a2d">공급 중단 시 영향 범위</text>
+  <text x="635" y="108" text-anchor="middle" font-size="10" fill="#7a2a2d">코어 로직 전면 재작성</text>
+
+  <line x1="482" y1="95" x2="518" y2="95" stroke="#d6555a" stroke-width="2" stroke-dasharray="3,3" marker-end="url(#arrowC)"/>
+
+  <!-- bottom: gateway -->
+  <text x="40" y="190" font-size="12" fill="#15502f" font-weight="bold">B. 모델 라우팅 게이트웨이 분리</text>
+
+  <rect x="40" y="200" width="200" height="54" rx="8" fill="#f5f5f5" stroke="#777777" stroke-width="2"/>
+  <text x="140" y="222" text-anchor="middle" font-size="12" fill="#333333">에이전트 코어 로직</text>
+  <text x="140" y="240" text-anchor="middle" font-size="10" fill="#333333">(벤더 중립 인터페이스만 호출)</text>
+
+  <line x1="240" y1="227" x2="280" y2="227" stroke="#555" stroke-width="2" marker-end="url(#arrowC)"/>
+
+  <rect x="282" y="200" width="200" height="54" rx="8" fill="#eef5ff" stroke="#2f6fed" stroke-width="2"/>
+  <text x="382" y="222" text-anchor="middle" font-size="12" fill="#1b3a73">모델 라우팅 게이트웨이</text>
+  <text x="382" y="240" text-anchor="middle" font-size="10" fill="#1b3a73">(벤더별 스키마 변환 흡수)</text>
+
+  <line x1="382" y1="254" x2="382" y2="290" stroke="#555" stroke-width="2" marker-end="url(#arrowC)"/>
+
+  <rect x="282" y="292" width="90" height="50" rx="6" fill="#f0f7f4" stroke="#03c75a" stroke-width="2"/>
+  <text x="327" y="320" text-anchor="middle" font-size="10" fill="#15502f">벤더 A</text>
+
+  <rect x="392" y="292" width="90" height="50" rx="6" fill="#f0f7f4" stroke="#03c75a" stroke-width="2"/>
+  <text x="437" y="320" text-anchor="middle" font-size="10" fill="#15502f">벤더 B</text>
+
+  <rect x="520" y="200" width="230" height="54" rx="8" fill="#f0f7f4" stroke="#03c75a" stroke-width="2"/>
+  <text x="635" y="222" text-anchor="middle" font-size="11" fill="#15502f">공급 중단 시 영향 범위</text>
+  <text x="635" y="240" text-anchor="middle" font-size="10" fill="#15502f">게이트웨이 라우팅 가중치 조정</text>
+
+  <line x1="482" y1="227" x2="518" y2="227" stroke="#03c75a" stroke-width="2" stroke-dasharray="3,3" marker-end="url(#arrowC)"/>
+
+  <rect x="120" y="380" width="560" height="56" rx="8" fill="#fff7f0" stroke="#e08a2e" stroke-width="2" stroke-dasharray="4,3"/>
+  <text x="400" y="402" text-anchor="middle" font-size="11" fill="#7a4310">단, 게이트웨이가 있어도 실제 트래픽이 한 벤더에 쏠려 있었다면</text>
+  <text x="400" y="420" text-anchor="middle" font-size="11" fill="#7a4310">설정 교체만으로는 서비스 품질 저하를 피할 수 없다</text>
+</svg>
