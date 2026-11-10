@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>에이전트가 알아서 장바구니 채우고 결제까지 해주세요 — AP2 Mandate 설계로 보는 에이전틱 커머스 신뢰 경계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">에이전트가 알아서 장바구니 채우고 결제까지 해주세요 — AP2 Mandate 설계로 보는 에이전틱 커머스 신뢰 경계</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — '에이전트가 알아서 최저가 찾아서 결제까지 해주세요'라는 요구는 카드번호를 에이전트에 쥐여주는 문제가 아니라, 누가 무엇을 얼마나 승인했는지 검증 가능하게 기록하는 위임 사슬 설계 문제입니다. Google AP2의 Mandate 모델과 MCP·A2A·UCP 사이의 레이어 구조, 실제 도입 순서를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"출장 항공권, 조건 맞으면 에이전트가 알아서 예약하고 결제까지 끝내주세요." 쇼핑·여행·구독 관리 에이전트가 실무에 들어오기 시작하면서 이런 요구가 더 이상 가설이 아니게 됐습니다. 문제는 여기서 가장 쉬운 구현이 가장 위험한 구현이라는 점입니다. 에이전트에게 저장된 카드 정보나 로그인 세션 토큰을 그대로 넘기면, 에이전트가 실수로든 프롬프트 인젝션으로든 "사용자가 승인하지 않은 결제"를 실행했을 때 가맹점도 카드사도 이게 정말 사용자의 의사였는지 증명할 방법이 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">Google이 2026년 초 공개하고 이후 FIDO Alliance에 Verifiable Intent 개념을 기증한 <b>AP2(Agent Payments Protocol)</b>는 이 문제를 "카드 정보를 어떻게 안전하게 전달할까"가 아니라 "누가 무엇을 승인했는지를 암호학적으로 검증 가능한 기록으로 남길까"로 바꿔서 풀었습니다. PayPal 지갑 연동과 Mastercard Agent Pay 파일럿이 이미 이 모델 위에서 돌아가고 있다는 점에서, 결제 기능을 건드리는 에이전트를 설계한다면 이 프로토콜의 사고방식을 모르고 지나치기 어렵습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">빌더가 답해야 할 질문은 "결제 API를 에이전트에게 연결할 것인가"가 아니라 "사용자가 승인한 범위와 에이전트가 실제로 실행한 행동 사이의 간극을, 사고가 난 뒤에도 제3자가 재구성할 수 있게 설계했는가"입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Mandate는 API 키가 아니라 서명된 위임 사슬이다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">AP2의 중심 추상은 기존 결제 흐름에 없던 새로운 개념인 <b>Mandate</b>입니다. 사용자가 에이전트에게 "10만원 이하 항공권이면 알아서 예약해"라고 말하는 순간 <b>Intent Mandate</b>가 서명되어 생성됩니다. 에이전트가 실제 후보 상품을 찾아 장바구니를 구성하면 그 구체적인 내역(가격, 판매자, 조건)이 <b>Cart Mandate</b>로 다시 서명됩니다. 마지막으로 결제가 실행되는 순간 <b>Payment Mandate</b>가 결제 수단과 금액을 확정해 서명합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">세 단계가 각각 독립적으로 서명되기 때문에, 분쟁이 생겼을 때 사용자가 승인한 의도와 에이전트가 실제로 담은 장바구니, 실제로 청구된 금액을 각각 떼어내 대조할 수 있습니다. 기존 카드 자동결제가 "이 세션이 결제 권한을 가진다"는 한 덩어리짜리 신뢰였다면, AP2는 의도-구성-실행 세 지점에 각각 서명을 박아 두는 셈입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">결제 프로토콜은 혼자 동작하지 않는다</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">AP2는 전체 스택의 한 레이어일 뿐입니다. 에이전트가 도구를 호출하고 다른 에이전트와 통신하는 기반은 여전히 MCP·A2A가 맡고, 그 위에서 상품을 찾고 비교하는 커머스 여정은 UCP(Universal Commerce Protocol) 같은 별도 계층이 담당하며, AP2는 그 여정의 마지막 단계인 결제 승인·실행만 책임집니다. 여기에 Visa TAP, Coinbase x402, PayPal의 자체 프로토콜까지 경쟁 구도로 공존하면서, Mastercard가 AP2·UCP·A2A·ACP를 동시에 지원하겠다고 공식 선언한 것처럼 업계는 "하나의 표준이 승리"보다 "멀티 프로토콜 공존"으로 수렴하는 중입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">즉 지금 설계에서 중요한 건 AP2 자체를 깊이 파는 것보다, 결제 레이어를 나머지 에이전트 스택과 느슨하게 분리해 두어 어떤 프로토콜이 표준으로 굳어지든 교체 비용을 줄이는 구조입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-10-ap2-agent-payments-protocol-mandate-trust-design-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">사용자의 말 한마디가 실제 결제 실행까지 가려면 서로 다른 신뢰 주체를 거칩니다. 화살표마다 서명 주체가 바뀌는 점이 중요합니다. Intent는 사용자가, Cart는 가맹점이 실제 재고·가격을 확인한 뒤 공동 서명하고, Payment는 결제 처리자가 레일(카드망·은행·스테이블코인)에 넘기기 직전에 확정합니다. 한 구간이라도 서명 없이 암묵적 신뢰로 넘어가면 그 지점이 바로 분쟁 발생 시 아무도 증명할 수 없는 사각지대가 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Mandate 모델을 언제 도입할 것인가</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">접근 방식</th><th style="border:1px solid #ddd; padding:8px;">구현 난이도</th><th style="border:1px solid #ddd; padding:8px;">분쟁 시 증빙력</th><th style="border:1px solid #ddd; padding:8px;">적합한 상황</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">저장 카드 + 세션 토큰 자동결제</td><td style="border:1px solid #ddd; padding:8px;">낮음</td><td style="border:1px solid #ddd; padding:8px;">거의 없음</td><td style="border:1px solid #ddd; padding:8px;">내부 테스트, 반자동 흐름</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">매 결제마다 사람 수동 재확인</td><td style="border:1px solid #ddd; padding:8px;">낮음</td><td style="border:1px solid #ddd; padding:8px;">사람 확인 자체가 증빙</td><td style="border:1px solid #ddd; padding:8px;">빈도 낮고 금액 큰 경우</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">AP2 Mandate 체인 도입</td><td style="border:1px solid #ddd; padding:8px;">높음</td><td style="border:1px solid #ddd; padding:8px;">단계별 서명으로 재구성 가능</td><td style="border:1px solid #ddd; padding:8px;">외부 고객 대상 반복 결제</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">자체 위임 토큰(비표준)</td><td style="border:1px solid #ddd; padding:8px;">중간</td><td style="border:1px solid #ddd; padding:8px;">설계자 역량에 의존</td><td style="border:1px solid #ddd; padding:8px;">폐쇄망·사내 전용</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">사내 전용 자동화나 금액이 작고 사용자가 매번 화면을 보는 구조라면 AP2 같은 무거운 표준을 끌어올 이유가 없습니다. 반대로 외부 가맹점과 실제 돈이 오가고, 나중에 "이건 내가 승인한 적 없다"는 분쟁이 법적 문제로 번질 수 있는 서비스라면 표준 Mandate 체계를 처음부터 설계에 넣는 편이 나중에 전체 결제 흐름을 뜯어고치는 것보다 훨씬 쌉니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 먼저 할 일은 프로토콜 스펙을 외우는 게 아니라 우리 서비스에서 사람이 "승인"이라고 느끼는 순간이 정확히 어디인지 UX로 먼저 확정하는 것입니다. "10만원 이하면 알아서"라는 느슨한 위임과 "이 특정 상품, 이 금액"이라는 확정 승인은 전혀 다른 Intent Mandate를 요구합니다. 그다음은 연동할 가맹점·결제사가 AP2를 포함해 어떤 프로토콜을 실제로 지원하는지 확인하는 단계입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">아직 생태계가 Visa TAP·x402 등으로 분열돼 있으므로, 특정 파트너사 하나에만 맞춰 깊게 구현하기보다 Mandate라는 개념 모델(의도-구성-실행 분리, 각 단계 서명)을 먼저 내부 구조로 잡아두고 프로토콜 바인딩은 어댑터 계층으로 분리하는 게 안전합니다. 마지막으로 분쟁 대응 프로세스를 결제 기능 출시 전에 먼저 그려봐야 합니다 — 세 개의 Mandate 중 어느 것이 위조·누락됐는지 운영팀이 몇 분 안에 조회할 수 있는 도구가 없다면, 서명 체계를 아무리 정교하게 설계해도 실제 분쟁 상황에서는 무용지물입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #e08a2e; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>주의</b> — 여러 사례가 보여주는 프로덕션 배포는 아직 파일럿 단계입니다. 특정 가맹점·결제사의 실제 지원 여부를 반드시 직접 확인한 뒤 통합 범위를 정해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="color:#03c75a; font-size:15px;">#에이전틱커머스 #AP2 #결제프로토콜 #신뢰경계 #에이전트권한</p>
+
+</body>
+</html>
