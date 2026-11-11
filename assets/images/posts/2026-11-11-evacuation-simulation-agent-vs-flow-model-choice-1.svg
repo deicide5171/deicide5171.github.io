@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <marker id="arrowEV" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="26" text-anchor="middle" font-size="14" fill="#333333">같은 입력이 에이전트 기반 vs 거시 흐름 모델로 갈라지는 대피 시뮬레이션 파이프라인</text>
+
+  <!-- input -->
+  <rect x="300" y="42" width="200" height="54" rx="8" fill="#f5f5f5" stroke="#777777" stroke-width="2"/>
+  <text x="400" y="64" text-anchor="middle" font-size="12" fill="#333333">건물 도면 · 인구 분포</text>
+  <text x="400" y="82" text-anchor="middle" font-size="11" fill="#333333">위험 발생 지점</text>
+
+  <line x1="360" y1="96" x2="220" y2="134" stroke="#555" stroke-width="2" marker-end="url(#arrowEV)"/>
+  <line x1="440" y1="96" x2="580" y2="134" stroke="#555" stroke-width="2" marker-end="url(#arrowEV)"/>
+
+  <!-- micro path -->
+  <rect x="80" y="136" width="280" height="50" rx="6" fill="#eef5ff" stroke="#2f6fed" stroke-width="2"/>
+  <text x="220" y="158" text-anchor="middle" font-size="12" fill="#1b3a73">에이전트 기반 (개인 단위)</text>
+  <text x="220" y="174" text-anchor="middle" font-size="10" fill="#1b3a73">소셜포스·게임이론 상호작용</text>
+
+  <line x1="220" y1="186" x2="220" y2="220" stroke="#555" stroke-width="2" marker-end="url(#arrowEV)"/>
+  <text x="300" y="208" font-size="10" fill="#c0392b">개체수↑ → 연산량 비선형 폭발</text>
+
+  <rect x="80" y="222" width="280" height="46" rx="6" fill="#eef5ff" stroke="#2f6fed" stroke-width="2"/>
+  <text x="220" y="250" text-anchor="middle" font-size="12" fill="#1b3a73">병목·쏠림 디테일 재현</text>
+
+  <!-- macro path -->
+  <rect x="440" y="136" width="280" height="50" rx="6" fill="#f0f7f4" stroke="#03c75a" stroke-width="2"/>
+  <text x="580" y="158" text-anchor="middle" font-size="12" fill="#15502f">거시 흐름 기반 (밀도·유량)</text>
+  <text x="580" y="174" text-anchor="middle" font-size="10" fill="#15502f">네트워크 노드·엣지 모델</text>
+
+  <line x1="580" y1="186" x2="580" y2="220" stroke="#555" stroke-width="2" marker-end="url(#arrowEV)"/>
+  <text x="650" y="208" font-size="10" fill="#1a7a3c">노드수 ∝ 연산량 (선형)</text>
+
+  <rect x="440" y="222" width="280" height="46" rx="6" fill="#f0f7f4" stroke="#03c75a" stroke-width="2"/>
+  <text x="580" y="250" text-anchor="middle" font-size="12" fill="#15502f">전체 대피 시간 추정</text>
+
+  <!-- hybrid convergence -->
+  <line x1="220" y1="268" x2="340" y2="312" stroke="#555" stroke-width="2" marker-end="url(#arrowEV)"/>
+  <line x1="580" y1="268" x2="460" y2="312" stroke="#555" stroke-width="2" marker-end="url(#arrowEV)"/>
+
+  <rect x="260" y="314" width="280" height="50" rx="6" fill="#fff7f0" stroke="#e08a2e" stroke-width="2"/>
+  <text x="400" y="336" text-anchor="middle" font-size="12" fill="#7a4310">하이브리드 결합</text>
+  <text x="400" y="352" text-anchor="middle" font-size="10" fill="#7a4310">핫스팟만 미시, 나머지는 거시</text>
+
+  <line x1="400" y1="364" x2="400" y2="396" stroke="#555" stroke-width="2" marker-end="url(#arrowEV)"/>
+
+  <rect x="260" y="398" width="280" height="42" rx="8" fill="#f5f5f5" stroke="#777777" stroke-width="2"/>
+  <text x="400" y="424" text-anchor="middle" font-size="12" fill="#333333">웹 지도 타임라인 재생</text>
+</svg>
