@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <marker id="arrowAS" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="26" text-anchor="middle" font-size="14" fill="#333333">요청이 세션 상태 저장소와 샌드박스 풀을 오가는 Agent Substrate 흐름</text>
+
+  <!-- user request -->
+  <rect x="320" y="42" width="160" height="46" rx="8" fill="#f5f5f5" stroke="#777777" stroke-width="2"/>
+  <text x="400" y="70" text-anchor="middle" font-size="13" fill="#333333">사용자 요청 / 메시지</text>
+
+  <line x1="400" y1="88" x2="400" y2="118" stroke="#555" stroke-width="2" marker-end="url(#arrowAS)"/>
+
+  <!-- state store -->
+  <rect x="300" y="120" width="200" height="54" rx="8" fill="#f0f7f4" stroke="#03c75a" stroke-width="2"/>
+  <text x="400" y="142" text-anchor="middle" font-size="12" fill="#15502f">세션 상태 저장소</text>
+  <text x="400" y="160" text-anchor="middle" font-size="10" fill="#15502f">(대화·파일·메모리, 항상 보존)</text>
+
+  <line x1="330" y1="174" x2="220" y2="218" stroke="#555" stroke-width="2" marker-end="url(#arrowAS)"/>
+  <line x1="470" y1="174" x2="580" y2="218" stroke="#555" stroke-width="2" marker-end="url(#arrowAS)"/>
+
+  <!-- resume path -->
+  <rect x="80" y="220" width="280" height="50" rx="6" fill="#eef5ff" stroke="#2f6fed" stroke-width="2"/>
+  <text x="220" y="242" text-anchor="middle" font-size="12" fill="#1b3a73">상태 있음 → 샌드박스 복원</text>
+  <text x="220" y="258" text-anchor="middle" font-size="10" fill="#1b3a73">(gVisor, 약 500ms)</text>
+
+  <!-- cold path -->
+  <rect x="440" y="220" width="280" height="50" rx="6" fill="#eef5ff" stroke="#2f6fed" stroke-width="2"/>
+  <text x="580" y="242" text-anchor="middle" font-size="12" fill="#1b3a73">상태 없음 → 신규 샌드박스 생성</text>
+  <text x="580" y="258" text-anchor="middle" font-size="10" fill="#1b3a73">(첫 요청, 콜드스타트)</text>
+
+  <line x1="220" y1="270" x2="330" y2="312" stroke="#555" stroke-width="2" marker-end="url(#arrowAS)"/>
+  <line x1="580" y1="270" x2="470" y2="312" stroke="#555" stroke-width="2" marker-end="url(#arrowAS)"/>
+
+  <!-- execution -->
+  <rect x="260" y="314" width="280" height="54" rx="8" fill="#fff7f0" stroke="#e08a2e" stroke-width="2"/>
+  <text x="400" y="336" text-anchor="middle" font-size="12" fill="#7a4310">샌드박스 실행 (컴퓨트, 빌려 쓰는 자원)</text>
+  <text x="400" y="354" text-anchor="middle" font-size="10" fill="#7a4310">작업 완료 또는 응답 대기 시 종료</text>
+
+  <line x1="330" y1="368" x2="400" y2="396" stroke="#999999" stroke-width="2" stroke-dasharray="5,4"/>
+  <line x1="470" y1="368" x2="400" y2="396" stroke="#999999" stroke-width="2" stroke-dasharray="5,4"/>
+  <line x1="400" y1="396" x2="400" y2="178" stroke="#999999" stroke-width="2" stroke-dasharray="5,4" marker-end="url(#arrowAS)"/>
+
+  <text x="430" y="408" font-size="11" fill="#999999">상태만 저장소에 반영 후 컴퓨트 반납</text>
+
+  <text x="220" y="285" text-anchor="middle" font-size="10" fill="#555555">대부분의 재요청 경로</text>
+  <text x="580" y="285" text-anchor="middle" font-size="10" fill="#555555">GPU·장시간 연결은 미지원 영역</text>
+</svg>
