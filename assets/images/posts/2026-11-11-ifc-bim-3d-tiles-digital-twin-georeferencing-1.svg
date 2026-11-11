@@ -1,0 +1,42 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <marker id="arrowIFC" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="26" text-anchor="middle" font-size="14" fill="#333333">BIM 저작 도구에서 디지털 트윈 플랫폼까지 — 좌표와 의미가 깎이는 지점</text>
+
+  <rect x="300" y="42" width="200" height="46" rx="8" fill="#f5f5f5" stroke="#777777" stroke-width="2"/>
+  <text x="400" y="70" text-anchor="middle" font-size="12" fill="#333333">BIM 저작 도구 (Revit 등)</text>
+
+  <line x1="400" y1="88" x2="400" y2="118" stroke="#555" stroke-width="2" marker-end="url(#arrowIFC)"/>
+
+  <rect x="280" y="120" width="240" height="46" rx="6" fill="#f5f5f5" stroke="#777777" stroke-width="2"/>
+  <text x="400" y="148" text-anchor="middle" font-size="12" fill="#333333">IFC 내보내기 (로컬 좌표)</text>
+
+  <line x1="400" y1="166" x2="400" y2="196" stroke="#555" stroke-width="2" marker-end="url(#arrowIFC)"/>
+
+  <rect x="240" y="198" width="320" height="50" rx="6" fill="#fff7f0" stroke="#e08a2e" stroke-width="2"/>
+  <text x="400" y="220" text-anchor="middle" font-size="12" fill="#7a4310">좌표 보정 (georeferencing)</text>
+  <text x="400" y="236" text-anchor="middle" font-size="10" fill="#7a4310">측량 기준점 ↔ BIM 베이스포인트</text>
+  <text x="630" y="224" font-size="10" fill="#c0392b">정밀도 손실 지점</text>
+
+  <line x1="400" y1="248" x2="400" y2="278" stroke="#555" stroke-width="2" marker-end="url(#arrowIFC)"/>
+
+  <rect x="240" y="280" width="320" height="50" rx="6" fill="#eef5ff" stroke="#2f6fed" stroke-width="2"/>
+  <text x="400" y="302" text-anchor="middle" font-size="12" fill="#1b3a73">CityGML LOD4 변환 (FME 등)</text>
+  <text x="400" y="318" text-anchor="middle" font-size="10" fill="#1b3a73">IFC 속성 → ADE 확장 필요</text>
+  <text x="630" y="306" font-size="10" fill="#c0392b">의미 손실 지점</text>
+
+  <line x1="400" y1="330" x2="400" y2="360" stroke="#555" stroke-width="2" marker-end="url(#arrowIFC)"/>
+
+  <rect x="260" y="362" width="280" height="42" rx="6" fill="#f0f7f4" stroke="#03c75a" stroke-width="2"/>
+  <text x="400" y="388" text-anchor="middle" font-size="12" fill="#15502f">3D Tiles 타일링</text>
+
+  <line x1="400" y1="404" x2="400" y2="420" stroke="#555" stroke-width="2" marker-end="url(#arrowIFC)"/>
+
+  <text x="400" y="438" text-anchor="middle" font-size="12" fill="#333333">디지털 트윈 플랫폼 (Cesium 등) 렌더링</text>
+</svg>
