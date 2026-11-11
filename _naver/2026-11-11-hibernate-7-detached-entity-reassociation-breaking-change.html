@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>Spring Boot 4로 올리는 김에 Hibernate도 최신으로 맞춰주세요 — 조용히 깨지는 detached 엔티티 재연결 패턴</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">Spring Boot 4로 올리는 김에 Hibernate도 최신으로 맞춰주세요 — 조용히 깨지는 detached 엔티티 재연결 패턴</div>
+<p style="font-size:14px; color:#999;">STACK</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 'Spring Boot 4로 올리는 김에 Hibernate도 최신으로 맞춰주세요'라는 요구는 버전 숫자를 바꾸는 작업이 아닙니다. Hibernate 7이 detached 엔티티의 암묵적 재연결을 막고 레거시 어노테이션을 걷어내면서, 오래 써 온 영속성 패턴이 컴파일은 되는데 런타임에만 깨지는 지점이 생깁니다. 무엇이 왜 깨지는지와 전환 전에 점검해야 할 것들을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"Spring Boot 4로 올리는 김에 Hibernate도 최신 버전으로 맞춰주세요." 이 요구는 의존성 버전 하나를 올리는 단순 작업처럼 들리지만, Hibernate 7은 Jakarta Persistence 3.2 베이스라인 위에서 오래된 암묵적 동작 몇 가지를 의도적으로 제거한 메이저 버전입니다. 그중 가장 조용히, 그러나 가장 넓게 영향을 주는 변경은 <b>detached 상태의 엔티티를 영속성 컨텍스트에 암묵적으로 재연결하는 동작의 제거</b>입니다. 폼에서 받은 데이터를 엔티티에 채우고 그대로 저장소에 넘겨 저장하는 패턴은 Hibernate 레거시 API(saveOrUpdate 계열)에 기대어 수년간 당연하게 동작해 왔는데, 이 가정이 Hibernate 7에서는 더 이상 성립하지 않습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">문제는 이 변경이 컴파일 타임에 드러나지 않는다는 점입니다. 코드는 그대로 빌드되고, 로컬 테스트에서는 조회 흐름이 단순해서 우연히 통과하다가, 운영 환경에서 특정 업데이트 경로를 탈 때만 예외가 발생하거나 예상과 다른 insert/update가 일어납니다. 빌더가 답해야 할 질문은 "Hibernate 버전을 올릴 것인가"가 아니라 "우리 코드베이스 어디에서 detached 엔티티를 암묵적으로 재연결에 의존하고 있는가"입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Detached 재연결이 왜 암묵적 위험이었는가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">영속성 컨텍스트(1차 캐시)는 하나의 세션 안에서 엔티티의 상태 변화를 추적해 트랜잭션 커밋 시점에 변경분만 반영합니다. 세션이 닫히면 그 안의 엔티티는 "detached" 상태가 되어 더 이상 추적되지 않습니다. 레거시 Hibernate API는 이 detached 엔티티를 다시 세션에 밀어 넣어 마치 계속 추적되고 있던 것처럼 처리하는 재연결을 허용했는데, 이 동작은 두 세션 사이에 그 엔티티가 실제로 변경되지 않았다는 가정에 암묵적으로 기대고 있었습니다. 동시에 다른 트랜잭션이 같은 행을 수정했다면, 재연결은 그 변경을 덮어쓰는 방식으로 조용히 데이터를 잃게 만들 수 있습니다. Hibernate 7은 JPA 표준이 정의한 merge() 경로만 공식 지원하도록 좁히면서, 이 암묵적 위험을 "명시적으로 병합 전략을 선택하라"는 요구로 바꿨습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">레거시 어노테이션 제거와 JPA 3.2 네임 충돌</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">같은 맥락에서 Hibernate 전용 @Where, @OrderBy, @ForeignKey, @Index 어노테이션이 제거되고 각각 @SQLRestriction, @SQLOrder와 JPA 표준 대응 어노테이션으로 대체됐습니다. @Cascade와 CascadeType도 deprecated 처리됐습니다. 여기에 더해 Jakarta Persistence 3.2가 새로 도입한 Nulls·SchemaManager 같은 타입이 기존 Hibernate 고유 타입과 이름이 겹치면서 import 충돌이 발생하는 경우도 공식 마이그레이션 가이드에 명시돼 있습니다. 하나하나는 사소해 보이지만, 레거시 어노테이션을 광범위하게 쓴 코드베이스라면 전수 치환 작업 자체가 작지 않은 공수입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-11-hibernate-7-detached-entity-reassociation-breaking-change-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">컨트롤러가 폼 데이터를 받아 ID가 채워진 detached 엔티티를 만드는 지점까지는 두 버전이 동일합니다. 여기서 Hibernate 6까지는 이 엔티티를 그대로 레거시 API에 넘기면 내부적으로 조회 후 병합이 암묵적으로 일어났지만, Hibernate 7부터는 이 경로가 사라지고 개발자가 merge()를 명시적으로 호출하거나 영속 상태의 엔티티만 다루는 서비스 레이어 패턴으로 바꿔야 합니다. 영향받는 지점이 레이어 하나가 아니라 컨트롤러·서비스·레포지토리 전 구간에 흩어져 있다는 점에서, 이건 버전 업그레이드가 아니라 마이그레이션 프로젝트로 다뤄야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">Hibernate 6 유지 vs Hibernate 7 전환</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">기준</th><th style="border:1px solid #ddd; padding:8px;">Hibernate 6 유지</th><th style="border:1px solid #ddd; padding:8px;">Hibernate 7 전환</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">기존 코드 호환성</td><td style="border:1px solid #ddd; padding:8px;">높음</td><td style="border:1px solid #ddd; padding:8px;">재연결 패턴 전수 수정 필요</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">JPA 3.2 신규 기능</td><td style="border:1px solid #ddd; padding:8px;">미지원</td><td style="border:1px solid #ddd; padding:8px;">SchemaManager 등 사용 가능</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">Spring Boot 4 정합성</td><td style="border:1px solid #ddd; padding:8px;">과거 호환 모드로만 가능</td><td style="border:1px solid #ddd; padding:8px;">공식 베이스라인과 일치</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">장기 지원</td><td style="border:1px solid #ddd; padding:8px;">종료 시점이 다가옴</td><td style="border:1px solid #ddd; padding:8px;">신규 패치·보안 업데이트 대상</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">전환 비용</td><td style="border:1px solid #ddd; padding:8px;">없음(당장은)</td><td style="border:1px solid #ddd; padding:8px;">레거시 어노테이션·재연결 패턴 전수 치환</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">당장 안정성이 최우선이고 전환 인력을 투입하기 어렵다면 Hibernate 6을 당분간 유지하는 것도 합리적인 선택입니다. 다만 Spring Boot 4 생태계가 Hibernate 7을 기본 베이스라인으로 삼고 있어, 유지 기간이 길어질수록 다른 라이브러리와의 호환성 문제가 누적됩니다. 전환하기로 했다면 "버전 번호만 올리고 나머지는 나중에"가 아니라, 재연결 패턴 치환을 전환 작업의 본체로 보고 일정에 반영해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 먼저 할 일은 코드베이스에서 saveOrUpdate, update() 호출부와 "폼에서 받은 ID 있는 객체를 그대로 저장소에 넘기는" 서비스 메서드를 전수 검색하는 것입니다. 이 목록이 이번 마이그레이션의 실제 작업 범위입니다. 두 번째로 제거된 레거시 어노테이션(@Where, @OrderBy, @ForeignKey, @Index, @Cascade) 사용처를 별도로 찾아 JPA 3.2 표준 대응으로 치환합니다. 세 번째로 이 둘을 한 번에 바꾸지 말고, 먼저 Hibernate 6의 최신 마이너 버전에서 deprecated 경고를 전부 확인해 "7에서 무엇이 깨질지"를 사전에 드러낸 다음 전환하는 편이 안전합니다. 마지막으로 재연결 패턴이 몰려 있던 서비스 메서드는 단위 테스트로 커버된 상태에서만 전환하고, 테스트가 없는 영역이라면 전환 전에 테스트부터 추가하는 순서를 지킵니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #e08a2e; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>주의</b> — 이 변경은 컴파일 타임에 드러나지 않습니다. 재연결 패턴 전수 검색과 테스트 커버리지 확인 없이 버전만 올리면 운영 환경에서만 문제가 터질 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="color:#03c75a; font-size:15px;">#Hibernate7 #JPA #영속성컨텍스트 #마이그레이션 #SpringBoot4</p>
+
+</body>
+</html>
