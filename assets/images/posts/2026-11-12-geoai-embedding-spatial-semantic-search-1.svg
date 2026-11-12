@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="'Helvetica Neue', Arial, sans-serif">
+  <defs>
+    <marker id="arrowG" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#555"/>
+    </marker>
+  </defs>
+
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <!-- source data -->
+  <rect x="30" y="30" width="150" height="46" rx="8" fill="#eef5ff" stroke="#2f6fed" stroke-width="2"/>
+  <text x="105" y="58" text-anchor="middle" font-size="12" fill="#1b3a73">지오메트리</text>
+
+  <rect x="30" y="86" width="150" height="46" rx="8" fill="#eef5ff" stroke="#2f6fed" stroke-width="2"/>
+  <text x="105" y="114" text-anchor="middle" font-size="12" fill="#1b3a73">위성·거리뷰 이미지</text>
+
+  <rect x="30" y="142" width="150" height="46" rx="8" fill="#eef5ff" stroke="#2f6fed" stroke-width="2"/>
+  <text x="105" y="170" text-anchor="middle" font-size="12" fill="#1b3a73">상가 리뷰 텍스트</text>
+
+  <line x1="180" y1="53" x2="250" y2="100" stroke="#555" stroke-width="1.5"/>
+  <line x1="180" y1="109" x2="250" y2="109" stroke="#555" stroke-width="1.5"/>
+  <line x1="180" y1="165" x2="250" y2="118" stroke="#555" stroke-width="1.5"/>
+
+  <!-- embedding pipeline -->
+  <rect x="252" y="70" width="180" height="78" rx="8" fill="#f3f0ff" stroke="#6c4fd6" stroke-width="2"/>
+  <text x="342" y="100" text-anchor="middle" font-size="13" fill="#3a2a73">임베딩 파이프라인</text>
+  <text x="342" y="120" text-anchor="middle" font-size="11" fill="#3a2a73">멀티모달 → 벡터</text>
+  <text x="342" y="138" text-anchor="middle" font-size="10" fill="#8c7bd6">(재인덱싱 주기 관리)</text>
+
+  <line x1="432" y1="109" x2="490" y2="109" stroke="#555" stroke-width="2" marker-end="url(#arrowG)"/>
+
+  <!-- vector index -->
+  <rect x="492" y="70" width="180" height="78" rx="8" fill="#fff7f0" stroke="#e08a2e" stroke-width="2"/>
+  <text x="582" y="100" text-anchor="middle" font-size="13" fill="#7a4310">벡터 인덱스</text>
+  <text x="582" y="120" text-anchor="middle" font-size="11" fill="#7a4310">pgvector / GeoAI 저장소</text>
+  <text x="582" y="138" text-anchor="middle" font-size="10" fill="#b57d3a">공간 피처 + 벡터</text>
+
+  <!-- agent query -->
+  <rect x="300" y="240" width="200" height="56" rx="8" fill="#f0f7f4" stroke="#03c75a" stroke-width="2"/>
+  <text x="400" y="264" text-anchor="middle" font-size="13" fill="#15502f">에이전트 자연어 질의</text>
+  <text x="400" y="282" text-anchor="middle" font-size="11" fill="#15502f">"분위기 비슷한 곳"</text>
+
+  <line x1="400" y1="240" x2="400" y2="190" stroke="#555" stroke-width="2"/>
+  <line x1="400" y1="190" x2="400" y2="149" stroke="#555" stroke-width="2" marker-end="url(#arrowG)"/>
+  <text x="440" y="210" font-size="11" fill="#999999">같은 모델로 질의를 벡터화</text>
+
+  <!-- result back to map -->
+  <line x1="582" y1="148" x2="582" y2="200" stroke="#555" stroke-width="2"/>
+  <line x1="582" y1="200" x2="500" y2="268" stroke="#555" stroke-width="2" marker-end="url(#arrowG)"/>
+  <text x="640" y="200" font-size="11" fill="#999999">유사도 검색 결과</text>
+
+  <rect x="300" y="362" width="200" height="56" rx="8" fill="#fdf0f0" stroke="#d6555a" stroke-width="2"/>
+  <text x="400" y="386" text-anchor="middle" font-size="13" fill="#7a2a2d">지도 레이어로 후보 반환</text>
+  <text x="400" y="404" text-anchor="middle" font-size="11" fill="#7a2a2d">다음 도구 호출로 연결</text>
+
+  <line x1="400" y1="296" x2="400" y2="360" stroke="#555" stroke-width="2" marker-end="url(#arrowG)"/>
+</svg>
