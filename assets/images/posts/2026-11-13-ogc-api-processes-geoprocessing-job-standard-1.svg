@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <!-- Client -->
+  <rect x="40" y="190" width="150" height="70" rx="8" fill="#eef2ff" stroke="#4f46e5" stroke-width="2"/>
+  <text x="115" y="218" text-anchor="middle" font-size="14" font-weight="bold" fill="#1e1b4b">웹 지도</text>
+  <text x="115" y="238" text-anchor="middle" font-size="12" fill="#1e1b4b">클라이언트</text>
+
+  <!-- arrow 1: submit -->
+  <line x1="190" y1="210" x2="270" y2="210" stroke="#888" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="230" y="200" text-anchor="middle" font-size="11" fill="#666">① 제출</text>
+
+  <!-- Job API -->
+  <rect x="270" y="160" width="200" height="140" rx="8" fill="#ecfeff" stroke="#0891b2" stroke-width="2"/>
+  <text x="370" y="183" text-anchor="middle" font-size="14" font-weight="bold" fill="#0e7490">지오프로세싱 작업 API</text>
+  <text x="370" y="203" text-anchor="middle" font-size="11" fill="#155e75">(OGC API - Processes)</text>
+  <rect x="290" y="215" width="160" height="26" rx="4" fill="#ffffff" stroke="#0891b2"/>
+  <text x="370" y="232" text-anchor="middle" font-size="11" fill="#155e75">accepted</text>
+  <rect x="290" y="245" width="160" height="26" rx="4" fill="#ffffff" stroke="#0891b2"/>
+  <text x="370" y="262" text-anchor="middle" font-size="11" fill="#155e75">running</text>
+  <rect x="290" y="275" width="160" height="16" rx="4" fill="#ffffff" stroke="#0891b2"/>
+  <text x="370" y="287" text-anchor="middle" font-size="10" fill="#155e75">successful / failed</text>
+
+  <!-- arrow 2: polling -->
+  <path d="M270,330 C230,330 190,290 190,260" fill="none" stroke="#888" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="200" y="320" font-size="11" fill="#666">② 상태 폴링</text>
+
+  <!-- arrow 3: dispatch to engine -->
+  <line x1="470" y1="210" x2="550" y2="210" stroke="#888" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="510" y="200" text-anchor="middle" font-size="11" fill="#666">③ 실행 위임</text>
+
+  <!-- Engine -->
+  <rect x="550" y="160" width="200" height="100" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="650" y="188" text-anchor="middle" font-size="14" font-weight="bold" fill="#9a3412">연산 엔진</text>
+  <text x="650" y="210" text-anchor="middle" font-size="11" fill="#9a3412">침수 · 확산 · 대피</text>
+  <text x="650" y="230" text-anchor="middle" font-size="11" fill="#9a3412">시뮬레이션 모델</text>
+
+  <!-- arrow back to job api -->
+  <line x1="550" y1="280" x2="470" y2="280" stroke="#888" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="510" y="300" text-anchor="middle" font-size="11" fill="#666">④ 결과 기록</text>
+
+  <!-- arrow result to client -->
+  <path d="M270,250 C230,260 190,250 190,260" fill="none" stroke="transparent"/>
+  <line x1="270" y1="245" x2="190" y2="235" stroke="#888" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="200" y="250" text-anchor="middle" font-size="11" fill="#666">⑤ 결과 레이어</text>
+
+  <!-- job store -->
+  <rect x="300" y="340" width="440" height="50" rx="8" fill="#f8fafc" stroke="#64748b" stroke-width="2"/>
+  <text x="520" y="370" text-anchor="middle" font-size="13" fill="#334155">작업 상태 저장소 (Redis/DB) — 재시작 시에도 유실되지 않아야 함</text>
+  <line x1="370" y1="300" x2="370" y2="340" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+  <text x="400" y="420" text-anchor="middle" font-size="13" fill="#475569">표준이 고정하는 건 ①②③의 계약 형태, 연산 엔진 내부는 자유</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#888"/>
+    </marker>
+  </defs>
+</svg>
