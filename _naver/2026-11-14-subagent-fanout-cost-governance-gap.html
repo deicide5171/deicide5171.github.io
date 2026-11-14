@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>서브에이전트가 몇 개 뜰지 예측이 안 되는데, 비용 통제는 어디에 걸어야 하는가</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">서브에이전트가 몇 개 뜰지 예측이 안 되는데, 비용 통제는 어디에 걸어야 하는가</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — '리서치는 서브에이전트가 알아서 몇 개든 띄우게 해주세요'라는 요구는 비용 폭주 리스크를 함께 들고 옵니다. Claude Code 2.1.317이 추가한 게이트웨이 비용 리포트 API와, 여전히 비어 있는 서브에이전트 단위 effort 제어 사이에서 비용 통제를 어디에 걸어야 하는지 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"코드베이스 전체를 훑어서 보안 취약점을 찾아달라"는 요구를 받으면, 요즘의 에이전트 설계는 하나의 거대한 프롬프트 대신 서브에이전트를 여러 개 띄워 파일별·모듈별로 쪼개 맡기는 쪽으로 수렴합니다. 문제는 이 팬아웃(fan-out)의 폭을 사람이 미리 정확히 예측할 수 없다는 점입니다. 서브에이전트마다 <b>"이 정도 깊이로 생각해도 된다"는 reasoning effort를 설정할 방법이 없다면</b>, 단순한 파일 하나짜리 점검에도 메인 에이전트와 똑같은 고비용 추론이 걸릴 수 있습니다. 이건 버그가 아니라 설계의 공백입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 공백은 커뮤니티에서 오래 지적돼 온 지점입니다. 서브에이전트 frontmatter는 모델 선택까지는 지원하지만 effort나 thinking budget 필드는 아직 없고, 2026년 11월 2일 나온 Claude Code 2.1.317도 이 공백을 직접 메우지는 않았습니다. 대신 이 릴리스가 가져온 건 다른 층의 해법입니다 — 게이트웨이 어드민 API에 <b>GET /v1/organizations/analytics/cost</b>가 추가되어, 개발자·일자·IdP 그룹별로 과거 지출을 조회할 수 있게 됐습니다. "설계 시점에 비용을 미리 막는" 기능은 그대로 비어 있고, "다 쓴 뒤에 집계하는" 기능만 새로 생긴 것입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-14-subagent-fanout-cost-governance-gap-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">팬아웃 설계에서 비용이 통과하는 지점은 네 군데로 나뉩니다. 서브에이전트를 정의하는 시점, 오케스트레이터가 몇 개를 띄울지 결정하는 실행 시점, 호출이 요금으로 빠져나가는 게이트웨이 예산 층, 그리고 이미 다 쓴 뒤에야 보이는 비용 리포트 API입니다. 지금 실제로 손에 쥘 수 있는 레버는 <b>maxTurns</b>와 게이트웨이 예산뿐이며, 서브에이전트별 effort 고정은 아직 기능으로 없고, 비용 리포트는 막는 기능이 아니라 보는 기능입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">통제 지점</th><th style="border:1px solid #ddd; padding:8px;">할 수 있는 것</th><th style="border:1px solid #ddd; padding:8px;">못 하는 것</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">서브에이전트 정의</td><td style="border:1px solid #ddd; padding:8px;">모델 티어 고정</td><td style="border:1px solid #ddd; padding:8px;">effort/thinking 고정</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">오케스트레이터</td><td style="border:1px solid #ddd; padding:8px;">maxTurns로 턴 수 제한</td><td style="border:1px solid #ddd; padding:8px;">동시 팬아웃 개수 상한</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">게이트웨이 예산</td><td style="border:1px solid #ddd; padding:8px;">API 키 단위 상한</td><td style="border:1px solid #ddd; padding:8px;">작업·세션 단위 세분화</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">비용 리포트 API</td><td style="border:1px solid #ddd; padding:8px;">개발자·일·그룹별 집계</td><td style="border:1px solid #ddd; padding:8px;">집계 시점엔 이미 지출 끝남</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">네 층 중 어느 하나에만 기대면 반드시 구멍이 생깁니다. 결국 지금 시점에서는 이 네 층을 전부 겹쳐 쓰는 수밖에 없습니다 — "완벽한 예방"이 아니라 "여러 겹의 느슨한 그물"이라는 전제를 갖고 설계해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 먼저 할 일은 서브에이전트 정의에 모델 티어부터 명시적으로 박아 두는 것입니다. 단순 분류·요약 작업에는 가벼운 모델을, 깊은 추론이 필요한 작업에만 상위 모델을 쓰도록 분리합니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:12px; font-family:monospace; font-size:14px; overflow-x:auto;">#. claude/agents/file-scanner.md
+---
+name: file-scanner
+model: haiku-5-5
+tools: Read, Grep
+---</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">그다음으로 오케스트레이터 쪽 서브에이전트 호출부에 maxTurns 상한을 강제로 걸어, 서브에이전트 하나가 루프에 빠져 턴을 무한정 늘리는 상황을 막습니다. 그다음 단계가 게이트웨이입니다. 아직 작업 단위 예산이 없으므로, 팀·프로젝트별로 API 키를 쪼개서 발급하고 그 키 단위로 상한을 거는 방식으로 "작업 단위"를 흉내 냅니다. 마지막으로 비용 리포트 API를 매일 배치로 당겨와 대시보드에 올리고, 급증이 보이면 알림이 뜨게 연결합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #e08a2e; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>주의</b> — 비용 리포트 API는 예방이 아니라 조기 발견 도구입니다. 모니터링만 걸어두고 안심하면, 알아차렸을 때는 이미 청구서가 나온 뒤입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="color:#03c75a; font-size:15px;">#서브에이전트 #비용거버넌스 #AgentSDK #게이트웨이예산 #멀티에이전트</p>
+
+</body>
+</html>
