@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>프레임워크가 React를 버리기로 했다 — Remix 3가 Fetch와 아일랜드 모델로 다시 지어진 이유</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">프레임워크가 React를 버리기로 했다 — Remix 3가 Fetch와 아일랜드 모델로 다시 지어진 이유</div>
+<p style="font-size:14px; color:#999;">STACK</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 번들 크기와 하이드레이션 비용이 발목을 잡는 서비스에 새 풀스택 프레임워크를 고른다면, React 자체를 들어낸 Remix 3의 Fetch 기반 아키텍처와 아일랜드 모델이 왜 이런 선택을 했는지, 지금 도입해도 되는지를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"신규 서비스인데 번들 크기가 너무 커서 저사양 기기에서 첫 화면이 늦게 뜬다는 지적이 계속 나와요." 프런트엔드 프레임워크를 새로 고르는 자리에서 이런 요구가 나오면, 보통은 코드 스플리팅이나 서버 컴포넌트로 답을 찾습니다. 그런데 2026년 8월 31일 첫 릴리스 후보를 거쳐 10월 Remix Jam에서 공개된 Remix 3는 더 급진적인 답을 들고 나왔습니다 — <b>React 자체를 들어낸 것</b>입니다. 원래 Remix 2는 이미 React Router로 흡수됐고, "Remix"라는 이름은 이번에 완전히 새로운 프레임워크로 다시 쓰였습니다. MIT 라이선스 단일 npm 패키지로 배포되고, 클라이언트 런타임은 React가 아니라 Preact 기반의 자체 포크를 씁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">서버는 Fetch API를 1급 인터페이스로 삼아 요청을 받고 라우트에 매칭하고 핸들러를 실행하는 구조를 클라이언트와 서버가 동일한 로직으로 공유합니다. 컴포넌트는 기본적으로 정적 HTML로만 렌더링되고, <b>clientEntry</b>로 명시한 컴포넌트만 클라이언트 자바스크립트 번들에 포함되는 아일랜드(islands) 모델을 씁니다. 다만 접근성 UI 컴포넌트는 3.0 안정 버전에 포함되지 않았고, 공식 마이그레이션 문서와 보안 감사가 아직 마무리 중이라는 보고도 있었습니다. 그래서 "지금 당장 운영 서비스를 옮겨라"가 아니라 "이 아키텍처 선택이 우리 판단 기준에 들어와야 하는가"를 다룹니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-14-remix-3-react-free-islands-architecture-decision-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">전통적인 React 풀스택 프레임워크는 서버에서 렌더링한 HTML을 클라이언트로 보낸 뒤, 그 위에 React 런타임 전체를 다시 올려 이벤트 핸들러를 연결하는 하이드레이션 과정을 거칩니다. 이 과정에서 페이지에 상호작용이 전혀 없는 부분까지도 React 런타임과 컴포넌트 코드가 번들에 실려 내려갑니다. Remix 3는 이 전제를 뒤집습니다 — 서버가 반환하는 건 이미 완성된 HTML이고, 클라이언트로 내려가는 자바스크립트는 명시적으로 clientEntry를 단 컴포넌트뿐입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">기준</th><th style="border:1px solid #ddd; padding:8px;">React 계열 유지</th><th style="border:1px solid #ddd; padding:8px;">Remix 3 (아일랜드)</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">생태계 성숙도</td><td style="border:1px solid #ddd; padding:8px;">높음</td><td style="border:1px solid #ddd; padding:8px;">낮음, 아직 얇음</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">번들 크기</td><td style="border:1px solid #ddd; padding:8px;">React 런타임 전체 포함</td><td style="border:1px solid #ddd; padding:8px;">정적 비율 높을수록 유리</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">마이그레이션 경로</td><td style="border:1px solid #ddd; padding:8px;">공식 경로 존재</td><td style="border:1px solid #ddd; padding:8px;">없음, 신규 프로젝트 취급</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">안정성</td><td style="border:1px solid #ddd; padding:8px;">수년간 검증</td><td style="border:1px solid #ddd; padding:8px;">RC 직후, 감사 진행 중</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">페이지 대부분이 폼·대시보드처럼 상호작용으로 채워져 있다면 React 생태계를 유지하는 쪽이 여전히 생산성이 높습니다. 반대로 콘텐츠 중심 페이지인데 React 하이드레이션 비용만 억울하게 물고 있었다면 아일랜드 모델의 이득이 체감됩니다. 다만 기존 Remix 2나 React Router 운영 프로젝트를 Remix 3로 "전환"한다는 선택지는 없다는 점도 분명합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">운영 서비스를 다루고 있다면 Remix 3는 지금 건드릴 대상이 아닙니다. 대신 신규로 띄우는 작은 프로젝트나 내부 도구를 PoC 대상으로 고릅니다. 가장 먼저 확인할 건 핵심 라이브러리가 Preact 포크 위에서 그대로 동작하는지입니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:12px; font-family:monospace; font-size:14px; overflow-x:auto;">// routes/dashboard.tsx — 정적 부분과 아일랜드 경계 구분
+export default function Dashboard() {
+  return (
+    &lt;main&gt;
+      &lt;h1&gt;이번 달 통계&lt;/h1&gt;
+      &lt;StaticSummaryTable data={monthlyStats} /&gt;
+      &lt;LiveChart clientEntry data={monthlyStats} /&gt;
+    &lt;/main&gt;
+  );
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">StaticSummaryTable은 서버에서 HTML로만 렌더링되고 번들에 들어가지 않지만, clientEntry가 붙은 LiveChart만 클라이언트 자바스크립트로 내려갑니다. 이 경계를 설계하는 연습 자체가 아일랜드 아키텍처를 익히는 핵심입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #e08a2e; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>주의</b> — 기존 Remix 2·React Router 운영 서비스를 Remix 3로 "전환"하는 공식 경로는 없습니다. 신규 프로젝트의 선택지로만 검토하세요.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="color:#03c75a; font-size:15px;">#Remix3 #아일랜드아키텍처 #FetchAPI #프론트엔드 #번들크기</p>
+
+</body>
+</html>
