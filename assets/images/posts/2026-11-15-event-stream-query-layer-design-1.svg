@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#1e293b">Kafka 토픽에서 조회 레이어로 가는 세 가지 경로</text>
+
+  <!-- Kafka topic -->
+  <rect x="40" y="190" width="140" height="70" rx="8" fill="#f1f5f9" stroke="#64748b" stroke-width="2"/>
+  <text x="110" y="220" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">Kafka Topic</text>
+  <text x="110" y="238" text-anchor="middle" font-size="10" fill="#334155">(order_events)</text>
+
+  <!-- Path 1: self-built -->
+  <line x1="180" y1="210" x2="250" y2="100" stroke="#888" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="250" y="55" width="190" height="90" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="345" y="78" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e3a8a">① 직접 구축</text>
+  <text x="345" y="96" text-anchor="middle" font-size="10" fill="#1e3a8a">Flink/ksqlDB 집계</text>
+  <text x="345" y="112" text-anchor="middle" font-size="10" fill="#1e3a8a">→ Postgres/Redis</text>
+  <text x="345" y="130" text-anchor="middle" font-size="10" fill="#1e3a8a">자유도 높음·운영 부담 큼</text>
+
+  <!-- Path 2: managed -->
+  <line x1="180" y1="225" x2="250" y2="225" stroke="#888" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="250" y="190" width="190" height="70" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="345" y="214" text-anchor="middle" font-size="12" font-weight="bold" fill="#9a3412">② 관리형 쿼리 레이어</text>
+  <text x="345" y="231" text-anchor="middle" font-size="10" fill="#9a3412">Lightning Tables류</text>
+  <text x="345" y="247" text-anchor="middle" font-size="10" fill="#9a3412">서빙 저장소 없이 바로 SQL/MCP</text>
+
+  <!-- Path 3: CDC warehouse -->
+  <line x1="180" y1="240" x2="250" y2="350" stroke="#888" stroke-width="2" marker-end="url(#arrow)"/>
+  <rect x="250" y="320" width="190" height="90" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="345" y="343" text-anchor="middle" font-size="12" font-weight="bold" fill="#14532d">③ CDC + 웨어하우스</text>
+  <text x="345" y="361" text-anchor="middle" font-size="10" fill="#14532d">Snowflake/BigQuery</text>
+  <text x="345" y="377" text-anchor="middle" font-size="10" fill="#14532d">분~시간 단위 신선도</text>
+  <text x="345" y="393" text-anchor="middle" font-size="10" fill="#14532d">풍부한 분석 쿼리</text>
+
+  <!-- Consumers -->
+  <line x1="440" y1="100" x2="520" y2="200" stroke="#888" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+  <line x1="440" y1="225" x2="520" y2="225" stroke="#888" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+  <line x1="440" y1="365" x2="520" y2="250" stroke="#888" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arrow)"/>
+
+  <rect x="520" y="190" width="220" height="70" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="630" y="214" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">대시보드 / 에이전트(MCP)</text>
+  <text x="630" y="232" text-anchor="middle" font-size="10" fill="#334155">단순 상태 조회 vs 복잡 분석</text>
+  <text x="630" y="248" text-anchor="middle" font-size="10" fill="#334155">요구 성격에 따라 경로 선택</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto">
+      <path d="M0,0 L8,4 L0,8 Z" fill="#888"/>
+    </marker>
+  </defs>
+</svg>

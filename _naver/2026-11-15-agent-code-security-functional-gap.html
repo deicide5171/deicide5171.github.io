@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"테스트 통과했으니 바로 머지해주세요" — 기능 84%, 보안 8%의 격차가 요구하는 별도 게이트</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"테스트 통과했으니 바로 머지해주세요" — 기능 84%, 보안 8%의 격차가 요구하는 별도 게이트</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 에이전트가 짠 코드는 기능 테스트는 84%까지 통과해도 보안 테스트는 8% 안팎밖에 통과하지 못한다는 벤치마크 결과가 반복해서 나옵니다. 기능 CI와 보안 게이트를 분리해서 설계해야 하는 이유와, 지금 당장 어디에 무엇을 걸 수 있는지 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"이 기능 에이전트한테 짜게 하고, 테스트만 초록불이면 바로 머지해주세요"라는 요구는 이제 흔합니다. 문제는 "테스트가 초록불"이라는 신호가 실제로 무엇을 보장하는지입니다. 기능 테스트는 "요구한 동작을 하는가"만 확인합니다. <b>"그 동작을 구현한 방식이 안전한가"는 애초에 검증 범위 밖</b>입니다. 그런데 많은 팀의 머지 게이트는 이 둘을 사실상 같은 것으로 취급합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">최근 벤치마크들이 이 간극을 숫자로 못박았습니다. 카네기멜런의 SusVibes 벤치마크는 실제 CVE를 기반으로 재구성한 200개 리포지토리 규모 과제에서, 가장 좋은 에이전트 조합이 기능 테스트를 61% 통과시켰지만 그중 80% 이상이 여전히 취약점을 그대로 품고 있었다고 보고했습니다. 이를 이어받은 Endor Labs의 Agent Security League 리더보드에서는 최고 구성의 기능 정확도가 <b>84.4%인 반면 보안 정확도는 7.8%</b>에 그쳤고, 설정별 중간값 격차는 45퍼센트포인트에 달했습니다. "테스트 통과 = 안전"이라는 전제가 여러 독립적인 측정에서 동시에 깨진 것입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-15-agent-code-security-functional-gap-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">요구사항이 에이전트에게 들어가 코드로 나오고, 머지되어 배포되기까지 검증이 걸리는 지점은 세 군데로 나뉩니다. 지금 대다수 파이프라인은 게이트 단계에 기능 테스트 하나만 올려두고, 거기서 초록불이 뜨면 바로 다음 단계로 넘깁니다. 기능 테스트와 별도로 보안 게이트(정적 분석, 의존성·시크릿 스캔, 필요하면 에이전틱 보안 리뷰)를 같은 위치에 <b>병렬로</b> 세워야, 두 게이트를 모두 통과한 코드만 다음 단계로 넘어가는 구조가 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">검증 수단</th><th style="border:1px solid #ddd; padding:8px;">확인하는 것</th><th style="border:1px solid #ddd; padding:8px;">놓치는 것</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">기능 유닛·통합 테스트</td><td style="border:1px solid #ddd; padding:8px;">요구한 동작의 재현</td><td style="border:1px solid #ddd; padding:8px;">입력 검증, 권한 체크, 인젝션 경로</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">정적 분석(SAST)</td><td style="border:1px solid #ddd; padding:8px;">알려진 취약 패턴</td><td style="border:1px solid #ddd; padding:8px;">새 패턴, 설계상 논리 결함</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">의존성·시크릿 스캔</td><td style="border:1px solid #ddd; padding:8px;">알려진 CVE, 하드코딩 키</td><td style="border:1px solid #ddd; padding:8px;">새로 작성된 취약점</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">에이전틱 보안 리뷰</td><td style="border:1px solid #ddd; padding:8px;">설계 의도 기반 신규 패턴</td><td style="border:1px solid #ddd; padding:8px;">느림, 결과가 실행마다 흔들림</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 넷 중 어느 하나도 혼자서 전체를 커버하지 못합니다. 속도가 빠른 세 가지를 머지를 막는 필수 게이트로 두고, 느리고 변동성 있는 에이전틱 리뷰는 비동기로 돌리되 그 결과 없이는 자동 배포까지는 못 가게 막는 식의 단계적 조합이 현실적입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 먼저 손댈 곳은 SAST의 스캔 범위입니다. 레포 전체를 매번 긁으면 기존 코드의 오래된 경고까지 섞여 노이즈가 커지고, 에이전트가 방금 작성한 변경분이 묻혀 버립니다. PR의 diff에만 좁혀서 돌리는 것부터 시작합니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:12px; font-family:monospace; font-size:14px; overflow-x:auto;">#. github/workflows/security-gate.yml
+on: [pull_request]
+jobs:
+  diff-sast:
+    steps:
+      - run: semgrep --config auto --diff-main --error
+  dependency-secret-scan:
+    steps:
+      - run: trivy fs --severity CRITICAL,HIGH --exit-code 1 .</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 잡들을 기능 테스트와 함께 브랜치 보호 규칙의 필수 상태 체크로 등록하면, 셋 중 하나라도 실패하면 머지 버튼 자체가 비활성화됩니다. 다음은 심각도 분류입니다. critical·high만 머지를 막고, medium 이하는 별도 이슈로 추적하되 머지는 막지 않습니다. 그다음으로 비용이 큰 에이전틱 보안 리뷰는 인증·결제·외부 입력을 다루는 경로를 건드린 PR에만 트리거하고, 결과가 나오기 전까지는 자동 배포 진입을 보류합니다. 마지막으로 기능 테스트 통과율 옆에 보안 게이트 통과율을 나란히 올린 대시보드를 만들어, 이 격차가 좁혀지고 있는지 계속 관찰합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #e08a2e; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>주의</b> — "CI가 초록불이면 안전하다"는 전제는 깨졌습니다. 보안 게이트는 기능 테스트의 부속물이 아니라 머지를 독립적으로 막을 수 있는 동등한 자격의 체크로 설계해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="color:#03c75a; font-size:15px;">#에이전트코드보안 #SAST #벤치마크 #머지게이트 #SusVibes</p>
+
+</body>
+</html>
