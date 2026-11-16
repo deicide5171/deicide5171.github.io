@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#1e293b">GNSS 신뢰도 게이트와 재밍·스푸핑 폴백 경로</text>
+
+  <rect x="40" y="55" width="160" height="50" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="120" y="76" text-anchor="middle" font-size="11" fill="#1e3a8a">GNSS 수신기</text>
+  <text x="120" y="92" text-anchor="middle" font-size="10" fill="#1e3a8a">좌표 + C/N0</text>
+
+  <rect x="250" y="55" width="190" height="50" rx="8" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/>
+  <text x="345" y="76" text-anchor="middle" font-size="11" font-weight="bold" fill="#854d0e">신뢰도 게이트</text>
+  <text x="345" y="92" text-anchor="middle" font-size="10" fill="#854d0e">신호강도·속도 이상치 판정</text>
+
+  <line x1="200" y1="80" x2="250" y2="80" stroke="#64748b" stroke-width="2"/>
+
+  <!-- normal path -->
+  <line x1="440" y1="70" x2="520" y2="70" stroke="#16a34a" stroke-width="2"/>
+  <text x="480" y="60" text-anchor="middle" font-size="10" fill="#166534">정상</text>
+  <rect x="520" y="45" width="220" height="50" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="630" y="66" text-anchor="middle" font-size="11" font-weight="bold" fill="#166534">GNSS 좌표 그대로 사용</text>
+  <text x="630" y="82" text-anchor="middle" font-size="10" fill="#166534">추적 서비스에 "정상" 표시</text>
+
+  <!-- suspect path -->
+  <line x1="440" y1="95" x2="520" y2="150" stroke="#dc2626" stroke-width="2"/>
+  <text x="470" y="120" text-anchor="middle" font-size="10" fill="#b91c1c">재밍·스푸핑 의심</text>
+  <rect x="520" y="130" width="220" height="60" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="630" y="152" text-anchor="middle" font-size="11" font-weight="bold" fill="#991b1b">IMU 데드레커닝</text>
+  <text x="630" y="168" text-anchor="middle" font-size="10" fill="#991b1b">+ 셀룰러 기지국 보조 위치</text>
+  <text x="630" y="184" text-anchor="middle" font-size="10" fill="#991b1b">추적 서비스에 "추정 중" 표시</text>
+
+  <!-- recovery -->
+  <line x1="630" y1="190" x2="630" y2="230" stroke="#64748b" stroke-width="2" stroke-dasharray="4,3"/>
+  <rect x="470" y="230" width="320" height="55" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1.5"/>
+  <text x="630" y="252" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">신뢰 복구 조건 확인</text>
+  <text x="630" y="270" text-anchor="middle" font-size="10" fill="#64748b">신호강도 정상화 + 다중 위성군 교차검증 통과 시에만 복귀</text>
+  <line x1="470" y1="257" x2="345" y2="105" stroke="#64748b" stroke-width="1.5" stroke-dasharray="4,3"/>
+
+  <rect x="40" y="320" width="720" height="110" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="400" y="345" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">핵심: 재밍은 신호 소실로 비교적 쉽게 탐지되지만</text>
+  <text x="400" y="365" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">스푸핑은 신호가 정상처럼 보이므로 속도·위치 이상치 규칙까지 함께 있어야 잡힌다</text>
+  <text x="400" y="390" text-anchor="middle" font-size="11" fill="#64748b">추정 경로로 전환됐다는 사실을 운영자에게 반드시 명시적으로 보여줘야 한다</text>
+  <text x="400" y="410" text-anchor="middle" font-size="11" fill="#64748b">조용히 추정치를 "정상"처럼 보여주는 것이 탐지 실패보다 더 위험하다</text>
+
+</svg>

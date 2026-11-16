@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"배가 재밍 구간을 지나가도 위치 추적이 안 끊기게 해주세요" — GNSS 재밍·스푸핑에 버티는 멀티 센서 폴백 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"배가 재밍 구간을 지나가도 위치 추적이 안 끊기게 해주세요" — GNSS 재밍·스푸핑에 버티는 멀티 센서 폴백 설계</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 호르무즈 해협처럼 GNSS 재밍·스푸핑이 일상화된 구간에서도 선박·화물차 위치 추적이 끊기거나 엉뚱한 좌표로 틀어지지 않게 해달라는 요구를, 신호를 더 정밀하게 받는 문제가 아니라 신호가 적대적으로 조작될 때 버티는 문제로 다시 설계하는 기준을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"호르무즈 해협 지나는 유조선 선단 위치 추적, 그 구간에서도 추적이 끊기거나 엉뚱한 좌표로 안 튀게 해주세요"라는 요구는 해운·물류 쪽에서 점점 자주 들어옵니다. 지금까지 GNSS 위치 추적 글들은 거의 전부 "정상적으로 들어오는 신호를 어떻게 더 정밀하게 받을 것인가"(RTK·PPP 보정)를 다뤘습니다. 이 요구는 질문 자체가 다릅니다 — 신호가 아예 꺼지거나(<b>재밍</b>), 가짜 위치로 거짓말을 하기 시작할 때(<b>스푸핑</b>) 그래도 서비스가 버티게 만드는 문제입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">재밍은 신호 자체를 지워버리므로 수신기가 "신호가 없다"는 걸 비교적 쉽게 알아챕니다. 스푸핑은 진짜처럼 보이는 가짜 신호를 주입하므로, 수신기는 속고 있다는 사실조차 모른 채 "정상 위치"라며 틀린 좌표를 계속 내보냅니다. <b>"신호가 들어오고 있다"는 사실만으로는 그 위치를 믿어도 되는지 전혀 보장되지 않는다</b>는 게 설계의 출발점입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-16-gnss-jamming-spoofing-fleet-tracking-resilience-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">위치 추적 파이프라인은 보통 GNSS 수신기 좌표를 그대로 추적 서비스가 받아 쓰는 단일 경로입니다. 재밍·스푸핑에 버티는 설계는 이 경로 중간에 "이 좌표를 믿어도 되는가"를 판정하는 <b>신뢰도 게이트</b>와, 못 믿을 때 대신 쓸 보조 추정 경로를 끼워 넣는 일입니다. 평소에는 좌표가 게이트를 그대로 통과하지만, 신호 강도 급락이나 물리적으로 불가능한 위치 점프가 감지되면 관성항법(IMU) 데드레커닝과 셀룰러 보조 위치로 즉시 전환됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">방어 계층</th><th style="border:1px solid #ddd; padding:8px;">잡아내는 것</th><th style="border:1px solid #ddd; padding:8px;">못 잡는 것</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">GNSS 단독</td><td style="border:1px solid #ddd; padding:8px;">없음</td><td style="border:1px solid #ddd; padding:8px;">재밍·스푸핑 전부 노출</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">신호강도(C/N0) 모니터링</td><td style="border:1px solid #ddd; padding:8px;">재밍</td><td style="border:1px solid #ddd; padding:8px;">스푸핑(정상처럼 보임)</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">다중 위성군 교차검증</td><td style="border:1px solid #ddd; padding:8px;">일부 조악한 스푸핑</td><td style="border:1px solid #ddd; padding:8px;">정교한 다중 위성군 스푸핑</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">IMU+셀룰러 폴백</td><td style="border:1px solid #ddd; padding:8px;">단기 위치 추정 유지</td><td style="border:1px solid #ddd; padding:8px;">장시간 누적 오차</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 흔한 실수는 신호강도 모니터링만 걸어두고 안심하는 것입니다. 스푸핑 신호는 정상 신호와 비슷하거나 더 강하게 들어오므로 이 계층만으로는 걸러지지 않습니다. 반대로 <b>데드레커닝만 과신해서도 안 됩니다</b> — 시간이 지날수록 오차가 누적되는 임시방편일 뿐입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 먼저 코드를 짜기 전에 이상 탐지 규칙부터 정의합니다. 신호 대 잡음비(C/N0) 급락과, 물리적으로 불가능한 순간 이동·속도 변화를 규칙으로 잡습니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:12px; font-family:monospace; font-size:14px; overflow-x:auto;">def is_trustworthy(fix, prev_fix, cn0):
+    if cn0 &lt; CN0_THRESHOLD:
+        return False  # 재밍 의심
+    implied_speed = haversine(fix, prev_fix) / dt
+    if implied_speed &gt; MAX_PLAUSIBLE_SPEED:
+        return False  # 스푸핑 의심
+    return True</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">게이트가 신뢰 불가 판정을 내리면 IMU 데드레커닝과 셀룰러 보조 위치로 전환하되, 대시보드에 <b>"현재 위치는 추정 중"</b>이라는 상태를 명시적으로 띄워야 합니다. 조용히 추정 좌표를 정상처럼 보여주면 운영자가 배의 실제 위치를 모르면서도 "정상 추적 중"이라 믿는, 더 위험한 상황이 생깁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #e08a2e; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>주의</b> — 신뢰 복구 조건(신호강도 정상화 + 다중 위성군 교차검증)을 명확히 정의하세요. GNSS가 돌아왔다고 바로 믿지 말고 몇 초간 교차 검증한 뒤에만 정상 경로로 복귀해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="color:#03c75a; font-size:15px;">#GNSS재밍 #GPS스푸핑 #선박추적 #데드레커닝 #위치복원력</p>
+
+</body>
+</html>
