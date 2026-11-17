@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#1e293b">QGIS Qt6 전환이 영향을 주는 경계</text>
+
+  <rect x="30" y="60" width="150" height="56" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="105" y="83" text-anchor="middle" font-size="11" fill="#1e3a8a">원천 데이터</text>
+  <text x="105" y="98" text-anchor="middle" font-size="9" fill="#1e3a8a">Shapefile·PostGIS·래스터</text>
+
+  <line x1="180" y1="88" x2="230" y2="88" stroke="#64748b" stroke-width="2"/>
+
+  <rect x="230" y="60" width="160" height="56" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
+  <text x="310" y="83" text-anchor="middle" font-size="11" font-weight="bold" fill="#334155">QGIS Desktop/Server</text>
+  <text x="310" y="98" text-anchor="middle" font-size="9" fill="#334155">Qt5 → Qt6 전환 대상</text>
+
+  <line x1="390" y1="88" x2="440" y2="88" stroke="#dc2626" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="415" y="75" text-anchor="middle" font-size="9" fill="#b91c1c">영향 경계</text>
+
+  <rect x="440" y="55" width="330" height="68" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="605" y="76" text-anchor="middle" font-size="11" font-weight="bold" fill="#991b1b">PyQGIS 플러그인 · Processing 스크립트</text>
+  <text x="605" y="92" text-anchor="middle" font-size="9" fill="#991b1b">Qt 직접 import = 깨질 위험 높음</text>
+  <text x="605" y="106" text-anchor="middle" font-size="9" fill="#991b1b">QGIS 공식 API만 사용 = 상대적으로 안전</text>
+
+  <line x1="605" y1="123" x2="605" y2="160" stroke="#64748b" stroke-width="2"/>
+
+  <rect x="440" y="160" width="160" height="56" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="2"/>
+  <text x="520" y="183" text-anchor="middle" font-size="11" font-weight="bold" fill="#9a3412">대화형 플러그인</text>
+  <text x="520" y="198" text-anchor="middle" font-size="9" fill="#9a3412">깨지면 바로 눈에 띔</text>
+
+  <rect x="610" y="160" width="160" height="56" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2.5"/>
+  <text x="690" y="180" text-anchor="middle" font-size="11" font-weight="bold" fill="#991b1b">야간 Headless 배치</text>
+  <text x="690" y="195" text-anchor="middle" font-size="9" fill="#991b1b">실패가 조용히 묻힘</text>
+  <text x="690" y="208" text-anchor="middle" font-size="9" fill="#991b1b">검증 우선순위 1순위</text>
+
+  <rect x="40" y="250" width="720" height="55" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="400" y="272" text-anchor="middle" font-size="11" fill="#334155">데이터 흐름(원천 → QGIS → 산출물) 자체는 바뀌지 않는다</text>
+  <text x="400" y="290" text-anchor="middle" font-size="11" fill="#334155">바뀌는 것은 QGIS와 플러그인·스크립트 사이의 Qt 경계다</text>
+
+  <rect x="40" y="325" width="720" height="100" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="400" y="350" text-anchor="middle" font-size="12" font-weight="bold" fill="#166534">검증 우선순위: 대화형 플러그인보다 야간 배치를 먼저 본다</text>
+  <text x="400" y="372" text-anchor="middle" font-size="11" fill="#166534">사람이 지켜보지 않는 경로일수록 오류가 늦게, 조용히 발견된다</text>
+  <text x="400" y="392" text-anchor="middle" font-size="11" fill="#166534">Processing 2.x GUI API 의존 코드는 지금 안 깨져도 이번 범위에 포함</text>
+  <text x="400" y="410" text-anchor="middle" font-size="11" fill="#166534">import 구문만 고치고 동작 재확인을 생략하는 것이 가장 흔한 실수</text>
+
+</svg>
