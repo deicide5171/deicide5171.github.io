@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#1e293b">effort 상속 경로와 override 가능 지점</text>
+
+  <rect x="320" y="50" width="160" height="46" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="400" y="78" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e3a8a">세션 effort (기본값)</text>
+
+  <line x1="400" y1="96" x2="400" y2="125" stroke="#64748b" stroke-width="2"/>
+  <text x="420" y="115" font-size="10" fill="#64748b">상속</text>
+
+  <rect x="300" y="125" width="200" height="46" rx="8" fill="#fef9c3" stroke="#ca8a04" stroke-width="2"/>
+  <text x="400" y="149" text-anchor="middle" font-size="11" font-weight="bold" fill="#854d0e">오케스트레이터</text>
+  <text x="400" y="163" text-anchor="middle" font-size="9" fill="#854d0e">(fan-out 시점)</text>
+
+  <line x1="330" y1="171" x2="180" y2="215" stroke="#16a34a" stroke-width="2"/>
+  <line x1="470" y1="171" x2="620" y2="215" stroke="#16a34a" stroke-width="2"/>
+  <line x1="400" y1="171" x2="400" y2="215" stroke="#dc2626" stroke-width="2" stroke-dasharray="4,3"/>
+
+  <rect x="60" y="215" width="240" height="60" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="180" y="237" text-anchor="middle" font-size="11" font-weight="bold" fill="#166534">research-deep 정의</text>
+  <text x="180" y="252" text-anchor="middle" font-size="10" fill="#166534">frontmatter: effort: high</text>
+  <text x="180" y="266" text-anchor="middle" font-size="9" fill="#166534">지원됨 — 역할 고정 override</text>
+
+  <rect x="500" y="215" width="240" height="60" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="620" y="237" text-anchor="middle" font-size="11" font-weight="bold" fill="#166534">format-light 정의</text>
+  <text x="620" y="252" text-anchor="middle" font-size="10" fill="#166534">frontmatter: effort: low</text>
+  <text x="620" y="266" text-anchor="middle" font-size="9" fill="#166534">지원됨 — 역할 고정 override</text>
+
+  <rect x="300" y="215" width="200" height="60" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2" stroke-dasharray="5,4"/>
+  <text x="400" y="237" text-anchor="middle" font-size="11" font-weight="bold" fill="#991b1b">호출 시점 override</text>
+  <text x="400" y="252" text-anchor="middle" font-size="10" fill="#991b1b">"이번만 깊게 봐줘"</text>
+  <text x="400" y="266" text-anchor="middle" font-size="9" fill="#991b1b">아직 미지원</text>
+
+  <rect x="40" y="310" width="720" height="110" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="1"/>
+  <text x="400" y="335" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">effort를 고정할 수 있는 지점은 세션 기본값과 서브에이전트 정의(frontmatter) 뿐이다</text>
+  <text x="400" y="358" text-anchor="middle" font-size="11" fill="#64748b">오케스트레이터가 호출하는 "그 순간"에 effort를 동적으로 바꾸는 길은 아직 없으므로</text>
+  <text x="400" y="378" text-anchor="middle" font-size="11" fill="#64748b">effort는 "작업"이 아니라 "역할"의 속성으로 설계해야 한다</text>
+  <text x="400" y="400" text-anchor="middle" font-size="11" fill="#64748b">fan-out 개수 자체는 effort와 무관하므로 예산 상한은 별도로 걸어야 한다</text>
+
+</svg>

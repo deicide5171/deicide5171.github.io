@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"이 리서치는 깊게, 포맷 정리는 가볍게 해주세요" — 서브에이전트마다 사고 깊이를 다르게 거는 effort 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"이 리서치는 깊게, 포맷 정리는 가볍게 해주세요" — 서브에이전트마다 사고 깊이를 다르게 거는 effort 설계</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — effort 레벨이 세션 기본값, 서브에이전트 정의, 호출 시점 중 어디에 고정되는지에 따라 "리서치는 깊게, 정리는 가볍게"라는 요구를 풀 수 있는 설계가 완전히 달라집니다. 지금은 역할 단위 고정까지만 지원됩니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"이 조사, 서브에이전트 다섯 개한테 나눠서 맡기되 선례 조사는 꼼꼼히, 보고서 포맷 정리는 빨리 끝내주세요"라는 요구는 멀티 에이전트 구조가 기본값이 되면서 실제로 자주 들어옵니다. 문제는 오케스트레이터가 xhigh처럼 높은 effort로 돌고 있으면, 별다른 설정 없이 띄운 서브에이전트들도 전부 같은 effort를 그대로 물려받는다는 점입니다. 포맷 정리처럼 깊은 사고가 필요 없는 작업까지 비싼 추론 비용을 그대로 쓰게 됩니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">effort는 low·medium·high·xhigh·max 중 하나를 고르는 다이얼이지만, 이 다이얼이 <b>"어디에" 고정되느냐</b>에 따라 설계 난이도가 완전히 달라집니다. 지금 실제로 지원되는 지점이 어디인지 정확히 알아야 과도한 기능을 기대하지 않고 현실적으로 설계할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-17-subagent-effort-level-cost-quality-dial-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">effort 설정은 호출 스택을 따라 위에서 아래로 흐릅니다. 세션이 열리면 세션 effort가 기본값이 되고, 오케스트레이터가 서브에이전트를 띄울 때 그 서브에이전트에 자기만의 effort가 정의돼 있지 않으면 위에서 내려온 값을 그대로 물려받습니다. 지금 끼워 넣을 수 있는 지점은 딱 하나, <b>서브에이전트 정의 자체의 frontmatter</b>입니다. "이번 호출만 특별히 깊게 봐 줘"처럼 호출하는 순간에 동적으로 바꾸는 길은 아직 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">설계 방식</th><th style="border:1px solid #ddd; padding:8px;">유연성</th><th style="border:1px solid #ddd; padding:8px;">지금 가능한가</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">세션 전체 단일 effort</td><td style="border:1px solid #ddd; padding:8px;">없음</td><td style="border:1px solid #ddd; padding:8px;">가능(기본 상태)</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">서브에이전트 정의별 고정</td><td style="border:1px solid #ddd; padding:8px;">역할 단위</td><td style="border:1px solid #ddd; padding:8px;">가능</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">호출 시점 동적 override</td><td style="border:1px solid #ddd; padding:8px;">작업 단위</td><td style="border:1px solid #ddd; padding:8px;">아직 불가</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">예산 상한(maxBudgetUsd 등)</td><td style="border:1px solid #ddd; padding:8px;">effort와 별개 축</td><td style="border:1px solid #ddd; padding:8px;">가능</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 흔한 실수는 "오케스트레이터만 xhigh로 올리면 전체 품질이 올라간다"고 가정하는 것입니다. 실제로는 그 오케스트레이터가 띄우는 모든 서브에이전트가 같은 비용을 물려받으므로, 사고 깊이가 필요 없는 작업에도 똑같이 비싼 추론 비용이 들어갑니다. 반대로 <b>역할별 effort만 나눠두고 비용 걱정이 끝났다고 안심하는 것도 위험</b>합니다 — fan-out 개수 자체는 effort와 무관하게 결정되므로 예산 상한은 별도로 걸어야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 먼저 서브에이전트를 "작업"이 아니라 "역할"로 분류합니다. 리서치형(깊은 판단 필요), 집행형(정해진 절차 수행), 정리형(사고 깊이 불필요) 세 갈래로 나누면 대부분의 멀티 에이전트 작업이 들어맞습니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:12px; font-family:monospace; font-size:14px; overflow-x:auto;"># .claude/agents/research-deep.md
+---
+name: research-deep
+effort: high
+---
+
+# .claude/agents/format-light.md
+---
+name: format-light
+effort: low
+---</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">역할별 정의가 자리 잡으면, 오케스트레이터가 역할을 골라 위임하는 것만으로 effort 분기가 자동으로 걸립니다. 호출 시점 동적 override가 없다는 한계는 역할을 충분히 세분화하는 것으로 상당 부분 메울 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #e08a2e; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>주의</b> — effort 설계와는 별개로 세션이나 오케스트레이터 단위에 maxBudgetUsd·maxTurns 같은 예산 상한을 반드시 걸어두세요. fan-out 개수 자체가 예상을 벗어나는 상황에서는 effort를 아무리 세분화해도 비용이 무한정 커질 수 있습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="color:#03c75a; font-size:15px;">#서브에이전트 #effort레벨 #에이전트SDK #비용설계 #멀티에이전트</p>
+
+</body>
+</html>
