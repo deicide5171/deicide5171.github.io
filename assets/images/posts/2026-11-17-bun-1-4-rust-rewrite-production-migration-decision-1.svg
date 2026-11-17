@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="28" text-anchor="middle" font-size="15" font-weight="bold" fill="#1e293b">Bun 1.4 — 엔진은 그대로, 주변 구현만 Rust로 교체</text>
+
+  <rect x="320" y="50" width="160" height="46" rx="8" fill="#eff6ff" stroke="#2563eb" stroke-width="2"/>
+  <text x="400" y="78" text-anchor="middle" font-size="11" font-weight="bold" fill="#1e3a8a">애플리케이션 코드</text>
+
+  <line x1="400" y1="96" x2="400" y2="120" stroke="#64748b" stroke-width="2"/>
+
+  <rect x="120" y="120" width="560" height="170" rx="10" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
+  <text x="400" y="142" text-anchor="middle" font-size="12" font-weight="bold" fill="#334155">런타임 계층 (Bun)</text>
+
+  <rect x="150" y="160" width="190" height="55" rx="8" fill="#f0fdf4" stroke="#16a34a" stroke-width="2"/>
+  <text x="245" y="182" text-anchor="middle" font-size="11" font-weight="bold" fill="#166534">JavaScriptCore</text>
+  <text x="245" y="198" text-anchor="middle" font-size="9" fill="#166534">JS 엔진 — 그대로 유지</text>
+
+  <rect x="460" y="160" width="190" height="55" rx="8" fill="#fef2f2" stroke="#dc2626" stroke-width="2"/>
+  <text x="555" y="182" text-anchor="middle" font-size="11" font-weight="bold" fill="#991b1b">I/O·패키지매니저·FFI</text>
+  <text x="555" y="198" text-anchor="middle" font-size="9" fill="#991b1b">Zig → Rust로 재작성됨</text>
+
+  <text x="400" y="240" text-anchor="middle" font-size="10" fill="#64748b">네이티브 애드온·파일 I/O·소켓은 이 FFI 경로를 반드시 거친다</text>
+  <text x="400" y="258" text-anchor="middle" font-size="10" fill="#64748b">순수 JS 로직 위주 서비스는 영향이 상대적으로 작다</text>
+  <text x="400" y="276" text-anchor="middle" font-size="10" fill="#64748b">네이티브 모듈 의존도가 높을수록 재작성 영향권 한가운데</text>
+
+  <line x1="400" y1="290" x2="400" y2="315" stroke="#64748b" stroke-width="2"/>
+
+  <rect x="320" y="315" width="160" height="46" rx="8" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
+  <text x="400" y="343" text-anchor="middle" font-size="11" fill="#334155">OS (syscall)</text>
+
+  <rect x="40" y="380" width="720" height="55" rx="8" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="400" y="402" text-anchor="middle" font-size="11" font-weight="bold" fill="#9a3412">판단 기준: 메모리·설치 속도 개선 수치는 재현 조건부다</text>
+  <text x="400" y="420" text-anchor="middle" font-size="10" fill="#9a3412">네이티브 애드온 의존 서비스부터 파일럿 검증 → 롤백 경로 유지한 채 점진 확대</text>
+
+</svg>
