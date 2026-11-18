@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { stroke-width: 2; rx: 10; }
+    .source { fill: #eef4fb; stroke: #3b6ea5; }
+    .storage { fill: #fdf6e3; stroke: #b8860b; }
+    .catalog { fill: #f0f7f4; stroke: #2e8b57; }
+    .engine { fill: #ffffff; stroke: #555; }
+    .label { font-size: 15px; font-weight: bold; fill: #222; text-anchor: middle; }
+    .sub { font-size: 12px; fill: #555; text-anchor: middle; }
+    .arrow { stroke: #666; stroke-width: 2; marker-end: url(#arrow); fill: none; }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#666" />
+    </marker>
+  </defs>
+
+  <rect x="20" y="40" width="140" height="60" class="box source" />
+  <text x="90" y="68" class="label">원천 데이터</text>
+  <text x="90" y="86" class="sub">CDC·이벤트·배치 ETL</text>
+
+  <rect x="210" y="40" width="160" height="60" class="box storage" />
+  <text x="290" y="68" class="label">Iceberg 테이블</text>
+  <text x="290" y="86" class="sub">오브젝트 스토리지(S3 등)</text>
+
+  <line x1="160" y1="70" x2="208" y2="70" class="arrow" />
+
+  <rect x="420" y="40" width="180" height="70" class="box catalog" />
+  <text x="510" y="65" class="label">카탈로그 계층</text>
+  <text x="510" y="83" class="sub">Polaris · Unity · Horizon</text>
+  <text x="510" y="99" class="sub">스냅샷·스키마 중재</text>
+
+  <line x1="370" y1="70" x2="418" y2="70" class="arrow" />
+  <path d="M510,110 Q510,130 290,130 Q290,130 290,102" class="arrow" stroke-dasharray="4,3" />
+  <text x="400" y="128" font-size="11" fill="#555" text-anchor="middle">"지금 유효한 스냅샷" 포인터 제공</text>
+
+  <rect x="80" y="220" width="140" height="60" class="box engine" />
+  <text x="150" y="255" class="label">Spark</text>
+
+  <rect x="260" y="220" width="140" height="60" class="box engine" />
+  <text x="330" y="255" class="label">DuckDB</text>
+
+  <rect x="440" y="220" width="140" height="60" class="box engine" />
+  <text x="510" y="255" class="label">Snowflake</text>
+
+  <rect x="620" y="220" width="140" height="60" class="box engine" />
+  <text x="690" y="255" class="label">Trino</text>
+
+  <line x1="150" y1="218" x2="480" y2="112" class="arrow" />
+  <line x1="330" y1="218" x2="505" y2="112" class="arrow" />
+  <line x1="510" y1="218" x2="520" y2="112" class="arrow" />
+  <line x1="690" y1="218" x2="540" y2="112" class="arrow" />
+
+  <rect x="20" y="320" width="740" height="100" rx="10" fill="#f7f7f7" stroke="#ccc" />
+  <text x="40" y="345" font-size="14" fill="#333">카탈로그 없이 여러 엔진이 같은 Iceberg 테이블을 직접 건드리면, 각 엔진이</text>
+  <text x="40" y="367" font-size="14" fill="#333">서로 다른 시점의 메타데이터 포인터를 참조해 "같은 테이블인데 결과가</text>
+  <text x="40" y="389" font-size="14" fill="#333">다르다"는 정합성 문제가 생긴다. 카탈로그는 모든 엔진에게 동일한</text>
+  <text x="40" y="411" font-size="14" fill="#333">"현재 유효한 스냅샷"을 보장해 이 충돌을 중재한다.</text>
+</svg>
