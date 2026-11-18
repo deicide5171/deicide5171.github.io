@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .stage { stroke-width: 2; rx: 10; }
+    .net { fill: #eef4fb; stroke: #3b6ea5; }
+    .cpu { fill: #fff8e6; stroke: #b8860b; }
+    .gpu { fill: #f0f7f4; stroke: #2e8b57; }
+    .label { font-size: 16px; font-weight: bold; fill: #222; text-anchor: middle; }
+    .tool { font-size: 13px; fill: #444; text-anchor: middle; }
+    .fix { font-size: 12.5px; fill: #555; text-anchor: middle; }
+    .arrow { stroke: #666; stroke-width: 2; marker-end: url(#arrow); fill: none; }
+    .heading { font-size: 15px; fill: #222; }
+  </style>
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#666" />
+    </marker>
+  </defs>
+
+  <text x="20" y="30" class="heading">증상 → 단계 분리 → 도구 → 처방: Cesium 렌더링 파이프라인 3단계</text>
+
+  <rect x="20" y="60" width="220" height="110" class="stage net" />
+  <text x="130" y="88" class="label">네트워크</text>
+  <text x="130" y="108" class="tool">타일·에셋 요청</text>
+  <text x="130" y="130" class="tool">도구: Network 탭</text>
+  <text x="130" y="152" class="fix">처방: 우선순위·프리로드 조정</text>
+
+  <rect x="290" y="60" width="220" height="110" class="stage cpu" />
+  <text x="400" y="88" class="label">CPU (메인스레드)</text>
+  <text x="400" y="108" class="tool">컬링·애니메이션·엔티티 갱신</text>
+  <text x="400" y="130" class="tool">도구: Chrome DevTools Performance</text>
+  <text x="400" y="152" class="fix">처방: Entity → Primitive 전환</text>
+
+  <rect x="560" y="60" width="220" height="110" class="stage gpu" />
+  <text x="670" y="88" class="label">GPU</text>
+  <text x="670" y="108" class="tool">드로우콜·fill-rate·셰이더</text>
+  <text x="670" y="130" class="tool">도구: requestRenderMode 비교</text>
+  <text x="670" y="152" class="fix">처방: on-demand 렌더링, SSE 조정</text>
+
+  <line x1="240" y1="115" x2="288" y2="115" class="arrow" />
+  <line x1="510" y1="115" x2="558" y2="115" class="arrow" />
+
+  <rect x="20" y="210" width="760" height="100" rx="10" fill="#f7f7f7" stroke="#ccc" />
+  <text x="40" y="235" font-size="14" fill="#333">증상이 단계를 가리킨다 — "초기 진입이 느리다"는 네트워크,</text>
+  <text x="40" y="257" font-size="14" fill="#333">"패닝·줌 중에만 끊긴다"는 CPU, "가만히 있어도 GPU 사용률이 높다"는</text>
+  <text x="40" y="279" font-size="14" fill="#333">GPU 단계를 먼저 의심하게 만든다. 세 단계를 한꺼번에 튜닝하면</text>
+  <text x="40" y="301" font-size="14" fill="#333">어떤 변경이 실제로 효과가 있었는지 구분할 수 없다.</text>
+
+  <rect x="20" y="330" width="760" height="100" rx="10" fill="#fff" stroke="#999" stroke-dasharray="4,3" />
+  <text x="40" y="355" font-size="14" fill="#333">진단 순서: ① 카메라 고정 시나리오 재현 → ② requestRenderMode로</text>
+  <text x="40" y="377" font-size="14" fill="#333">유휴 렌더링(GPU) 분리 → ③ Performance 탭으로 CPU/GPU 시간 비교 →</text>
+  <text x="40" y="399" font-size="14" fill="#333">④ 3D Tiles Inspector로 타일·드로우콜 세부 확인 후 SSE 단계적 조정</text>
+  <text x="40" y="421" font-size="14" fill="#333">— 각 단계는 품질·개발 비용과 성능을 맞바꾸는 트레이드오프를 동반한다.</text>
+</svg>
