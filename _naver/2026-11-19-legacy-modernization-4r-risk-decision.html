@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"레거시 시스템, 이번 기회에 다 바꿔주세요" — 현대화를 4R 중 무엇으로 결정할 것인가</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"레거시 시스템, 이번 기회에 다 바꿔주세요" — 현대화를 4R 중 무엇으로 결정할 것인가</div>
+<p style="font-size:14px; color:#999;">dev-strategy</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 레거시 현대화는 기술부채 해소가 아니라 보안·규제 리스크를 관리하는 결정이 됐습니다. 리호스트·리플랫폼·리팩터·리빌드 중 무엇을 고를지는 "어느 방식이 좋은가"가 아니라 "지금 리스크가 어느 레이어에 있는가"로 정해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"레거시 시스템, 이번 기회에 통째로 새로 지어주세요. 어차피 손댈 거면 제대로 하죠"라는 요구는 임원 보고 자리에서 흔히 나옵니다. 그런데 이 요구를 "교체냐 보수냐"의 기술 선택으로만 받으면 절반을 놓칩니다. 최근 업계 흐름은 현대화를 기술부채 해소의 문제에서 리스크 관리의 문제로 옮기고 있습니다. 컴플라이언스를 설계 단계부터 넣어야 한다는 "Compliance-by-Design"이 요구사항이 되고, 아이덴티티 중심 제로 트러스트가 기본 전제가 되면서, <b>"지금 이 시스템을 그대로 두는 것 자체가 감수해야 할 리스크"</b>라는 프레임이 힘을 얻고 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 상황에서 "빅뱅으로 통째로 바꾸자"는 결정은 업계 다수 사례에서 실패 확률이 높다고 지적됩니다. 문제는 바꾸는 방식 하나를 고르기 전에 "이 시스템이 지금 정확히 어떻게 동작하는가"를 이해하는 단계를 건너뛰는 데 있습니다. 리호스트든 리팩터든 리빌드든, 모든 접근법의 공통 전제는 현재 시스템을 정확히 파악하는 것이고, 이 이해 단계가 현대화 성공의 핵심 변수로 꼽힙니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-19-legacy-modernization-4r-risk-decision-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">현대화 결정은 세 겹의 판단이 쌓인 결과입니다. 맨 위에는 "이 시스템을 왜 지금 건드리는가"라는 리스크·규제 동인이 있고, 중간에는 "어떤 방식으로 옮길 것인가"라는 4R(Rehost·Replatform·Refactor·Rebuild) 선택이 있고, 맨 아래에는 "실제로 어떤 순서로 손댈 것인가"라는 실행 계획이 있습니다. <b>이해 단계(현재 시스템 파악)는 이 세 레이어 중 어디에도 속하지 않고 그 아래를 가로질러 받칩니다.</b> 이 단계를 생략하면 실행 계획 단계에서 숨어 있던 의존성이 튀어나와 일정과 예산이 깨집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">방식(4R)</th><th style="border:1px solid #ddd; padding:8px;">속도</th><th style="border:1px solid #ddd; padding:8px;">리스크 해소 폭</th><th style="border:1px solid #ddd; padding:8px;">적합한 상황</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">Rehost(들어올려 옮기기)</td><td style="border:1px solid #ddd; padding:8px;">빠름</td><td style="border:1px solid #ddd; padding:8px;">좁음 — 인프라만</td><td style="border:1px solid #ddd; padding:8px;">클라우드 이전이 급하고 코드는 안정적인 경우</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">Replatform(일부 교체)</td><td style="border:1px solid #ddd; padding:8px;">중간</td><td style="border:1px solid #ddd; padding:8px;">중간 — 런타임·DB까지</td><td style="border:1px solid #ddd; padding:8px;">EOL 임박한 런타임·DB를 바꿔야 하는 경우</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">Refactor(구조 개선)</td><td style="border:1px solid #ddd; padding:8px;">느림</td><td style="border:1px solid #ddd; padding:8px;">넓음 — 설계까지</td><td style="border:1px solid #ddd; padding:8px;">아키텍처 자체가 변경을 막고 있는 경우</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">Rebuild(전면 재작성)</td><td style="border:1px solid #ddd; padding:8px;">매우 느림</td><td style="border:1px solid #ddd; padding:8px;">가장 넓음, 신규 리스크 동반</td><td style="border:1px solid #ddd; padding:8px;">비즈니스 요구가 근본적으로 달라진 경우</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이 표를 "아래로 갈수록 좋다"로 읽으면 안 됩니다. Rebuild는 리스크 해소 폭이 가장 넓지만 그만큼 새로운 버그·새로운 운영 미숙련이라는 리스크를 새로 만듭니다. 반대로 Rehost는 빠르지만 애초에 문제였던 아키텍처·코드 품질 리스크는 그대로 들고 갑니다. <b>올바른 질문은 "어느 방식이 가장 좋은가"가 아니라 "지금 해소해야 하는 리스크가 인프라·런타임·설계·비즈니스 요구 중 어디에 있는가"</b>입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 먼저 할 일은 "왜 지금"을 리스크 언어로 적는 것입니다. "느려서", "불편해서"가 아니라 "이 버전은 N개월 뒤 보안 지원이 끊긴다"처럼 구체적인 동인을 문서로 남겨야, 뒤에 나올 4R 선택과 예산 확보 근거가 같이 섭니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:12px; font-family:monospace; font-size:14px; overflow-x:auto;">현대화 동인 체크리스트 예시
+- 보안: 사용 중인 프레임워크 EOL 시점, 대체 불가능한 CVE 존재 여부
+- 규제: 신규 컴플라이언스 요건이 요구하는 아이덴티티·감사 로그 수준
+- 운영: 변경 한 번에 걸리는 평균 리드타임, 장애 시 복구 소요
+- 비즈니스: 현재 아키텍처로 처리 불가능한 신규 요구사항 존재 여부</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">그다음 이해 단계로 넘어갑니다. 현재 시스템의 데이터 흐름, 숨은 의존성, 암묵적 비즈니스 규칙을 코드 정적 분석과 실제 운영 로그로 함께 추적합니다. 이 단계를 생략하고 바로 Rebuild로 넘어가면, 아무도 문서화하지 않은 예외 처리 로직이 새 시스템에서 빠져 운영 중에야 발견되는 사고가 납니다. 이해가 끝난 뒤에야 4R 중 하나를 고르고, 고른 방식 안에서도 영향 범위가 가장 작은 모듈부터 점진적으로 옮기며 각 단계마다 되돌릴 수 있는 지점을 남겨 둡니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #e08a2e; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>주의</b> — "어차피 할 거면 제대로"라는 말에 끌려 곧바로 Rebuild를 택하지 마세요. 리스크 동인과 이해 단계를 건너뛴 Rebuild는 가장 넓은 해소 폭 대신 가장 큰 불확실성만 가져옵니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="color:#03c75a; font-size:15px;">#레거시마이그레이션 #현대화전략 #리스크관리 #아키텍처의사결정 #제로트러스트</p>
+
+</body>
+</html>

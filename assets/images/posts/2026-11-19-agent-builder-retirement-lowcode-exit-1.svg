@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill: #ffffff; stroke: #333333; stroke-width: 2; }
+    .boxBad { fill: #fff0f0; stroke: #d9534f; stroke-width: 2; }
+    .boxGood { fill: #f0f7f4; stroke: #2e8b57; stroke-width: 2; }
+    .label { font-size: 14px; fill: #222222; text-anchor: middle; }
+    .sublabel { font-size: 11px; fill: #555555; text-anchor: middle; }
+    .arrow { stroke: #666666; stroke-width: 2; marker-end: url(#arrowhead); fill: none; }
+    .title { font-size: 16px; font-weight: bold; fill: #222222; }
+    .badtext { font-size: 13px; fill: #b02a2a; text-anchor: middle; }
+    .goodtext { font-size: 13px; fill: #1f6b42; text-anchor: middle; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#666666" />
+    </marker>
+  </defs>
+
+  <text x="20" y="30" class="title">① 벤더 포맷에 정의·런타임·실행이 한 덩어리</text>
+
+  <rect x="40" y="55" width="720" height="90" class="boxBad" rx="8" />
+  <text x="400" y="85" class="label">벤더 비주얼 빌더</text>
+  <text x="400" y="110" class="sublabel">워크플로우 정의(JSON) · 실행 런타임 · 모델/도구 호출</text>
+  <text x="400" y="128" class="sublabel">— 모두 벤더 전용 포맷 안에만 존재 —</text>
+
+  <line x1="400" y1="145" x2="400" y2="175" class="arrow" stroke-dasharray="5,4" />
+  <text x="400" y="195" class="badtext">벤더가 제품 종료 공지 → 포맷을 읽을 런타임이 사라짐 → 정의도 함께 유실</text>
+
+  <text x="20" y="245" class="title">② 정의를 벤더 중립 표현으로 먼저 소유</text>
+
+  <rect x="40" y="265" width="200" height="60" class="boxGood" rx="8" />
+  <text x="140" y="290" class="label">워크플로우 정의</text>
+  <text x="140" y="308" class="sublabel">단계·조건·도구 명세(문서/코드)</text>
+
+  <line x1="240" y1="295" x2="290" y2="250" class="arrow" />
+  <line x1="240" y1="295" x2="290" y2="295" class="arrow" />
+  <line x1="240" y1="295" x2="290" y2="340" class="arrow" />
+
+  <rect x="300" y="215" width="160" height="50" class="box" rx="8" />
+  <text x="380" y="245" class="label">비주얼 빌더 런타임</text>
+
+  <rect x="300" y="270" width="160" height="50" class="box" rx="8" />
+  <text x="380" y="300" class="label">자체 오케스트레이터</text>
+
+  <rect x="300" y="325" width="160" height="50" class="box" rx="8" />
+  <text x="380" y="355" class="label">Agent SDK 런타임</text>
+
+  <text x="600" y="300" class="goodtext">런타임 하나가</text>
+  <text x="600" y="318" class="goodtext">빠져도 정의는 남는다</text>
+
+</svg>
