@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill: #ffffff; stroke: #333333; stroke-width: 2; }
+    .boxBad { fill: #fff0f0; stroke: #d9534f; stroke-width: 2; }
+    .boxGood { fill: #f0f7f4; stroke: #2e8b57; stroke-width: 2; }
+    .label { font-size: 13px; fill: #222222; text-anchor: middle; }
+    .sublabel { font-size: 11px; fill: #555555; text-anchor: middle; }
+    .arrow { stroke: #666666; stroke-width: 2; marker-end: url(#arrowhead); fill: none; }
+    .title { font-size: 15px; font-weight: bold; fill: #222222; }
+    .badtext { font-size: 12px; fill: #b02a2a; text-anchor: middle; }
+    .goodtext { font-size: 12px; fill: #1f6b42; text-anchor: middle; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#666666" />
+    </marker>
+  </defs>
+
+  <text x="20" y="28" class="title">① 기본 layers.properties — 레이어 단위 판단만 가능</text>
+
+  <rect x="20" y="45" width="110" height="46" class="box" />
+  <text x="75" y="72" class="label">A사 요청</text>
+  <rect x="20" y="100" width="110" height="46" class="box" />
+  <text x="75" y="127" class="label">B사 요청</text>
+
+  <rect x="170" y="70" width="150" height="46" class="boxBad" />
+  <text x="245" y="92" class="label">인가: 레이어명만 확인</text>
+  <text x="245" y="108" class="sublabel">nationwide_stores 허용?</text>
+
+  <rect x="360" y="70" width="150" height="46" class="box" />
+  <text x="435" y="97" class="label">레이어 전체 반환</text>
+
+  <line x1="130" y1="68" x2="168" y2="85" class="arrow" />
+  <line x1="130" y1="123" x2="168" y2="100" class="arrow" />
+  <line x1="320" y1="93" x2="358" y2="93" class="arrow" />
+  <text x="435" y="130" class="badtext">A사·B사 모두 전국 데이터를 그대로 받음 — 구역 분리 불가</text>
+
+  <text x="20" y="195" class="title">② GeoServer ACL — 인가 단계에서 범위·속성까지 합성</text>
+
+  <rect x="20" y="215" width="110" height="46" class="box" />
+  <text x="75" y="242" class="label">A사 요청</text>
+  <rect x="20" y="270" width="110" height="46" class="box" />
+  <text x="75" y="297" class="label">B사 요청</text>
+
+  <rect x="170" y="215" width="170" height="100" class="boxGood" />
+  <text x="255" y="238" class="label">인가: 단계적 필터</text>
+  <text x="255" y="256" class="sublabel">워크스페이스 → 레이어</text>
+  <text x="255" y="272" class="sublabel">→ 지리적 범위</text>
+  <text x="255" y="288" class="sublabel">→ 속성 필터</text>
+  <text x="255" y="304" class="sublabel">(tenant_regions 테이블 참조)</text>
+
+  <rect x="380" y="215" width="150" height="46" class="boxGood" />
+  <text x="455" y="237" class="label">A사: 서울 구역만</text>
+  <text x="455" y="252" class="sublabel">쿼리에 공간조건 합성</text>
+
+  <rect x="380" y="270" width="150" height="46" class="boxGood" />
+  <text x="455" y="292" class="label">B사: 부산 구역만</text>
+  <text x="455" y="307" class="sublabel">쿼리에 공간조건 합성</text>
+
+  <line x1="130" y1="238" x2="168" y2="238" class="arrow" />
+  <line x1="130" y1="293" x2="168" y2="280" class="arrow" />
+  <line x1="340" y1="238" x2="378" y2="238" class="arrow" />
+  <line x1="340" y1="280" x2="378" y2="293" class="arrow" />
+
+  <text x="455" y="345" class="goodtext">캐시가 필요한 공개 레이어는 그대로 두고</text>
+  <text x="455" y="362" class="goodtext">테넌트 제약 레이어만 골라 규칙을 건다</text>
+
+</svg>
