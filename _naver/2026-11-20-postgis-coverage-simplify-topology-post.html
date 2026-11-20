@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"행정구역 경계 단순화해주세요, 근데 옆 구역이랑 틈 생기면 안 돼요" — ST_CoverageSimplify로 토폴로지 지키며 단순화하기</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"행정구역 경계 단순화해주세요, 근데 옆 구역이랑 틈 생기면 안 돼요" — ST_CoverageSimplify로 토폴로지 지키며 단순화하기</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 폴리곤을 개별로 단순화하면 인접 구역끼리 공유하던 경계선이 각자 다르게 깎여 틈이나 겹침이 생깁니다. PostGIS 3.7의 ST_CoverageSimplify는 폴리곤 집합 전체를 하나의 coverage로 보고 공유 경계를 한 번만 계산해 이 문제를 구조적으로 막습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"행정구역 경계 레이어 정점이 너무 많아서 지도가 느려요. 단순화해주세요. 근데 옆 동네랑 경계선에 틈이 생기거나 겹치면 안 돼요"라는 요구는 얼핏 모순처럼 들리지만 실무에서 거의 항상 같이 옵니다. 폴리곤을 하나씩 따로 단순화하면 두 폴리곤이 공유하던 경계선이 각자 다른 결과로 깎여 나가 틈이나 겹침이 생깁니다. 면적을 합산하거나 공간 조인을 거는 분석에서는 이것이 실제 오류로 드러납니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">기존에 흔히 쓰던 <b>ST_SimplifyPreserveTopology</b>는 이름과 달리 폴리곤 각각의 내부 토폴로지만 보장할 뿐, 옆 폴리곤과의 공유 경계 일치는 보장하지 않습니다. 이 틈을 메우기 위해 PostGIS 3.7(2026년 10월 29일 정식 출시)이 <b>ST_CoverageSimplify</b>·ST_CoverageClean·ST_CoverageInvalidEdges 같은 'coverage' 계열 함수를 들여왔습니다. 폴리곤을 개별 도형이 아니라 서로 맞닿은 조각들의 집합으로 보고 공유 경계선을 한 번만 계산해 모든 이웃에게 똑같이 적용하는 방식입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-20-postgis-coverage-simplify-topology-post-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">서로 맞닿아 영역을 빈틈없이 나누는 폴리곤 집합은 보통 원본 고정밀 경계 적재 → 정점 단순화 → 벡터 타일 생성 → 클라이언트 렌더링 순서로 웹 지도에 올라갑니다. 기존 방식은 단순화 단계에서 폴리곤 테이블을 행 단위로 순회하며 ST_Simplify를 각각 호출했습니다. ST_CoverageSimplify는 이 단계를 <b>테이블 전체를 하나의 coverage로 보고 한 번에 단순화</b>하는 집합 연산으로 바꿉니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">중요한 전제가 하나 있습니다. coverage 함수들은 입력이 이미 '유효한 coverage'라는 것을 가정합니다. 원본 데이터에 이미 미세한 gap이나 overlap이 있다면 바로 돌려도 결과가 보장되지 않으므로, 단순화 전에 기존 데이터가 유효한지 먼저 검증하고 문제가 있으면 정리하는 단계가 먼저 들어가야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">방식</th><th style="border:1px solid #ddd; padding:8px;">공유 경계 일치</th><th style="border:1px solid #ddd; padding:8px;">전제 조건</th><th style="border:1px solid #ddd; padding:8px;">적합한 상황</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">ST_Simplify(개별)</td><td style="border:1px solid #ddd; padding:8px;">보장 안 됨</td><td style="border:1px solid #ddd; padding:8px;">없음</td><td style="border:1px solid #ddd; padding:8px;">틈 허용 가능한 경우</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">ST_SimplifyPreserveTopology</td><td style="border:1px solid #ddd; padding:8px;">보장 안 됨(자기 자신만)</td><td style="border:1px solid #ddd; padding:8px;">없음</td><td style="border:1px solid #ddd; padding:8px;">단일 폴리곤 작업</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">ST_CoverageSimplify</td><td style="border:1px solid #ddd; padding:8px;">보장됨</td><td style="border:1px solid #ddd; padding:8px;">유효한 coverage(GEOS 3.12+)</td><td style="border:1px solid #ddd; padding:8px;">행정구역·필지처럼 맞닿은 집합</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">PostGIS Topology 확장</td><td style="border:1px solid #ddd; padding:8px;">보장됨</td><td style="border:1px solid #ddd; padding:8px;">토폴로지 스키마 구축</td><td style="border:1px solid #ddd; padding:8px;">편집이 계속되는 운영 데이터</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">ST_CoverageSimplify는 완전한 토폴로지 모델보다 훨씬 가볍습니다. 다만 이 가벼움은 '한 번 단순화하고 끝'이라는 전제에서 나오므로, 편집이 계속 일어나는 운영 데이터라면 PostGIS Topology로 토폴로지 자체를 유지하는 편이 장기적으로 안전합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 먼저 할 일은 GEOS 버전 확인입니다. ST_CoverageSimplify·ST_CoverageInvalidEdges는 GEOS 3.12 이상, ST_CoverageClean은 3.14 이상을 요구합니다. PostGIS 3.7을 설치했다고 자동으로 GEOS가 그 버전까지 올라가는 것은 아니므로 먼저 확인해야 합니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:12px; font-family:monospace; font-size:14px; overflow-x:auto;">-- 1) 기존 데이터가 유효한 coverage인지 먼저 검증
+SELECT ST_CoverageInvalidEdges(geom) OVER ()
+FROM admin_boundary;
+
+-- 2) 단순화 (허용 오차는 미터 단위)
+SELECT id, ST_CoverageSimplify(geom, 10.0) OVER () AS simplified_geom
+FROM admin_boundary;</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">단순화 허용 오차는 작은 값부터 시작해 렌더링 품질과 파일 크기를 비교하며 올려야 합니다. 단순화 결과를 타일링 파이프라인에 넣기 전에 반드시 재검증해, 단순화 이후에도 coverage가 깨지지 않았는지 확인하는 단계를 고정해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #e08a2e; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>주의</b> — 원본 데이터에 이미 gap이나 overlap이 있으면 ST_CoverageSimplify를 바로 돌려도 결과가 보장되지 않습니다. 반드시 ST_CoverageClean으로 먼저 정리한 뒤 단순화하십시오.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="color:#03c75a; font-size:15px;">#PostGIS #ST_CoverageSimplify #토폴로지 #폴리곤단순화 #GEOS</p>
+
+</body>
+</html>
