@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill: #ffffff; stroke: #333333; stroke-width: 2; }
+    .boxBad { fill: #fff0f0; stroke: #d9534f; stroke-width: 2; }
+    .boxGood { fill: #f0f7f4; stroke: #2e8b57; stroke-width: 2; }
+    .label { font-size: 13px; fill: #222222; text-anchor: middle; }
+    .sublabel { font-size: 11px; fill: #555555; text-anchor: middle; }
+    .arrow { stroke: #666666; stroke-width: 2; marker-end: url(#arrowhead); fill: none; }
+    .title { font-size: 15px; font-weight: bold; fill: #222222; }
+    .badtext { font-size: 12px; fill: #b02a2a; text-anchor: middle; }
+    .goodtext { font-size: 12px; fill: #1f6b42; text-anchor: middle; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#666666" />
+    </marker>
+  </defs>
+
+  <text x="20" y="28" class="title">① 개별 ST_Simplify — 폴리곤마다 따로 단순화</text>
+
+  <polygon points="60,60 180,55 185,150 55,155" class="box" />
+  <text x="120" y="100" class="label">A구역</text>
+  <polygon points="185,55 300,60 300,155 180,150" class="boxBad" />
+  <text x="240" y="100" class="label">B구역</text>
+  <line x1="182" y1="55" x2="195" y2="150" stroke="#d9534f" stroke-width="3" stroke-dasharray="4,3" />
+
+  <text x="400" y="80" class="label">각자 ST_Simplify 호출</text>
+  <text x="400" y="100" class="sublabel">공유 경계를 독립적으로 계산</text>
+  <line x1="300" y1="100" x2="430" y2="100" class="arrow" />
+
+  <polygon points="520,60 640,58 648,150 515,158" class="box" />
+  <text x="580" y="100" class="label">A구역(단순화)</text>
+  <polygon points="650,55 700,62 695,150 648,148" class="boxBad" />
+  <text x="672" y="105" class="sublabel">B구역(단순화)</text>
+  <line x1="648" y1="58" x2="650" y2="148" stroke="#d9534f" stroke-width="3" stroke-dasharray="4,3" />
+  <text x="610" y="180" class="badtext">경계선이 서로 어긋나 틈/겹침 발생</text>
+
+  <text x="20" y="245" class="title">② ST_CoverageSimplify — 집합 전체를 하나의 coverage로</text>
+
+  <polygon points="60,270 180,265 185,360 55,365" class="boxGood" />
+  <text x="120" y="310" class="label">A구역</text>
+  <polygon points="185,265 300,270 300,365 180,360" class="boxGood" />
+  <text x="240" y="310" class="label">B구역</text>
+  <line x1="182" y1="265" x2="193" y2="360" stroke="#2e8b57" stroke-width="3" />
+
+  <text x="400" y="290" class="label">coverage 전체를 입력으로</text>
+  <text x="400" y="308" class="sublabel">공유 edge를 한 번만 계산</text>
+  <line x1="300" y1="310" x2="430" y2="310" class="arrow" />
+
+  <polygon points="520,270 638,268 645,358 515,363" class="boxGood" />
+  <text x="580" y="310" class="label">A구역(단순화)</text>
+  <polygon points="645,268 700,272 697,358 645,355" class="boxGood" />
+  <text x="672" y="315" class="sublabel">B구역(단순화)</text>
+  <line x1="645" y1="268" x2="645" y2="355" stroke="#2e8b57" stroke-width="3" />
+  <text x="610" y="390" class="goodtext">공유 edge가 동일하게 적용돼 틈/겹침 없음</text>
+  <text x="610" y="408" class="sublabel">단, 입력이 유효한 coverage여야 함</text>
+
+</svg>
