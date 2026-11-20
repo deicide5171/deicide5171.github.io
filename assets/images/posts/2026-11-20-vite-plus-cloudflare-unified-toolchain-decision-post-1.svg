@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill: #ffffff; stroke: #333333; stroke-width: 2; }
+    .boxBad { fill: #fff0f0; stroke: #d9534f; stroke-width: 2; }
+    .boxGood { fill: #f0f7f4; stroke: #2e8b57; stroke-width: 2; }
+    .label { font-size: 13px; fill: #222222; text-anchor: middle; }
+    .sublabel { font-size: 11px; fill: #555555; text-anchor: middle; }
+    .arrow { stroke: #666666; stroke-width: 2; marker-end: url(#arrowhead); fill: none; }
+    .title { font-size: 15px; font-weight: bold; fill: #222222; }
+    .badtext { font-size: 12px; fill: #b02a2a; text-anchor: middle; }
+    .goodtext { font-size: 12px; fill: #1f6b42; text-anchor: middle; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#666666" />
+    </marker>
+  </defs>
+
+  <text x="20" y="28" class="title">① 조합형 툴체인 — 도구마다 독립된 설정·버전 주기</text>
+
+  <rect x="20" y="50" width="110" height="40" class="box" />
+  <text x="75" y="74" class="label">npm/pnpm</text>
+  <rect x="20" y="100" width="110" height="40" class="box" />
+  <text x="75" y="124" class="label">Vite(Rollup)</text>
+  <rect x="20" y="150" width="110" height="40" class="box" />
+  <text x="75" y="174" class="label">ESLint</text>
+  <rect x="20" y="200" width="110" height="40" class="box" />
+  <text x="75" y="224" class="label">Vitest</text>
+
+  <rect x="200" y="100" width="180" height="140" class="boxBad" />
+  <text x="290" y="125" class="label">각각 다른 설정 파일</text>
+  <text x="290" y="145" class="sublabel">vite.config / eslint.config</text>
+  <text x="290" y="162" class="sublabel">vitest.config / package.json</text>
+  <text x="290" y="185" class="sublabel">메이저 업그레이드 시</text>
+  <text x="290" y="202" class="sublabel">조합 호환성을 팀이 직접 검증</text>
+
+  <line x1="130" y1="70" x2="198" y2="130" class="arrow" />
+  <line x1="130" y1="120" x2="198" y2="150" class="arrow" />
+  <line x1="130" y1="170" x2="198" y2="180" class="arrow" />
+  <line x1="130" y1="220" x2="198" y2="210" class="arrow" />
+  <text x="290" y="255" class="badtext">결합도는 낮지만 조합 검증 비용은 팀의 몫</text>
+
+  <text x="20" y="310" class="title">② Vite+ 1.0 — vp 단일 CLI로 통합 (Cloudflare 소유)</text>
+
+  <rect x="20" y="330" width="110" height="40" class="box" />
+  <text x="75" y="354" class="label">vp CLI 요청</text>
+
+  <rect x="200" y="320" width="220" height="110" class="boxGood" />
+  <text x="310" y="342" class="label">통합 설정 체계</text>
+  <text x="310" y="362" class="sublabel">패키지 설치 + Rolldown 번들링</text>
+  <text x="310" y="378" class="sublabel">+ Oxc 린팅 + Vitest 테스트</text>
+  <text x="310" y="398" class="sublabel">벤더가 버전 정합을 관리</text>
+  <text x="310" y="415" class="sublabel">단, 로드맵은 벤더가 결정</text>
+
+  <rect x="470" y="340" width="150" height="60" class="box" />
+  <text x="545" y="362" class="label">MIT 라이선스 유지</text>
+  <text x="545" y="378" class="sublabel">+ 독립 메인테이너 펀드</text>
+  <text x="545" y="393" class="sublabel">(최악 시나리오 완화 장치)</text>
+
+  <line x1="130" y1="350" x2="198" y2="370" class="arrow" />
+  <line x1="420" y1="370" x2="468" y2="370" class="arrow" />
+  <text x="545" y="430" class="goodtext">결합도는 높지만 설정 관리 부담은 벤더로 이전</text>
+
+</svg>
