@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill: #ffffff; stroke: #333333; stroke-width: 2; }
+    .boxBad { fill: #fff0f0; stroke: #d9534f; stroke-width: 2; }
+    .boxGood { fill: #f0f7f4; stroke: #2e8b57; stroke-width: 2; }
+    .boxQuarantine { fill: #fff7f0; stroke: #e08a2e; stroke-width: 2; }
+    .label { font-size: 12px; fill: #222222; text-anchor: middle; }
+    .sublabel { font-size: 10px; fill: #555555; text-anchor: middle; }
+    .arrow { stroke: #666666; stroke-width: 2; marker-end: url(#arrowhead); fill: none; }
+    .title { font-size: 15px; font-weight: bold; fill: #222222; }
+    .badtext { font-size: 12px; fill: #b02a2a; text-anchor: middle; }
+    .goodtext { font-size: 12px; fill: #1f6b42; text-anchor: middle; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#666666" />
+    </marker>
+  </defs>
+
+  <text x="20" y="28" class="title">① 소스별로 흩어진 검증 스크립트 — 기준이 제각각</text>
+
+  <rect x="20" y="45" width="90" height="36" class="box" /><text x="65" y="67" class="label">구청 필지</text>
+  <rect x="20" y="90" width="90" height="36" class="box" /><text x="65" y="112" class="label">센서 시설물</text>
+  <rect x="20" y="135" width="90" height="36" class="box" /><text x="65" y="157" class="label">외주 지적</text>
+
+  <rect x="150" y="45" width="110" height="36" class="boxBad" /><text x="205" y="67" class="label">스크립트 A</text>
+  <rect x="150" y="90" width="110" height="36" class="boxBad" /><text x="205" y="112" class="label">노트북 B</text>
+  <rect x="150" y="135" width="110" height="36" class="boxBad" /><text x="205" y="157" class="label">담당자 머릿속 C</text>
+
+  <rect x="330" y="80" width="140" height="46" class="box" /><text x="400" y="107" class="label">GeoServer / PostGIS</text>
+
+  <line x1="110" y1="63" x2="148" y2="63" class="arrow" />
+  <line x1="110" y1="108" x2="148" y2="108" class="arrow" />
+  <line x1="110" y1="153" x2="148" y2="153" class="arrow" />
+  <line x1="260" y1="63" x2="328" y2="95" class="arrow" />
+  <line x1="260" y1="108" x2="328" y2="103" class="arrow" />
+  <line x1="260" y1="153" x2="328" y2="115" class="arrow" />
+  <text x="580" y="107" class="badtext">검증 기준이 소스마다 달라 깨진 데이터가 섞여 들어감</text>
+
+  <text x="20" y="200" class="title">② 거버넌스 게이트웨이 — 공통 규칙 엔진이 먼저 판정</text>
+
+  <rect x="20" y="220" width="90" height="36" class="box" /><text x="65" y="242" class="label">구청 필지</text>
+  <rect x="20" y="265" width="90" height="36" class="box" /><text x="65" y="287" class="label">센서 시설물</text>
+  <rect x="20" y="310" width="90" height="36" class="box" /><text x="65" y="332" class="label">외주 지적</text>
+
+  <rect x="150" y="245" width="160" height="80" class="boxGood" />
+  <text x="230" y="268" class="label">공통 규칙 엔진</text>
+  <text x="230" y="285" class="sublabel">좌표계 · 필수속성</text>
+  <text x="230" y="300" class="sublabel">토폴로지 유효성</text>
+  <text x="230" y="315" class="sublabel">(1Integrate류)</text>
+
+  <rect x="350" y="220" width="120" height="40" class="boxQuarantine" />
+  <text x="410" y="242" class="label">격리(Quarantine)</text>
+  <text x="410" y="255" class="sublabel">사유 기록 후 보류</text>
+
+  <rect x="350" y="290" width="120" height="40" class="boxGood" />
+  <text x="410" y="312" class="label">통과 데이터만</text>
+
+  <rect x="520" y="280" width="150" height="46" class="box" /><text x="595" y="307" class="label">GeoServer / PostGIS</text>
+
+  <line x1="110" y1="238" x2="148" y2="260" class="arrow" />
+  <line x1="110" y1="283" x2="148" y2="283" class="arrow" />
+  <line x1="110" y1="328" x2="148" y2="305" class="arrow" />
+  <line x1="310" y1="260" x2="348" y2="245" class="arrow" />
+  <line x1="310" y1="290" x2="348" y2="305" class="arrow" />
+  <line x1="470" y1="310" x2="518" y2="303" class="arrow" />
+  <text x="595" y="340" class="goodtext">뒷단은 "이미 검증된 데이터만 받는다"는 전제 유지</text>
+
+  <text x="20" y="400" class="title">핵심: 규칙이 한곳에 모이면 "왜 막혔는가"를 감사로 추적할 수 있다</text>
+  <text x="20" y="425" class="sublabel" text-anchor="start">사후 검증(서빙 단계)은 오염이 이미 전파된 뒤 발견되므로 되돌리는 비용이 가장 크다.</text>
+</svg>

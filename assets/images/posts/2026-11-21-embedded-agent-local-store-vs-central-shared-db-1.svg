@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill: #ffffff; stroke: #333333; stroke-width: 2; }
+    .boxLocal { fill: #f0f7f4; stroke: #2e8b57; stroke-width: 2; }
+    .boxCentral { fill: #eef3ff; stroke: #3b5bdb; stroke-width: 2; }
+    .boxSync { fill: #fff7f0; stroke: #e08a2e; stroke-width: 2; }
+    .label { font-size: 12px; fill: #222222; text-anchor: middle; }
+    .sublabel { font-size: 10px; fill: #555555; text-anchor: middle; }
+    .arrow { stroke: #666666; stroke-width: 2; marker-end: url(#arrowhead); fill: none; }
+    .arrowSync { stroke: #e08a2e; stroke-width: 2; marker-end: url(#arrowheadOrange); fill: none; }
+    .title { font-size: 15px; font-weight: bold; fill: #222222; }
+    .notetext { font-size: 12px; fill: #555555; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#666666" />
+    </marker>
+    <marker id="arrowheadOrange" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#e08a2e" />
+    </marker>
+  </defs>
+
+  <text x="20" y="28" class="title">에이전트 프로세스마다 임베디드 로컬 저장소 — 빠르고 독립적</text>
+
+  <rect x="30" y="50" width="160" height="80" class="box" />
+  <text x="110" y="72" class="label">에이전트 A 프로세스</text>
+  <rect x="45" y="85" width="130" height="36" class="boxLocal" />
+  <text x="110" y="100" class="sublabel">임베디드 로컬 저장소</text>
+  <text x="110" y="114" class="sublabel">(Relate, 인프로세스)</text>
+
+  <rect x="320" y="50" width="160" height="80" class="box" />
+  <text x="400" y="72" class="label">에이전트 B 프로세스</text>
+  <rect x="335" y="85" width="130" height="36" class="boxLocal" />
+  <text x="400" y="100" class="sublabel">임베디드 로컬 저장소</text>
+  <text x="400" y="114" class="sublabel">local_only 데이터</text>
+
+  <rect x="610" y="50" width="160" height="80" class="box" />
+  <text x="690" y="72" class="label">에이전트 C 프로세스</text>
+  <rect x="625" y="85" width="130" height="36" class="boxLocal" />
+  <text x="690" y="100" class="sublabel">임베디드 로컬 저장소</text>
+  <text x="690" y="114" class="sublabel">세션 종료 시 폐기 가능</text>
+
+  <text x="20" y="175" class="title">동기화 지점 — 공유가 필요한 사실만 선별해 병합</text>
+
+  <rect x="150" y="190" width="500" height="50" class="boxSync" />
+  <text x="400" y="212" class="label">동기화 계층 — 병합 정책 적용</text>
+  <text x="400" y="228" class="sublabel">타임스탬프 우선 · 역할 우선순위 · 충돌 시 사람에게 에스컬레이션</text>
+
+  <line x1="110" y1="130" x2="200" y2="188" class="arrowSync" />
+  <line x1="400" y1="130" x2="400" y2="188" class="arrowSync" />
+  <line x1="690" y1="130" x2="600" y2="188" class="arrowSync" />
+
+  <rect x="280" y="280" width="240" height="60" class="boxCentral" />
+  <text x="400" y="305" class="label">중앙 공유 DB (shared truth)</text>
+  <text x="400" y="322" class="sublabel">작업 배정 상태 · 승인된 결론</text>
+
+  <line x1="400" y1="240" x2="400" y2="278" class="arrowSync" />
+
+  <path d="M330,340 C200,380 200,150 108,132" class="arrow" />
+  <text x="150" y="385" class="notetext">필요할 때 로컬로 가져와 다시 읽기 캐시로 사용</text>
+
+  <text x="20" y="400" class="title">핵심: "이 데이터가 에이전트 고유 사실인가, 공유 진실인가"를 먼저 분류</text>
+  <text x="20" y="423" class="notetext">분류 없이 로컬·중앙을 먼저 정하면, 나중에 공유가 필요해진 데이터를 옮기는 비용을 떠안는다.</text>
+</svg>

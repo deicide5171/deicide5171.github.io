@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"여러 부서에서 들어오는 공간 데이터, 품질이 제각각이라 못 믿겠어요" — VertiGIS Data Gateway로 보는 거버넌스 게이트웨이 vs 직접 짠 ETL 검증</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"여러 부서에서 들어오는 공간 데이터, 품질이 제각각이라 못 믿겠어요" — VertiGIS Data Gateway로 보는 거버넌스 게이트웨이 vs 직접 짠 ETL 검증</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 소스가 늘어날수록 소스별로 흩어진 검증 스크립트는 한계에 부딪힙니다. VertiGIS가 1Spatial 인수 후 내놓은 Data Gateway를 계기로, 검증·정제·규정 준수를 파이프라인 코드 안에 둘지 별도 거버넌스 계층으로 뗄지 판단하는 기준을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"구청마다 올려주는 필지 데이터, 센서 업체가 보내주는 시설물 데이터, 외주사가 작업한 지적 데이터를 한 지도에 모았는데, 어디는 좌표계가 틀리고 어디는 필수 속성이 비어 있어서 그대로는 못 믿겠어요"라는 요구는 GIS 조직에서 데이터 소스가 둘 이상으로 늘어나는 순간 거의 반드시 나옵니다. 이 말을 받으면 흔히 "검증 스크립트를 하나 더 짜면 되겠지"로 끝내기 쉽지만, 소스가 셋을 넘어가는 순간 이 접근은 <b>소스 수만큼 검증 로직이 흩어지는 문제</b>로 이어집니다. 좌표계 확인은 A 스크립트에, 필수 속성 체크는 B 노트북에, 폴리곤 유효성 검사는 C의 머릿속에만 있는 식으로 쌓이면, 새 소스가 추가될 때마다 "이번엔 뭘 또 깜빡했는가"를 반복합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">2026년 11월 18일 VertiGIS가 공개한 Data Gateway는 이 문제를 제품으로 보여준 사례입니다. VertiGIS가 2025년 12월 1Spatial 인수를 발표하고 2026년 4월 완료한 뒤 내놓은 첫 플랫폼 혁신으로, 1Spatial의 데이터 관리·거버넌스 역량(1Integrate 룰 엔진)을 기반으로 복잡한 환경 전반에서 검증·정제·변환·규정 준수를 자동화한다고 밝혔습니다. 핵심은 검증 로직을 어디에 짜 넣을까가 아니라, <b>파이프라인 코드와 분리된 별도 계층으로 둘 것인가</b>라는 질문입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-21-spatial-data-governance-gateway-build-vs-buy-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">거버넌스 게이트웨이는 소스 시스템과 서빙 계층(GeoServer·PostGIS) 사이, 전통적인 ETL이 있던 그 자리에 들어갑니다. 다만 역할이 다릅니다. 일반 ETL이 "형식을 맞춰서 옮긴다"에 집중한다면, 거버넌스 게이트웨이는 <b>"이 데이터가 들어와도 되는가"를 규칙 엔진으로 먼저 판정</b>하고, 통과하지 못한 레코드는 격리(quarantine)해 둔 채 통과한 것만 흘려보냅니다. 좌표계 불일치·필수 속성 누락·토폴로지 오류 같은 품질 문제를 소스 쪽에서 한 번 걸러낸다는 점에서, 뒷단의 GeoServer·PostGIS는 "이미 검증된 데이터만 받는다"는 전제를 유지할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">방식</th><th style="border:1px solid #ddd; padding:8px;">세밀도·유연성</th><th style="border:1px solid #ddd; padding:8px;">운영 부담</th><th style="border:1px solid #ddd; padding:8px;">적합한 상황</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">소스별 검증 스크립트</td><td style="border:1px solid #ddd; padding:8px;">자유롭게 커스텀</td><td style="border:1px solid #ddd; padding:8px;">소스 수에 비례 증가</td><td style="border:1px solid #ddd; padding:8px;">소스 1~2개, 변경 거의 없음</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">범용 ETL 도구(FME 등)</td><td style="border:1px solid #ddd; padding:8px;">중간 — 도구 문법 안에서만</td><td style="border:1px solid #ddd; padding:8px;">중간</td><td style="border:1px solid #ddd; padding:8px;">이미 ETL 운영 중, 변환 비중이 큰 경우</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">전용 거버넌스 게이트웨이</td><td style="border:1px solid #ddd; padding:8px;">선언적 규칙, 감사 추적 내장</td><td style="border:1px solid #ddd; padding:8px;">초기 도입 비용 높음</td><td style="border:1px solid #ddd; padding:8px;">소스 계속 증가, 규정 준수 증빙 필요</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">서빙 단계 사후 검증</td><td style="border:1px solid #ddd; padding:8px;">낮음 — 이미 들어온 뒤</td><td style="border:1px solid #ddd; padding:8px;">오염 전파 후 발견</td><td style="border:1px solid #ddd; padding:8px;">내부 단일 팀의 소규모 데이터셋</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">네 번째 선택지, 즉 "일단 넣고 나중에 걸러내자"는 가장 쉬워 보이지만 가장 위험합니다. 깨진 폴리곤이나 좌표계가 틀린 레코드가 이미 타일 캐시에 구워지거나 다른 테이블과 조인된 뒤에 발견되면, 되돌리는 비용이 애초에 막는 비용보다 훨씬 커집니다. <b>전용 거버넌스 게이트웨이는 초기 비용이 들지만, 소스가 다섯·열 개로 늘어나는 조직에서는 규칙을 한곳에서 관리하고 감사 로그로 추적할 수 있다는 점에서 운영 부담이 역전</b>됩니다. 반대로 소스가 하나뿐이라면 거버넌스 플랫폼 도입은 과한 투자입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 먼저 할 일은 제품을 고르는 것이 아니라, 현재 소스별로 실제로 발생하는 품질 문제 유형을 목록화하는 것입니다. 좌표계 문제인지, 필수 속성 누락인지, 토폴로지 오류인지에 따라 어느 계층에서 걸러야 효율적인지가 달라집니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:12px; font-family:monospace; font-size:14px; overflow-x:auto;">source: 외주사_지적측량_shp
+rules:
+  - crs_must_equal: EPSG:5186
+  - required_attributes: [pnu, jimok, area_sqm]
+  - geometry_valid: true   # ST_IsValid 기준
+action_on_fail: quarantine_with_reason</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">둘째로, 가장 품질이 나쁜 소스 하나를 골라 파일럿으로 먼저 돌려봐야 합니다. 모든 소스를 한 번에 옮기려 하면 규칙 설계와 운영 전환이 동시에 터져 실패 원인을 구분할 수 없습니다. 셋째로, 격리된 레코드를 누가 확인하고 수정할지 책임자를 미리 정해야 합니다 — 게이트웨이가 막아주는 것과 막힌 데이터를 실제로 고치는 것은 별개의 운영 프로세스입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #e08a2e; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>주의</b> — 규칙이 과도하게 엄격해 정상 데이터까지 막는 '거짓 양성'이 없는지, 초기 몇 주간은 격리함을 매일 사람이 직접 검토해 임계값을 조정해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="color:#03c75a; font-size:15px;">#데이터거버넌스 #VertiGIS #1Spatial #공간데이터품질 #ETL</p>
+
+</body>
+</html>
