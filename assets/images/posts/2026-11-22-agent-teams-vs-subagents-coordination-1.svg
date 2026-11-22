@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill: #ffffff; stroke: #333333; stroke-width: 2; }
+    .boxLead { fill: #eef3ff; stroke: #3b5bdb; stroke-width: 2; }
+    .boxSub { fill: #f0f7f4; stroke: #2e8b57; stroke-width: 2; }
+    .boxTeam { fill: #fff7f0; stroke: #e08a2e; stroke-width: 2; }
+    .label { font-size: 13px; fill: #222222; text-anchor: middle; }
+    .sublabel { font-size: 11px; fill: #555555; text-anchor: middle; }
+    .arrow { stroke: #666666; stroke-width: 2; marker-end: url(#arrowhead); fill: none; }
+    .arrowMesh { stroke: #e08a2e; stroke-width: 2; marker-end: url(#arrowheadOrange); fill: none; }
+    .title { font-size: 15px; font-weight: bold; fill: #222222; }
+    .notetext { font-size: 12px; fill: #555555; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#666666" />
+    </marker>
+    <marker id="arrowheadOrange" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#e08a2e" />
+    </marker>
+  </defs>
+
+  <text x="20" y="26" class="title">① 서브에이전트 — 위계형 호출-응답</text>
+  <rect x="30" y="45" width="130" height="50" class="boxLead" />
+  <text x="95" y="66" class="label">메인 세션</text>
+  <text x="95" y="82" class="sublabel">조율자 1곳</text>
+
+  <rect x="30" y="130" width="110" height="45" class="boxSub" />
+  <text x="85" y="150" class="label">서브A</text>
+  <text x="85" y="165" class="sublabel">결과만 반환</text>
+  <rect x="155" y="130" width="110" height="45" class="boxSub" />
+  <text x="210" y="150" class="label">서브B</text>
+  <text x="210" y="165" class="sublabel">결과만 반환</text>
+
+  <line x1="80" y1="95" x2="85" y2="128" class="arrow" />
+  <line x1="110" y1="95" x2="210" y2="128" class="arrow" />
+  <path d="M85,130 C60,110 70,100 90,96" class="arrow" />
+  <path d="M210,130 C210,105 150,98 112,96" class="arrow" />
+  <text x="150" y="200" class="notetext">서브A·서브B는 서로의 존재를 모름 — 메인을 거쳐야만 정보가 섞임</text>
+
+  <text x="420" y="26" class="title">② Agent Teams — 메쉬형 메일박스 통신</text>
+  <rect x="430" y="45" width="130" height="50" class="boxLead" />
+  <text x="495" y="66" class="label">팀 리드</text>
+  <text x="495" y="82" class="sublabel">뼈대·작업목록만</text>
+
+  <rect x="430" y="130" width="100" height="45" class="boxTeam" />
+  <text x="480" y="150" class="label">팀원A</text>
+  <text x="480" y="165" class="sublabel">mailbox</text>
+  <rect x="560" y="130" width="100" height="45" class="boxTeam" />
+  <text x="610" y="150" class="label">팀원B</text>
+  <text x="610" y="165" class="sublabel">mailbox</text>
+  <rect x="495" y="210" width="100" height="45" class="boxTeam" />
+  <text x="545" y="230" class="label">팀원C</text>
+  <text x="545" y="245" class="sublabel">mailbox</text>
+
+  <line x1="470" y1="95" x2="480" y2="128" class="arrow" />
+  <line x1="520" y1="95" x2="610" y2="128" class="arrow" />
+  <line x1="480" y1="175" x2="610" y2="175" class="arrowMesh" />
+  <line x1="480" y1="175" x2="545" y2="208" class="arrowMesh" />
+  <line x1="610" y1="175" x2="545" y2="208" class="arrowMesh" />
+  <text x="545" y="280" class="notetext">팀원끼리 직접 메시지 + 공유 작업 목록에서 스스로 작업 집어감</text>
+
+  <rect x="250" y="340" width="300" height="80" class="box" />
+  <text x="400" y="365" class="title" text-anchor="middle">③ 헤드리스(-p) / Agent SDK 자동화</text>
+  <text x="400" y="388" class="sublabel">팀원 스폰 안 됨 — 이름 붙인 호출도</text>
+  <text x="400" y="405" class="sublabel">그대로 평범한 서브에이전트로 떨어짐</text>
+</svg>
