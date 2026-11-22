@@ -1,0 +1,69 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill: #ffffff; stroke: #333333; stroke-width: 2; }
+    .boxAgent { fill: #eef3ff; stroke: #3b5bdb; stroke-width: 2; }
+    .boxRead { fill: #f0f7f4; stroke: #2e8b57; stroke-width: 2; }
+    .boxScoped { fill: #fff7f0; stroke: #e08a2e; stroke-width: 2; }
+    .boxDanger { fill: #fdecea; stroke: #c0392b; stroke-width: 2; }
+    .label { font-size: 13px; fill: #222222; text-anchor: middle; }
+    .sublabel { font-size: 11px; fill: #555555; text-anchor: middle; }
+    .arrow { stroke: #666666; stroke-width: 2; marker-end: url(#arrowhead); fill: none; }
+    .title { font-size: 15px; font-weight: bold; fill: #222222; }
+    .notetext { font-size: 12px; fill: #555555; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#666666" />
+    </marker>
+  </defs>
+
+  <text x="20" y="26" class="title">신규 데이터 → 에이전트 → MCP 가드레일 계층 → GeoServer / GWC</text>
+
+  <rect x="20" y="50" width="120" height="50" class="box" />
+  <text x="80" y="72" class="label">신규 드론</text>
+  <text x="80" y="88" class="sublabel">촬영 데이터 적재</text>
+  <line x1="140" y1="75" x2="178" y2="75" class="arrow" />
+
+  <rect x="180" y="50" width="120" height="50" class="boxAgent" />
+  <text x="240" y="72" class="label">에이전트</text>
+  <text x="240" y="88" class="sublabel">자연어 요청 해석</text>
+  <line x1="300" y1="75" x2="338" y2="75" class="arrow" />
+
+  <rect x="340" y="50" width="140" height="50" class="box" />
+  <text x="410" y="72" class="label">MCP 도구 계층</text>
+  <text x="410" y="88" class="sublabel">작업을 등급별로 분류</text>
+
+  <line x1="410" y1="100" x2="150" y2="155" class="arrow" />
+  <line x1="410" y1="100" x2="410" y2="155" class="arrow" />
+  <line x1="410" y1="100" x2="670" y2="155" class="arrow" />
+
+  <rect x="40" y="160" width="220" height="60" class="boxRead" />
+  <text x="150" y="182" class="label">조회 전용 (read_only)</text>
+  <text x="150" y="200" class="sublabel">레이어·스타일·캐시 상태 목록</text>
+  <text x="150" y="215" class="sublabel">승인 없이 즉시 통과</text>
+
+  <rect x="300" y="160" width="220" height="60" class="boxScoped" />
+  <text x="410" y="182" class="label">범위 제한 쓰기 (reversible)</text>
+  <text x="410" y="200" class="sublabel">레이어 발행 · 스타일 교체</text>
+  <text x="410" y="215" class="sublabel">지정 워크스페이스 안에서만 자동승인</text>
+
+  <rect x="560" y="160" width="220" height="60" class="boxDanger" />
+  <text x="670" y="182" class="label">파괴적 작업 (destructive)</text>
+  <text x="670" y="200" class="sublabel">캐시 전체 삭제 · 워크스페이스 삭제</text>
+  <text x="670" y="215" class="sublabel">사람 승인 필수</text>
+
+  <line x1="150" y1="220" x2="150" y2="260" class="arrow" />
+  <line x1="410" y1="220" x2="410" y2="260" class="arrow" />
+  <line x1="670" y1="220" x2="670" y2="260" class="arrow" />
+
+  <rect x="120" y="265" width="560" height="55" class="box" />
+  <text x="400" y="287" class="label">GeoServer REST API + GeoWebCache(GWC)</text>
+  <text x="400" y="305" class="sublabel">워크스페이스 · 레이어 · 스토어 · 캐시 타일 실제 변경</text>
+
+  <line x1="400" y1="320" x2="400" y2="350" class="arrow" />
+  <rect x="220" y="355" width="360" height="55" class="box" />
+  <text x="400" y="377" class="label">WMS / WFS로 최종 사용자에게 노출</text>
+  <text x="400" y="395" class="sublabel">감사 로그: 요청 → 등급 분류 → 실제 실행, REST 로그와 별도 보관</text>
+
+  <text x="20" y="430" class="notetext">핵심: 조회·범위제한쓰기·파괴적 작업을 같은 권한으로 노출하면 자연어 해석 오류가 전체 서비스로 번진다</text>
+</svg>
