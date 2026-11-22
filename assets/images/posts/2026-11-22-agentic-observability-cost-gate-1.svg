@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill: #ffffff; stroke: #333333; stroke-width: 2; }
+    .boxReq { fill: #eef3ff; stroke: #3b5bdb; stroke-width: 2; }
+    .boxSpan { fill: #fff7f0; stroke: #e08a2e; stroke-width: 2; }
+    .boxGate { fill: #f0f7f4; stroke: #2e8b57; stroke-width: 2; }
+    .label { font-size: 12px; fill: #222222; text-anchor: middle; }
+    .sublabel { font-size: 10.5px; fill: #555555; text-anchor: middle; }
+    .arrow { stroke: #666666; stroke-width: 1.6; marker-end: url(#arrowhead); fill: none; }
+    .title { font-size: 15px; font-weight: bold; fill: #222222; }
+    .notetext { font-size: 12px; fill: #555555; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5 Z" fill="#666666" />
+    </marker>
+  </defs>
+
+  <text x="20" y="24" class="title">일반 요청 vs 에이전트 요청 — 스팬이 펼쳐지는 방식</text>
+
+  <rect x="20" y="45" width="140" height="40" class="boxReq" />
+  <text x="90" y="69" class="label">일반 웹 요청 1건</text>
+  <line x1="160" y1="65" x2="198" y2="65" class="arrow" />
+  <rect x="200" y="45" width="110" height="40" class="box" />
+  <text x="255" y="69" class="label">스팬 1개</text>
+  <text x="330" y="69" class="notetext">→ 비용은 요청 수에 선형</text>
+
+  <rect x="20" y="110" width="140" height="40" class="boxReq" />
+  <text x="90" y="134" class="label">에이전트 요청 1건</text>
+  <line x1="160" y1="130" x2="198" y2="130" class="arrow" />
+  <rect x="200" y="100" width="130" height="30" class="boxSpan" />
+  <text x="265" y="120" class="sublabel">모델 호출 스팬 x N</text>
+  <rect x="200" y="135" width="130" height="30" class="boxSpan" />
+  <text x="265" y="155" class="sublabel">도구 호출 스팬 x M</text>
+  <rect x="200" y="170" width="130" height="30" class="boxSpan" />
+  <text x="265" y="190" class="sublabel">서브에이전트 스팬 x K</text>
+  <text x="450" y="150" class="notetext">→ 호출 트리 깊이·너비에 따라 비선형 증가</text>
+
+  <line x1="330" y1="115" x2="378" y2="115" class="arrow" />
+  <line x1="330" y1="150" x2="378" y2="150" class="arrow" />
+  <line x1="330" y1="185" x2="378" y2="185" class="arrow" />
+
+  <rect x="380" y="95" width="220" height="110" class="box" />
+  <text x="490" y="118" class="label">OpenTelemetry Collector</text>
+  <text x="490" y="136" class="sublabel">비용이 실제로 결정되는 통제 지점</text>
+  <rect x="395" y="148" width="190" height="24" class="boxGate" />
+  <text x="490" y="165" class="sublabel">테일 샘플링: 실패·재시도·느림 보존</text>
+  <rect x="395" y="176" width="190" height="24" class="boxGate" />
+  <text x="490" y="193" class="sublabel">성공·루틴 요청은 저비율만 보존</text>
+
+  <line x1="600" y1="150" x2="638" y2="150" class="arrow" />
+  <rect x="640" y="110" width="140" height="80" class="box" />
+  <text x="710" y="135" class="label">백엔드 저장소</text>
+  <text x="710" y="155" class="sublabel">팀별 비용 대시보드</text>
+  <text x="710" y="173" class="sublabel">서비스 오너가 직접 확인</text>
+
+  <rect x="140" y="260" width="520" height="70" class="boxGate" />
+  <text x="400" y="285" class="label" text-anchor="middle">배포 파이프라인 예산 게이트</text>
+  <text x="400" y="305" class="sublabel">이 변경이 예상 트레이스 볼륨·비용을 얼마나 늘리는가</text>
+  <text x="400" y="320" class="sublabel">팀 예산을 넘기면 CI에서 배포 차단</text>
+
+  <text x="20" y="380" class="title">핵심: SDK 계측량 · Collector 샘플링 · 배포 게이트, 세 지점을 함께 설계</text>
+  <text x="20" y="400" class="notetext">한 곳만 손대면 비용은 나머지 두 곳에서 새어 나간다 — 59%의 조직이 모니터링 비용으로</text>
+  <text x="20" y="418" class="notetext">에이전틱 배포를 지연·취소한 이유도 파이프라인 전체를 통제점으로 보지 않았기 때문이다.</text>
+</svg>
