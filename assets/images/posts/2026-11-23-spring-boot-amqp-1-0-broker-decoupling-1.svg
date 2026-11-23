@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill: #ffffff; stroke: #333333; stroke-width: 2; }
+    .boxApp { fill: #eef3ff; stroke: #3b5bdb; stroke-width: 2; }
+    .boxOld { fill: #fff7f0; stroke: #e08a2e; stroke-width: 2; }
+    .boxNew { fill: #f0f7f4; stroke: #2e8b57; stroke-width: 2; }
+    .label { font-size: 12px; fill: #222222; text-anchor: middle; }
+    .sublabel { font-size: 10.5px; fill: #555555; text-anchor: middle; }
+    .arrow { stroke: #666666; stroke-width: 1.6; marker-end: url(#arrowhead); fill: none; }
+    .title { font-size: 15px; font-weight: bold; fill: #222222; }
+    .notetext { font-size: 12px; fill: #555555; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5 Z" fill="#666666" />
+    </marker>
+  </defs>
+
+  <text x="20" y="24" class="title">Spring Boot 4.2 — AMQP 클라이언트 선택이 브로커 결합도를 가른다</text>
+
+  <rect x="40" y="50" width="220" height="120" class="boxApp" />
+  <text x="150" y="72" class="label">Spring Boot 애플리케이션</text>
+  <rect x="55" y="85" width="190" height="34" class="boxOld" />
+  <text x="150" y="107" class="sublabel">spring-rabbit (@RabbitListener)</text>
+  <rect x="55" y="125" width="190" height="34" class="boxNew" />
+  <text x="150" y="147" class="sublabel">spring-amqp-client (AMQP 1.0)</text>
+
+  <line x1="260" y1="102" x2="300" y2="102" class="arrow" />
+  <text x="330" y="98" class="sublabel">AMQP 0-9-1</text>
+  <text x="330" y="112" class="sublabel">(RabbitMQ 전용 모델)</text>
+
+  <line x1="260" y1="142" x2="300" y2="142" class="arrow" />
+  <text x="330" y="138" class="sublabel">AMQP 1.0</text>
+  <text x="330" y="152" class="sublabel">(공개 표준, 브로커 중립)</text>
+
+  <rect x="430" y="60" width="160" height="60" class="box" />
+  <text x="510" y="84" class="label">RabbitMQ</text>
+  <text x="510" y="102" class="sublabel">두 프로토콜 모두 지원</text>
+
+  <rect x="430" y="150" width="160" height="40" class="box" />
+  <text x="510" y="174" class="sublabel">Azure Service Bus</text>
+
+  <rect x="430" y="195" width="160" height="40" class="box" />
+  <text x="510" y="219" class="sublabel">ActiveMQ Artemis / Solace</text>
+
+  <line x1="300" y1="142" x2="420" y2="90" class="arrow" />
+  <line x1="300" y1="142" x2="420" y2="170" class="arrow" />
+  <line x1="300" y1="142" x2="420" y2="215" class="arrow" />
+  <line x1="260" y1="102" x2="420" y2="90" class="arrow" />
+
+  <rect x="620" y="60" width="150" height="175" class="boxNew" />
+  <text x="695" y="82" class="label">AMQP 1.0 선택 시</text>
+  <text x="695" y="102" class="sublabel">브로커 교체해도</text>
+  <text x="695" y="118" class="sublabel">@RabbitListener 코드는</text>
+  <text x="695" y="134" class="sublabel">다시 안 써도 됨</text>
+  <text x="695" y="156" class="sublabel">단, RabbitMQ만의</text>
+  <text x="695" y="172" class="sublabel">고급 기능(우선순위 큐 등)은</text>
+  <text x="695" y="188" class="sublabel">spring-rabbitmq-client로</text>
+  <text x="695" y="204" class="sublabel">RabbitMQ 전용 1.0 API 사용</text>
+
+  <rect x="140" y="280" width="520" height="80" class="boxOld" />
+  <text x="400" y="303" class="label" text-anchor="middle">0-9-1만 계속 쓴 경우</text>
+  <text x="400" y="323" class="sublabel">RabbitMQ API(exchange·queue·routing key)에 코드가 묶임</text>
+  <text x="400" y="341" class="sublabel">→ 브로커를 바꾸면 메시징 계층을 통째로 재작성해야 함</text>
+
+  <text x="20" y="400" class="title">핵심: 0-9-1·1.0 클라이언트는 같은 프로젝트에 공존 가능 — 점진 전환이 가능하다</text>
+  <text x="20" y="418" class="notetext">RabbitMQ 4.0부터 포트 5672 하나로 두 프로토콜을 동시에 서빙하므로 즉시 전면 교체할 필요는 없다.</text>
+</svg>
