@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"RabbitMQ 말고 다른 브로커로도 바꿀 수 있게 해주세요" — Spring Boot 4.2 AMQP 1.0 지원으로 보는 메시지 브로커 결합도 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"RabbitMQ 말고 다른 브로커로도 바꿀 수 있게 해주세요" — Spring Boot 4.2 AMQP 1.0 지원으로 보는 메시지 브로커 결합도 설계</div>
+<p style="font-size:14px; color:#999;">실무 스택</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 2026년 11월 19일 GA로 나온 Spring Boot 4.2가 AMQP 1.0 지원을 공식화했습니다. 0-9-1과 1.0이 왜 완전히 다른 프로토콜인지, 이 선택이 메시지 브로커 결합도에 어떤 차이를 만드는지 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"지금은 RabbitMQ 하나로 돌아가는데, 나중에 다른 브로커로 옮길 수도 있으니 너무 RabbitMQ에 딱 붙은 코드는 피해주세요." 이런 요청이 막막한 이유는, Spring에서 가장 흔히 쓰는 @RabbitListener와 spring-rabbit이 애초에 RabbitMQ 고유의 AMQP 0-9-1 모델(exchange·queue·routing key)을 그대로 노출하는 구조이기 때문입니다. <b>AMQP라는 이름이 같다고 해서 0-9-1과 1.0이 같은 프로토콜의 다른 버전이 아닙니다.</b></p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">2026년 11월 19일 GA로 나온 Spring Boot 4.2는 바로 이 지점을 겨냥합니다. RabbitMQ 4.0이 AMQP 1.0을 코어 프로토콜로 추가하면서, Spring 쪽에도 AMQP 1.0 클라이언트 지원이 자리 잡았습니다. spring-rabbit이 여전히 0-9-1 전용인 반면, 새로 추가된 spring-amqp-client(Qpid ProtonJ2 기반)는 AMQP 1.0을 구현하는 어떤 브로커와도 통신할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-23-spring-boot-amqp-1-0-broker-decoupling-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">AMQP 0-9-1은 애초에 RabbitMQ가 정의한 서버 모델을 프로토콜 자체에 담고 있어서, 이 모델을 그대로 쓰는 @RabbitListener 코드는 다른 브로커로 옮길 때 통신 방식 자체를 다시 설계해야 합니다. 반면 <b>AMQP 1.0은 서버 모델을 정의하지 않는 범용 프로토콜</b>이라, 브로커가 1.0을 구현하기만 하면 "주소(address)"라는 추상 단위로 통신할 수 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">구성</th><th style="border:1px solid #ddd; padding:8px;">브로커 결합도</th><th style="border:1px solid #ddd; padding:8px;">RabbitMQ 고유 기능</th><th style="border:1px solid #ddd; padding:8px;">적합한 상황</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">spring-rabbit (0-9-1)</td><td style="border:1px solid #ddd; padding:8px;">높음</td><td style="border:1px solid #ddd; padding:8px;">전부 사용 가능</td><td style="border:1px solid #ddd; padding:8px;">RabbitMQ 유지가 확실할 때</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">spring-rabbitmq-client (RabbitMQ 1.0)</td><td style="border:1px solid #ddd; padding:8px;">중간</td><td style="border:1px solid #ddd; padding:8px;">RabbitMQ 1.0 확장 가능</td><td style="border:1px solid #ddd; padding:8px;">RabbitMQ 유지 + 경량 프로토콜</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">spring-amqp-client (범용 1.0)</td><td style="border:1px solid #ddd; padding:8px;">낮음</td><td style="border:1px solid #ddd; padding:8px;">사용 불가</td><td style="border:1px solid #ddd; padding:8px;">브로커 교체 가능성이 실제 로드맵에 있을 때</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">0-9-1·1.0 혼용</td><td style="border:1px solid #ddd; padding:8px;">전환 구간만 중간</td><td style="border:1px solid #ddd; padding:8px;">유지하며 신규만 전환</td><td style="border:1px solid #ddd; padding:8px;">기존 서비스를 깨지 않고 점진 전환할 때</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">여기서 짚어야 할 함정은 "표준 프로토콜이니 무조건 더 낫다"는 판단입니다. spring-amqp-client는 브로커 중립성을 주는 대신 RabbitMQ만의 확장 기능(우선순위 큐 등)을 포기해야 합니다. <b>RabbitMQ를 바꿀 계획이 없다면 표준을 좇다가 오히려 쓰던 기능을 잃는 손해가 더 클 수 있습니다.</b></p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 먼저 할 일은 라이브러리를 바꾸는 게 아니라, 현재 메시징 코드가 RabbitMQ 고유 기능에 실제로 얼마나 의존하는지 점검하는 것입니다. 우선순위 큐, 특정 교환기 타입, 관리 플러그인 연동 등을 목록으로 뽑아보면 표준화해도 되는 부분이 자연스럽게 갈립니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:12px; font-family:monospace; font-size:14px; overflow-x:auto;">@Service
+public class OrderEventPublisher {
+    private final AmqpClientTemplate template;
+
+    public void publishOrderCreated(OrderCreatedEvent event) {
+        // 주소 기반 전송 — 특정 브로커 개념에 묶이지 않는다
+        template.send("orders.created", event);
+    }
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">점검이 끝나면 RabbitMQ 의존도가 낮은 신규 기능부터 spring-amqp-client로 전환하고, 기존 @RabbitListener 서비스는 당장 건드리지 않습니다. RabbitMQ 4.0이 같은 포트에서 0-9-1과 1.0을 동시에 서빙하므로 점진 전환이 가능합니다. 실제 브로커 교체가 로드맵에 있다면, 전환 대상 서비스를 먼저 스테이징에서 다른 AMQP 1.0 브로커로 바꿔 검증한 뒤 프로덕션 계획을 세웁니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #e08a2e; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>주의</b> — "표준이니 될 것"이라고 가정하고 검증을 건너뛰면, 브로커별 1.0 구현 디테일(주소 라우팅 방식 등) 차이에서 뒤늦게 막힙니다. 전환 전 스테이징 검증은 생략할 수 없습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="color:#03c75a; font-size:15px;">#SpringBoot #AMQP #메시지브로커 #RabbitMQ #아키텍처결합도</p>
+
+</body>
+</html>

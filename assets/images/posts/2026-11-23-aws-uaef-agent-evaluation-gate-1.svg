@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill: #ffffff; stroke: #333333; stroke-width: 2; }
+    .boxFw { fill: #eef3ff; stroke: #3b5bdb; stroke-width: 2; }
+    .boxCore { fill: #fff7f0; stroke: #e08a2e; stroke-width: 2; }
+    .boxGate { fill: #f0f7f4; stroke: #2e8b57; stroke-width: 2; }
+    .label { font-size: 12px; fill: #222222; text-anchor: middle; }
+    .sublabel { font-size: 10.5px; fill: #555555; text-anchor: middle; }
+    .arrow { stroke: #666666; stroke-width: 1.6; marker-end: url(#arrowhead); fill: none; }
+    .title { font-size: 15px; font-weight: bold; fill: #222222; }
+    .notetext { font-size: 12px; fill: #555555; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="7" markerHeight="7" refX="5" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5 Z" fill="#666666" />
+    </marker>
+  </defs>
+
+  <text x="20" y="24" class="title">프레임워크별 에이전트 트레이스가 하나의 평가 게이트로 모이는 경로</text>
+
+  <rect x="20" y="45" width="130" height="28" class="boxFw" />
+  <text x="85" y="63" class="label">LangGraph</text>
+  <rect x="20" y="80" width="130" height="28" class="boxFw" />
+  <text x="85" y="98" class="label">LangChain</text>
+  <rect x="20" y="115" width="130" height="28" class="boxFw" />
+  <text x="85" y="133" class="label">Strands Agents</text>
+  <rect x="20" y="150" width="130" height="28" class="boxFw" />
+  <text x="85" y="168" class="label">Bedrock AgentCore</text>
+
+  <line x1="150" y1="59" x2="198" y2="110" class="arrow" />
+  <line x1="150" y1="94" x2="198" y2="112" class="arrow" />
+  <line x1="150" y1="129" x2="198" y2="118" class="arrow" />
+  <line x1="150" y1="164" x2="198" y2="124" class="arrow" />
+
+  <rect x="200" y="90" width="140" height="50" class="box" />
+  <text x="270" y="110" class="label">어댑터</text>
+  <text x="270" y="128" class="sublabel">프레임워크별 트레이스 →</text>
+  <text x="270" y="140" class="sublabel">canonical 형식 변환</text>
+
+  <line x1="340" y1="115" x2="378" y2="115" class="arrow" />
+
+  <rect x="380" y="60" width="230" height="130" class="boxCore" />
+  <text x="495" y="84" class="label">UAEF 메트릭 엔진</text>
+  <text x="495" y="102" class="sublabel">7개 차원 · 36개 내장 메트릭</text>
+  <rect x="395" y="112" width="200" height="26" class="box" />
+  <text x="495" y="129" class="sublabel">규칙 기반 메트릭 (12개)</text>
+  <rect x="395" y="142" width="200" height="26" class="box" />
+  <text x="495" y="159" class="sublabel">Bedrock LLM 판정 메트릭 (24개)</text>
+  <text x="495" y="178" class="notetext">→ 채점·결과 저장은 AWS 서비스에 의존</text>
+
+  <line x1="610" y1="125" x2="648" y2="125" class="arrow" />
+
+  <rect x="650" y="95" width="130" height="60" class="boxGate" />
+  <text x="715" y="118" class="label">회귀 리포트</text>
+  <text x="715" y="136" class="sublabel">점수 5%↓ 경미/보통/심각</text>
+
+  <rect x="140" y="250" width="520" height="80" class="boxGate" />
+  <text x="400" y="275" class="label" text-anchor="middle">CI 배포 게이트</text>
+  <text x="400" y="295" class="sublabel">심각 등급 회귀 발견 시 릴리스 차단, 베이스라인 대비 비교</text>
+  <text x="400" y="313" class="sublabel">단, 보안 판단 용도로는 사용하지 않음 (AWS 명시 경고)</text>
+  <line x1="400" y1="195" x2="400" y2="248" class="arrow" />
+
+  <text x="20" y="375" class="title">핵심: 프레임워크를 갈아타도 같은 36개 지표로 버전 간 점수를 비교할 수 있다</text>
+  <text x="20" y="395" class="notetext">단, 24개 지표가 Bedrock 판정에 의존해 비용·가용성이 평가 자체의 제약이 되고,</text>
+  <text x="20" y="413" class="notetext">보안 결정에는 못 쓴다는 AWS의 경고를 그대로 설계 전제로 받아들여야 한다.</text>
+</svg>
