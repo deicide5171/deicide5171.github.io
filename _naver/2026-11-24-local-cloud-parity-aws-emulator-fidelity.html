@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"로컬에서 AWS 계정 없이 통합 테스트 돌아가게 해주세요" — AWS Emulator로 보는 로컬-클라우드 동등성 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"로컬에서 AWS 계정 없이 통합 테스트 돌아가게 해주세요" — AWS Emulator로 보는 로컬-클라우드 동등성 설계</div>
+<p style="font-size:14px; color:#999;">시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — LocalStack 커뮤니티 에디션이 중단된 자리에, AWS가 자사 에이전트로 전부 작성하고 PR은 받지 않는 오픈소스 AWS Emulator를 2026년 11월 내놓았습니다. 로컬·CI 테스트 환경이 클라우드를 얼마나 똑같이 흉내내야 하는지 판단하는 기준을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"매번 AWS 계정 열어서 과금되는 리소스 만들지 말고, 로컬이나 CI에서 통합 테스트 좀 돌아가게 해주세요." 이 요구는 새롭지 않습니다. 그동안 LocalStack이 사실상 유일한 답이었는데, 2026년 3월 23일 LocalStack의 오픈소스 커뮤니티 에디션 저장소가 보관(archive) 처리되면서 공백이 생겼습니다. 커뮤니티가 fakecloud·MiniStack·LocalEmu 같은 대체 프로젝트를 내놓는 와중에, AWS가 2026년 11월 11일 직접 오픈소스 로컬 에뮬레이터 "AWS Emulator"를 공개했습니다. 여기서 짚어야 할 건 단순히 선택지가 하나 늘었다는 게 아니라, <b>이 도구가 가진 두 가지 성격이 설계 판단 자체를 바꾼다는 점</b>입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">첫째, AWS Emulator는 사람이 작성하지 않았습니다. AWS의 자율 에이전트가 코드를 전부 작성했고, AWS는 외부 PR을 받지 않는다고 명시했습니다. 즉 에뮬레이터가 실제 AWS 동작과 어긋나는 걸 발견해도 커뮤니티가 패치를 보내 고칠 수 있는 구조가 아닙니다. 둘째, 모든 에뮬레이트된 리소스는 메모리에만 존재하고 에뮬레이터를 멈추면 사라집니다. AWS 스스로 장시간 구동이나 부하 테스트용으로 검증하지 않았다고 밝혔습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-24-local-cloud-parity-aws-emulator-fidelity-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">로컬-클라우드 동등성은 전부 아니면 전무의 문제가 아니라, 개발 루프의 각 단계마다 <b>충실도와 비용을 어느 수준에서 맞출 것인가를 따로 정해야 하는 스펙트럼</b>입니다. 로컬 워크스테이션은 속도가 최우선이라 인메모리 에뮬레이터가 유리하고, CI 파이프라인은 매 실행마다 깨끗한 상태로 띄웠다 버리는 휘발성이 오히려 장점입니다. 반면 스테이징은 실제 AWS 계정의 서비스 동작·과금·IAM 경계를 그대로 검증해야 하는 자리라 에뮬레이터로 대체할 수 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">중요한 건 에뮬레이터와 실제 계정 사이에 반드시 "충실도 격차 감시" 지점을 둬야 한다는 점입니다. 로컬·CI 단계만 통과시키고 끝내면, 에뮬레이터가 실제 AWS와 다르게 동작하는 부분을 아무도 모르는 채로 쌓입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">방식</th><th style="border:1px solid #ddd; padding:8px;">상태 영속성</th><th style="border:1px solid #ddd; padding:8px;">장시간·부하 테스트</th><th style="border:1px solid #ddd; padding:8px;">문제 발견 시 대응</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">AWS Emulator</td><td style="border:1px solid #ddd; padding:8px;">없음 — 종료 시 소실</td><td style="border:1px solid #ddd; padding:8px;">비검증, 비권장</td><td style="border:1px solid #ddd; padding:8px;">PR 불가, AWS 업데이트 대기</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">커뮤니티 포크</td><td style="border:1px solid #ddd; padding:8px;">프로젝트마다 다름</td><td style="border:1px solid #ddd; padding:8px;">대체로 비검증</td><td style="border:1px solid #ddd; padding:8px;">커뮤니티 PR로 직접 수정</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">실제 AWS 샌드박스 계정</td><td style="border:1px solid #ddd; padding:8px;">영속(정리 필요)</td><td style="border:1px solid #ddd; padding:8px;">검증 가능</td><td style="border:1px solid #ddd; padding:8px;">AWS 지원 채널</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">계약 테스트 + 모킹</td><td style="border:1px solid #ddd; padding:8px;">테스트 코드에 종속</td><td style="border:1px solid #ddd; padding:8px;">설계에 따라 가능</td><td style="border:1px solid #ddd; padding:8px;">코드 소유권이 우리 쪽</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 눈여겨봐야 할 열은 마지막입니다. AWS Emulator는 공식 도구라는 신뢰도를 주지만, 그 신뢰도와 별개로 <b>우리가 발견한 버그를 우리 손으로 고칠 수 없는 블랙박스 의존성</b>이라는 사실은 변하지 않습니다. 서드파티 라이브러리의 벤더 종속 판단과 똑같이 다뤄야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 먼저 옮길 테스트는 상태를 오래 들고 있지 않는 것들입니다. "S3 이벤트가 Lambda에 올바른 형식으로 전달되는가" 같은 짧은 단위 통합 테스트는 인메모리 에뮬레이터로 옮겨도 손해가 없습니다. 반대로 바로 막히는 지점은 둘입니다. 하나는 테스트 간 상태를 유지해야 하는 시나리오이고, 다른 하나는 IAM 정책의 미묘한 거부 조건을 검증하는 보안 테스트입니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; overflow-x:auto; line-height:1.6;">test:unit        -&gt; 모킹만 사용, AWS 의존 없음
+test:integration -&gt; AWS Emulator (인메모리, 매 실행 초기화)
+test:contract    -&gt; 실제 AWS 샌드박스 계정, 주 1회 스케줄 실행
+test:staging-e2e -&gt; 배포 전 수동 트리거, 실제 계정 전체 플로우</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">이렇게 네 단계로 쪼개면, 평소 개발 루프는 test:integration까지만 빠르게 돌리고 test:contract가 매주 한 번씩 "에뮬레이터가 실제와 벌어지기 시작했는지"를 잡아냅니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #e08a2e; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>주의</b> — 계약 테스트 계층을 처음부터 넣지 않고 에뮬레이터 하나로 전부 대체하면, 몇 달 뒤 에뮬레이터가 새로 추가된 AWS 기능을 아직 흉내내지 못하는 공백을 운영 장애로 처음 발견하게 됩니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">#AWSEmulator #LocalStack #테스트전략 #로컬개발환경 #CI</p>
+
+</body>
+</html>
