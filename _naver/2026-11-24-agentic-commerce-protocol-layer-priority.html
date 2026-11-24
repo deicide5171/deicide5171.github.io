@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"에이전트가 알아서 결제까지 끝내게 해주세요" — ACP·AP2·UCP 3층 구조, 빌더는 어디부터 구현해야 하는가</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"에이전트가 알아서 결제까지 끝내게 해주세요" — ACP·AP2·UCP 3층 구조, 빌더는 어디부터 구현해야 하는가</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 쇼핑 에이전트에 결제까지 맡기려는 요구는 ACP·AP2·UCP 중 하나를 고르는 문제가 아니라, 발견·권한위임·체크아웃이라는 서로 다른 레이어 중 지금 무엇부터 구현할지의 문제입니다. 세 표준의 역할과 구현 순서를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"쇼핑 에이전트 만드는데, 마음에 드는 상품 찾으면 장바구니 담고 결제까지 사람 손 안 거치고 끝내주세요." 이 요구를 받으면 보통 결제 연동 라이브러리 하나만 고르면 끝나는 일이라고 생각합니다. 하지만 지금 에이전틱 커머스 생태계에는 서로 다른 레이어를 담당하는 표준이 최소 셋 떠 있습니다 — OpenAI·Stripe의 ACP(Agentic Commerce Protocol), Google의 AP2(Agent Payments Protocol), 그리고 Google·Shopify의 UCP(Universal Commerce Protocol)입니다. <b>이름이 비슷해서 경쟁 표준처럼 보이지만, 실제로는 발견·체크아웃 실행·권한위임 신뢰라는 서로 다른 문제를 풉니다.</b> Perplexity가 ACP와 AP2를 동시에 쓰는 이유도 여기에 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">세 표준의 성숙도와 통제 구조는 제각각입니다. ACP는 Stripe의 Shared Payment Token으로 체크아웃을 실행하는 데 집중하고, 사양은 공개돼 있지만 실제 운영은 Stripe 인프라에 사실상 묶여 있습니다. AP2는 Intent·Cart·Payment 세 종류의 서명된 위임장을 발급해 "사용자가 실제로 승인했다"는 증거 체인을 만드는 권한 계층이고, UCP는 가맹점이 자기 서버에 상품 프로필을 직접 호스팅하는 탈중앙 구조로 발견·장바구니 단계를 표준화합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-24-agentic-commerce-protocol-layer-priority-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">세 표준은 쇼핑 흐름의 세 단계에 각각 배치됩니다. "어떤 상품이 있는지" 알아내는 발견·장바구니 단계는 UCP가, "결제를 실행해도 된다"는 승인 증거를 남기는 단계는 AP2가, 실제로 돈이 움직이는 체크아웃 실행은 ACP가 맡습니다. <b>하나를 넣으면 나머지가 불필요해지는 대체재가 아니라, 순서대로 쌓이는 파이프라인입니다.</b> AP2의 위임장 체인은 다른 두 레이어를 가로지르는 감사 로그 역할도 겸해서, AP2 없이 ACP만 붙이면 "에이전트가 승인했다고 주장하는 금액"과 "사용자가 실제로 승인한 금액"을 구분할 방법이 없습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">레이어</th><th style="border:1px solid #ddd; padding:8px;">담당 범위</th><th style="border:1px solid #ddd; padding:8px;">운영 통제 구조</th><th style="border:1px solid #ddd; padding:8px;">빠지면 생기는 공백</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">UCP</td><td style="border:1px solid #ddd; padding:8px;">상품 발견·장바구니</td><td style="border:1px solid #ddd; padding:8px;">탈중앙, 가맹점 자체 호스팅</td><td style="border:1px solid #ddd; padding:8px;">에이전트가 가맹점마다 다른 포맷을 긁어야 함</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">AP2</td><td style="border:1px solid #ddd; padding:8px;">승인의 서명된 증거 체인</td><td style="border:1px solid #ddd; padding:8px;">FIDO Alliance, 플랫폼 중립</td><td style="border:1px solid #ddd; padding:8px;">결제 승인 여부를 사후 증명 불가</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">ACP</td><td style="border:1px solid #ddd; padding:8px;">실제 체크아웃 실행</td><td style="border:1px solid #ddd; padding:8px;">사양은 공개, 운영은 Stripe 집중</td><td style="border:1px solid #ddd; padding:8px;">승인은 됐는데 결제 실행 경로가 없음</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">세 번째 줄을 가볍게 넘기면 안 됩니다. ACP는 사양이 공개돼 있다고 홍보되지만, 실제 트랜잭션은 Stripe의 Shared Payment Token 인프라를 통하도록 설계돼 있어 <b>"표준을 따랐다"와 "Stripe에 결제 처리를 위탁했다"가 사실상 같은 말</b>이 됩니다. 반대로 UCP는 가맹점이 직접 서빙하는 구조라 플랫폼 종속은 피하지만, 구현 편차 위험을 가맹점 쪽이 떠안습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가맹점(판매자) 입장이라면 순서는 발견부터입니다. UCP 상품 프로필로 카탈로그를 먼저 노출해야 어떤 에이전트든 찾아올 수 있고, 그 다음에야 ACP 체크아웃 연동이 의미를 가집니다. 체크아웃만 먼저 붙이면 에이전트가 애초에 그 상품을 찾아내지 못해 기능이 죽은 채로 남습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">반대로 쇼핑 에이전트(구매자 쪽)를 만드는 거라면 가장 먼저 막히는 지점은 AP2 위임장입니다. 아래는 Cart Mandate의 최소 구조입니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; overflow-x:auto; line-height:1.6;">{
+  "mandate_type": "CartMandate",
+  "user_credential_ref": "vc:user-auth-2026-11-24",
+  "cart_hash": "sha256:9f2a...",
+  "max_amount": { "currency": "KRW", "value": 128000 },
+  "merchant_ref": "ucp:merchant/example-shop",
+  "expires_at": "2026-11-24T15:30:00+09:00"
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>max_amount와 cart_hash를 묶어 서명하는 이유는, 에이전트가 담은 장바구니 금액이 사용자가 승인한 상한을 넘지 못하게 구조적으로 막기 위해서</b>입니다. 여기서 흔히 막히는 지점은 "에이전트가 상품을 추가·변경할 때마다 새 Cart Mandate를 받아야 하는가"입니다. 매번 받으면 승인 피로가 쌓이고, 세션 단위로 뭉뚱그리면 금액 상한을 우회하는 경로가 생깁니다. 실무에서는 상한 범위 안의 변경은 기존 Mandate로 흡수하고, 상한을 넘기거나 가맹점이 바뀌는 순간에만 재승인을 요구하는 경계선을 먼저 정해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #e08a2e; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>주의</b> — ACP 체크아웃 연동은 위임장 체인이 검증 가능해진 뒤에 붙이는 게 순서상 맞습니다. 승인 증거 없이 결제 실행부터 연결하면, 나중에 분쟁이 났을 때 사용자가 진짜 승인했는지 증명할 방법이 없는 채로 돈만 움직이는 구조가 돼버립니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">#에이전틱커머스 #ACP #AP2 #UCP #결제프로토콜</p>
+
+</body>
+</html>

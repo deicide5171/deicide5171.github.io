@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill: #ffffff; stroke: #333333; stroke-width: 2; }
+    .boxUcp { fill: #eef3ff; stroke: #3b5bdb; stroke-width: 2; }
+    .boxAp2 { fill: #f0f7f4; stroke: #2e8b57; stroke-width: 2; }
+    .boxAcp { fill: #fff7f0; stroke: #e08a2e; stroke-width: 2; }
+    .label { font-size: 13px; fill: #222222; text-anchor: middle; }
+    .sublabel { font-size: 11px; fill: #555555; text-anchor: middle; }
+    .arrow { stroke: #666666; stroke-width: 2; marker-end: url(#arrowhead); fill: none; }
+    .title { font-size: 16px; font-weight: bold; fill: #222222; }
+    .notetext { font-size: 11px; fill: #555555; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#666666" />
+    </marker>
+  </defs>
+
+  <text x="20" y="28" class="title">에이전틱 커머스 3층 파이프라인 — 발견 → 권한위임 → 체크아웃</text>
+
+  <rect x="30" y="55" width="200" height="110" class="boxUcp" />
+  <text x="130" y="78" class="label">UCP</text>
+  <text x="130" y="96" class="sublabel">발견 · 장바구니 구성</text>
+  <text x="130" y="112" class="sublabel">가맹점 자체 호스팅</text>
+  <text x="130" y="128" class="sublabel">(탈중앙, Google·Shopify)</text>
+  <text x="130" y="148" class="sublabel">상품 프로필 제공</text>
+
+  <rect x="300" y="55" width="200" height="110" class="boxAp2" />
+  <text x="400" y="78" class="label">AP2</text>
+  <text x="400" y="96" class="sublabel">Intent·Cart·Payment</text>
+  <text x="400" y="112" class="sublabel">서명된 위임장(Mandate)</text>
+  <text x="400" y="128" class="sublabel">(FIDO Alliance 거버넌스)</text>
+  <text x="400" y="148" class="sublabel">사용자 승인 증거 체인</text>
+
+  <rect x="570" y="55" width="200" height="110" class="boxAcp" />
+  <text x="670" y="78" class="label">ACP</text>
+  <text x="670" y="96" class="sublabel">체크아웃 실행</text>
+  <text x="670" y="112" class="sublabel">Stripe Shared Payment Token</text>
+  <text x="670" y="128" class="sublabel">(OpenAI·Stripe)</text>
+  <text x="670" y="148" class="sublabel">실제 결제 처리</text>
+
+  <line x1="230" y1="110" x2="296" y2="110" class="arrow" />
+  <line x1="500" y1="110" x2="566" y2="110" class="arrow" />
+
+  <rect x="80" y="210" width="640" height="90" class="box" />
+  <text x="400" y="235" class="label">공통 참조: Cart Mandate (cart_hash + max_amount 서명)</text>
+  <text x="400" y="256" class="sublabel">UCP가 구성한 장바구니 금액 ↔ AP2가 서명한 승인 상한 ↔ ACP가 청구한 실제 금액</text>
+  <text x="400" y="274" class="sublabel">세 값이 일치하는지는 AP2 위임장 없이는 사후 검증 불가능</text>
+
+  <line x1="130" y1="165" x2="150" y2="206" class="arrow" />
+  <line x1="400" y1="165" x2="400" y2="206" class="arrow" />
+  <line x1="670" y1="165" x2="650" y2="206" class="arrow" />
+
+  <rect x="230" y="340" width="340" height="70" class="boxAcp" />
+  <text x="400" y="365" class="label">실제 결제 네트워크</text>
+  <text x="400" y="385" class="sublabel">카드사 · PG · 은행 — Stripe 인프라를 경유</text>
+
+  <line x1="400" y1="300" x2="400" y2="336" class="arrow" />
+
+  <text x="400" y="430" class="notetext" text-anchor="middle">※ 세 레이어는 경쟁 표준이 아니라 순서대로 쌓이는 파이프라인이다</text>
+</svg>

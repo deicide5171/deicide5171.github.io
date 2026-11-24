@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <style>
+    .box { fill: #ffffff; stroke: #333333; stroke-width: 2; }
+    .boxSource { fill: #eef3ff; stroke: #3b5bdb; stroke-width: 2; }
+    .boxLake { fill: #f0f7f4; stroke: #2e8b57; stroke-width: 2; }
+    .boxSim { fill: #fff7f0; stroke: #e08a2e; stroke-width: 2; }
+    .label { font-size: 12px; fill: #222222; text-anchor: middle; }
+    .sublabel { font-size: 10px; fill: #555555; text-anchor: middle; }
+    .arrow { stroke: #666666; stroke-width: 2; marker-end: url(#arrowhead); fill: none; }
+    .title { font-size: 15px; font-weight: bold; fill: #222222; }
+    .notetext { font-size: 11px; fill: #555555; }
+  </style>
+  <defs>
+    <marker id="arrowhead" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#666666" />
+    </marker>
+  </defs>
+
+  <text x="20" y="26" class="title">생태 디지털 트윈 — 이기종 수집부터 테스트베드까지</text>
+
+  <rect x="20" y="45" width="160" height="60" class="boxSource" />
+  <text x="100" y="68" class="label">고정 IoT 센서</text>
+  <text x="100" y="84" class="sublabel">토양수분·기온, 결측·고장</text>
+
+  <rect x="200" y="45" width="160" height="60" class="boxSource" />
+  <text x="280" y="68" class="label">야생동물 카메라</text>
+  <text x="280" y="84" class="sublabel">야간·악천후 오탐</text>
+
+  <rect x="380" y="45" width="180" height="60" class="boxSource" />
+  <text x="470" y="68" class="label">eBird · GBIF</text>
+  <text x="470" y="84" class="sublabel">시민과학, 공간 관측 편향</text>
+
+  <line x1="100" y1="105" x2="250" y2="150" class="arrow" />
+  <line x1="280" y1="105" x2="290" y2="150" class="arrow" />
+  <line x1="470" y1="105" x2="340" y2="150" class="arrow" />
+
+  <rect x="150" y="155" width="340" height="60" class="box" />
+  <text x="320" y="178" class="label">수집 · 신뢰도 정규화 계층</text>
+  <text x="320" y="196" class="sublabel">공급원별 신뢰도 플래그(spatial_bias, requires_corroboration)</text>
+
+  <line x1="320" y1="215" x2="320" y2="250" class="arrow" />
+
+  <rect x="120" y="255" width="400" height="60" class="boxLake" />
+  <text x="320" y="278" class="label">GIS 데이터 레이크 (~1,000개 데이터셋)</text>
+  <text x="320" y="296" class="sublabel">배치 기반, 먼저 신뢰도 로직을 안정시키는 단계</text>
+
+  <line x1="320" y1="315" x2="320" y2="350" class="arrow" />
+
+  <rect x="80" y="355" width="280" height="65" class="boxSim" />
+  <text x="220" y="378" class="label">시뮬레이션 · 테스트베드</text>
+  <text x="220" y="396" class="sublabel">제거·복원 전략을 미리 시험</text>
+  <text x="220" y="412" class="sublabel">(예: 아이스플랜트 300에이커)</text>
+
+  <rect x="400" y="355" width="280" height="65" class="boxSim" />
+  <text x="540" y="378" class="label">실시간 분석 · 동적 시각화</text>
+  <text x="540" y="396" class="sublabel">ArcGIS Velocity (예고된 다음 단계)</text>
+  <text x="540" y="412" class="sublabel">신뢰도 로직 검증 후 도입</text>
+
+  <line x1="360" y1="385" x2="396" y2="385" class="arrow" />
+</svg>
