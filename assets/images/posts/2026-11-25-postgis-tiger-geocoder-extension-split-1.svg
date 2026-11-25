@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="400" y="30" text-anchor="middle" font-size="18" font-weight="bold" fill="#222">PostGIS 지오코딩 번들 구조 변화</text>
+
+  <!-- Before: 3.6 bundle -->
+  <text x="190" y="60" text-anchor="middle" font-size="14" font-weight="bold" fill="#555">PostGIS 3.6 이하 — 단일 설치 단위</text>
+  <rect x="60" y="75" width="260" height="150" rx="10" fill="#eef6f0" stroke="#2f9e5b" stroke-width="2"/>
+  <rect x="80" y="95" width="220" height="30" rx="4" fill="#ffffff" stroke="#2f9e5b"/>
+  <text x="190" y="115" text-anchor="middle" font-size="13" fill="#222">PostGIS core</text>
+  <rect x="80" y="135" width="220" height="30" rx="4" fill="#ffffff" stroke="#2f9e5b"/>
+  <text x="190" y="155" text-anchor="middle" font-size="13" fill="#222">address_standardizer</text>
+  <rect x="80" y="175" width="220" height="30" rx="4" fill="#ffffff" stroke="#2f9e5b"/>
+  <text x="190" y="195" text-anchor="middle" font-size="13" fill="#222">tiger_geocoder</text>
+  <text x="190" y="240" text-anchor="middle" font-size="12" fill="#777">CREATE EXTENSION 한 번으로 설치</text>
+
+  <!-- Arrow -->
+  <line x1="340" y1="150" x2="420" y2="150" stroke="#999" stroke-width="2" marker-end="url(#arrow)"/>
+  <text x="380" y="140" text-anchor="middle" font-size="12" fill="#777">3.7</text>
+
+  <!-- After: 3.7 split -->
+  <text x="610" y="60" text-anchor="middle" font-size="14" font-weight="bold" fill="#555">PostGIS 3.7 — 저장소 3개로 분리</text>
+  <rect x="460" y="75" width="300" height="60" rx="8" fill="#f4f4f4" stroke="#555" stroke-width="2"/>
+  <text x="610" y="110" text-anchor="middle" font-size="13" fill="#222">PostGIS core (자체 릴리스 주기)</text>
+
+  <rect x="460" y="150" width="140" height="60" rx="8" fill="#fff7f0" stroke="#e08a2e" stroke-width="2"/>
+  <text x="530" y="175" text-anchor="middle" font-size="12" fill="#222">address_standardizer</text>
+  <text x="530" y="195" text-anchor="middle" font-size="11" fill="#777">독립 저장소</text>
+
+  <rect x="620" y="150" width="140" height="60" rx="8" fill="#fff7f0" stroke="#e08a2e" stroke-width="2"/>
+  <text x="690" y="175" text-anchor="middle" font-size="12" fill="#222">tiger_geocoder</text>
+  <text x="690" y="195" text-anchor="middle" font-size="11" fill="#777">PG16+ 요구</text>
+
+  <line x1="600" y1="180" x2="620" y2="180" stroke="#e08a2e" stroke-width="2" stroke-dasharray="4 3"/>
+  <text x="610" y="225" text-anchor="middle" font-size="11" fill="#c0622e">의존 관계는 그대로 — 설치 순서 수동 관리 필요</text>
+
+  <!-- Pipeline below -->
+  <text x="400" y="275" text-anchor="middle" font-size="14" font-weight="bold" fill="#555">지오코딩 데이터 흐름 (양쪽 공통)</text>
+
+  <rect x="60" y="300" width="140" height="50" rx="8" fill="#ffffff" stroke="#2f6fa8" stroke-width="2"/>
+  <text x="130" y="330" text-anchor="middle" font-size="12" fill="#222">원본 주소 데이터</text>
+
+  <line x1="200" y1="325" x2="260" y2="325" stroke="#999" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="260" y="300" width="160" height="50" rx="8" fill="#ffffff" stroke="#2f6fa8" stroke-width="2"/>
+  <text x="340" y="320" text-anchor="middle" font-size="12" fill="#222">address_standardizer</text>
+  <text x="340" y="337" text-anchor="middle" font-size="11" fill="#777">주소 정규화</text>
+
+  <line x1="420" y1="325" x2="480" y2="325" stroke="#999" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="480" y="300" width="150" height="50" rx="8" fill="#ffffff" stroke="#2f6fa8" stroke-width="2"/>
+  <text x="555" y="320" text-anchor="middle" font-size="12" fill="#222">tiger_geocoder</text>
+  <text x="555" y="337" text-anchor="middle" font-size="11" fill="#777">TIGER 대조·좌표화</text>
+
+  <line x1="630" y1="325" x2="690" y2="325" stroke="#999" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <rect x="690" y="300" width="80" height="50" rx="8" fill="#eef6f0" stroke="#2f9e5b" stroke-width="2"/>
+  <text x="730" y="330" text-anchor="middle" font-size="12" fill="#222">좌표</text>
+
+  <text x="400" y="400" text-anchor="middle" font-size="12" fill="#777">※ 데이터 흐름 자체는 동일 — 바뀐 것은 "누가 어떤 저장소에서 버전을 관리하는가"</text>
+  <text x="400" y="425" text-anchor="middle" font-size="12" fill="#777">업그레이드 전 세 구성요소의 버전 호환 조합을 먼저 표로 정리할 것</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L0,6 L9,3 z" fill="#999"/>
+    </marker>
+  </defs>
+</svg>
