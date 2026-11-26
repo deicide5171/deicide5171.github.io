@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"MCP에 다 걸어도 되나요" — AAIF 재단 이관이 실제로 바꾸는 벤더 락인 리스크</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"MCP에 다 걸어도 되나요" — AAIF 재단 이관이 실제로 바꾸는 벤더 락인 리스크</div>
+<p style="font-size:14px; color:#999;">AI</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — MCP·Agent Skills·A2A가 리눅스 재단 산하 AAIF로 이관되며 "이제 특정 회사 거 아니니 안심해도 된다"는 말이 돕니다. 재단 이관이 실제로 없애는 리스크와 그대로 남기는 리스크를 구분해, 사내 아키텍처를 얼마나 묶어도 되는지 판단 기준을 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"사내 에이전트 도구 연동, 전부 MCP 서버로 통일해주세요." 이 요구를 받으면 보통 기술 선택 문제로만 봅니다. 호환성 좋고 여러 모델 벤더가 다 지원하니 표준으로 삼자는 식입니다. 그런데 이 표준의 원 소유자가 Anthropic 한 회사라는 사실이 걸리면 "회사가 방향을 바꾸거나 라이선스를 조이면 어떡하냐"는 반론이 바로 따라붙습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">2025년 12월 9일 리눅스 재단이 AAIF(Agentic AI Foundation)를 출범시키며 Anthropic의 MCP, Block의 goose, OpenAI의 AGENTS.md를 창립 프로젝트로 받아들였습니다. 1년이 채 안 된 지금 AAIF 산하 프로젝트는 Agent Skills·A2A·agentgateway·OpenSandbox까지 늘어 에이전트 툴링 스택 전체가 한 재단 아래로 모였습니다. <b>"이제 안심하고 올인해도 된다"는 말과, 재단 이관이 실제로 바꾸는 것 사이에는 꽤 거리가 있습니다.</b></p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-26-mcp-aaif-foundation-governance-lockin-risk-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">MCP는 에이전트 호스트 애플리케이션과 외부 도구·데이터 소스 사이의 연결 계층입니다. 재단 이관이 바꾸는 건 프로토콜 동작이 아니라 그 위의 통제 구조입니다. 리눅스 재단 산하에 거버닝 보드(예산·멤버십)와 테크니컬 커미티(Platinum 8개사 대표, 신규 프로젝트 승인)가 있고, 그 아래 MCP 같은 프로젝트들이 상표와 법인격만 넘긴 채 들어와 있습니다. <b>중요한 건 그 아래 한 단계입니다 — MCP의 실제 기술 결정권은 재단이 아니라 여전히 MCP 자체의 메인테이너들에게 있습니다.</b> 재단 donation 발표문도 "메인테이너 구조는 그대로 유지되고, 재단이 기술 방향을 지시하지 않는다"고 명시했습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">빌더 입장에서 바뀌는 건 "회사 하나가 사양을 바꾸거나 라이선스를 조이는" 시나리오의 발생 확률이지, 메인테이너 구성이나 기술 로드맵 자체가 아닙니다. 그 메인테이너 구성이 여전히 특정 회사 출신에 쏠려 있을 수 있다는 점도 재단 소속이라는 사실만으로는 바뀌지 않습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">거버넌스 모델</th><th style="border:1px solid #ddd; padding:8px;">기술 결정권 위치</th><th style="border:1px solid #ddd; padding:8px;">전환 리스크</th><th style="border:1px solid #ddd; padding:8px;">실제 선례</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">단일 기업 오픈소스</td><td style="border:1px solid #ddd; padding:8px;">그 기업 내부</td><td style="border:1px solid #ddd; padding:8px;">높음 — 즉시 변경 가능</td><td style="border:1px solid #ddd; padding:8px;">Redis 라이선스 전환·Valkey 포크</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">재단 donation (AAIF 등)</td><td style="border:1px solid #ddd; padding:8px;">기존 메인테이너 유지</td><td style="border:1px solid #ddd; padding:8px;">중간 — 쏠림은 남음</td><td style="border:1px solid #ddd; padding:8px;">MCP·goose·AGENTS.md</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">표준 기구형(W3C 등)</td><td style="border:1px solid #ddd; padding:8px;">다자 워킹그룹</td><td style="border:1px solid #ddd; padding:8px;">낮음 — 가장 느림</td><td style="border:1px solid #ddd; padding:8px;">HTTP, GeoJSON</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">AAIF Gold 멤버십이 20만 달러부터 시작하고 테크니컬 커미티 의석이 Platinum 등급 회사에 배정된다는 점도 봐야 합니다. <b>"자금을 댄 회사가 그 재단의 기본값으로부터 가장 먼저 이익을 보는 회사이기도 하다"</b>는 지적은 출범 직후부터 반복됐습니다. 재단 소속이라는 사실 하나로 "완전히 중립적인 공공 표준"과 동일시하면 과대평가입니다. 반대로 Redis처럼 단일 기업이 하루아침에 라이선스를 바꾸는 최악의 시나리오는 확실히 막습니다 — 재단에 기증된 상표와 IP는 그 기업이 마음대로 회수할 수 없기 때문입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 프로젝트 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">지금 MCP 위에 핵심 연동 아키텍처를 올리기로 했다면, 재단 이관 뉴스 하나로 안심하지 말고 아래 순서로 직접 점검합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>① 메인테이너 명단 확인</b> — modelcontextprotocol.io 거버넌스 페이지에서 Lead·Core Maintainer 소속 회사를 직접 읽습니다. 재단 소속이어도 특정 회사 출신이 과반이면 그 회사의 방향 전환 리스크는 여전히 남아 있다고 봅니다.<br>
+<b>② 상표·라이선스 조항 분리해서 읽기</b> — "사양이 공개됐다"와 "상표·커뮤니티 자산이 재단에 있다"는 별개 사실입니다.<br>
+<b>③ 추상화 경계 설계</b> — 비즈니스 로직이 MCP SDK를 직접 참조하지 않게 내부 인터페이스로 한 겹 감쌉니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; overflow-x:auto; line-height:1.6;">// 내부 도구 호출 인터페이스 — MCP 구현 세부사항을 여기서 끊는다
+interface ToolGateway {
+  callTool(name: string, args: Record&lt;string, unknown&gt;): Promise&lt;ToolResult&gt;;
+}
+
+class McpToolGateway implements ToolGateway {
+  constructor(private client: McpClient) {}
+  async callTool(name: string, args: Record&lt;string, unknown&gt;) {
+    return this.client.request({ method: "tools/call", params: { name, arguments: args } });
+  }
+}</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>④ 탈출 경로를 미리 문서화</b> — 프로토콜 포크나 메인테이너 대거 이탈 같은 사태가 벌어졌을 때 무엇을 바꿔야 하는지 한 페이지로 적어 둡니다. 이 작업 자체가 ①·② 점검을 강제로 하게 만듭니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">여기서 흔히 막히는 지점은 "어느 정도 추상화가 과한가"입니다. 모든 걸 범용 인터페이스로 감싸면 MCP가 제공하는 리소스·프롬프트 같은 고유 기능을 못 쓰게 됩니다. 실무에서는 도구 호출처럼 다른 프로토콜로도 대체 가능한 경계만 감싸고, MCP 고유 기능은 직접 쓰되 그 사용처를 한 모듈에 몰아 둬서 나중에 바꿔야 할 범위를 좁히는 선이 합리적입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #e08a2e; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>주의</b> — 재단 소속 여부만 보고 "중립적이니 안전하다"고 판단하지 않습니다. 실제 메인테이너 명단과 상표·법인격 귀속을 직접 확인하는 쪽이 더 정확한 리스크 판단입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">#MCP #AAIF #오픈소스거버넌스 #벤더락인 #아키텍처의사결정</p>
+
+</body>
+</html>

@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <!-- Client -->
+  <rect x="30" y="40" width="160" height="60" rx="8" fill="#eef3ff" stroke="#3b6fd6" stroke-width="2"/>
+  <text x="110" y="65" text-anchor="middle" font-size="14" font-weight="bold" fill="#1f2d50">지도 클라이언트</text>
+  <text x="110" y="83" text-anchor="middle" font-size="12" fill="#3b6fd6">LAYERS=a,b,c</text>
+
+  <!-- Arrow to GWC -->
+  <line x1="190" y1="70" x2="270" y2="70" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- GWC decision box -->
+  <rect x="270" y="20" width="220" height="100" rx="8" fill="#fff7e6" stroke="#d8972a" stroke-width="2"/>
+  <text x="380" y="45" text-anchor="middle" font-size="14" font-weight="bold" fill="#5c3d0a">GeoWebCache</text>
+  <text x="380" y="65" text-anchor="middle" font-size="12" fill="#5c3d0a">멤버 레이어 a,b,c</text>
+  <text x="380" y="82" text-anchor="middle" font-size="12" fill="#5c3d0a">개별 캐시 조회</text>
+  <text x="380" y="99" text-anchor="middle" font-size="11" fill="#8a5a00">(coalesced 판정)</text>
+
+  <!-- Arrow down to layer caches -->
+  <line x1="380" y1="120" x2="380" y2="150" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+
+  <!-- Per-layer caches -->
+  <rect x="230" y="150" width="90" height="60" rx="6" fill="#e8f7ee" stroke="#2e9e5b" stroke-width="2"/>
+  <text x="275" y="175" text-anchor="middle" font-size="12" font-weight="bold" fill="#1d6b3d">캐시 a</text>
+  <text x="275" y="192" text-anchor="middle" font-size="11" fill="#1d6b3d">HIT</text>
+
+  <rect x="335" y="150" width="90" height="60" rx="6" fill="#e8f7ee" stroke="#2e9e5b" stroke-width="2"/>
+  <text x="380" y="175" text-anchor="middle" font-size="12" font-weight="bold" fill="#1d6b3d">캐시 b</text>
+  <text x="380" y="192" text-anchor="middle" font-size="11" fill="#1d6b3d">HIT</text>
+
+  <rect x="440" y="150" width="90" height="60" rx="6" fill="#fdecec" stroke="#c23b3b" stroke-width="2"/>
+  <text x="485" y="175" text-anchor="middle" font-size="12" font-weight="bold" fill="#7a1f1f">레이어 c</text>
+  <text x="485" y="192" text-anchor="middle" font-size="11" fill="#7a1f1f">캐싱 불가 조건</text>
+
+  <!-- Arrow from c to live render -->
+  <line x1="485" y1="210" x2="485" y2="250" stroke="#c23b3b" stroke-width="2" marker-end="url(#arrowred)"/>
+  <rect x="420" y="250" width="130" height="50" rx="6" fill="#fdecec" stroke="#c23b3b" stroke-width="2"/>
+  <text x="485" y="272" text-anchor="middle" font-size="12" font-weight="bold" fill="#7a1f1f">라이브 렌더링</text>
+  <text x="485" y="289" text-anchor="middle" font-size="11" fill="#7a1f1f">폴백</text>
+
+  <!-- Arrows from a,b caches down to composite -->
+  <line x1="275" y1="210" x2="275" y2="330" stroke="#2e9e5b" stroke-width="2" marker-end="url(#arrowgreen)"/>
+  <line x1="380" y1="210" x2="380" y2="330" stroke="#2e9e5b" stroke-width="2" marker-end="url(#arrowgreen)"/>
+  <line x1="485" y1="300" x2="420" y2="330" stroke="#c23b3b" stroke-width="2" marker-end="url(#arrowred)"/>
+
+  <!-- Composite box -->
+  <rect x="220" y="330" width="320" height="60" rx="8" fill="#eef3ff" stroke="#3b6fd6" stroke-width="2"/>
+  <text x="380" y="355" text-anchor="middle" font-size="14" font-weight="bold" fill="#1f2d50">타일 조합(composite)</text>
+  <text x="380" y="373" text-anchor="middle" font-size="11" fill="#3b6fd6">a+b는 캐시, c는 라이브 결과를 합성</text>
+
+  <!-- Arrow back to client -->
+  <line x1="540" y1="360" x2="630" y2="360" stroke="#555" stroke-width="2" marker-end="url(#arrow)"/>
+  <line x1="630" y1="360" x2="630" y2="70" stroke="#555" stroke-width="2"/>
+  <line x1="630" y1="70" x2="192" y2="70" stroke="#555" stroke-width="2" marker-end="url(#arrow)" stroke-dasharray="4 3"/>
+  <text x="700" y="220" text-anchor="middle" font-size="11" fill="#555">응답</text>
+
+  <!-- Note: layer group exception -->
+  <rect x="580" y="20" width="190" height="80" rx="6" fill="#f4f4f4" stroke="#999" stroke-width="1.5" stroke-dasharray="4 3"/>
+  <text x="675" y="40" text-anchor="middle" font-size="11" font-weight="bold" fill="#444">예외: 레이어그룹</text>
+  <text x="675" y="58" text-anchor="middle" font-size="10" fill="#444">합성 요청에 레이어그룹이</text>
+  <text x="675" y="72" text-anchor="middle" font-size="10" fill="#444">섞여 있으면 그룹 자체는</text>
+  <text x="675" y="86" text-anchor="middle" font-size="10" fill="#444">전용 캐시를 쓰지 않음</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#555"/>
+    </marker>
+    <marker id="arrowgreen" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#2e9e5b"/>
+    </marker>
+    <marker id="arrowred" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#c23b3b"/>
+    </marker>
+  </defs>
+</svg>

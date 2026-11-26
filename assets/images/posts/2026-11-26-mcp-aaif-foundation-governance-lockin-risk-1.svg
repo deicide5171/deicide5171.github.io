@@ -1,0 +1,65 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+  <text x="400" y="26" text-anchor="middle" font-size="16" font-weight="bold" fill="#222">AAIF 거버넌스 계층과 빌더 시스템의 경계</text>
+
+  <rect x="250" y="40" width="300" height="34" rx="6" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+  <text x="400" y="62" text-anchor="middle" font-size="13" fill="#333">Linux Foundation (법인·예산 모체)</text>
+
+  <line x1="400" y1="74" x2="400" y2="90" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="40" y="90" width="330" height="54" rx="6" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+  <text x="205" y="110" text-anchor="middle" font-size="12.5" fill="#333">AAIF Governing Board</text>
+  <text x="205" y="128" text-anchor="middle" font-size="11.5" fill="#666">예산·멤버십 (Gold 멤버십 $200K~)</text>
+
+  <rect x="430" y="90" width="330" height="54" rx="6" fill="#eef2ff" stroke="#4f46e5" stroke-width="1.5"/>
+  <text x="595" y="110" text-anchor="middle" font-size="12.5" fill="#333">AAIF Technical Committee</text>
+  <text x="595" y="128" text-anchor="middle" font-size="11.5" fill="#666">Platinum 8개사 대표 — 신규 프로젝트 승인</text>
+
+  <line x1="205" y1="144" x2="205" y2="165" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+  <line x1="595" y1="144" x2="595" y2="165" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="40" y="165" width="720" height="52" rx="6" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5"/>
+  <text x="400" y="184" text-anchor="middle" font-size="12.5" font-weight="bold" fill="#166534">재단에 기증된 프로젝트들 (상표·법인격만 이관)</text>
+  <text x="130" y="205" text-anchor="middle" font-size="11" fill="#333">MCP</text>
+  <text x="270" y="205" text-anchor="middle" font-size="11" fill="#333">Agent Skills</text>
+  <text x="410" y="205" text-anchor="middle" font-size="11" fill="#333">A2A</text>
+  <text x="540" y="205" text-anchor="middle" font-size="11" fill="#333">goose</text>
+  <text x="680" y="205" text-anchor="middle" font-size="11" fill="#333">AGENTS.md</text>
+
+  <line x1="400" y1="217" x2="400" y2="238" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="150" y="238" width="500" height="44" rx="6" fill="#fff7ed" stroke="#ea580c" stroke-width="1.5"/>
+  <text x="400" y="265" text-anchor="middle" font-size="12.5" fill="#7c2d12">MCP Core/Lead Maintainers — 기술 결정권은 재단이 아닌 메인테이너에게</text>
+
+  <line x1="40" y1="296" x2="760" y2="296" stroke="#999" stroke-width="1" stroke-dasharray="6,4"/>
+  <text x="400" y="312" text-anchor="middle" font-size="11" fill="#888">— 여기까지는 빌더가 바꿀 수 없는 영역 / 여기부터는 빌더가 직접 설계 —</text>
+
+  <line x1="400" y1="282" x2="400" y2="330" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="40" y="330" width="150" height="48" rx="6" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="115" y="358" text-anchor="middle" font-size="12" fill="#333">Host App</text>
+
+  <line x1="190" y1="354" x2="225" y2="354" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="225" y="330" width="190" height="48" rx="6" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="320" y="352" text-anchor="middle" font-size="12" fill="#333">MCP 클라이언트</text>
+  <text x="320" y="368" text-anchor="middle" font-size="10.5" fill="#666">(추상화 레이어로 감싸기)</text>
+
+  <line x1="415" y1="354" x2="450" y2="354" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="450" y="330" width="150" height="48" rx="6" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="525" y="358" text-anchor="middle" font-size="12" fill="#333">MCP 서버들</text>
+
+  <line x1="600" y1="354" x2="635" y2="354" stroke="#888" stroke-width="1.5" marker-end="url(#arrow)"/>
+
+  <rect x="635" y="330" width="130" height="48" rx="6" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/>
+  <text x="700" y="358" text-anchor="middle" font-size="12" fill="#333">도구·데이터</text>
+
+  <text x="400" y="410" text-anchor="middle" font-size="11.5" fill="#444">재단 거버넌스는 "상표·법인격" 리스크를 줄이지만, 메인테이너 집중도·탈출 경로는 여전히 빌더가 직접 점검해야 한다</text>
+
+  <defs>
+    <marker id="arrow" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#888"/>
+    </marker>
+  </defs>
+</svg>
