@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>"지도에 레이어 여러 개를 한 번에 겹쳐서 보여주세요" — GeoWebCache 멀티 레이어 타일 캐싱이 바꾸는 캐시 설계</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">"지도에 레이어 여러 개를 한 번에 겹쳐서 보여주세요" — GeoWebCache 멀티 레이어 타일 캐싱이 바꾸는 캐시 설계</div>
+<p style="font-size:14px; color:#999;">GIS</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — GeoServer 3.0.2(GWC 2.0.2)부터 <b>LAYERS=a,b,c</b>처럼 여러 레이어를 합쳐 요청해도 멤버 레이어별 캐시를 조합해 응답할 수 있습니다. 새 캐시가 생기는 게 아니라 기존 레이어 캐시의 활용 범위가 넓어지는 구조라, 디스크 용량과 레이어그룹 예외를 먼저 점검해야 하는 이유를 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"행정구역 경계랑 하천, 건물 레이어를 한 지도에 같이 띄워주세요." 흔한 요구입니다. 그런데 GeoServer를 WMS로 운영해 본 분이라면 한 번쯤 의아했을 지점이 있습니다 — 레이어 하나씩 따로 요청하면 두 번째부터는 캐시에서 바로 나오는데, <b>LAYERS=boundary,river,building</b>처럼 한 요청에 여러 레이어를 합쳐서 보내면 매번 느립니다. GeoWebCache(GWC)는 지금까지 단일 레이어를 지정한 타일 요청만 캐싱 대상으로 인식했고, 여러 레이어가 섞인 "coalesced" 요청은 캐시를 아예 건너뛰고 그때그때 GeoServer가 직접 렌더링해 돌려줬습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">프론트엔드 입장에서 레이어 합성 요청은 네트워크 왕복을 줄이는 자연스러운 최적화입니다. 하지만 그 요청이 GWC 캐시의 사각지대였다는 사실은 운영자 쪽에서는 잘 드러나지 않습니다. 전체 응답 시간이 "그냥 느린 레이어가 있나 보다"로 넘어가기 쉽기 때문입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">2026년 6월 17년 만의 메이저 업데이트로 나온 GeoServer 3.0 계열이 이 지점을 바꿨습니다. GWC 2.0 기반의 3.0.2 릴리스에 <b>멀티 레이어(coalesced) 타일 캐싱</b> 기능이 들어오면서, 합성 요청도 각 멤버 레이어의 개별 캐시를 조합해 내려줄 수 있게 됐습니다. 기능 하나가 추가된 게 아니라, "레이어를 합쳐 요청하면 느리다"는 그동안의 암묵적 전제 자체가 깨지는 변화입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-26-geoserver-gwc-multilayer-tile-coalescing-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">지도 클라이언트가 보내는 <b>LAYERS=a,b,c</b> 요청은 WMS 레이어에게 가기 전에 GWC 캐시 레이어를 거칩니다. 기존에는 이 단계에서 "레이어가 2개 이상이니 캐시 대상 아님" 판정이 내려져 바로 GeoServer 렌더링 엔진으로 넘어갔습니다. 멀티 레이어 캐싱이 켜지면 이 판정 로직이 바뀝니다 — a, b, c 각각을 자신의 개별 타일 캐시에서 조회하고, 모두 존재하면 조합(composite)해서 응답합니다. 핵심은 <b>레이어 a를 단독으로 요청했을 때 쓰는 캐시와 a,b,c로 합성 요청할 때 쓰는 캐시가 같은 저장소</b>라는 점입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">단, 두 가지 예외가 있습니다. 첫째, 멤버 레이어 중 하나가 일반 캐싱 조건을 만족하지 못하면 그 레이어만 라이브 렌더링되고 나머지는 캐시에서 가져와 조합합니다 — 전부 아니면 전무가 아니라 레이어 단위 폴백입니다. 둘째, <b>레이어그룹이 합성 요청에 섞여 있으면 그 레이어그룹 자체는 전용 캐시를 쓰지 않습니다.</b> 레이어그룹을 많이 쓰는 조직이라면 "그룹으로 묶으면 캐시가 더 잘 될 것"이라는 기대가 이번에도 그대로 깨진다는 점을 염두에 둬야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">운영 방식</th><th style="border:1px solid #ddd; padding:8px;">캐시 적중률</th><th style="border:1px solid #ddd; padding:8px;">캐시 용량 증가</th><th style="border:1px solid #ddd; padding:8px;">언제 쓰면 안 되는가</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">멀티 레이어 캐싱 끔(기존 기본값)</td><td style="border:1px solid #ddd; padding:8px;">합성 요청 0%</td><td style="border:1px solid #ddd; padding:8px;">변화 없음</td><td style="border:1px solid #ddd; padding:8px;">레이어 조합 요청 비중이 낮은 서비스</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">멀티 레이어 캐싱 켬</td><td style="border:1px solid #ddd; padding:8px;">멤버 레이어 각각 100% 도달 가능</td><td style="border:1px solid #ddd; padding:8px;">레이어별 캐시가 더 빨리 채워짐</td><td style="border:1px solid #ddd; padding:8px;">디스크·스토리지 여유가 빠듯한 환경</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">레이어그룹으로 미리 합성해 별도 캐싱</td><td style="border:1px solid #ddd; padding:8px;">고정 조합에서 가장 빠름</td><td style="border:1px solid #ddd; padding:8px;">그룹 수만큼 캐시 중복</td><td style="border:1px solid #ddd; padding:8px;">클라이언트가 조합을 자유롭게 바꾸는 서비스</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">멀티 레이어 캐싱을 켠다고 캐시 용량이 공짜로 늘어나는 건 아닙니다. 공식 문서도 "합성 요청이 단일 레이어 캐시와 같은 저장소에 쓰기 때문에 해당 레이어들의 캐시가 더 빨리 채워진다"고 명시합니다. 지금까지 라이브 렌더링으로 새어 나가던 부하가 <b>캐시 디스크 쓰기 부하로 자리를 옮기는</b> 셈입니다. 레이어별 캐시 만료 주기를 디스크 용량에 맞춰 빠듯하게 잡아 둔 조직이라면, 이 기능을 켜기 전에 용량 여유부터 다시 계산해야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실무 설정과 확인 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">GWC 관리자 UI 또는 gwc-gs.xml에서 멀티 레이어 캐싱을 레이어 단위로 활성화합니다. 켜기 전/후 비교가 운영 판단의 핵심입니다.</p>
+
+<pre style="background-color:#f4f4f4; padding:14px; font-family:monospace; font-size:14px; overflow-x:auto; line-height:1.6;">curl -s -D - -o /dev/null \
+  "http://geoserver/geoserver/gwc/service/wms?LAYERS=boundary,river,building&amp;TILED=true" \
+  | grep -i "geowebcache-cache-result"</pre>
+
+<p style="font-size:16px; color:#333; line-height:1.8;"><b>geowebcache-cache-result</b> 응답 헤더가 MISS에서 HIT으로 바뀌는지가 가장 빠른 검증 지표입니다. 진행 순서는 다음과 같습니다. 1) 실제로 레이어 합성 요청이 얼마나 자주 들어오는지부터 집계합니다 — 비중이 낮다면 굳이 바꿀 이유가 없습니다. 2) 트래픽이 가장 많은 레이어 조합부터 멀티 레이어 캐싱을 켭니다. 3) 켠 직후 며칠간 디스크 사용량 증가 추이를 관찰합니다. 4) 레이어그룹으로 자주 쓰는 고정 조합이 있다면, 그 조합은 멀티 레이어 캐싱이 아니라 기존 레이어그룹 캐시로 남겨 둘지 별도로 판단합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">가장 흔히 걸리는 함정은 "레이어그룹을 쓰면 당연히 캐시가 더 잘 될 것"이라는 역방향 기대입니다. 레이어그룹은 여전히 전용 캐시가 없으므로, 클라이언트가 보내는 조합이 고정적이라면 차라리 그 조합 그대로 레이어그룹을 만들어 그룹 전용 캐시를 쓰는 기존 방식이 낫고, 조합이 매번 달라진다면 멀티 레이어 캐싱 쪽이 유리합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #e08a2e; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>주의</b> — 조합 단계에서 GeoServer의 최대 WMS 요청 메모리 설정을 초과하면 그 요청은 캐시 여부와 무관하게 여전히 제한됩니다. 켜는 것과 무제한으로 많은 레이어를 합성해도 된다는 것은 별개의 문제입니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">#GeoServer #GeoWebCache #타일캐시 #WMS #성능튜닝</p>
+
+</body>
+</html>
