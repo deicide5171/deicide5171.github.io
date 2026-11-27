@@ -1,0 +1,60 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 450" width="800" height="450" font-family="sans-serif">
+  <rect x="0" y="0" width="800" height="450" fill="#ffffff"/>
+
+  <text x="200" y="28" text-anchor="middle" font-size="14" font-weight="bold" fill="#444">순환 의존 (흔한 구조)</text>
+  <text x="600" y="28" text-anchor="middle" font-size="14" font-weight="bold" fill="#444">독립 복구 경로</text>
+  <line x1="400" y1="15" x2="400" y2="430" stroke="#ccc" stroke-width="1.5" stroke-dasharray="4 3"/>
+
+  <!-- Left: circular dependency -->
+  <circle cx="150" cy="150" r="22" fill="#fdecec" stroke="#c23b3b" stroke-width="2"/>
+  <text x="150" y="154" text-anchor="middle" font-size="10" fill="#7a1f1f">N1</text>
+  <circle cx="210" cy="110" r="22" fill="#fdecec" stroke="#c23b3b" stroke-width="2"/>
+  <text x="210" y="114" text-anchor="middle" font-size="10" fill="#7a1f1f">N2</text>
+  <circle cx="270" cy="150" r="22" fill="#e8f7ee" stroke="#2e9e5b" stroke-width="2"/>
+  <text x="270" y="154" text-anchor="middle" font-size="10" fill="#1d6b3d">N3</text>
+  <circle cx="150" cy="210" r="22" fill="#e8f7ee" stroke="#2e9e5b" stroke-width="2"/>
+  <text x="150" y="214" text-anchor="middle" font-size="10" fill="#1d6b3d">N4</text>
+  <circle cx="230" cy="220" r="22" fill="#e8f7ee" stroke="#2e9e5b" stroke-width="2"/>
+  <text x="230" y="224" text-anchor="middle" font-size="10" fill="#1d6b3d">N5</text>
+  <text x="200" y="260" text-anchor="middle" font-size="10" fill="#7a1f1f">2/5 다운 → 쿼럼(과반수) 상실</text>
+
+  <rect x="110" y="300" width="220" height="55" rx="8" fill="#fff7e6" stroke="#d8972a" stroke-width="2"/>
+  <text x="220" y="322" text-anchor="middle" font-size="12" font-weight="bold" fill="#5c3d0a">복구 오케스트레이터</text>
+  <text x="220" y="340" text-anchor="middle" font-size="10" fill="#8a5a00">같은 클러스터 과반수가 있어야 동작</text>
+
+  <path d="M 220 300 C 220 270 200 260 200 245" stroke="#c23b3b" stroke-width="1.8" fill="none" marker-end="url(#arrowred)"/>
+  <path d="M 230 355 C 50 390 40 280 110 215" stroke="#c23b3b" stroke-width="1.8" fill="none" marker-end="url(#arrowred)" stroke-dasharray="3 3"/>
+  <text x="90" y="395" text-anchor="middle" font-size="10" fill="#7a1f1f">클러스터 복구에 필요</text>
+  <text x="90" y="408" text-anchor="middle" font-size="10" fill="#7a1f1f">→ 둘 다 멈춤 (순환)</text>
+
+  <!-- Right: independent recovery -->
+  <circle cx="530" cy="150" r="22" fill="#fdecec" stroke="#c23b3b" stroke-width="2"/>
+  <text x="530" y="154" text-anchor="middle" font-size="10" fill="#7a1f1f">N1</text>
+  <circle cx="590" cy="110" r="22" fill="#fdecec" stroke="#c23b3b" stroke-width="2"/>
+  <text x="590" y="114" text-anchor="middle" font-size="10" fill="#7a1f1f">N2</text>
+  <circle cx="650" cy="150" r="22" fill="#e8f7ee" stroke="#2e9e5b" stroke-width="2"/>
+  <text x="650" y="154" text-anchor="middle" font-size="10" fill="#1d6b3d">N3</text>
+  <circle cx="530" cy="210" r="22" fill="#e8f7ee" stroke="#2e9e5b" stroke-width="2"/>
+  <text x="530" y="214" text-anchor="middle" font-size="10" fill="#1d6b3d">N4</text>
+  <circle cx="610" cy="220" r="22" fill="#e8f7ee" stroke="#2e9e5b" stroke-width="2"/>
+  <text x="610" y="224" text-anchor="middle" font-size="10" fill="#1d6b3d">N5</text>
+  <text x="580" y="260" text-anchor="middle" font-size="10" fill="#7a1f1f">같은 쿼럼 손실 상황</text>
+
+  <rect x="490" y="330" width="220" height="60" rx="8" fill="#eef3ff" stroke="#3b6fd6" stroke-width="2"/>
+  <text x="600" y="352" text-anchor="middle" font-size="12" font-weight="bold" fill="#1f2d50">독립 복구 제어 평면</text>
+  <text x="600" y="368" text-anchor="middle" font-size="10" fill="#3b6fd6">다른 리전·계정·네트워크 경로</text>
+  <text x="600" y="383" text-anchor="middle" font-size="10" fill="#3b6fd6">쿼럼 상태와 무관하게 개입 가능</text>
+
+  <path d="M 600 330 C 600 290 600 270 580 245" stroke="#2e9e5b" stroke-width="1.8" fill="none" marker-end="url(#arrowgreen)"/>
+  <text x="440" y="340" text-anchor="middle" font-size="10" fill="#1d6b3d">같은 장애 도메인</text>
+  <text x="440" y="353" text-anchor="middle" font-size="10" fill="#1d6b3d">공유 안 함</text>
+
+  <defs>
+    <marker id="arrowred" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#c23b3b"/>
+    </marker>
+    <marker id="arrowgreen" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6 Z" fill="#2e9e5b"/>
+    </marker>
+  </defs>
+</svg>
