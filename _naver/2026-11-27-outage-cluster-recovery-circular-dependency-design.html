@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>복구 시스템이 자기가 고쳐야 할 것에 의존하고 있었다 — 11월 장애 클러스터가 보여준 순환 의존 설계의 함정</title>
+</head>
+<body style="background-color:#ffffff; padding:20px;">
+<!--
+  ■ 네이버 블로그 게시 방법
+  1. 이 파일을 브라우저(크롬/사파리)로 연다.
+  2. 전체 선택(Cmd+A / Ctrl+A) 후 복사(Cmd+C / Ctrl+C).
+  3. 네이버 블로그 글쓰기 본문에 붙여넣기 — 인라인 스타일이 유지된 채 들어간다.
+  4. 맨 위 제목 줄은 잘라내서(Cmd+X) 네이버 '제목' 칸에 붙여넣는다.
+  5. 코드 블록은 붙여넣은 뒤 네이버 에디터의 '소스코드' 컴포넌트로 감싸면 더 깔끔하다.
+  6. 맨 아래 해시태그 줄은 네이버 태그 입력칸에 옮겨 쓰고 본문에서는 지운다.
+  ※ 이 주석은 화면에 보이지 않으며 복사되지 않는다.
+-->
+
+<div style="font-size:26px; font-weight:bold; color:#222; line-height:1.4;">복구 시스템이 자기가 고쳐야 할 것에 의존하고 있었다 — 11월 장애 클러스터가 보여준 순환 의존 설계의 함정</div>
+<p style="font-size:14px; color:#999;">시스템 설계</p>
+
+<div style="background-color:#f0f7f4; border-left:4px solid #03c75a; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>한 줄 요약</b> — 2026년 11월 12~17일 사이 Microsoft 365·Coinbase·Cloudflare류 장애가 한꺼번에 겹치면서 드러난 공통 패턴은 하나입니다. 자동 복구 시스템이 정작 자신이 고쳐야 할 클러스터에 의존하고 있었다는 것. 쿼럼 설계와 복구 경로의 순환 의존을 어떻게 점검하고 끊어야 하는지 정리했습니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">왜 지금 이 판단이 필요한가</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">"장애가 나도 사람이 안 붙어 있어도 자동으로 복구되게 해주세요." 이 요구를 받으면 대부분의 팀은 헬스체크·오토스케일링·페일오버 같은 자동 복구 장치를 설계하는 데 집중합니다. 그런데 2026년 11월 12일부터 17일 사이 벌어진 일련의 장애들이 공통으로 드러낸 질문은 그게 아니었습니다 — "그 자동 복구 시스템 자체는 무엇에 의존하고 있는가"였습니다. Cloud Security Alliance가 이 시기를 묶어 낸 리서치 노트는 이 구간을 사람들이 대부분 고정 인프라로 여기는 서비스들이 연달아 무너진 사건으로 규정했습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">구체적인 사례를 보면 패턴이 또렷해집니다. Coinbase의 2026년 5월 장애 사후분석은 거래 시스템이 5노드 합의 클러스터로 돌아가는데, AWS 장애로 그중 3노드가 한꺼번에 내려가며 <b>쿼럼(과반수)을 잃어 거래 처리 자체가 멈춘</b> 사례를 짚었습니다. Coinbase는 장애 지속 시간이 길어진 원인을 실제 장애 상황에서 한 번도 검증된 적 없던 아키텍처 가정 때문이라고 결론 내렸습니다. Cloudflare의 2025년 11월 장애 사후분석은 원인을 잘못된 설정 파일로 지목하면서, 자주 바뀌는 대형 설정 파일은 사실상 코드이며 코드와 같은 안전장치를 받아야 한다는 교훈을 남겼습니다. 그리고 가장 반복되는 패턴은 따로 있습니다 — 복구 시스템이 클러스터가 회복돼야 작동하는데, 클러스터는 복구 시스템 없이는 회복될 수 없는 <b>순환 의존</b>입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">개별 컴포넌트 장애는 설계에서 이미 가정하고 대비합니다. 문제는 각자 감당할 수 있다고 여겼던 장애 여러 개가 예상 못 한 방식으로 서로 얽힐 때 생깁니다. 이번 11월 장애 클러스터가 특별한 신기술 때문이 아니라 오래된 설계 질문 — 쿼럼 크기, 설정 변경 안전장치, 복구 경로의 독립성 — 을 다시 들여다보게 만들었다는 점에서, 지금 이 판단을 점검할 이유가 있습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">전체 시스템에서의 위치</div>
+
+<img src="https://deicide5171.github.io/assets/images/posts/2026-11-27-outage-cluster-recovery-circular-dependency-design-1.svg" style="width:100%;">
+
+<p style="font-size:16px; color:#333; line-height:1.8;">흔한 구조에서는 복구 오케스트레이터가 클러스터의 헬스체크 결과를 보고 재시작·페일오버를 트리거합니다. 그런데 이 오케스트레이터 자신이 같은 클러스터의 과반수 노드, 같은 네트워크 경로, 때로는 같은 리전의 제어 평면을 통해서만 동작한다면, 클러스터가 쿼럼을 잃는 순간 오케스트레이터도 같이 눈이 멉니다. 클러스터를 고치려면 오케스트레이터가 필요하고, 오케스트레이터가 움직이려면 클러스터의 일부가 먼저 살아 있어야 하는 닫힌 고리가 만들어집니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">독립 경로를 둔 구조에서는 복구 제어 평면이 의도적으로 다른 실패 도메인에 놓입니다 — 다른 리전, 다른 계정, 혹은 완전히 다른 네트워크 경로로 클러스터 상태를 관찰하고 개입할 수 있는 경로를 별도로 유지합니다. 평소엔 거의 쓰이지 않기 때문에 존재 자체를 잊기 쉽지만, 정작 전체 장애 상황에서 유일하게 살아 있는 경로가 되는 쪽은 이쪽입니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">선택의 트레이드오프</div>
+
+<table style="border-collapse:collapse; width:100%; font-size:15px;">
+<tr style="background-color:#f4f4f4;"><th style="border:1px solid #ddd; padding:8px;">설계 요소</th><th style="border:1px solid #ddd; padding:8px;">선택지 A</th><th style="border:1px solid #ddd; padding:8px;">선택지 B</th><th style="border:1px solid #ddd; padding:8px;">언제 B가 필요한가</th></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">쿼럼 크기</td><td style="border:1px solid #ddd; padding:8px;">3/5(과반수 2개 손실 허용)</td><td style="border:1px solid #ddd; padding:8px;">5/7 또는 멀티 리전 쿼럼</td><td style="border:1px solid #ddd; padding:8px;">쿼럼 손실이 곧 서비스 정지인 결제·거래 시스템</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">설정 변경</td><td style="border:1px solid #ddd; padding:8px;">설정 파일을 데이터로 취급</td><td style="border:1px solid #ddd; padding:8px;">설정을 코드로 취급(리뷰·카나리)</td><td style="border:1px solid #ddd; padding:8px;">설정 하나로 전체 트래픽 경로가 바뀌는 계층</td></tr>
+<tr><td style="border:1px solid #ddd; padding:8px;">복구 제어 평면</td><td style="border:1px solid #ddd; padding:8px;">같은 인프라·리전에 둠</td><td style="border:1px solid #ddd; padding:8px;">다른 실패 도메인에 독립적으로 둠</td><td style="border:1px solid #ddd; padding:8px;">자동 복구가 꺼지면 전체가 멈추는 시스템</td></tr>
+</table>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">B열의 공통점은 전부 비용이 더 든다는 것입니다. 멀티 리전 쿼럼은 지연시간과 인프라 비용을 늘리고, 설정을 코드 취급하면 변경 속도가 느려지고, 독립 복구 경로는 평소엔 쓰지도 않는 인프라를 유지보수해야 합니다. 이 표의 함정은 "B가 항상 낫다"가 아니라 "A로 충분한 시스템에까지 B를 강요하면 그 자체가 낭비"라는 데 있습니다. 내부 대시보드처럼 몇 시간 멈춰도 복구 가능한 시스템이라면 A열로 충분합니다. 결제·합의·안전 필수 시스템이라면 비용을 감수하고서라도 B열로 가야 한다는 판단을, 장애가 나기 전에 미리 내려둬야 합니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="font-size:21px; font-weight:bold; color:#222; border-left:5px solid #03c75a; padding-left:12px;">실제 진행 순서</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">1) 지금 운영 중인 자동 복구·헬스체크 시스템이 무엇에 의존하는지 지도를 그립니다 — 같은 리전인가, 같은 쿼럼의 과반수가 살아있어야 하는가. 2) 쿼럼 손실을 의도적으로 시험합니다. 대부분의 시스템은 노드 하나가 죽는 시나리오만 테스트하고, 과반수가 동시에 죽는 시나리오는 검증한 적이 없습니다. 3) 자주 바뀌는 대형 설정 파일(라우팅 규칙, 피처 플래그)에 코드와 동일한 리뷰·카나리·롤백 절차를 적용할지 판단합니다. 4) 복구 제어 평면이 보호 대상과 같은 실패 도메인에 있는지 점검하고, critical path에 한해 독립 경로를 설계합니다. 5) 장애 사후분석 때마다 "우리 복구 시스템이 방금 망가진 바로 그것에 의존하고 있었는가?"를 고정 질문으로 넣습니다.</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<div style="background-color:#fff7f0; border-left:4px solid #e08a2e; padding:14px 16px; font-size:16px; color:#333; line-height:1.7;">
+<b>주의</b> — 모든 시스템에 독립 복구 경로를 두는 건 과잉 설계입니다. critical path를 먼저 가려내고, 그 경로에만 비용을 투자해야 합니다.
+</div>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">&nbsp;</p>
+
+<p style="font-size:16px; color:#333; line-height:1.8;">#장애복구 #쿼럼 #분산시스템 #복원력 #아키텍처설계</p>
+
+</body>
+</html>
